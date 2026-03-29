@@ -44,6 +44,8 @@
             protobuf
             protoc-gen-go
             protoc-gen-go-grpc
+
+            tilt
           ];
 
           shellHook = ''

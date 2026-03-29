@@ -15,6 +15,11 @@
       "source": "mindrally/skills",
       "sourceType": "github",
       "computedHash": "5696250d6eb09665ce24ee60d6528f0cd0492c7341a708d0ac2937c307b37a12"
+    },
+    "tilt": {
+      "source": "0xbigboss/claude-code",
+      "sourceType": "github",
+      "computedHash": "08a92f193c6725df8327f15429209be3ba94c8f47b85ff05c92aac8f0a3a1bb1"
     }
   }
 }

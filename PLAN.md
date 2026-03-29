@@ -16,14 +16,11 @@
     orders/
   shared/
     contracts/
-    db/
     env/
     messaging/
     proto/
     retry/
     tracing/
-    types/
-    util/
   docs/
     architecture/
   infra/
@@ -59,8 +56,6 @@
 - `shared/messaging`: RabbitMQ connection, publish, and consume utilities.
 - `shared/tracing`: HTTP, gRPC, and RabbitMQ tracing wrappers.
 - `shared/retry`: retry policy and backoff.
-- `shared/db`: shared DB connection helpers.
-- `shared/util` and `shared/types`: minimal cross-service helpers and types.
 
 Only move code into `shared/` after at least two services need it.
 
