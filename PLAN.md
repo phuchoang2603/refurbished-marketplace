@@ -10,14 +10,10 @@
   go.sum
   Makefile
   Tiltfile
-  proto/
   services/
-    api-gateway/
-    users-service/
-    catalog-service/
-    inventory-service/
-    orders-service/
-    payment-service/
+    users/
+    products/
+    orders/
   shared/
     contracts/
     db/
@@ -39,22 +35,21 @@
       k8s/
   tools/
   web/
-  assets/
 ```
 
 ## Service Layout Rules
 
 - Start simple: services may begin with a flat layout when small.
-- Move to `cmd/`, `internal/`, and optional `pkg/` once service complexity grows.
+- Move to `cmd/`, `internal/`, and optional `pkg/` only when complexity grows.
 - Keep service business logic private under `internal/`.
 - Keep transport handlers close to service code (HTTP, gRPC, event consumers).
 - Each service owns its persistence and migrations.
 
 ## Proto and Codegen Plan
 
-- Keep protobuf definitions at repository root in `proto/`.
-- Version contracts by domain: `proto/<domain>/v1/*.proto`.
-- Generate Go code into `shared/proto/`.
+- Keep protobuf definitions service-local first: `services/<service>/proto/v1/`.
+- Promote to a root-level `proto/` only when contracts are shared across multiple services.
+- Generate Go code into service-local output first; introduce `shared/proto/` only when reuse is proven.
 - Keep generation commands in the top-level `Makefile`.
 
 ## Shared Package Boundaries
@@ -92,8 +87,8 @@ Only move code into `shared/` after at least two services need it.
 ## gRPC Plan
 
 - Use gRPC for synchronous service-to-service calls.
-- Define gRPC contracts in root `proto/`.
-- Generate and consume stubs from `shared/proto/`.
+- Define contracts in each service under `services/<service>/proto/v1/`.
+- Generate and consume stubs from the owning service until shared contracts are needed.
 - Keep handlers in each service, not in `shared/`.
 
 ## Local Development and Ops Plan
@@ -102,6 +97,7 @@ Only move code into `shared/` after at least two services need it.
 - Keep dev/prod manifests under `infra/development/k8s` and `infra/production/k8s`.
 - Keep Dockerfiles under corresponding `infra/*/docker`.
 - Include infra resources for RabbitMQ and tracing from day one.
+- Plan to use Istio ingress and traffic policies for edge routing first.
 
 ## Testing Plan
 
@@ -113,12 +109,12 @@ Only move code into `shared/` after at least two services need it.
 ## Implementation Sequence
 
 1. Bootstrap the monorepo skeleton.
-2. Add root `proto/` and codegen into `shared/proto/`.
-3. Implement `users-service` with PostgreSQL + `goose` + `sqlc`.
-4. Implement `catalog-service` with PostgreSQL + `goose` + `sqlc`.
-5. Add RabbitMQ shared messaging and the first event-driven flow.
-6. Implement `inventory-service`, then `orders-service`.
-7. Add `payment-service` and complete the order-payment async workflow.
+2. Add service-local `proto/v1` folders and per-service codegen.
+3. Implement `users` with PostgreSQL + `goose` + `sqlc`.
+4. Implement `products` with PostgreSQL + `goose` + `sqlc`.
+5. Implement `orders` and connect the first event-driven workflow.
+6. Add RabbitMQ shared messaging where async coordination is needed.
+7. Add optional future services (for example payments) in separate projects or later phases.
 8. Harden observability, retries, dead-lettering, and integration tests.
 
 ## Long-Term Goal
