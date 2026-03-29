@@ -1,9 +1,5 @@
 # Refurbished Marketplace Plan
 
-## Guiding Shape
-
-This project should stay close to the Boot.dev style: small packages, explicit SQL, simple handlers, and table-driven tests. The repo should also follow the broad structure of `microservices-go-starter`: `services/`, `shared/`, `docs/`, and `infra/` as the maintop-level areas.
-
 ## Canonical Repo Tree
 
 ```text
@@ -12,102 +8,119 @@ This project should stay close to the Boot.dev style: small packages, explicit S
   flake.nix
   go.mod
   go.sum
+  Makefile
+  Tiltfile
+  proto/
   services/
-    catalog/
-      cmd/catalog/
-      internal/
-      db/
-        migrations/
-        queries/
-      proto/
-    users/
-    orders/
-    inventory/
-    payments/
-    events/
+    api-gateway/
+    users-service/
+    catalog-service/
+    inventory-service/
+    orders-service/
+    payment-service/
   shared/
     contracts/
+    db/
     env/
+    messaging/
+    proto/
     retry/
+    tracing/
+    types/
     util/
   docs/
     architecture/
   infra/
     development/
+      docker/
+      k8s/
     production/
+      docker/
+      k8s/
   tools/
+  web/
+  assets/
 ```
 
 ## Service Layout Rules
 
-- Each service owns its own business logic and persistence.
-- Put the executable in `cmd/<service>/`.
-- Put request handling, domain logic, and repositories under `internal/`.
-- Keep gRPC definitions in `proto/` when a service exposes or consumes gRPC APIs.
-- Keep migrations and SQL queries next to the service that owns the schema.
+- Start simple: services may begin with a flat layout when small.
+- Move to `cmd/`, `internal/`, and optional `pkg/` once service complexity grows.
+- Keep service business logic private under `internal/`.
+- Keep transport handlers close to service code (HTTP, gRPC, event consumers).
+- Each service owns its persistence and migrations.
 
-## Suggested Service Split
+## Proto and Codegen Plan
 
-- `catalog`: product listings, refurb condition, pricing, and search-facing data
-- `users`: accounts, profiles, auth-related user state
-- `inventory`: stock levels, item availability, reservation lifecycle
-- `orders`: checkout, order state, and coordination across services
-- `payments`: payment intent and transaction records
-- `events`: event publishing/consuming helpers and contract definitions
+- Keep protobuf definitions at repository root in `proto/`.
+- Version contracts by domain: `proto/<domain>/v1/*.proto`.
+- Generate Go code into `shared/proto/`.
+- Keep generation commands in the top-level `Makefile`.
 
-## Database Plan
+## Shared Package Boundaries
 
-- Use PostgreSQL as the source of truth for each service.
-- Use `goose` for schema migrations.
-- Use `sqlc` for typed query generation.
-- Favor plain SQL files over ORM layers.
-- Keep one schema owner per service to avoid shared-database coupling.
+- `shared/contracts`: HTTP, WS, and AMQP event names/payload contracts.
+- `shared/env`: env parsing helpers.
+- `shared/messaging`: RabbitMQ connection, publish, and consume utilities.
+- `shared/tracing`: HTTP, gRPC, and RabbitMQ tracing wrappers.
+- `shared/retry`: retry policy and backoff.
+- `shared/db`: shared DB connection helpers.
+- `shared/util` and `shared/types`: minimal cross-service helpers and types.
+
+Only move code into `shared/` after at least two services need it.
+
+## Data and Persistence Plan
+
+- Primary database: PostgreSQL.
+- Migrations: `goose`.
+- Query layer: `sqlc`.
+- Keep SQL explicit in files.
+- Preferred per-service layout:
+  - `services/<service>/db/migrations/`
+  - `services/<service>/db/queries/`
+- Keep one schema owner per service boundary.
 
 ## Messaging Plan
 
-- Use RabbitMQ for asynchronous workflows and cross-service events.
-- Treat events as integration boundaries, not as a replacement for service APIs.
-- Standardize event naming early, such as `catalog.item.created` or `orders.order.completed`.
-- Keep message payloads small and versionable.
+- Use RabbitMQ for async workflows and eventual consistency.
+- Centralize routing keys/constants in `shared/contracts`.
+- Use topic exchanges with clear naming conventions:
+  - `<domain>.event.<action>`
+  - `<domain>.cmd.<action>`
+- Include dead-letter and retry strategy in shared messaging utilities.
 
 ## gRPC Plan
 
-- Use gRPC for synchronous service-to-service calls where latency and contract clarity matter.
-- Keep protobuf files minimal and versioned by service.
-- Generate code into service-local output directories or a shared generated area if needed.
+- Use gRPC for synchronous service-to-service calls.
+- Define gRPC contracts in root `proto/`.
+- Generate and consume stubs from `shared/proto/`.
+- Keep handlers in each service, not in `shared/`.
+
+## Local Development and Ops Plan
+
+- Use `Tiltfile` for local compile/build/deploy loops.
+- Keep dev/prod manifests under `infra/development/k8s` and `infra/production/k8s`.
+- Keep Dockerfiles under corresponding `infra/*/docker`.
+- Include infra resources for RabbitMQ and tracing from day one.
 
 ## Testing Plan
 
-- Put unit tests next to implementation files.
-- Use table-driven tests for parsing, validation, and business rules.
-- Add integration tests for PostgreSQL and RabbitMQ interactions.
-- Keep test fixtures tiny and explicit.
-- Prefer testing behavior through public service methods and handlers.
+- Unit tests colocated with implementation (`*_test.go`).
+- Prefer table-driven tests for business and validation logic.
+- Add integration tests for PostgreSQL repositories, RabbitMQ publishers/consumers, and gRPC boundaries where critical.
+- Keep fixtures explicit and minimal.
 
-## Development Plan
+## Implementation Sequence
 
-2. Create the canonical repo tree and shared top-level folders.
-3. Scaffold the first service with `cmd/`, `internal/`, `db/`, and `proto/`.
-4. Add PostgreSQL migrations and `sqlc` queries for the first service.
-5. Add RabbitMQ publishing/consuming for one workflow.
-6. Add gRPC contracts for one synchronous service boundary.
-7. Build out tests as each module lands.
-
-## Implementation Order
-
-- Start with `users` and `catalog` so the marketplace has identity and listings.
-- Add `inventory` next so availability can be tracked explicitly.
-- Add `orders` after the core data model is stable.
-- Add `payments` and event-driven flows once order state exists.
-
-## Code Style Notes
-
-- Keep files short and focused.
-- Prefer explicit dependencies over hidden globals.
-- Use standard library types and helpers first.
-- Keep error handling direct and readable.
-- Avoid over-abstracting until duplication is real.
+1. Bootstrap the monorepo skeleton.
+2. Add root `proto/` and codegen into `shared/proto/`.
+3. Implement `users-service` with PostgreSQL + `goose` + `sqlc`.
+4. Implement `catalog-service` with PostgreSQL + `goose` + `sqlc`.
+5. Add RabbitMQ shared messaging and the first event-driven flow.
+6. Implement `inventory-service`, then `orders-service`.
+7. Add `payment-service` and complete the order-payment async workflow.
+8. Harden observability, retries, dead-lettering, and integration tests.
 
 ## Long-Term Goal
 
-Reach a point where each service can be built, tested, and deployed independently while still following one consistent project shape.
+Each service should be independently buildable and deployable, while the repository keeps a consistent structure, shared contracts, and reproducible local/dev/prod workflows.
