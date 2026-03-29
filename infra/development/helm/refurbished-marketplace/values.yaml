@@ -7,19 +7,16 @@ services:
     namespace: users
     image: refurbished-marketplace/users
     port: 8081
-    httpAddr: ":8081"
   products:
     enabled: true
     namespace: products
     image: refurbished-marketplace/products
     port: 8082
-    httpAddr: ":8082"
   orders:
     enabled: true
     namespace: orders
     image: refurbished-marketplace/orders
     port: 8083
-    httpAddr: ":8083"
 
 databases:
   users:

@@ -1,0 +1,64 @@
+x-db-base: &db_base
+  image: postgres:16
+  restart: unless-stopped
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+    interval: 10s
+    timeout: 5s
+    retries: 10
+
+services:
+  # --- APPS ---
+  users:
+    build:
+      context: ../../..
+      dockerfile: infra/development/docker/users.Dockerfile
+    ports: ["8081:8081"]
+    depends_on: { users-db: { condition: service_healthy } }
+
+  products:
+    build:
+      context: ../../..
+      dockerfile: infra/development/docker/products.Dockerfile
+    ports: ["8082:8082"]
+    depends_on: { products-db: { condition: service_healthy } }
+
+  orders:
+    build:
+      context: ../../..
+      dockerfile: infra/development/docker/orders.Dockerfile
+    ports: ["8083:8083"]
+    depends_on: { orders-db: { condition: service_healthy } }
+
+  # --- DATABASES ---
+  users-db:
+    <<: *db_base
+    environment:
+      POSTGRES_DB: users_db
+      POSTGRES_USER: users_app
+      POSTGRES_PASSWORD: users_app_dev_password
+    ports: ["5433:5432"]
+    volumes: ["users_db_data:/var/lib/postgresql/data"]
+
+  products-db:
+    <<: *db_base
+    environment:
+      POSTGRES_DB: products_db
+      POSTGRES_USER: products_app
+      POSTGRES_PASSWORD: products_app_dev_password
+    ports: ["5434:5432"]
+    volumes: ["products_db_data:/var/lib/postgresql/data"]
+
+  orders-db:
+    <<: *db_base
+    environment:
+      POSTGRES_DB: orders_db
+      POSTGRES_USER: orders_app
+      POSTGRES_PASSWORD: orders_app_dev_password
+    ports: ["5435:5432"]
+    volumes: ["orders_db_data:/var/lib/postgresql/data"]
+
+volumes:
+  users_db_data:
+  products_db_data:
+  orders_db_data:

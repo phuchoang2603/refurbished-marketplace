@@ -24,9 +24,6 @@ spec:
           imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
           ports:
             - containerPort: {{ $svc.port }}
-          env:
-            - name: HTTP_ADDR
-              value: {{ $svc.httpAddr | quote }}
 ---
 apiVersion: v1
 kind: Service
