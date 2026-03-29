@@ -18,6 +18,16 @@ spec:
       labels:
         app: {{ $name }}
     spec:
+{{- if $svc.db }}
+      initContainers:
+        - name: wait-for-db
+          image: postgres:16-alpine
+          command: ["sh", "-c"]
+          args:
+            - >-
+              until pg_isready -h {{ $svc.db.host }} -p {{ $svc.db.port }} -U {{ $svc.db.user }} -d {{ $svc.db.name }};
+              do echo "waiting for database {{ $svc.db.host }}"; sleep 2; done
+{{- end }}
       containers:
         - name: {{ $name }}
           image: {{ $svc.image }}

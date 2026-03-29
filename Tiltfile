@@ -17,6 +17,17 @@ docker_build(
   ],
 )
 
+docker_build(
+  'refurbished-marketplace/users-migrator',
+  '.',
+  dockerfile='./infra/development/docker/users-migrator.Dockerfile',
+  only=[
+    './services/users/db/migrations',
+    './go.mod',
+    './go.sum',
+  ],
+)
+
 k8s_resource('users', port_forwards=['8081:8081'], resource_deps=['cnpg-operator-install'], labels='services')
 ### End Users Service ###
 
