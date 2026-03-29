@@ -11,15 +11,13 @@
   Makefile
   Tiltfile
   services/
+  products/
     users/
-    products/
     orders/
   shared/
     contracts/
-    env/
     messaging/
     proto/
-    retry/
     tracing/
   docs/
     architecture/
@@ -52,10 +50,8 @@
 ## Shared Package Boundaries
 
 - `shared/contracts`: HTTP, WS, and AMQP event names/payload contracts.
-- `shared/env`: env parsing helpers.
 - `shared/messaging`: RabbitMQ connection, publish, and consume utilities.
 - `shared/tracing`: HTTP, gRPC, and RabbitMQ tracing wrappers.
-- `shared/retry`: retry policy and backoff.
 
 Only move code into `shared/` after at least two services need it.
 

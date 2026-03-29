@@ -7,16 +7,34 @@ services:
     namespace: users
     image: refurbished-marketplace/users
     port: 8081
+    db:
+      host: users-db-rw
+      port: 5432
+      name: users_db
+      user: users_app
+      password: users_app_dev_password
   products:
     enabled: true
     namespace: products
     image: refurbished-marketplace/products
     port: 8082
+    db:
+      host: products-db-rw
+      port: 5432
+      name: products_db
+      user: products_app
+      password: products_app_dev_password
   orders:
     enabled: true
     namespace: orders
     image: refurbished-marketplace/orders
     port: 8083
+    db:
+      host: orders-db-rw
+      port: 5432
+      name: orders_db
+      user: orders_app
+      password: orders_app_dev_password
 
 databases:
   users:

@@ -24,6 +24,11 @@ spec:
           imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
           ports:
             - containerPort: {{ $svc.port }}
+{{- if $svc.db }}
+          env:
+            - name: DB_URL
+              value: {{ printf "postgres://%s:%s@%s:%v/%s?sslmode=disable" $svc.db.user $svc.db.password $svc.db.host $svc.db.port $svc.db.name | quote }}
+{{- end }}
 ---
 apiVersion: v1
 kind: Service

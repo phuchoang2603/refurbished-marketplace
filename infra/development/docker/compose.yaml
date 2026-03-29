@@ -13,6 +13,8 @@ services:
     build:
       context: ../../..
       dockerfile: infra/development/docker/users.Dockerfile
+    environment:
+      DB_URL: postgres://users_app:users_app_dev_password@users-db:5432/users_db?sslmode=disable
     ports: ["8081:8081"]
     depends_on: { users-db: { condition: service_healthy } }
 
@@ -20,6 +22,8 @@ services:
     build:
       context: ../../..
       dockerfile: infra/development/docker/products.Dockerfile
+    environment:
+      DB_URL: postgres://products_app:products_app_dev_password@products-db:5432/products_db?sslmode=disable
     ports: ["8082:8082"]
     depends_on: { products-db: { condition: service_healthy } }
 
@@ -27,6 +31,8 @@ services:
     build:
       context: ../../..
       dockerfile: infra/development/docker/orders.Dockerfile
+    environment:
+      DB_URL: postgres://orders_app:orders_app_dev_password@orders-db:5432/orders_db?sslmode=disable
     ports: ["8083:8083"]
     depends_on: { orders-db: { condition: service_healthy } }
 
