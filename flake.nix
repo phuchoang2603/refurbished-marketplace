@@ -45,6 +45,8 @@
             protoc-gen-go
             protoc-gen-go-grpc
 
+            kubectl
+            kubernetes-helm
             tilt
           ];
 

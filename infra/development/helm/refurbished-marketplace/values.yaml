@@ -1,0 +1,51 @@
+global:
+  imagePullPolicy: IfNotPresent
+
+services:
+  users:
+    enabled: true
+    namespace: users
+    image: refurbished-marketplace/users
+    port: 8081
+    httpAddr: ":8081"
+  products:
+    enabled: true
+    namespace: products
+    image: refurbished-marketplace/products
+    port: 8082
+    httpAddr: ":8082"
+  orders:
+    enabled: true
+    namespace: orders
+    image: refurbished-marketplace/orders
+    port: 8083
+    httpAddr: ":8083"
+
+databases:
+  users:
+    enabled: true
+    namespace: users
+    dbName: users_db
+    owner: users_app
+    password: users_app_dev_password
+    instances: 1
+    storage:
+      size: 1Gi
+  products:
+    enabled: true
+    namespace: products
+    dbName: products_db
+    owner: products_app
+    password: products_app_dev_password
+    instances: 1
+    storage:
+      size: 1Gi
+  orders:
+    enabled: true
+    namespace: orders
+    dbName: orders_db
+    owner: orders_app
+    password: orders_app_dev_password
+    instances: 1
+    storage:
+      size: 1Gi

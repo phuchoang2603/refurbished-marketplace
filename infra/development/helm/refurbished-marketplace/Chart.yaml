@@ -1,0 +1,6 @@
+apiVersion: v2
+name: refurbished-marketplace
+description: Development chart for refurbished marketplace services
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
