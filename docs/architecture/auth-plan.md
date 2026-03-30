@@ -7,7 +7,7 @@ Add JWT-based login and refresh flows to the `users` service using one shared JW
 ## Scope
 
 - Service: `services/users`
-- Transport: HTTP REST (existing users handlers)
+- Transport: gRPC for internal usage (REST moved to web edge)
 - Persistence: PostgreSQL (`goose` + `sqlc`)
 - Token strategy:
   - Access token: short-lived JWT
@@ -58,17 +58,18 @@ Why hash refresh tokens:
 
 ## API Endpoints
 
-Add endpoints under `users` service:
+Auth operations are exposed via users gRPC and consumed by web edge REST:
+
+- Target gRPC operations:
+  - `Login`
+  - `Refresh`
+  - `Logout`
+
+Web edge currently maps these operations to REST:
 
 - `POST /auth/login`
-  - Input: `email`, `password`
-  - Output: `access_token`, `refresh_token`, `token_type`, `expires_in`
 - `POST /auth/refresh`
-  - Input: `refresh_token`
-  - Output: new `access_token`, new `refresh_token`, `token_type`, `expires_in`
-- `POST /auth/logout` (optional in this phase)
-  - Input: `refresh_token`
-  - Output: `204`
+- `POST /auth/logout`
 
 ## Token and Session Flow
 
@@ -128,4 +129,4 @@ Minimal claim set:
 
 ## Istio Consideration
 
-Istio may validate access JWTs later, but this plan keeps issuance/refresh/revocation in the users service where it belongs.
+Istio may validate access JWTs later, but issuance/refresh/revocation stays in users service logic.
