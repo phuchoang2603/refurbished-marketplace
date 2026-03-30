@@ -5,7 +5,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ $name }}
-  namespace: {{ $svc.namespace }}
+  namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ $name }}
 spec:
@@ -56,12 +56,18 @@ spec:
                   name: {{ $svc.auth.secretName }}
                   key: {{ $svc.auth.secretKey }}
 {{- end }}
+{{- if $svc.env }}
+{{- range $key, $value := $svc.env }}
+            - name: {{ $key }}
+              value: {{ $value | quote }}
+{{- end }}
+{{- end }}
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: {{ $name }}
-  namespace: {{ $svc.namespace }}
+  namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ $name }}
 spec:

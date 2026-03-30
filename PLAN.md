@@ -140,12 +140,14 @@
 - Orchestration:
   - `Tiltfile` uses Helm chart under `infra/chart`
   - development values are in `infra/development/k8s/dev-helm-values.yaml`
+  - Helm release namespace is `ecommerce`
   - CloudNativePG operator installed through Helm in namespace `cnpg-system`
 - Secrets:
   - secrets are applied separately via `infra/development/k8s/secrets.yaml`
   - service and migration manifests consume secrets using `secretKeyRef`
 - Namespaces:
-  - each service/database pair isolated in its own namespace (`users`, `products`, `orders`)
+  - application resources (`web`, `users`, `products`, `orders`, db clusters, migration jobs) are deployed to `ecommerce`
+  - CloudNativePG operator stays in `cnpg-system`
 - Database readiness:
   - service deployments use `initContainer` with `pg_isready` before app container startup
 - Migration jobs:
@@ -158,10 +160,11 @@
 
 ## Service Discovery (Current)
 
-- Web-to-users gRPC target is constructed dynamically in Helm templates.
-- `USERS_GRPC_ADDR` is not defined in values files.
-- Current pattern:
-  - `users.<users-namespace>.svc.cluster.local:<users-port>`
+- Web service upstream addresses are defined in values under `services.web.env`.
+- Current values include:
+  - `USERS_GRPC_ADDR=users:9091`
+  - `PRODUCTS_SVC_ADDR=products:8082`
+  - `ORDERS_SVC_ADDR=orders:8083`
 
 ## Testing Strategy (Current)
 

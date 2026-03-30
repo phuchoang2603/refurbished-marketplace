@@ -4,6 +4,7 @@
 
 - Kubernetes secrets are defined in `infra/development/k8s/secrets.yaml`.
 - Tilt applies `secrets.yaml` directly before Helm-rendered manifests.
+- Secrets in this file target namespace `ecommerce`.
 - Helm templates reference secrets via `secretKeyRef` only.
 
 ## Why This Structure
@@ -12,12 +13,12 @@
 - Makes later migration to External Secrets Operator straightforward.
 - Keeps app manifests stable while secret source changes.
 
-## Current Secret Names
+## Current Secret Names (Development)
 
-- `users/users-app` (DB username/password)
-- `users/users-auth` (`JWT_SECRET`)
-- `products/products-app` (DB username/password)
-- `orders/orders-app` (DB username/password)
+- `ecommerce/users-app` (DB username/password)
+- `ecommerce/users-auth` (`JWT_SECRET`)
+- `ecommerce/products-app` (DB username/password)
+- `ecommerce/orders-app` (DB username/password)
 
 ## Environment Variables by Service
 

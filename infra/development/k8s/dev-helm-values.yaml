@@ -2,11 +2,18 @@ global:
   imagePullPolicy: IfNotPresent
 
 services:
+  web:
+    enabled: true
+    image: refurbished-marketplace/web
+    port: 8080
+    env:
+      USERS_GRPC_ADDR: users:9091
+      PRODUCTS_SVC_ADDR: products:8082
+      ORDERS_SVC_ADDR: orders:8083
   users:
     enabled: true
-    namespace: users
     image: refurbished-marketplace/users
-    port: 8081
+    port: 9091
     auth:
       secretName: users-auth
       secretKey: JWT_SECRET
@@ -22,7 +29,6 @@ services:
       passwordKey: password
   products:
     enabled: true
-    namespace: products
     image: refurbished-marketplace/products
     port: 8082
     migration:
@@ -37,7 +43,6 @@ services:
       passwordKey: password
   orders:
     enabled: true
-    namespace: orders
     image: refurbished-marketplace/orders
     port: 8083
     migration:
@@ -54,7 +59,6 @@ services:
 databases:
   users:
     enabled: true
-    namespace: users
     dbName: users_db
     owner: users_app
     appSecretName: users-app
@@ -63,7 +67,6 @@ databases:
       size: 1Gi
   products:
     enabled: true
-    namespace: products
     dbName: products_db
     owner: products_app
     appSecretName: products-app
@@ -72,7 +75,6 @@ databases:
       size: 1Gi
   orders:
     enabled: true
-    namespace: orders
     dbName: orders_db
     owner: orders_app
     appSecretName: orders-app

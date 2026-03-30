@@ -1,11 +1,11 @@
 {{- range $name, $svc := .Values.services }}
-{{- if and $svc.enabled $svc.migration.enabled }}
+{{- if and $svc.enabled $svc.migration $svc.migration.enabled }}
 ---
 apiVersion: batch/v1
 kind: Job
 metadata:
   name: {{ printf "%s-migrate" $name }}
-  namespace: {{ $svc.namespace }}
+  namespace: {{ $.Release.Namespace }}
   annotations:
     "helm.sh/hook": pre-install,pre-upgrade
     "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded

@@ -4,7 +4,7 @@ local_resource(
 )
 
 k8s_yaml('./infra/development/k8s/secrets.yaml')
-k8s_yaml(helm('./infra/chart', values=['./infra/development/k8s/dev-helm-values.yaml']))
+k8s_yaml(helm('./infra/chart', namespace='ecommerce', values=['./infra/development/k8s/dev-helm-values.yaml']))
 
 ### Users Service ###
 docker_build(
@@ -30,8 +30,24 @@ docker_build(
 )
 
 k8s_resource('users-migrate', resource_deps=['cnpg-operator-install'], labels='migrate')
-k8s_resource('users', port_forwards=['8081:8081'], resource_deps=['cnpg-operator-install'], labels='services')
+k8s_resource('users', port_forwards=['9091:9091'], resource_deps=['cnpg-operator-install'], labels='services')
 ### End Users Service ###
+
+### Web Service ###
+docker_build(
+  'refurbished-marketplace/web',
+  '.',
+  dockerfile='./infra/development/docker/web.Dockerfile',
+  only=[
+    './services/web',
+    './services/users/proto',
+    './go.mod',
+    './go.sum',
+  ],
+)
+
+k8s_resource('web', port_forwards=['8080:8080'], resource_deps=['cnpg-operator-install'], labels='services')
+### End Web Service ###
 
 ### Products Service ###
 docker_build(

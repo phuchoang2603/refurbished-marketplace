@@ -5,7 +5,7 @@ apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
   name: {{ printf "%s-db" $name }}
-  namespace: {{ $db.namespace }}
+  namespace: {{ $.Release.Namespace }}
 spec:
   instances: {{ $db.instances }}
   storage:
