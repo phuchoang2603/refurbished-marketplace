@@ -7,6 +7,9 @@ services:
     namespace: users
     image: refurbished-marketplace/users
     port: 8081
+    auth:
+      secretName: users-auth
+      secretKey: JWT_SECRET
     migration:
       enabled: true
       image: refurbished-marketplace/users-migrator
@@ -14,8 +17,9 @@ services:
       host: users-db-rw
       port: 5432
       name: users_db
-      user: users_app
-      password: users_app_dev_password
+      secretName: users-app
+      usernameKey: username
+      passwordKey: password
   products:
     enabled: true
     namespace: products
@@ -28,8 +32,9 @@ services:
       host: products-db-rw
       port: 5432
       name: products_db
-      user: products_app
-      password: products_app_dev_password
+      secretName: products-app
+      usernameKey: username
+      passwordKey: password
   orders:
     enabled: true
     namespace: orders
@@ -42,8 +47,9 @@ services:
       host: orders-db-rw
       port: 5432
       name: orders_db
-      user: orders_app
-      password: orders_app_dev_password
+      secretName: orders-app
+      usernameKey: username
+      passwordKey: password
 
 databases:
   users:
@@ -51,7 +57,7 @@ databases:
     namespace: users
     dbName: users_db
     owner: users_app
-    password: users_app_dev_password
+    appSecretName: users-app
     instances: 1
     storage:
       size: 1Gi
@@ -60,7 +66,7 @@ databases:
     namespace: products
     dbName: products_db
     owner: products_app
-    password: products_app_dev_password
+    appSecretName: products-app
     instances: 1
     storage:
       size: 1Gi
@@ -69,7 +75,7 @@ databases:
     namespace: orders
     dbName: orders_db
     owner: orders_app
-    password: orders_app_dev_password
+    appSecretName: orders-app
     instances: 1
     storage:
       size: 1Gi

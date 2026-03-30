@@ -25,7 +25,7 @@ spec:
           command: ["sh", "-c"]
           args:
             - >-
-              until pg_isready -h {{ $svc.db.host }} -p {{ $svc.db.port }} -U {{ $svc.db.user }} -d {{ $svc.db.name }};
+              until pg_isready -h {{ $svc.db.host }} -p {{ $svc.db.port }};
               do echo "waiting for database {{ $svc.db.host }}"; sleep 2; done
 {{- end }}
       containers:
@@ -36,8 +36,25 @@ spec:
             - containerPort: {{ $svc.port }}
 {{- if $svc.db }}
           env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $svc.db.secretName }}
+                  key: {{ $svc.db.usernameKey }}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $svc.db.secretName }}
+                  key: {{ $svc.db.passwordKey }}
             - name: DB_URL
-              value: {{ printf "postgres://%s:%s@%s:%v/%s?sslmode=disable" $svc.db.user $svc.db.password $svc.db.host $svc.db.port $svc.db.name | quote }}
+              value: {{ printf "postgres://$(DB_USER):$(DB_PASSWORD)@%s:%v/%s?sslmode=disable" $svc.db.host $svc.db.port $svc.db.name | quote }}
+{{- end }}
+{{- if $svc.auth }}
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $svc.auth.secretName }}
+                  key: {{ $svc.auth.secretKey }}
 {{- end }}
 ---
 apiVersion: v1

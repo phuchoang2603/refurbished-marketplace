@@ -24,7 +24,7 @@ spec:
           command: ["sh", "-c"]
           args:
             - >-
-              until pg_isready -h {{ $svc.db.host }} -p {{ $svc.db.port }} -U {{ $svc.db.user }} -d {{ $svc.db.name }};
+              until pg_isready -h {{ $svc.db.host }} -p {{ $svc.db.port }};
               do echo "waiting for database {{ $svc.db.host }}"; sleep 2; done
       containers:
         - name: goose
@@ -33,8 +33,18 @@ spec:
           env:
             - name: GOOSE_DRIVER
               value: "postgres"
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $svc.db.secretName }}
+                  key: {{ $svc.db.usernameKey }}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $svc.db.secretName }}
+                  key: {{ $svc.db.passwordKey }}
             - name: GOOSE_DBSTRING
-              value: {{ printf "host=%s port=%v user=%s password=%s dbname=%s sslmode=disable" $svc.db.host $svc.db.port $svc.db.user $svc.db.password $svc.db.name | quote }}
+              value: {{ printf "host=%s port=%v user=$(DB_USER) password=$(DB_PASSWORD) dbname=%s sslmode=disable" $svc.db.host $svc.db.port $svc.db.name | quote }}
             - name: GOOSE_COMMAND
               value: "up"
 {{- end }}
