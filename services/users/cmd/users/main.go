@@ -35,7 +35,13 @@ func main() {
 	}
 
 	queries := database.New(db)
-	svc := service.New(queries)
+	jwtSecret := os.Getenv("JWT_SECRET")
+	cfg := service.DefaultConfig(jwtSecret)
+	if err := service.ValidateConfig(cfg); err != nil {
+		log.Fatalf("auth config: %v", err)
+	}
+
+	svc := service.New(queries, cfg)
 	h := handlers.New(svc)
 
 	mux := http.NewServeMux()

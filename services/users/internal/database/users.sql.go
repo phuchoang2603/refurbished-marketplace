@@ -7,9 +7,43 @@ package database
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
+
+const createRefreshToken = `-- name: CreateRefreshToken :one
+INSERT INTO refresh_tokens (id, token_hash, user_id, expires_at)
+VALUES ($1, $2, $3, $4)
+RETURNING id, token_hash, user_id, expires_at, revoked_at, created_at, updated_at
+`
+
+type CreateRefreshTokenParams struct {
+	ID        uuid.UUID
+	TokenHash string
+	UserID    uuid.UUID
+	ExpiresAt time.Time
+}
+
+func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (RefreshToken, error) {
+	row := q.db.QueryRowContext(ctx, createRefreshToken,
+		arg.ID,
+		arg.TokenHash,
+		arg.UserID,
+		arg.ExpiresAt,
+	)
+	var i RefreshToken
+	err := row.Scan(
+		&i.ID,
+		&i.TokenHash,
+		&i.UserID,
+		&i.ExpiresAt,
+		&i.RevokedAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (id, email, password_hash)
@@ -30,6 +64,27 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.ID,
 		&i.Email,
 		&i.PasswordHash,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getRefreshTokenByID = `-- name: GetRefreshTokenByID :one
+SELECT id, token_hash, user_id, expires_at, revoked_at, created_at, updated_at
+FROM refresh_tokens
+WHERE id = $1
+`
+
+func (q *Queries) GetRefreshTokenByID(ctx context.Context, id uuid.UUID) (RefreshToken, error) {
+	row := q.db.QueryRowContext(ctx, getRefreshTokenByID, id)
+	var i RefreshToken
+	err := row.Scan(
+		&i.ID,
+		&i.TokenHash,
+		&i.UserID,
+		&i.ExpiresAt,
+		&i.RevokedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
 	)
@@ -72,4 +127,15 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.UpdatedAt,
 	)
 	return i, err
+}
+
+const revokeRefreshToken = `-- name: RevokeRefreshToken :exec
+UPDATE refresh_tokens
+SET revoked_at = NOW(), updated_at = NOW()
+WHERE id = $1
+`
+
+func (q *Queries) RevokeRefreshToken(ctx context.Context, id uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, revokeRefreshToken, id)
+	return err
 }

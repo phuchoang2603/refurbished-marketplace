@@ -1,0 +1,148 @@
+package tests
+
+import (
+	"database/sql"
+	"errors"
+	"testing"
+
+	"refurbished-marketplace/services/users/internal/database"
+	"refurbished-marketplace/services/users/internal/service"
+	"refurbished-marketplace/shared/testutil"
+
+	"github.com/google/uuid"
+)
+
+func TestAuthLoginAndRefresh(t *testing.T) {
+	db := testutil.SetupPostgresWithMigrations(
+		t,
+		testutil.PostgresConfig{
+			Database: "users_db",
+			Username: "users_app",
+			Password: "users_app_dev_password",
+		},
+		"../db/migrations",
+	)
+
+	queries := database.New(db)
+	svc := service.New(queries, service.DefaultConfig("test-secret"))
+	ctx := t.Context()
+
+	created, err := svc.CreateUser(ctx, "auth@test.com", "password123")
+	if err != nil {
+		t.Fatalf("create user: %v", err)
+	}
+
+	t.Run("login success", func(t *testing.T) {
+		tokens, err := svc.Login(ctx, "auth@test.com", "password123")
+		if err != nil {
+			t.Fatalf("login failed: %v", err)
+		}
+		if tokens.AccessToken == "" || tokens.RefreshToken == "" {
+			t.Fatalf("expected non-empty tokens")
+		}
+	})
+
+	t.Run("login invalid credentials", func(t *testing.T) {
+		_, err := svc.Login(ctx, "auth@test.com", "wrong-password")
+		if !errors.Is(err, service.ErrInvalidCredentials) {
+			t.Fatalf("expected ErrInvalidCredentials, got %v", err)
+		}
+	})
+
+	t.Run("refresh rotates token", func(t *testing.T) {
+		tokens, err := svc.Login(ctx, "auth@test.com", "password123")
+		if err != nil {
+			t.Fatalf("login failed: %v", err)
+		}
+
+		refreshed, err := svc.Refresh(ctx, tokens.RefreshToken)
+		if err != nil {
+			t.Fatalf("refresh failed: %v", err)
+		}
+
+		if refreshed.AccessToken == "" || refreshed.RefreshToken == "" {
+			t.Fatalf("expected refreshed tokens")
+		}
+
+		if refreshed.RefreshToken == tokens.RefreshToken {
+			t.Fatalf("expected rotated refresh token")
+		}
+	})
+
+	t.Run("refresh old token revoked", func(t *testing.T) {
+		tokens, err := svc.Login(ctx, "auth@test.com", "password123")
+		if err != nil {
+			t.Fatalf("login failed: %v", err)
+		}
+
+		_, err = svc.Refresh(ctx, tokens.RefreshToken)
+		if err != nil {
+			t.Fatalf("first refresh failed: %v", err)
+		}
+
+		_, err = svc.Refresh(ctx, tokens.RefreshToken)
+		if !errors.Is(err, service.ErrTokenRevoked) {
+			t.Fatalf("expected ErrTokenRevoked, got %v", err)
+		}
+	})
+
+	t.Run("get user by id", func(t *testing.T) {
+		u, err := svc.GetUserByID(ctx, created.ID)
+		if err != nil {
+			t.Fatalf("get user by id: %v", err)
+		}
+		if u.ID != created.ID {
+			t.Fatalf("expected id %s, got %s", created.ID, u.ID)
+		}
+	})
+
+	t.Run("get missing user", func(t *testing.T) {
+		_, err := svc.GetUserByID(ctx, uuid.New())
+		if !errors.Is(err, service.ErrUserNotFound) {
+			t.Fatalf("expected ErrUserNotFound, got %v", err)
+		}
+	})
+}
+
+func TestQueriesMissingUserNoRows(t *testing.T) {
+	db := testutil.SetupPostgresWithMigrations(
+		t,
+		testutil.PostgresConfig{
+			Database: "users_db",
+			Username: "users_app",
+			Password: "users_app_dev_password",
+		},
+		"../db/migrations",
+	)
+
+	queries := database.New(db)
+	_, err := queries.GetUserByID(t.Context(), uuid.New())
+	if !errors.Is(err, sql.ErrNoRows) {
+		t.Fatalf("expected sql.ErrNoRows, got %v", err)
+	}
+}
+
+func TestServiceCreateUserValidation(t *testing.T) {
+	db := testutil.SetupPostgresWithMigrations(
+		t,
+		testutil.PostgresConfig{
+			Database: "users_db",
+			Username: "users_app",
+			Password: "users_app_dev_password",
+		},
+		"../db/migrations",
+	)
+
+	queries := database.New(db)
+	svc := service.New(queries, service.DefaultConfig("test-secret"))
+
+	_, err := svc.CreateUser(t.Context(), "bad-email", "password123")
+	if !errors.Is(err, service.ErrInvalidEmail) {
+		t.Fatalf("expected ErrInvalidEmail, got %v", err)
+	}
+
+	_, err = svc.CreateUser(t.Context(), "user@test.com", "short")
+	if !errors.Is(err, service.ErrInvalidPassword) {
+		t.Fatalf("expected ErrInvalidPassword, got %v", err)
+	}
+}

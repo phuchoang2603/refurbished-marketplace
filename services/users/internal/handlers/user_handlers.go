@@ -10,36 +10,6 @@ import (
 	"github.com/google/uuid"
 )
 
-type Handler struct {
-	svc *service.Service
-}
-
-func New(svc *service.Service) *Handler {
-	return &Handler{svc: svc}
-}
-
-func (h *Handler) Register(mux *http.ServeMux) {
-	mux.HandleFunc("GET /healthz", h.handleHealthz)
-	mux.HandleFunc("POST /users", h.handleCreateUser)
-	mux.HandleFunc("GET /users/{id}", h.handleGetUserByID)
-}
-
-type createUserRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
-}
-
-type userResponse struct {
-	ID        string `json:"id"`
-	Email     string `json:"email"`
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
-}
-
-func (h *Handler) handleHealthz(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
-}
-
 func (h *Handler) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	var req createUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -82,19 +52,4 @@ func (h *Handler) handleGetUserByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	writeJSON(w, http.StatusOK, mapUser(u))
-}
-
-func mapUser(u service.User) userResponse {
-	return userResponse{
-		ID:        u.ID.String(),
-		Email:     u.Email,
-		CreatedAt: u.CreatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
-		UpdatedAt: u.UpdatedAt.UTC().Format("2006-01-02T15:04:05Z07:00"),
-	}
-}
-
-func writeJSON(w http.ResponseWriter, status int, payload any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(status)
-	_ = json.NewEncoder(w).Encode(payload)
 }
