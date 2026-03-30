@@ -4,21 +4,9 @@ local_resource(
 )
 
 k8s_yaml('./infra/development/k8s/secrets.yaml')
-
-k8s_yaml(helm('./infra/development/k8s/refurbished-marketplace'))
+k8s_yaml(helm('./infra/chart', values=['./infra/development/k8s/dev-helm-values.yaml']))
 
 ### Users Service ###
-docker_build(
-  'refurbished-marketplace/users',
-  '.',
-  dockerfile='./infra/development/docker/users.Dockerfile',
-  only=[
-    './services/users',
-    './go.mod',
-    './go.sum',
-  ],
-)
-
 docker_build(
   'refurbished-marketplace/users-migrator',
   '.',
@@ -30,6 +18,18 @@ docker_build(
   ],
 )
 
+docker_build(
+  'refurbished-marketplace/users',
+  '.',
+  dockerfile='./infra/development/docker/users.Dockerfile',
+  only=[
+    './services/users',
+    './go.mod',
+    './go.sum',
+  ],
+)
+
+k8s_resource('users-migrate', resource_deps=['cnpg-operator-install'], labels='migrate')
 k8s_resource('users', port_forwards=['8081:8081'], resource_deps=['cnpg-operator-install'], labels='services')
 ### End Users Service ###
 
