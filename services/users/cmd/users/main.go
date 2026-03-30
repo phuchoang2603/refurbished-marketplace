@@ -3,20 +3,23 @@ package main
 import (
 	"database/sql"
 	"log"
-	"net/http"
+	"net"
 	"os"
 
 	"refurbished-marketplace/services/users/internal/database"
-	"refurbished-marketplace/services/users/internal/handlers"
+	"refurbished-marketplace/services/users/internal/grpcserver"
 	"refurbished-marketplace/services/users/internal/service"
 
 	_ "github.com/lib/pq"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
+	usersv1 "refurbished-marketplace/services/users/proto/v1"
 )
 
 func main() {
-	addr := os.Getenv("HTTP_ADDR")
+	addr := os.Getenv("GRPC_ADDR")
 	if addr == "" {
-		addr = ":8081"
+		addr = ":9091"
 	}
 
 	dbURL := os.Getenv("DB_URL")
@@ -42,11 +45,17 @@ func main() {
 	}
 
 	svc := service.New(queries, cfg)
-	h := handlers.New(svc)
+	grpcSvc := grpcserver.New(svc)
 
-	mux := http.NewServeMux()
-	h.Register(mux)
+	lis, err := net.Listen("tcp", addr)
+	if err != nil {
+		log.Fatalf("listen: %v", err)
+	}
 
-	log.Printf("starting users service on %s", addr)
-	log.Fatal(http.ListenAndServe(addr, mux))
+	server := grpc.NewServer()
+	usersv1.RegisterUsersServiceServer(server, grpcSvc)
+	reflection.Register(server)
+
+	log.Printf("starting users grpc service on %s", addr)
+	log.Fatal(server.Serve(lis))
 }

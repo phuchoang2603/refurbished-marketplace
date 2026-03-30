@@ -7,14 +7,14 @@ RUN go mod download
 
 COPY services ./services
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/users ./services/users/cmd/users
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/web ./services/web/cmd/web
 
 FROM gcr.io/distroless/static-debian12
 
 WORKDIR /app
 
-COPY --from=builder /out/users /app/users
+COPY --from=builder /out/web /app/web
 
-EXPOSE 9091
+EXPOSE 8080
 
-ENTRYPOINT ["/app/users"]
+ENTRYPOINT ["/app/web"]

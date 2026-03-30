@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package users.v1;
+
+option go_package = "refurbished-marketplace/services/users/proto/v1;usersv1";
+
+import "google/protobuf/timestamp.proto";
+
+service UsersService {
+  rpc CreateUser(CreateUserRequest) returns (User);
+  rpc GetUserByID(GetUserByIDRequest) returns (User);
+  rpc Login(LoginRequest) returns (TokenResponse);
+  rpc Refresh(RefreshRequest) returns (TokenResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
+}
+
+message CreateUserRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message GetUserByIDRequest {
+  string id = 1;
+}
+
+message LoginRequest {
+  string email = 1;
+  string password = 2;
+}
+
+message RefreshRequest {
+  string refresh_token = 1;
+}
+
+message LogoutRequest {
+  string refresh_token = 1;
+}
+
+message LogoutResponse {}
+
+message TokenResponse {
+  string access_token = 1;
+  string refresh_token = 2;
+  string token_type = 3;
+  int64 expires_in = 4;
+}
+
+message User {
+  string id = 1;
+  string email = 2;
+  google.protobuf.Timestamp created_at = 3;
+  google.protobuf.Timestamp updated_at = 4;
+}
