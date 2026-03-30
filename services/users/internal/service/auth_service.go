@@ -78,6 +78,40 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (Tokens, err
 	return s.issueTokenPair(ctx, u.ID, u.Email)
 }
 
+func (s *Service) Logout(ctx context.Context, refreshToken string) error {
+	claims, err := s.parseToken(refreshToken, "refresh")
+	if err != nil {
+		return err
+	}
+
+	refreshID, err := uuid.Parse(claims.ID)
+	if err != nil {
+		return ErrInvalidToken
+	}
+
+	session, err := s.queries.GetRefreshTokenByID(ctx, refreshID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrInvalidToken
+		}
+		return err
+	}
+
+	if session.RevokedAt.Valid {
+		return nil
+	}
+
+	if hashToken(refreshToken) != session.TokenHash {
+		return ErrInvalidToken
+	}
+
+	if err := s.queries.RevokeRefreshToken(ctx, refreshID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (s *Service) issueTokenPair(ctx context.Context, userID uuid.UUID, email string) (Tokens, error) {
 	now := time.Now().UTC()
 	accessExpiresAt := now.Add(s.cfg.JWTAccessTTL)

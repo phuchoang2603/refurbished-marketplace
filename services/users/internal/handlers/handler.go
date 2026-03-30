@@ -25,6 +25,10 @@ type refreshRequest struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
+type logoutRequest struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
 func New(svc *service.Service) *Handler {
 	return &Handler{svc: svc}
 }
@@ -34,5 +38,6 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /users", h.handleCreateUser)
 	mux.HandleFunc("POST /auth/login", h.handleLogin)
 	mux.HandleFunc("POST /auth/refresh", h.handleRefresh)
+	mux.HandleFunc("POST /auth/logout", h.handleLogout)
 	mux.HandleFunc("GET /users/{id}", h.handleGetUserByID)
 }

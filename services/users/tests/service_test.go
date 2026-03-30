@@ -86,6 +86,22 @@ func TestAuthLoginAndRefresh(t *testing.T) {
 		}
 	})
 
+	t.Run("logout revokes refresh token", func(t *testing.T) {
+		tokens, err := svc.Login(ctx, "auth@test.com", "password123")
+		if err != nil {
+			t.Fatalf("login failed: %v", err)
+		}
+
+		if err := svc.Logout(ctx, tokens.RefreshToken); err != nil {
+			t.Fatalf("logout failed: %v", err)
+		}
+
+		_, err = svc.Refresh(ctx, tokens.RefreshToken)
+		if !errors.Is(err, service.ErrTokenRevoked) {
+			t.Fatalf("expected ErrTokenRevoked, got %v", err)
+		}
+	})
+
 	t.Run("get user by id", func(t *testing.T) {
 		u, err := svc.GetUserByID(ctx, created.ID)
 		if err != nil {
