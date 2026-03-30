@@ -3,7 +3,7 @@ package usersclient
 import (
 	"context"
 
-	usersv1 "refurbished-marketplace/services/users/proto/v1"
+	usersv1 "refurbished-marketplace/shared/proto/users/v1"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

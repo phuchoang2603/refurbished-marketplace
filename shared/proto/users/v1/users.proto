@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package users.v1;
 
-option go_package = "refurbished-marketplace/services/users/proto/v1;usersv1";
+option go_package = "refurbished-marketplace/shared/proto/users/v1;usersv1";
 
 import "google/protobuf/timestamp.proto";
 

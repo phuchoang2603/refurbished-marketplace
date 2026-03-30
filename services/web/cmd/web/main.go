@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"refurbished-marketplace/services/web/internal/handlers"
-	"refurbished-marketplace/services/web/internal/usersclient"
+	"refurbished-marketplace/shared/proto/usersclient"
 )
 
 func main() {

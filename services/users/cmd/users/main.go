@@ -13,7 +13,7 @@ import (
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
-	usersv1 "refurbished-marketplace/services/users/proto/v1"
+	usersv1 "refurbished-marketplace/shared/proto/users/v1"
 )
 
 func main() {

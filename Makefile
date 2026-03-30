@@ -5,9 +5,9 @@ test:
 
 generate-proto:
 	@set -e; \
-	PROTO_FILES=$$(find services -type f -path '*/proto/v1/*.proto'); \
+	PROTO_FILES=$$(find services shared -type f -path '*/proto/*/v1/*.proto'); \
 	if [ -z "$$PROTO_FILES" ]; then \
-		echo "No proto files found under services/*/proto/v1"; \
+		echo "No proto files found"; \
 		exit 0; \
 	fi; \
 	for file in $$PROTO_FILES; do \

@@ -6,6 +6,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 
 COPY services ./services
+COPY shared ./shared
 
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/orders ./services/orders/cmd/orders
 

@@ -40,7 +40,7 @@ docker_build(
   dockerfile='./infra/development/docker/web.Dockerfile',
   only=[
     './services/web',
-    './services/users/proto',
+    './shared/proto',
     './go.mod',
     './go.sum',
   ],

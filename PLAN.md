@@ -33,26 +33,25 @@
       db/migrations/
       db/queries/
       internal/
-      proto/v1/
       tests/
     products/
       cmd/products/
       db/migrations/
       db/queries/
       internal/
-      proto/v1/
       tests/
     orders/
       cmd/orders/
       db/migrations/
       db/queries/
       internal/
-      proto/v1/
       tests/
   shared/
     contracts/
     messaging/
     proto/
+      users/v1/
+      usersclient/
     tracing/
     testutil/
   infra/
@@ -87,11 +86,11 @@
 - Start simple per service; avoid over-abstracting.
 - Keep service code in `services/<name>/` and private code in `internal/`.
 - Internal services should expose gRPC contracts first (`proto/v1`) and avoid new REST handlers.
+- Shared gRPC contracts live under `shared/proto/<domain>/v1/` when reused by multiple services.
 - Keep REST/HTTP DTO shaping in the web/edge service.
 - Keep SQL and migrations service-local:
   - `services/<service>/db/migrations/`
   - `services/<service>/db/queries/`
-- Keep proto service-local first: `services/<service>/proto/v1/`.
 - Keep all service tests in `services/<service>/tests/` (unit + integration).
 
 ## Transport Strategy (Committed)
@@ -165,6 +164,12 @@
   - `USERS_GRPC_ADDR=users:9091`
   - `PRODUCTS_SVC_ADDR=products:8082`
   - `ORDERS_SVC_ADDR=orders:8083`
+
+## gRPC Contracts and Clients (Current)
+
+- Users protobuf contract is centralized at `shared/proto/users/v1/users.proto`.
+- Generated users gRPC code lives in `shared/proto/users/v1/`.
+- Reusable users gRPC client lives in `shared/proto/usersclient/`.
 
 ## Testing Strategy (Current)
 
