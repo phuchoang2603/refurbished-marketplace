@@ -6,10 +6,7 @@ services:
     enabled: true
     image: refurbished-marketplace/web
     port: 8080
-    env:
-      USERS_GRPC_ADDR: users:9091
-      PRODUCTS_SVC_ADDR: products:8082
-      ORDERS_SVC_ADDR: orders:8083
+
   users:
     enabled: true
     image: refurbished-marketplace/users
@@ -24,9 +21,13 @@ services:
       host: users-db-rw
       port: 5432
       name: users_db
+      owner: users_app
       secretName: users-app
       usernameKey: username
       passwordKey: password
+      instances: 1
+      storageSize: 1Gi
+
   products:
     enabled: true
     image: refurbished-marketplace/products
@@ -38,9 +39,13 @@ services:
       host: products-db-rw
       port: 5432
       name: products_db
+      owner: products_app
       secretName: products-app
       usernameKey: username
       passwordKey: password
+      instances: 1
+      storageSize: 1Gi
+
   orders:
     enabled: true
     image: refurbished-marketplace/orders
@@ -52,32 +57,9 @@ services:
       host: orders-db-rw
       port: 5432
       name: orders_db
+      owner: orders_app
       secretName: orders-app
       usernameKey: username
       passwordKey: password
-
-databases:
-  users:
-    enabled: true
-    dbName: users_db
-    owner: users_app
-    appSecretName: users-app
-    instances: 1
-    storage:
-      size: 1Gi
-  products:
-    enabled: true
-    dbName: products_db
-    owner: products_app
-    appSecretName: products-app
-    instances: 1
-    storage:
-      size: 1Gi
-  orders:
-    enabled: true
-    dbName: orders_db
-    owner: orders_app
-    appSecretName: orders-app
-    instances: 1
-    storage:
-      size: 1Gi
+      instances: 1
+      storageSize: 1Gi

@@ -4,7 +4,7 @@ local_resource(
 )
 
 k8s_yaml('./infra/development/k8s/secrets.yaml')
-k8s_yaml(helm('./infra/chart', namespace='ecommerce', values=['./infra/development/k8s/dev-helm-values.yaml']))
+k8s_yaml(helm('./infra/charts/refurbished-marketplace', namespace='ecommerce', values=['./infra/development/k8s/dev-helm-values.yaml']))
 
 ### Users Service ###
 docker_build(
@@ -24,6 +24,7 @@ docker_build(
   dockerfile='./infra/development/docker/users.Dockerfile',
   only=[
     './services/users',
+    './shared',
     './go.mod',
     './go.sum',
   ],
@@ -56,6 +57,7 @@ docker_build(
   dockerfile='./infra/development/docker/products.Dockerfile',
   only=[
     './services/products',
+    './shared',
     './go.mod',
     './go.sum',
   ],
@@ -71,6 +73,7 @@ docker_build(
   dockerfile='./infra/development/docker/orders.Dockerfile',
   only=[
     './services/orders',
+    './shared',
     './go.mod',
     './go.sum',
   ],

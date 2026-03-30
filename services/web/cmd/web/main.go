@@ -17,7 +17,7 @@ func main() {
 
 	usersGRPCAddr := os.Getenv("USERS_GRPC_ADDR")
 	if usersGRPCAddr == "" {
-		usersGRPCAddr = "localhost:9091"
+		log.Fatal("USERS_GRPC_ADDR is required")
 	}
 
 	usersClient, err := usersclient.New(usersGRPCAddr)
