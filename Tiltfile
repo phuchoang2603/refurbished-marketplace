@@ -3,9 +3,9 @@ local_resource(
   'helm repo add cnpg https://cloudnative-pg.github.io/charts && helm repo update && helm upgrade --install cnpg --namespace cnpg-system --create-namespace cnpg/cloudnative-pg',
 )
 
-k8s_yaml('./infra/development/helm/secrets.yaml')
+k8s_yaml('./infra/development/k8s/secrets.yaml')
 
-k8s_yaml(helm('./infra/development/helm/refurbished-marketplace'))
+k8s_yaml(helm('./infra/development/k8s/refurbished-marketplace'))
 
 ### Users Service ###
 docker_build(
