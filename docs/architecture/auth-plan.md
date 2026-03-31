@@ -17,7 +17,7 @@ Add JWT-based login and refresh flows to the `users` service using one shared JW
 
 - OAuth/social login
 - RBAC/permission system
-- Moving auth logic to `shared/`
+- Moving users session lifecycle logic to `shared/`
 - Istio policy integration details
 
 ## Configuration
@@ -130,3 +130,15 @@ Minimal claim set:
 ## Istio Consideration
 
 Istio may validate access JWTs later, but issuance/refresh/revocation stays in users service logic.
+
+## Shared JWT Utility Guidance
+
+To avoid duplicated token verification code between `users` and `web`, a small shared JWT utility package is acceptable for:
+
+- signature verification
+- standard claim parsing (`sub`, `aud`, `iss`, `exp`, `iat`, `typ`, `jti`)
+
+Keep users-domain behaviors in users service:
+
+- refresh session persistence and revocation
+- login/refresh/logout orchestration

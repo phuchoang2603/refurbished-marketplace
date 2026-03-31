@@ -22,6 +22,7 @@ This applies to `users`, `products`, and `orders`.
 - Owns all client-facing REST routes.
 - Handles request/response shaping for frontend use cases.
 - Calls internal services using gRPC clients.
+- Enforces REST authorization (JWT validation + route protection).
 
 ### users/products/orders (internal)
 
@@ -47,3 +48,9 @@ Migration is now complete for users transport boundary. Current order going forw
 - Synchronous internal calls: gRPC
 - Asynchronous integration: RabbitMQ events
 - Mesh policy (Istio): authn/authz/traffic controls, but not token issuance or refresh business logic
+
+## Authorization Boundary
+
+- Authentication session lifecycle remains in `users` service.
+- Authorization for REST route access is enforced in `web`.
+- Domain authorization invariants (e.g. product ownership for mutations) are enforced in the owning service as well.

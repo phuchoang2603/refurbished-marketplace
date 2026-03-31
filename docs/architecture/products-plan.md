@@ -9,6 +9,7 @@ Implement the first products vertical slice with the same conventions as users:
 - service layer
 - gRPC handlers
 - tests in `services/products/tests/`
+- owner-based authorization support for product mutations
 
 ## Scope
 
@@ -17,18 +18,16 @@ Implement the first products vertical slice with the same conventions as users:
 - Storage: PostgreSQL (`products_db`)
 - Infra: existing Tilt + Helm + CloudNativePG and Compose setup
 
-## Initial Product Model
+## Product Model
 
 Use a minimal model for v1:
 
 - `id UUID PRIMARY KEY`
-- `seller_user_id UUID NOT NULL`
+- `owner_user_id UUID NOT NULL`
 - `name TEXT NOT NULL`
 - `description TEXT NOT NULL DEFAULT ''`
-- `condition_grade TEXT NOT NULL`
 - `price_cents BIGINT NOT NULL`
-- `currency TEXT NOT NULL`
-- `quantity INT NOT NULL`
+- `stock INT NOT NULL`
 - `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`
 - `updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`
 
@@ -37,35 +36,40 @@ Use a minimal model for v1:
 - `CreateProduct`
 - `GetProductByID`
 - `ListProducts`
+- `UpdateProduct`
+- `DeleteProduct`
 
 ## SQLC Queries (v1)
 
 - `CreateProduct`
 - `GetProductByID`
 - `ListProducts`
+- `UpdateProductByIDAndOwner`
+- `DeleteProductByIDAndOwner`
 
 ## Validation Rules
 
 - `name`: non-empty
-- `condition_grade`: non-empty for now
 - `price_cents`: must be positive
-- `currency`: ISO-like uppercase (start with strict 3 chars)
-- `quantity`: zero or positive
+- `stock`: zero or positive
+- `owner_user_id`: must be valid UUID
 
 ## Testing
 
 All tests stay under `services/products/tests/`:
 
 - integration tests for create/get/list and constraints using `shared/testutil`
-- service tests for validation/error mapping
+- service tests for validation/error mapping and owner-guarded mutations
+- minimal gRPC smoke tests for method wiring/status mapping
 
 ## Implementation Sequence
 
 1. Add migration `001_products.sql`.
 2. Add SQL queries and run `sqlc generate`.
 3. Add `internal/service` methods and error types.
-4. Add protobuf contract in `services/products/proto/v1/` and generate code.
-5. Add gRPC handlers/server wiring.
-5. Wire `cmd/products/main.go` with required `DB_URL`.
-6. Add tests in `services/products/tests/`.
-7. Add products migrator Dockerfile and enable migration job in k8s chart values.
+4. Add protobuf contract in `shared/proto/products/v1/` and generate code.
+5. Add gRPC handlers/server wiring (including update/delete).
+6. Wire `cmd/products/main.go` with required `DB_URL`.
+7. Add tests in `services/products/tests/`.
+8. Add products migrator Dockerfile and enable migration job in k8s chart values.
+9. Wire web auth middleware and protect product mutation endpoints.

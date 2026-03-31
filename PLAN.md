@@ -185,11 +185,9 @@
 - Test location:
   - keep all service tests in `services/<service>/tests/`
 - Users tests:
-  - `services/users/tests/grpc_test.go` keeps minimal gRPC smoke coverage (happy path + status mapping)
   - `services/users/tests/service_test.go` validates auth/login/refresh/logout and user service behavior
   - coverage includes create/read, missing-user behavior, unique-email constraint, refresh rotation, and logout revocation
 - Products tests:
-  - `services/products/tests/grpc_test.go` keeps minimal gRPC smoke coverage (happy path + status mapping)
   - `services/products/tests/service_test.go` validates product service create/read/list behavior and query-level no-row behavior
 - Shared test utilities:
   - `shared/testutil/postgres.go` contains reusable Postgres+Goose setup logic for future service tests
@@ -216,9 +214,26 @@
   - `POST /products`
   - `GET /products/{id}`
   - `GET /products?limit=&offset=`
+  - `PATCH /products/{id}` (planned)
+  - `DELETE /products/{id}` (planned)
 - Tests:
   - `services/products/tests/service_test.go` covers service/query behavior
-  - `services/products/tests/grpc_test.go` covers minimal transport mapping
+
+## Auth + Authorization Direction (Committed)
+
+- Users service remains source of truth for auth session domain:
+  - login/refresh/logout token issuance and refresh session state
+- Web service acts as edge authorization gate:
+  - validate access JWT for protected REST endpoints
+  - extract authenticated user id (`sub`) and pass trusted identity to internal services
+- Products ownership model:
+  - each product must store `owner_user_id`
+  - create/update/delete must require authenticated user
+  - list/get stay public for marketplace browsing
+- Planned protected REST endpoints:
+  - `POST /products`
+  - `PATCH /products/{id}`
+  - `DELETE /products/{id}`
 
 ## Environment and Tooling
 
@@ -229,6 +244,9 @@
 
 ## Next Steps
 
-1. Implement `orders` vertical slice with gRPC-first transport (`goose` + `sqlc` + service + tests).
-2. Add orders migration job + orders migrator image once orders migrations exist.
-3. Introduce RabbitMQ contracts and one async workflow.
+1. Add web JWT middleware and endpoint protection for product mutations.
+2. Extend products model/queries/proto with `owner_user_id` and mutation methods (`UpdateProduct`, `DeleteProduct`).
+3. Implement `PATCH /products/{id}` and `DELETE /products/{id}` in web and enforce owner-only authorization.
+4. Implement `orders` vertical slice with gRPC-first transport (`goose` + `sqlc` + service + tests).
+5. Add orders migration job + orders migrator image once orders migrations exist.
+6. Introduce RabbitMQ contracts and one async workflow.
