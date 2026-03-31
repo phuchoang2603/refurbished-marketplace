@@ -36,7 +36,7 @@
             gofumpt
             golangci-lint
 
-            nodejs
+            python312
 
             goose
             sqlc

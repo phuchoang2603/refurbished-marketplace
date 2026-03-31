@@ -156,6 +156,9 @@
 - Service ports:
   - web: `8080`
   - users gRPC: `9091`
+  - users-db: 5432 (Postgres)
+  - products-db: 5433 (Postgres)
+  - orders-db: 5434 (Postgres)
 
 ## Service Discovery (Current)
 
