@@ -10,23 +10,27 @@ service ProductsService {
   rpc CreateProduct(CreateProductRequest) returns (Product);
   rpc GetProductByID(GetProductByIDRequest) returns (Product);
   rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+  rpc UpdateProduct(UpdateProductRequest) returns (Product);
+  rpc DeleteProduct(DeleteProductRequest) returns (DeleteProductResponse);
 }
 
 message Product {
   string id = 1;
+  string owner_user_id = 2;
+  string name = 3;
+  string description = 4;
+  int64 price_cents = 5;
+  int32 stock = 6;
+  google.protobuf.Timestamp created_at = 7;
+  google.protobuf.Timestamp updated_at = 8;
+}
+
+message CreateProductRequest {
+  string owner_user_id = 1;
   string name = 2;
   string description = 3;
   int64 price_cents = 4;
   int32 stock = 5;
-  google.protobuf.Timestamp created_at = 6;
-  google.protobuf.Timestamp updated_at = 7;
-}
-
-message CreateProductRequest {
-  string name = 1;
-  string description = 2;
-  int64 price_cents = 3;
-  int32 stock = 4;
 }
 
 message GetProductByIDRequest {
@@ -41,3 +45,19 @@ message ListProductsRequest {
 message ListProductsResponse {
   repeated Product products = 1;
 }
+
+message UpdateProductRequest {
+  string id = 1;
+  string owner_user_id = 2;
+  optional string name = 3;
+  optional string description = 4;
+  optional int64 price_cents = 5;
+  optional int32 stock = 6;
+}
+
+message DeleteProductRequest {
+  string id = 1;
+  string owner_user_id = 2;
+}
+
+message DeleteProductResponse {}

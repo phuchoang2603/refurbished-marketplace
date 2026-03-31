@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"refurbished-marketplace/services/web/internal/handlers"
+	authconfig "refurbished-marketplace/shared/auth/config"
 	"refurbished-marketplace/shared/proto/productsclient"
 	"refurbished-marketplace/shared/proto/usersclient"
 )
@@ -38,7 +39,12 @@ func main() {
 	}
 	defer productsClient.Close()
 
-	h := handlers.New(usersClient, productsClient)
+	jwtSecret := os.Getenv("JWT_SECRET")
+	if jwtSecret == "" {
+		log.Fatal("JWT_SECRET is required")
+	}
+
+	h := handlers.New(usersClient, productsClient, authconfig.DefaultConfig(jwtSecret))
 	mux := http.NewServeMux()
 	h.Register(mux)
 

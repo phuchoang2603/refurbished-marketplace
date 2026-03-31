@@ -20,6 +20,8 @@ func writeGRPCError(w http.ResponseWriter, err error) {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": st.Message()})
 	case codes.NotFound:
 		writeJSON(w, http.StatusNotFound, map[string]string{"error": st.Message()})
+	case codes.PermissionDenied:
+		writeJSON(w, http.StatusForbidden, map[string]string{"error": st.Message()})
 	case codes.AlreadyExists:
 		writeJSON(w, http.StatusConflict, map[string]string{"error": st.Message()})
 	case codes.Unauthenticated:

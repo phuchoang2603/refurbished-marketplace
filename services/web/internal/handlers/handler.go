@@ -4,6 +4,8 @@ package handlers
 import (
 	"net/http"
 
+	webAuth "refurbished-marketplace/services/web/internal/auth"
+	authconfig "refurbished-marketplace/shared/auth/config"
 	"refurbished-marketplace/shared/proto/productsclient"
 	"refurbished-marketplace/shared/proto/usersclient"
 )
@@ -11,20 +13,23 @@ import (
 type Handler struct {
 	users    *usersclient.Client
 	products *productsclient.Client
+	auth     authconfig.Config
 }
 
-func New(users *usersclient.Client, products *productsclient.Client) *Handler {
-	return &Handler{users: users, products: products}
+func New(users *usersclient.Client, products *productsclient.Client, authCfg authconfig.Config) *Handler {
+	return &Handler{users: users, products: products, auth: authCfg}
 }
 
 func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /healthz", h.handleHealthz)
 	mux.HandleFunc("POST /users", h.handleCreateUser)
 	mux.HandleFunc("GET /users/{id}", h.handleGetUserByID)
-	mux.HandleFunc("POST /products", h.handleCreateProduct)
+	mux.Handle("POST /products", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleCreateProduct)))
+	mux.Handle("PATCH /products/{id}", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleUpdateProduct)))
+	mux.Handle("DELETE /products/{id}", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleDeleteProduct)))
 	mux.HandleFunc("GET /products", h.handleListProducts)
 	mux.HandleFunc("GET /products/{id}", h.handleGetProductByID)
 	mux.HandleFunc("POST /auth/login", h.handleLogin)
 	mux.HandleFunc("POST /auth/refresh", h.handleRefresh)
-	mux.HandleFunc("POST /auth/logout", h.handleLogout)
+	mux.Handle("POST /auth/logout", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleLogout)))
 }

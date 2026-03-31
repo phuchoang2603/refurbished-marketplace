@@ -6,6 +6,9 @@ import (
 	"strconv"
 	"strings"
 
+	webAuth "refurbished-marketplace/services/web/internal/auth"
+	"refurbished-marketplace/shared/proto/productsclient"
+
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -18,6 +21,7 @@ type createProductRequest struct {
 
 type productResponse struct {
 	ID          string `json:"id"`
+	OwnerUserID string `json:"owner_user_id"`
 	Name        string `json:"name"`
 	Description string `json:"description"`
 	PriceCents  int64  `json:"price_cents"`
@@ -26,7 +30,26 @@ type productResponse struct {
 	UpdatedAt   string `json:"updated_at"`
 }
 
-func mapProduct(id, name, description string, priceCents int64, stock int32, createdAt, updatedAt *timestamppb.Timestamp) productResponse {
+type updateProductRequest struct {
+	Name        *string `json:"name"`
+	Description *string `json:"description"`
+	PriceCents  *int64  `json:"price_cents"`
+	Stock       *int32  `json:"stock"`
+}
+
+func normalizeUpdateProductRequest(req updateProductRequest) updateProductRequest {
+	if req.Name != nil {
+		v := strings.TrimSpace(*req.Name)
+		req.Name = &v
+	}
+	if req.Description != nil {
+		v := strings.TrimSpace(*req.Description)
+		req.Description = &v
+	}
+	return req
+}
+
+func mapProduct(id, ownerUserID, name, description string, priceCents int64, stock int32, createdAt, updatedAt *timestamppb.Timestamp) productResponse {
 	var created string
 	var updated string
 	if createdAt != nil {
@@ -38,6 +61,7 @@ func mapProduct(id, name, description string, priceCents int64, stock int32, cre
 
 	return productResponse{
 		ID:          id,
+		OwnerUserID: ownerUserID,
 		Name:        name,
 		Description: description,
 		PriceCents:  priceCents,
@@ -48,19 +72,25 @@ func mapProduct(id, name, description string, priceCents int64, stock int32, cre
 }
 
 func (h *Handler) handleCreateProduct(w http.ResponseWriter, r *http.Request) {
+	ownerUserID, ok := webAuth.UserIDFromContext(r.Context())
+	if !ok || ownerUserID == "" {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+
 	var req createProductRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
 		return
 	}
 
-	p, err := h.products.CreateProduct(r.Context(), req.Name, req.Description, req.PriceCents, req.Stock)
+	p, err := h.products.CreateProduct(r.Context(), ownerUserID, req.Name, req.Description, req.PriceCents, req.Stock)
 	if err != nil {
 		writeGRPCError(w, err)
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, mapProduct(p.Id, p.Name, p.Description, p.PriceCents, p.Stock, p.CreatedAt, p.UpdatedAt))
+	writeJSON(w, http.StatusCreated, mapProduct(p.Id, p.OwnerUserId, p.Name, p.Description, p.PriceCents, p.Stock, p.CreatedAt, p.UpdatedAt))
 }
 
 func (h *Handler) handleGetProductByID(w http.ResponseWriter, r *http.Request) {
@@ -76,7 +106,7 @@ func (h *Handler) handleGetProductByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, mapProduct(p.Id, p.Name, p.Description, p.PriceCents, p.Stock, p.CreatedAt, p.UpdatedAt))
+	writeJSON(w, http.StatusOK, mapProduct(p.Id, p.OwnerUserId, p.Name, p.Description, p.PriceCents, p.Stock, p.CreatedAt, p.UpdatedAt))
 }
 
 func (h *Handler) handleListProducts(w http.ResponseWriter, r *http.Request) {
@@ -109,8 +139,68 @@ func (h *Handler) handleListProducts(w http.ResponseWriter, r *http.Request) {
 
 	items := make([]productResponse, 0, len(resp.Products))
 	for _, p := range resp.Products {
-		items = append(items, mapProduct(p.Id, p.Name, p.Description, p.PriceCents, p.Stock, p.CreatedAt, p.UpdatedAt))
+		items = append(items, mapProduct(p.Id, p.OwnerUserId, p.Name, p.Description, p.PriceCents, p.Stock, p.CreatedAt, p.UpdatedAt))
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{"products": items})
+}
+
+func (h *Handler) handleUpdateProduct(w http.ResponseWriter, r *http.Request) {
+	ownerUserID, ok := webAuth.UserIDFromContext(r.Context())
+	if !ok || ownerUserID == "" {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+
+	id := strings.TrimSpace(r.PathValue("id"))
+	if id == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid product id"})
+		return
+	}
+
+	var req updateProductRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+		return
+	}
+	req = normalizeUpdateProductRequest(req)
+	if req.Name == nil && req.Description == nil && req.PriceCents == nil && req.Stock == nil {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "empty update payload"})
+		return
+	}
+
+	p, err := h.products.UpdateProduct(r.Context(), id, ownerUserID, productsclient.UpdateProductInput{
+		Name:        req.Name,
+		Description: req.Description,
+		PriceCents:  req.PriceCents,
+		Stock:       req.Stock,
+	})
+	if err != nil {
+		writeGRPCError(w, err)
+		return
+	}
+
+	writeJSON(w, http.StatusOK, mapProduct(p.Id, p.OwnerUserId, p.Name, p.Description, p.PriceCents, p.Stock, p.CreatedAt, p.UpdatedAt))
+}
+
+func (h *Handler) handleDeleteProduct(w http.ResponseWriter, r *http.Request) {
+	ownerUserID, ok := webAuth.UserIDFromContext(r.Context())
+	if !ok || ownerUserID == "" {
+		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		return
+	}
+
+	id := strings.TrimSpace(r.PathValue("id"))
+	if id == "" {
+		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid product id"})
+		return
+	}
+
+	_, err := h.products.DeleteProduct(r.Context(), id, ownerUserID)
+	if err != nil {
+		writeGRPCError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }

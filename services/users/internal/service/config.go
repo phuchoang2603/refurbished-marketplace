@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	authconfig "refurbished-marketplace/shared/auth/config"
 	"strings"
 	"time"
 )
@@ -15,12 +16,13 @@ type Config struct {
 }
 
 func DefaultConfig(secret string) Config {
+	base := authconfig.DefaultConfig(secret)
 	return Config{
-		JWTSecret:     secret,
-		JWTIssuer:     "refurbished-marketplace",
-		JWTAudience:   "refurbished-marketplace-api",
-		JWTAccessTTL:  15 * time.Minute,
-		JWTRefreshTTL: 168 * time.Hour,
+		JWTSecret:     base.JWTSecret,
+		JWTIssuer:     base.JWTIssuer,
+		JWTAudience:   base.JWTAudience,
+		JWTAccessTTL:  authconfig.DefaultJWTAccessTTL,
+		JWTRefreshTTL: authconfig.DefaultJWTRefreshTTL,
 	}
 }
 

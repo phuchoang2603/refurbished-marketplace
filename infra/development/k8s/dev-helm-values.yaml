@@ -6,6 +6,9 @@ services:
     enabled: true
     image: refurbished-marketplace/web
     port: 8080
+    auth:
+      secretName: users-auth
+      secretKey: JWT_SECRET
 
   users:
     enabled: true

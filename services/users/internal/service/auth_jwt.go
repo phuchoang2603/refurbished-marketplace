@@ -3,7 +3,8 @@ package service
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
+	errorspkg "errors"
+	sharedjwt "refurbished-marketplace/shared/auth/jwt"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -33,39 +34,19 @@ func (s *Service) signToken(tokenType, jti string, userID uuid.UUID, email strin
 }
 
 func (s *Service) parseToken(raw string, expectedType string) (jwt.RegisteredClaims, error) {
-	parsed, err := jwt.Parse(raw, func(t *jwt.Token) (any, error) {
-		if t.Method != jwt.SigningMethodHS256 {
-			return nil, ErrInvalidToken
-		}
-		return []byte(s.cfg.JWTSecret), nil
-	})
+	claims, err := sharedjwt.ParseAndValidate(raw, s.cfg.JWTSecret, expectedType, s.cfg.JWTIssuer, s.cfg.JWTAudience)
 	if err != nil {
-		if errors.Is(err, jwt.ErrTokenExpired) {
+		if errorspkg.Is(err, sharedjwt.ErrExpiredToken) {
 			return jwt.RegisteredClaims{}, ErrTokenExpired
 		}
 		return jwt.RegisteredClaims{}, ErrInvalidToken
 	}
 
-	claimsMap, ok := parsed.Claims.(jwt.MapClaims)
-	if !ok || !parsed.Valid {
-		return jwt.RegisteredClaims{}, ErrInvalidToken
-	}
-
-	typ, _ := claimsMap["typ"].(string)
-	iss, _ := claimsMap["iss"].(string)
-	aud, _ := claimsMap["aud"].(string)
-	sub, _ := claimsMap["sub"].(string)
-	jti, _ := claimsMap["jti"].(string)
-
-	if typ != expectedType || iss != s.cfg.JWTIssuer || aud != s.cfg.JWTAudience || sub == "" || jti == "" {
-		return jwt.RegisteredClaims{}, ErrInvalidToken
-	}
-
 	return jwt.RegisteredClaims{
-		Issuer:   iss,
-		Subject:  sub,
-		Audience: jwt.ClaimStrings{aud},
-		ID:       jti,
+		Issuer:   claims.Issuer,
+		Subject:  claims.Subject,
+		Audience: jwt.ClaimStrings{claims.Audience},
+		ID:       claims.ID,
 	}, nil
 }
 

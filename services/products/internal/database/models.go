@@ -18,4 +18,5 @@ type Product struct {
 	Stock       int32
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+	OwnerUserID uuid.UUID
 }
