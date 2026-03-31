@@ -55,15 +55,15 @@
     tracing/
     testutil/
   infra/
-    chart/
-      templates/
-      Chart.yaml
+    charts/
+      refurbished-marketplace/
+        templates/
+        Chart.yaml
     development/
       docker/
       k8s/
         dev-helm-values.yaml
         secrets.yaml
-      k8s/
     production/
       docker/
       k8s/
@@ -137,7 +137,7 @@
 ## Kubernetes Development (Current)
 
 - Orchestration:
-  - `Tiltfile` uses Helm chart under `infra/chart`
+  - `Tiltfile` uses Helm chart under `infra/charts/refurbished-marketplace`
   - development values are in `infra/development/k8s/dev-helm-values.yaml`
   - Helm release namespace is `ecommerce`
   - CloudNativePG operator installed through Helm in namespace `cnpg-system`
@@ -153,9 +153,12 @@
   - Helm hook jobs (`pre-install,pre-upgrade`) in `templates/migrations.tpl`
   - users migration enabled by default
   - users migrator image built from `infra/development/docker/users-migrator.Dockerfile` (base: `ghcr.io/kukymbr/goose-docker:3.27.0`)
+  - products migration enabled by default
+  - products migrator image built from `infra/development/docker/products-migrator.Dockerfile` (base: `ghcr.io/kukymbr/goose-docker:3.27.0`)
 - Service ports:
   - web: `8080`
   - users gRPC: `9091`
+  - products gRPC: `9092`
   - users-db: 5432 (Postgres)
   - products-db: 5433 (Postgres)
   - orders-db: 5434 (Postgres)
@@ -164,8 +167,8 @@
 
 - Web service upstream addresses are defined in values under `services.web.env`.
 - Current values include:
-  - `USERS_GRPC_ADDR=users:9091`
-  - `PRODUCTS_SVC_ADDR=products:8082`
+  - `USERS_SVC_ADDR=users:9091`
+  - `PRODUCTS_SVC_ADDR=products:9092`
   - `ORDERS_SVC_ADDR=orders:8083`
 
 ## gRPC Contracts and Clients (Current)
@@ -173,17 +176,49 @@
 - Users protobuf contract is centralized at `shared/proto/users/v1/users.proto`.
 - Generated users gRPC code lives in `shared/proto/users/v1/`.
 - Reusable users gRPC client lives in `shared/proto/usersclient/`.
+- Products protobuf contract is centralized at `shared/proto/products/v1/products.proto`.
+- Generated products gRPC code lives in `shared/proto/products/v1/`.
+- Reusable products gRPC client lives in `shared/proto/productsclient/`.
 
 ## Testing Strategy (Current)
 
 - Test location:
   - keep all service tests in `services/<service>/tests/`
 - Users tests:
-  - `services/users/tests/integration_test.go` uses Testcontainers PostgreSQL module + Goose migrations
+  - `services/users/tests/grpc_test.go` keeps minimal gRPC smoke coverage (happy path + status mapping)
   - `services/users/tests/service_test.go` validates auth/login/refresh/logout and user service behavior
   - coverage includes create/read, missing-user behavior, unique-email constraint, refresh rotation, and logout revocation
+- Products tests:
+  - `services/products/tests/grpc_test.go` keeps minimal gRPC smoke coverage (happy path + status mapping)
+  - `services/products/tests/service_test.go` validates product service create/read/list behavior and query-level no-row behavior
 - Shared test utilities:
   - `shared/testutil/postgres.go` contains reusable Postgres+Goose setup logic for future service tests
+
+## Products Service (In Progress)
+
+- Runtime:
+  - `services/products/cmd/products/main.go`
+  - requires `DB_URL` (no hardcoded fallback)
+  - serves gRPC on `GRPC_ADDR` (default `:9092`)
+- SQL and migrations:
+  - migrations:
+    - `001_products.sql`
+  - queries:
+    - `CreateProduct`, `GetProductByID`, `ListProducts`
+- sqlc:
+  - config at `services/products/sqlc.yaml`
+  - generated package at `services/products/internal/database`
+- Service layer:
+  - product validation + create/read/list logic in `services/products/internal/service`
+- gRPC server:
+  - `services/products/internal/grpcserver`
+- Web edge endpoints:
+  - `POST /products`
+  - `GET /products/{id}`
+  - `GET /products?limit=&offset=`
+- Tests:
+  - `services/products/tests/service_test.go` covers service/query behavior
+  - `services/products/tests/grpc_test.go` covers minimal transport mapping
 
 ## Environment and Tooling
 
@@ -194,8 +229,6 @@
 
 ## Next Steps
 
-1. Implement `products` vertical slice with gRPC-first transport (`goose` + `sqlc` + service + tests).
-2. Add products migration job + products migrator image once products migrations exist.
-3. Implement `orders` vertical slice with gRPC-first transport.
-4. Add orders migration job + orders migrator image once orders migrations exist.
-5. Introduce RabbitMQ contracts and one async workflow.
+1. Implement `orders` vertical slice with gRPC-first transport (`goose` + `sqlc` + service + tests).
+2. Add orders migration job + orders migrator image once orders migrations exist.
+3. Introduce RabbitMQ contracts and one async workflow.

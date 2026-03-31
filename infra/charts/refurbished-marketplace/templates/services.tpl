@@ -58,7 +58,7 @@ spec:
                   key: {{ $svc.auth.secretKey }}
 {{- end }}
 {{- if eq $name "web" }}
-            - name: USERS_GRPC_ADDR
+            - name: USERS_SVC_ADDR
               value: {{ printf "users:%v" $.Values.services.users.port | quote }}
             - name: PRODUCTS_SVC_ADDR
               value: {{ printf "products:%v" $.Values.services.products.port | quote }}

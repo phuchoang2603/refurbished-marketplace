@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"refurbished-marketplace/services/web/internal/handlers"
+	"refurbished-marketplace/shared/proto/productsclient"
 	"refurbished-marketplace/shared/proto/usersclient"
 )
 
@@ -15,9 +16,9 @@ func main() {
 		addr = ":8080"
 	}
 
-	usersGRPCAddr := os.Getenv("USERS_GRPC_ADDR")
+	usersGRPCAddr := os.Getenv("USERS_SVC_ADDR")
 	if usersGRPCAddr == "" {
-		log.Fatal("USERS_GRPC_ADDR is required")
+		log.Fatal("USERS_SVC_ADDR is required")
 	}
 
 	usersClient, err := usersclient.New(usersGRPCAddr)
@@ -26,7 +27,18 @@ func main() {
 	}
 	defer usersClient.Close()
 
-	h := handlers.New(usersClient)
+	productsGRPCAddr := os.Getenv("PRODUCTS_SVC_ADDR")
+	if productsGRPCAddr == "" {
+		log.Fatal("PRODUCTS_SVC_ADDR is required")
+	}
+
+	productsClient, err := productsclient.New(productsGRPCAddr)
+	if err != nil {
+		log.Fatalf("products grpc client: %v", err)
+	}
+	defer productsClient.Close()
+
+	h := handlers.New(usersClient, productsClient)
 	mux := http.NewServeMux()
 	h.Register(mux)
 

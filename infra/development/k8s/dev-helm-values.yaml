@@ -31,10 +31,10 @@ services:
   products:
     enabled: true
     image: refurbished-marketplace/products
-    port: 8082
+    port: 9092
     migration:
-      enabled: false
-      image: ghcr.io/kukymbr/goose-docker:3.27.0
+      enabled: true
+      image: refurbished-marketplace/products-migrator
     db:
       host: products-db-rw
       port: 5432
