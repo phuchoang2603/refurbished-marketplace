@@ -9,19 +9,25 @@
 - `users` is the first implemented vertical slice (migration + sqlc queries + service + handlers + integration tests).
 - Users auth is implemented with JWT login/refresh/logout and DB-backed refresh token sessions.
 - Web edge service exists and now owns REST entrypoints while users is served via gRPC.
-- Product listing/checkout is now being shaped as a normal ecommerce flow (not C2C escrow/inspection).
-- C2C escrow/inspection was dropped from scope; focus is normal ecommerce with later recommender + payment/fraud integration points.
 - `orders` vertical slice is implemented as gRPC-first with PostgreSQL migrations, sqlc, and service tests.
-- `products` should be a merchant-owned catalog, not a user-owned C2C listing flow.
 
 ## Data Model Direction
 
 | Service  | Responsibility       | Key Fields Added                                      |
 | -------- | -------------------- | ----------------------------------------------------- |
-| Users    | Identity & Profile   | `x_pos`, `y_pos`, `mean_amount`, `std_amount`         |
+| Users    | Identity & Profile   | `x_pos`, `y_pos`                                      |
 | Products | Inventory & Merchant | `terminal_id`, `x_pos`, `y_pos`                       |
 | Orders   | Intent to Buy        | `status` (`PENDING`, `PAID`, `FAILED`), `total_cents` |
 | Payment  | Financial & ML Logic | `tx_fraud`, `tx_fraud_scenario`, `tx_time_seconds`    |
+
+## Schema Next Step
+
+Implement the schema changes above in the database layer first, then update the service code around those schemas.
+
+- `users`: add location columns only; derive spending aggregates from transaction history when needed.
+- `products`: add merchant/terminal metadata columns.
+- `orders`: keep order header state and totals.
+- `payment`: add fraud/transaction tracking fields when the service is introduced.
 
 ## Canonical Repo Tree
 
@@ -106,17 +112,6 @@
   - `services/<service>/db/queries/`
 - Keep all service tests in `services/<service>/tests/` (unit + integration).
 
-## Transport Strategy (Committed)
-
-- Edge:
-  - `web` service owns client-facing REST APIs.
-  - Web service composes calls to internal services via gRPC clients.
-- Internal:
-  - `users`, `products`, and `orders` communicate through gRPC only.
-  - Domain events will use Kafka for async workflows and downstream ML/analytics consumers.
-- Transition:
-  - Existing users REST endpoints are considered transitional and will be replaced by web-edge REST + users gRPC.
-
 ## Users Service (Implemented)
 
 - Runtime:
@@ -147,168 +142,25 @@
     - access TTL: `15m`
     - refresh TTL: `168h`
 
-## Kubernetes Development (Current)
+## Focus Areas
 
-- Orchestration:
-  - `Tiltfile` uses Helm chart under `infra/charts/refurbished-marketplace`
-  - development values are in `infra/development/k8s/dev-helm-values.yaml`
-  - Helm release namespace is `ecommerce`
-  - CloudNativePG operator installed through Helm in namespace `cnpg-system`
-- Secrets:
-  - secrets are applied separately via `infra/development/k8s/secrets.yaml`
-  - service and migration manifests consume secrets using `secretKeyRef`
-- Namespaces:
-  - application resources (`web`, `users`, `products`, `orders`, db clusters, migration jobs) are deployed to `ecommerce`
-  - CloudNativePG operator stays in `cnpg-system`
-- Database readiness:
-  - service deployments use `initContainer` with `pg_isready` before app container startup
-- Migration jobs:
-  - Helm hook jobs (`pre-install,pre-upgrade`) in `templates/migrations.tpl`
-  - users migration enabled by default
-  - users migrator image built from `infra/development/docker/users-migrator.Dockerfile` (base: `ghcr.io/kukymbr/goose-docker:3.27.0`)
-  - products migration enabled by default
-  - products migrator image built from `infra/development/docker/products-migrator.Dockerfile` (base: `ghcr.io/kukymbr/goose-docker:3.27.0`)
-- Service ports:
-  - web: `8080`
-  - users gRPC: `9091`
-  - products gRPC: `9092`
-  - users-db: 5432 (Postgres)
-  - products-db: 5433 (Postgres)
-  - orders-db: 5434 (Postgres)
+- Keep `users` as identity/profile plus auth session source of truth.
+- Keep `products` as read-only catalog data in the public API.
+- Keep `orders` as order headers plus line items.
+- Introduce `payment` as the bank/fraud boundary later.
+- Update docs in `docs/architecture/` when a topic becomes stable enough to move out of `PLAN.md`.
 
-## Service Discovery (Current)
+## Minimal Schema
 
-- Web service upstream addresses are defined in values under `services.web.env`.
-- Current values include:
-  - `USERS_SVC_ADDR=users:9091`
-  - `PRODUCTS_SVC_ADDR=products:9092`
-  - `ORDERS_SVC_ADDR=orders:9093`
-
-## gRPC Contracts and Clients (Current)
-
-- Users protobuf contract is centralized at `shared/proto/users/v1/users.proto`.
-- Generated users gRPC code lives in `shared/proto/users/v1/`.
-- Reusable users gRPC client lives in `shared/proto/usersclient/`.
-- Products protobuf contract is centralized at `shared/proto/products/v1/products.proto`.
-- Generated products gRPC code lives in `shared/proto/products/v1/`.
-- Reusable products gRPC client lives in `shared/proto/productsclient/`.
-- Orders protobuf contract is centralized at `shared/proto/orders/v1/orders.proto`.
-- Generated orders gRPC code lives in `shared/proto/orders/v1/`.
-- Reusable orders gRPC client lives in `shared/proto/ordersclient/`.
-
-## Testing Strategy (Current)
-
-- Test location:
-  - keep all service tests in `services/<service>/tests/`
-- Users tests:
-  - `services/users/tests/service_test.go` validates auth/login/refresh/logout and user service behavior
-  - coverage includes create/read, missing-user behavior, unique-email constraint, refresh rotation, and logout revocation
-- Products tests:
-  - `services/products/tests/service_test.go` validates product service create/read/list behavior and query-level no-row behavior
-- Orders tests:
-  - `services/orders/tests/service_test.go` validates order service create/read/list/state transition behavior
-- Shared test utilities:
-  - `shared/testutil/postgres.go` contains reusable Postgres+Goose setup logic for future service tests
-
-## Products Service (Implemented)
-
-- Runtime:
-  - `services/products/cmd/products/main.go`
-  - requires `DB_URL` (no hardcoded fallback)
-  - serves gRPC on `GRPC_ADDR` (default `:9092`)
-- SQL and migrations:
-  - migrations:
-    - `001_products.sql`
-  - queries:
-    - `CreateProduct`, `GetProductByID`, `ListProducts`
-- sqlc:
-  - config at `services/products/sqlc.yaml`
-  - generated package at `services/products/internal/database`
-- Service layer:
-  - product validation + create/read/list logic in `services/products/internal/service`
-- gRPC server:
-  - `services/products/internal/grpcserver`
-- Web edge endpoints:
-  - `GET /products/{id}`
-  - `GET /products?limit=&offset=`
-- Tests:
-  - `services/products/tests/service_test.go` covers service/query behavior
-
-## Orders Service (Implemented)
-
-- Runtime:
-  - `services/orders/cmd/orders/main.go`
-  - requires `DB_URL` (no hardcoded fallback)
-  - serves gRPC on `GRPC_ADDR` (default `:9093`)
-- SQL and migrations:
-  - migrations:
-    - `001_orders.sql`
-    - `002_order_items.sql`
-  - queries:
-    - order create/read/list/status update queries
-    - order item create/list-by-order queries
-- sqlc:
-  - config at `services/orders/sqlc.yaml`
-  - generated package at `services/orders/internal/database`
-- Service layer:
-  - order validation + lifecycle logic in `services/orders/internal/service`
-- gRPC server:
-  - `services/orders/internal/grpcserver`
-- Web edge endpoints:
-  - `POST /orders`
-  - `GET /orders`
-  - `GET /orders/{id}`
-  - `POST /orders/{id}/confirm`
-  - `POST /orders/{id}/cancel`
-- Tests:
-  - `services/orders/tests/service_test.go` covers service/query behavior
-
-## Auth + Authorization Direction (Committed)
-
-- Users service remains source of truth for auth session domain:
-  - login/refresh/logout token issuance and refresh session state
-- Web service acts as edge authorization gate:
-  - validate access JWT for protected REST endpoints
-  - extract authenticated user id (`sub`) and pass trusted identity to internal services
-- Products ownership model:
-  - products are merchant-owned catalog entries
-  - keep `owner_user_id` as the DB field for now
-  - list/get stay public for marketplace browsing
-
-## Product Access Model
-
-- Public web API should only expose read operations for products.
-- No public `POST`, `PATCH`, or `DELETE` for products in the non-C2C model.
-- Product creation and lifecycle management are out of scope for the public web API in this repository.
-
-## Payment / Bank Simulation Direction
-
-- Add a `payment` service as the boundary to the external bank simulator / credit-card-fraud system.
-- `orders` should remain responsible for order lifecycle and line items, but payment authorization/decline belongs to `payment`.
-- Transaction metadata, fraud labels, and simulator-specific fields should live in `payment`, not `orders` or `products`.
-- `payment` should publish/consume Kafka events for the bank simulator handoff and later downstream analytics/ML use.
-- Orders should transition based on payment outcomes (`PAID`, `FAILED`, `CANCELED` as appropriate).
-- Keep the financial integration swappable so the marketplace can later target Stripe/Braintree-like adapters without changing order catalog code.
-
-## Payments / Fulfillment Direction
-
-- This repository is now scoped as normal ecommerce, not C2C escrow.
-- External payments/fraud platform is a separate project and integrates over API/events.
-- Orders will own the purchase lifecycle and line items.
-- Payment will own bank/fraud interaction and event exchange with the simulator.
-- Recommender remains a later async consumer of order/payment history.
-- CDC is deferred; start with explicit domain events and outbox only if reliable publishing becomes necessary.
-
-## Environment and Tooling
-
-- Nix + direnv enabled.
-- `.envrc` supports Colima/Testcontainers compatibility.
-- `Makefile` includes:
-  - `generate-proto`
+- `users`: `id`, `email`, `password_hash`, `x_pos`, `y_pos`
+- `products`: `id`, `name`, `description`, `price_cents`, `stock`, `terminal_id`, `x_pos`, `y_pos`
+- `orders`: `id`, `buyer_user_id`, `status`, `total_cents`
+- `order_items`: `id`, `order_id`, `product_id`, `quantity`, `unit_price_cents`, `line_total_cents`
+- `payment`: `id`, `order_id`, `tx_fraud`, `tx_fraud_scenario`, `tx_time_seconds`
 
 ## Next Steps
 
-1. Tighten the plan around order state transitions and any remaining product ownership edge cases.
-2. Add a `payment` service boundary for the bank simulator / fraud integration.
-3. Introduce Kafka/Strimzi contracts for payment outcomes and downstream consumers.
-4. Decide whether to add a merchant account service or keep merchant identity as a separate foreign key for now.
+1. Implement the DB schema changes for `users`, `products`, `orders`, and the future `payment` boundary.
+2. Remove remaining product write paths from the public web API.
+3. Add the `payment` service and its bank/fraud event flow.
+4. Introduce Kafka/Strimzi contracts for payment outcomes and downstream consumers.

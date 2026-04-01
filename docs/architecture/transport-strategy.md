@@ -30,6 +30,11 @@ This applies to `users`, `products`, and `orders`.
 - Own domain logic, DB access, migrations, and events.
 - Do not add new public REST APIs.
 
+### products scope
+
+- Public reads only in the web API.
+- Product catalog writes are not part of the public ecommerce flow.
+
 ## Migration Path from Current State
 
 Migration is now complete for users transport boundary. Current order going forward:
@@ -42,6 +47,18 @@ Migration is now complete for users transport boundary. Current order going forw
 
 - REST schema ownership: `web` service
 - gRPC schema ownership: each internal service under `services/<service>/proto/v1/`
+
+### gRPC Contracts and Clients (Current)
+
+- Users protobuf contract is centralized at `shared/proto/users/v1/users.proto`.
+- Generated users gRPC code lives in `shared/proto/users/v1/`.
+- Reusable users gRPC client lives in `shared/proto/usersclient/`.
+- Products protobuf contract is centralized at `shared/proto/products/v1/products.proto`.
+- Generated products gRPC code lives in `shared/proto/products/v1/`.
+- Reusable products gRPC client lives in `shared/proto/productsclient/`.
+- Orders protobuf contract is centralized at `shared/proto/orders/v1/orders.proto`.
+- Generated orders gRPC code lives in `shared/proto/orders/v1/`.
+- Reusable orders gRPC client lives in `shared/proto/ordersclient/`.
 
 ## Related Architecture
 

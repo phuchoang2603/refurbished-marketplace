@@ -25,9 +25,9 @@ This repository is scoped as a normal ecommerce platform, not C2C escrow.
 
 ### products service
 
-- Owns resource authorization invariants:
-  - persist `owner_user_id` for each product
-  - enforce owner-only write semantics for update/delete
+- Owns catalog resource rules:
+  - public reads for browsing
+  - internal-only write paths if catalog management is reintroduced later
 
 ## Payments / Events
 
@@ -53,21 +53,10 @@ Public:
 Authenticated:
 
 - `POST /auth/logout`
-- `POST /products`
-- `PATCH /products/{id}`
-- `DELETE /products/{id}`
 
 ## Data and Contract Changes
 
-Products model should include:
-
-- `owner_user_id UUID NOT NULL`
-
-Products gRPC should include:
-
-- `owner_user_id` in `Product`
-- `owner_user_id` in mutation requests (trusted input from web)
-- update/delete methods for owner mutations
+Products model should focus on catalog and terminal metadata, not public ownership writes.
 
 ## Why Not Move Everything to Web
 
