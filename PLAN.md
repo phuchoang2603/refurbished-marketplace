@@ -12,6 +12,16 @@
 - Product listing/checkout is now being shaped as a normal ecommerce flow (not C2C escrow/inspection).
 - C2C escrow/inspection was dropped from scope; focus is normal ecommerce with later recommender + payment/fraud integration points.
 - `orders` vertical slice is implemented as gRPC-first with PostgreSQL migrations, sqlc, and service tests.
+- `products` should be a merchant-owned catalog, not a user-owned C2C listing flow.
+
+## Data Model Direction
+
+| Service  | Responsibility       | Key Fields Added                                      |
+| -------- | -------------------- | ----------------------------------------------------- |
+| Users    | Identity & Profile   | `x_pos`, `y_pos`, `mean_amount`, `std_amount`         |
+| Products | Inventory & Merchant | `terminal_id`, `x_pos`, `y_pos`                       |
+| Orders   | Intent to Buy        | `status` (`PENDING`, `PAID`, `FAILED`), `total_cents` |
+| Payment  | Financial & ML Logic | `tx_fraud`, `tx_fraud_scenario`, `tx_time_seconds`    |
 
 ## Canonical Repo Tree
 
@@ -219,11 +229,8 @@
 - gRPC server:
   - `services/products/internal/grpcserver`
 - Web edge endpoints:
-  - `POST /products`
   - `GET /products/{id}`
   - `GET /products?limit=&offset=`
-  - `PATCH /products/{id}`
-  - `DELETE /products/{id}`
 - Tests:
   - `services/products/tests/service_test.go` covers service/query behavior
 
@@ -236,8 +243,10 @@
 - SQL and migrations:
   - migrations:
     - `001_orders.sql`
+    - `002_order_items.sql`
   - queries:
     - order create/read/list/status update queries
+    - order item create/list-by-order queries
 - sqlc:
   - config at `services/orders/sqlc.yaml`
   - generated package at `services/orders/internal/database`
@@ -262,19 +271,32 @@
   - validate access JWT for protected REST endpoints
   - extract authenticated user id (`sub`) and pass trusted identity to internal services
 - Products ownership model:
-  - each product must store `owner_user_id`
-  - create/update/delete must require authenticated user
+  - products are merchant-owned catalog entries
+  - keep `owner_user_id` as the DB field for now
   - list/get stay public for marketplace browsing
-- Planned protected REST endpoints:
-  - `POST /products`
-  - `PATCH /products/{id}`
-  - `DELETE /products/{id}`
+
+## Product Access Model
+
+- Public web API should only expose read operations for products.
+- No public `POST`, `PATCH`, or `DELETE` for products in the non-C2C model.
+- Product creation and lifecycle management are out of scope for the public web API in this repository.
+
+## Payment / Bank Simulation Direction
+
+- Add a `payment` service as the boundary to the external bank simulator / credit-card-fraud system.
+- `orders` should remain responsible for order lifecycle and line items, but payment authorization/decline belongs to `payment`.
+- Transaction metadata, fraud labels, and simulator-specific fields should live in `payment`, not `orders` or `products`.
+- `payment` should publish/consume Kafka events for the bank simulator handoff and later downstream analytics/ML use.
+- Orders should transition based on payment outcomes (`PAID`, `FAILED`, `CANCELED` as appropriate).
+- Keep the financial integration swappable so the marketplace can later target Stripe/Braintree-like adapters without changing order catalog code.
 
 ## Payments / Fulfillment Direction
 
 - This repository is now scoped as normal ecommerce, not C2C escrow.
 - External payments/fraud platform is a separate project and integrates over API/events.
-- Orders will own the purchase lifecycle and emit domain events for downstream payment/fraud/recommender consumers.
+- Orders will own the purchase lifecycle and line items.
+- Payment will own bank/fraud interaction and event exchange with the simulator.
+- Recommender remains a later async consumer of order/payment history.
 - CDC is deferred; start with explicit domain events and outbox only if reliable publishing becomes necessary.
 
 ## Environment and Tooling
@@ -287,5 +309,6 @@
 ## Next Steps
 
 1. Tighten the plan around order state transitions and any remaining product ownership edge cases.
-2. Introduce Kafka/Strimzi contracts and one async workflow for downstream consumers.
-3. Decide the first external integration boundary for payment/fraud or recommender.
+2. Add a `payment` service boundary for the bank simulator / fraud integration.
+3. Introduce Kafka/Strimzi contracts for payment outcomes and downstream consumers.
+4. Decide whether to add a merchant account service or keep merchant identity as a separate foreign key for now.

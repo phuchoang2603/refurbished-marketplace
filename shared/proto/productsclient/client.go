@@ -30,16 +30,8 @@ func (c *Client) Close() error {
 	return nil
 }
 
-type UpdateProductInput struct {
-	Name        *string
-	Description *string
-	PriceCents  *int64
-	Stock       *int32
-}
-
-func (c *Client) CreateProduct(ctx context.Context, ownerUserID, name, description string, priceCents int64, stock int32) (*productsv1.Product, error) {
+func (c *Client) CreateProduct(ctx context.Context, name, description string, priceCents int64, stock int32) (*productsv1.Product, error) {
 	return c.client.CreateProduct(ctx, &productsv1.CreateProductRequest{
-		OwnerUserId: ownerUserID,
 		Name:        name,
 		Description: description,
 		PriceCents:  priceCents,
@@ -53,25 +45,4 @@ func (c *Client) GetProductByID(ctx context.Context, id string) (*productsv1.Pro
 
 func (c *Client) ListProducts(ctx context.Context, limit, offset int32) (*productsv1.ListProductsResponse, error) {
 	return c.client.ListProducts(ctx, &productsv1.ListProductsRequest{Limit: limit, Offset: offset})
-}
-
-func (c *Client) UpdateProduct(ctx context.Context, id, ownerUserID string, in UpdateProductInput) (*productsv1.Product, error) {
-	req := &productsv1.UpdateProductRequest{Id: id, OwnerUserId: ownerUserID}
-	if in.Name != nil {
-		req.Name = in.Name
-	}
-	if in.Description != nil {
-		req.Description = in.Description
-	}
-	if in.PriceCents != nil {
-		req.PriceCents = in.PriceCents
-	}
-	if in.Stock != nil {
-		req.Stock = in.Stock
-	}
-	return c.client.UpdateProduct(ctx, req)
-}
-
-func (c *Client) DeleteProduct(ctx context.Context, id, ownerUserID string) (*productsv1.DeleteProductResponse, error) {
-	return c.client.DeleteProduct(ctx, &productsv1.DeleteProductRequest{Id: id, OwnerUserId: ownerUserID})
 }

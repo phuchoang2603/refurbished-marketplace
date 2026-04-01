@@ -7,20 +7,18 @@ package database
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/google/uuid"
 )
 
 const createProduct = `-- name: CreateProduct :one
-INSERT INTO products (id, owner_user_id, name, description, price_cents, stock)
-VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING products.id, products.name, products.description, products.price_cents, products.stock, products.created_at, products.updated_at, products.owner_user_id
+INSERT INTO products (id, name, description, price_cents, stock)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING id, name, description, price_cents, stock, created_at, updated_at
 `
 
 type CreateProductParams struct {
 	ID          uuid.UUID
-	OwnerUserID uuid.UUID
 	Name        string
 	Description string
 	PriceCents  int64
@@ -30,7 +28,6 @@ type CreateProductParams struct {
 func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (Product, error) {
 	row := q.db.QueryRowContext(ctx, createProduct,
 		arg.ID,
-		arg.OwnerUserID,
 		arg.Name,
 		arg.Description,
 		arg.PriceCents,
@@ -45,32 +42,12 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (P
 		&i.Stock,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.OwnerUserID,
 	)
 	return i, err
 }
 
-const deleteProductByIDAndOwner = `-- name: DeleteProductByIDAndOwner :execrows
-DELETE FROM products
-WHERE id = $1
-  AND owner_user_id = $2
-`
-
-type DeleteProductByIDAndOwnerParams struct {
-	ID          uuid.UUID
-	OwnerUserID uuid.UUID
-}
-
-func (q *Queries) DeleteProductByIDAndOwner(ctx context.Context, arg DeleteProductByIDAndOwnerParams) (int64, error) {
-	result, err := q.db.ExecContext(ctx, deleteProductByIDAndOwner, arg.ID, arg.OwnerUserID)
-	if err != nil {
-		return 0, err
-	}
-	return result.RowsAffected()
-}
-
 const getProductByID = `-- name: GetProductByID :one
-SELECT products.id, products.name, products.description, products.price_cents, products.stock, products.created_at, products.updated_at, products.owner_user_id
+SELECT id, name, description, price_cents, stock, created_at, updated_at
 FROM products
 WHERE id = $1
 `
@@ -86,13 +63,12 @@ func (q *Queries) GetProductByID(ctx context.Context, id uuid.UUID) (Product, er
 		&i.Stock,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.OwnerUserID,
 	)
 	return i, err
 }
 
 const listProducts = `-- name: ListProducts :many
-SELECT products.id, products.name, products.description, products.price_cents, products.stock, products.created_at, products.updated_at, products.owner_user_id
+SELECT id, name, description, price_cents, stock, created_at, updated_at
 FROM products
 ORDER BY created_at DESC
 LIMIT $1 OFFSET $2
@@ -120,7 +96,6 @@ func (q *Queries) ListProducts(ctx context.Context, arg ListProductsParams) ([]P
 			&i.Stock,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.OwnerUserID,
 		); err != nil {
 			return nil, err
 		}
@@ -133,49 +108,4 @@ func (q *Queries) ListProducts(ctx context.Context, arg ListProductsParams) ([]P
 		return nil, err
 	}
 	return items, nil
-}
-
-const updateProductByIDAndOwner = `-- name: UpdateProductByIDAndOwner :one
-UPDATE products
-SET
-  name = COALESCE($1::text, name),
-  description = COALESCE($2::text, description),
-  price_cents = COALESCE($3::bigint, price_cents),
-  stock = COALESCE($4::integer, stock),
-  updated_at = NOW()
-WHERE id = $5
-  AND owner_user_id = $6
-RETURNING products.id, products.name, products.description, products.price_cents, products.stock, products.created_at, products.updated_at, products.owner_user_id
-`
-
-type UpdateProductByIDAndOwnerParams struct {
-	Name        sql.NullString
-	Description sql.NullString
-	PriceCents  sql.NullInt64
-	Stock       sql.NullInt32
-	ID          uuid.UUID
-	OwnerUserID uuid.UUID
-}
-
-func (q *Queries) UpdateProductByIDAndOwner(ctx context.Context, arg UpdateProductByIDAndOwnerParams) (Product, error) {
-	row := q.db.QueryRowContext(ctx, updateProductByIDAndOwner,
-		arg.Name,
-		arg.Description,
-		arg.PriceCents,
-		arg.Stock,
-		arg.ID,
-		arg.OwnerUserID,
-	)
-	var i Product
-	err := row.Scan(
-		&i.ID,
-		&i.Name,
-		&i.Description,
-		&i.PriceCents,
-		&i.Stock,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.OwnerUserID,
-	)
-	return i, err
 }

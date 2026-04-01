@@ -26,10 +26,6 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /healthz", h.handleHealthz)
 	mux.HandleFunc("POST /users", h.handleCreateUser)
 	mux.HandleFunc("GET /users/{id}", h.handleGetUserByID)
-
-	mux.Handle("POST /products", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleCreateProduct)))
-	mux.Handle("PATCH /products/{id}", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleUpdateProduct)))
-	mux.Handle("DELETE /products/{id}", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleDeleteProduct)))
 	mux.HandleFunc("GET /products", h.handleListProducts)
 	mux.HandleFunc("GET /products/{id}", h.handleGetProductByID)
 
