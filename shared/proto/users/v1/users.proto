@@ -17,6 +17,8 @@ service UsersService {
 message CreateUserRequest {
   string email = 1;
   string password = 2;
+  double x_pos = 3;
+  double y_pos = 4;
 }
 
 message GetUserByIDRequest {
@@ -48,6 +50,8 @@ message TokenResponse {
 message User {
   string id = 1;
   string email = 2;
-  google.protobuf.Timestamp created_at = 3;
-  google.protobuf.Timestamp updated_at = 4;
+  double x_pos = 3;
+  double y_pos = 4;
+  google.protobuf.Timestamp created_at = 5;
+  google.protobuf.Timestamp updated_at = 6;
 }

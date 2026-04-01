@@ -46,19 +46,27 @@ func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshToken
 }
 
 const createUser = `-- name: CreateUser :one
-INSERT INTO users (id, email, password_hash)
-VALUES ($1, $2, $3)
-RETURNING id, email, password_hash, created_at, updated_at
+INSERT INTO users (id, email, password_hash, x_pos, y_pos)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING users.id, users.email, users.password_hash, users.created_at, users.updated_at, users.x_pos, users.y_pos
 `
 
 type CreateUserParams struct {
 	ID           uuid.UUID
 	Email        string
 	PasswordHash string
+	XPos         float64
+	YPos         float64
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, createUser, arg.ID, arg.Email, arg.PasswordHash)
+	row := q.db.QueryRowContext(ctx, createUser,
+		arg.ID,
+		arg.Email,
+		arg.PasswordHash,
+		arg.XPos,
+		arg.YPos,
+	)
 	var i User
 	err := row.Scan(
 		&i.ID,
@@ -66,6 +74,8 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.XPos,
+		&i.YPos,
 	)
 	return i, err
 }
@@ -92,7 +102,7 @@ func (q *Queries) GetRefreshTokenByID(ctx context.Context, id uuid.UUID) (Refres
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, password_hash, created_at, updated_at
+SELECT users.id, users.email, users.password_hash, users.created_at, users.updated_at, users.x_pos, users.y_pos
 FROM users
 WHERE email = $1
 `
@@ -106,12 +116,14 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.XPos,
+		&i.YPos,
 	)
 	return i, err
 }
 
 const getUserByID = `-- name: GetUserByID :one
-SELECT id, email, password_hash, created_at, updated_at
+SELECT users.id, users.email, users.password_hash, users.created_at, users.updated_at, users.x_pos, users.y_pos
 FROM users
 WHERE id = $1
 `
@@ -125,6 +137,8 @@ func (q *Queries) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 		&i.PasswordHash,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.XPos,
+		&i.YPos,
 	)
 	return i, err
 }

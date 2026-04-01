@@ -26,6 +26,8 @@ type CreateUserRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Email         string                 `protobuf:"bytes,1,opt,name=email,proto3" json:"email,omitempty"`
 	Password      string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	XPos          float64                `protobuf:"fixed64,3,opt,name=x_pos,json=xPos,proto3" json:"x_pos,omitempty"`
+	YPos          float64                `protobuf:"fixed64,4,opt,name=y_pos,json=yPos,proto3" json:"y_pos,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -72,6 +74,20 @@ func (x *CreateUserRequest) GetPassword() string {
 		return x.Password
 	}
 	return ""
+}
+
+func (x *CreateUserRequest) GetXPos() float64 {
+	if x != nil {
+		return x.XPos
+	}
+	return 0
+}
+
+func (x *CreateUserRequest) GetYPos() float64 {
+	if x != nil {
+		return x.YPos
+	}
+	return 0
 }
 
 type GetUserByIDRequest struct {
@@ -366,8 +382,10 @@ type User struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	Email         string                 `protobuf:"bytes,2,opt,name=email,proto3" json:"email,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,3,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	XPos          float64                `protobuf:"fixed64,3,opt,name=x_pos,json=xPos,proto3" json:"x_pos,omitempty"`
+	YPos          float64                `protobuf:"fixed64,4,opt,name=y_pos,json=yPos,proto3" json:"y_pos,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,5,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -416,6 +434,20 @@ func (x *User) GetEmail() string {
 	return ""
 }
 
+func (x *User) GetXPos() float64 {
+	if x != nil {
+		return x.XPos
+	}
+	return 0
+}
+
+func (x *User) GetYPos() float64 {
+	if x != nil {
+		return x.YPos
+	}
+	return 0
+}
+
 func (x *User) GetCreatedAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.CreatedAt
@@ -434,10 +466,12 @@ var File_shared_proto_users_v1_users_proto protoreflect.FileDescriptor
 
 const file_shared_proto_users_v1_users_proto_rawDesc = "" +
 	"\n" +
-	"!shared/proto/users/v1/users.proto\x12\busers.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"E\n" +
+	"!shared/proto/users/v1/users.proto\x12\busers.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"o\n" +
 	"\x11CreateUserRequest\x12\x14\n" +
 	"\x05email\x18\x01 \x01(\tR\x05email\x12\x1a\n" +
-	"\bpassword\x18\x02 \x01(\tR\bpassword\"$\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword\x12\x13\n" +
+	"\x05x_pos\x18\x03 \x01(\x01R\x04xPos\x12\x13\n" +
+	"\x05y_pos\x18\x04 \x01(\x01R\x04yPos\"$\n" +
 	"\x12GetUserByIDRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"@\n" +
 	"\fLoginRequest\x12\x14\n" +
@@ -454,14 +488,16 @@ const file_shared_proto_users_v1_users_proto_rawDesc = "" +
 	"\n" +
 	"token_type\x18\x03 \x01(\tR\ttokenType\x12\x1d\n" +
 	"\n" +
-	"expires_in\x18\x04 \x01(\x03R\texpiresIn\"\xa2\x01\n" +
+	"expires_in\x18\x04 \x01(\x03R\texpiresIn\"\xcc\x01\n" +
 	"\x04User\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x14\n" +
-	"\x05email\x18\x02 \x01(\tR\x05email\x129\n" +
+	"\x05email\x18\x02 \x01(\tR\x05email\x12\x13\n" +
+	"\x05x_pos\x18\x03 \x01(\x01R\x04xPos\x12\x13\n" +
+	"\x05y_pos\x18\x04 \x01(\x01R\x04yPos\x129\n" +
 	"\n" +
-	"created_at\x18\x03 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"created_at\x18\x05 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt2\xbb\x02\n" +
+	"updated_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt2\xbb\x02\n" +
 	"\fUsersService\x129\n" +
 	"\n" +
 	"CreateUser\x12\x1b.users.v1.CreateUserRequest\x1a\x0e.users.v1.User\x12;\n" +

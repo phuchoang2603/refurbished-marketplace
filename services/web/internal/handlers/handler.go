@@ -26,6 +26,7 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /healthz", h.handleHealthz)
 	mux.HandleFunc("POST /users", h.handleCreateUser)
 	mux.HandleFunc("GET /users/{id}", h.handleGetUserByID)
+
 	mux.HandleFunc("GET /products", h.handleListProducts)
 	mux.HandleFunc("GET /products/{id}", h.handleGetProductByID)
 

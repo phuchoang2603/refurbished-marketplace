@@ -45,8 +45,8 @@ func (c *Client) Logout(ctx context.Context, refreshToken string) (*usersv1.Logo
 	return c.client.Logout(ctx, &usersv1.LogoutRequest{RefreshToken: refreshToken})
 }
 
-func (c *Client) CreateUser(ctx context.Context, email, password string) (*usersv1.User, error) {
-	return c.client.CreateUser(ctx, &usersv1.CreateUserRequest{Email: email, Password: password})
+func (c *Client) CreateUser(ctx context.Context, email, password string, xPos, yPos float64) (*usersv1.User, error) {
+	return c.client.CreateUser(ctx, &usersv1.CreateUserRequest{Email: email, Password: password, XPos: xPos, YPos: yPos})
 }
 
 func (c *Client) GetUserByID(ctx context.Context, id string) (*usersv1.User, error) {

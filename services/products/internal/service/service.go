@@ -19,6 +19,7 @@ var (
 	ErrInvalidProductName = errors.New("invalid product name")
 	ErrInvalidPrice       = errors.New("invalid product price")
 	ErrInvalidStock       = errors.New("invalid product stock")
+	ErrInvalidTerminalID  = errors.New("invalid terminal id")
 	ErrProductNotFound    = errors.New("product not found")
 	ErrInvalidListLimit   = errors.New("invalid list limit")
 	ErrInvalidListOffset  = errors.New("invalid list offset")

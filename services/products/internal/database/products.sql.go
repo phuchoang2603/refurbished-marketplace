@@ -12,9 +12,9 @@ import (
 )
 
 const createProduct = `-- name: CreateProduct :one
-INSERT INTO products (id, name, description, price_cents, stock)
-VALUES ($1, $2, $3, $4, $5)
-RETURNING id, name, description, price_cents, stock, created_at, updated_at
+INSERT INTO products (id, name, description, price_cents, stock, terminal_id, x_pos, y_pos)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+RETURNING products.id, products.name, products.description, products.price_cents, products.stock, products.created_at, products.updated_at, products.terminal_id, products.x_pos, products.y_pos
 `
 
 type CreateProductParams struct {
@@ -23,6 +23,9 @@ type CreateProductParams struct {
 	Description string
 	PriceCents  int64
 	Stock       int32
+	TerminalID  uuid.UUID
+	XPos        float64
+	YPos        float64
 }
 
 func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (Product, error) {
@@ -32,6 +35,9 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (P
 		arg.Description,
 		arg.PriceCents,
 		arg.Stock,
+		arg.TerminalID,
+		arg.XPos,
+		arg.YPos,
 	)
 	var i Product
 	err := row.Scan(
@@ -42,12 +48,15 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (P
 		&i.Stock,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.TerminalID,
+		&i.XPos,
+		&i.YPos,
 	)
 	return i, err
 }
 
 const getProductByID = `-- name: GetProductByID :one
-SELECT id, name, description, price_cents, stock, created_at, updated_at
+SELECT products.id, products.name, products.description, products.price_cents, products.stock, products.created_at, products.updated_at, products.terminal_id, products.x_pos, products.y_pos
 FROM products
 WHERE id = $1
 `
@@ -63,12 +72,15 @@ func (q *Queries) GetProductByID(ctx context.Context, id uuid.UUID) (Product, er
 		&i.Stock,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.TerminalID,
+		&i.XPos,
+		&i.YPos,
 	)
 	return i, err
 }
 
 const listProducts = `-- name: ListProducts :many
-SELECT id, name, description, price_cents, stock, created_at, updated_at
+SELECT products.id, products.name, products.description, products.price_cents, products.stock, products.created_at, products.updated_at, products.terminal_id, products.x_pos, products.y_pos
 FROM products
 ORDER BY created_at DESC
 LIMIT $1 OFFSET $2
@@ -96,6 +108,9 @@ func (q *Queries) ListProducts(ctx context.Context, arg ListProductsParams) ([]P
 			&i.Stock,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.TerminalID,
+			&i.XPos,
+			&i.YPos,
 		); err != nil {
 			return nil, err
 		}

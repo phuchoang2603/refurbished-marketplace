@@ -18,8 +18,11 @@ message Product {
   string description = 3;
   int64 price_cents = 4;
   int32 stock = 5;
-  google.protobuf.Timestamp created_at = 6;
-  google.protobuf.Timestamp updated_at = 7;
+  string terminal_id = 6;
+  double x_pos = 7;
+  double y_pos = 8;
+  google.protobuf.Timestamp created_at = 9;
+  google.protobuf.Timestamp updated_at = 10;
 }
 
 message CreateProductRequest {
@@ -27,6 +30,9 @@ message CreateProductRequest {
   string description = 2;
   int64 price_cents = 3;
   int32 stock = 4;
+  string terminal_id = 5;
+  double x_pos = 6;
+  double y_pos = 7;
 }
 
 message GetProductByIDRequest {

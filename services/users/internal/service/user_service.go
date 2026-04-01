@@ -17,11 +17,13 @@ type User struct {
 	ID           uuid.UUID
 	Email        string
 	PasswordHash string
+	XPos         float64
+	YPos         float64
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
 
-func (s *Service) CreateUser(ctx context.Context, email string, password string) (User, error) {
+func (s *Service) CreateUser(ctx context.Context, email string, password string, xPos, yPos float64) (User, error) {
 	cleanEmail := strings.TrimSpace(strings.ToLower(email))
 	if !strings.Contains(cleanEmail, "@") || len(cleanEmail) < 3 {
 		return User{}, ErrInvalidEmail
@@ -46,12 +48,14 @@ func (s *Service) CreateUser(ctx context.Context, email string, password string)
 		ID:           uuid.New(),
 		Email:        cleanEmail,
 		PasswordHash: string(hash),
+		XPos:         xPos,
+		YPos:         yPos,
 	})
 	if err != nil {
 		return User{}, err
 	}
 
-	return mapDBUser(created), nil
+	return mapDBUser(database.User(created)), nil
 }
 
 func (s *Service) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
@@ -63,7 +67,7 @@ func (s *Service) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 		return User{}, err
 	}
 
-	return mapDBUser(u), nil
+	return mapDBUser(database.User(u)), nil
 }
 
 func mapDBUser(u database.User) User {
@@ -71,6 +75,8 @@ func mapDBUser(u database.User) User {
 		ID:           u.ID,
 		Email:        u.Email,
 		PasswordHash: u.PasswordHash,
+		XPos:         u.XPos,
+		YPos:         u.YPos,
 		CreatedAt:    u.CreatedAt,
 		UpdatedAt:    u.UpdatedAt,
 	}

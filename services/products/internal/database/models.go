@@ -18,4 +18,7 @@ type Product struct {
 	Stock       int32
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+	TerminalID  uuid.UUID
+	XPos        float64
+	YPos        float64
 }

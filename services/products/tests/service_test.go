@@ -31,7 +31,7 @@ func TestCreateAndReadProducts(t *testing.T) {
 	svc := newProductsService(t)
 	ctx := t.Context()
 
-	created, err := svc.CreateProduct(ctx, "iPhone 13", "Refurbished - Grade A", 49900, 7)
+	created, err := svc.CreateProduct(ctx, "iPhone 13", "Refurbished - Grade A", 49900, 7, uuid.New(), 12.5, -4.25)
 	if err != nil {
 		t.Fatalf("create product: %v", err)
 	}
@@ -59,17 +59,17 @@ func TestProductValidation(t *testing.T) {
 	svc := newProductsService(t)
 	ctx := t.Context()
 
-	_, err := svc.CreateProduct(ctx, "", "x", 100, 1)
+	_, err := svc.CreateProduct(ctx, "", "x", 100, 1, uuid.New(), 0, 0)
 	if !errors.Is(err, service.ErrInvalidProductName) {
 		t.Fatalf("expected ErrInvalidProductName, got %v", err)
 	}
 
-	_, err = svc.CreateProduct(ctx, "Laptop", "x", 0, 1)
+	_, err = svc.CreateProduct(ctx, "Laptop", "x", 0, 1, uuid.New(), 0, 0)
 	if !errors.Is(err, service.ErrInvalidPrice) {
 		t.Fatalf("expected ErrInvalidPrice, got %v", err)
 	}
 
-	_, err = svc.CreateProduct(ctx, "Laptop", "x", 100, -1)
+	_, err = svc.CreateProduct(ctx, "Laptop", "x", 100, -1, uuid.New(), 0, 0)
 	if !errors.Is(err, service.ErrInvalidStock) {
 		t.Fatalf("expected ErrInvalidStock, got %v", err)
 	}

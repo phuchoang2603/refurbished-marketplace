@@ -27,7 +27,7 @@ func TestAuthLoginAndRefresh(t *testing.T) {
 	svc := service.New(queries, service.DefaultConfig("test-secret"))
 	ctx := t.Context()
 
-	created, err := svc.CreateUser(ctx, "auth@test.com", "password123")
+	created, err := svc.CreateUser(ctx, "auth@test.com", "password123", 12.5, -4.25)
 	if err != nil {
 		t.Fatalf("create user: %v", err)
 	}
@@ -152,12 +152,12 @@ func TestServiceCreateUserValidation(t *testing.T) {
 	queries := database.New(db)
 	svc := service.New(queries, service.DefaultConfig("test-secret"))
 
-	_, err := svc.CreateUser(t.Context(), "bad-email", "password123")
+	_, err := svc.CreateUser(t.Context(), "bad-email", "password123", 0, 0)
 	if !errors.Is(err, service.ErrInvalidEmail) {
 		t.Fatalf("expected ErrInvalidEmail, got %v", err)
 	}
 
-	_, err = svc.CreateUser(t.Context(), "user@test.com", "short")
+	_, err = svc.CreateUser(t.Context(), "user@test.com", "short", 0, 0)
 	if !errors.Is(err, service.ErrInvalidPassword) {
 		t.Fatalf("expected ErrInvalidPassword, got %v", err)
 	}

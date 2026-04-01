@@ -27,4 +27,6 @@ type User struct {
 	PasswordHash string
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
+	XPos         float64
+	YPos         float64
 }
