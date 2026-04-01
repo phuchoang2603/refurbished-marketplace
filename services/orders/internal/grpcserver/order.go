@@ -14,6 +14,17 @@ import (
 )
 
 func mapOrder(o service.Order) *ordersv1.Order {
+	var status ordersv1.OrderStatus
+	switch o.Status {
+	case service.OrderStatusPending:
+		status = ordersv1.OrderStatus_ORDER_STATUS_PENDING
+	case service.OrderStatusPaid:
+		status = ordersv1.OrderStatus_ORDER_STATUS_PAID
+	case service.OrderStatusFailed:
+		status = ordersv1.OrderStatus_ORDER_STATUS_FAILED
+	default:
+		status = ordersv1.OrderStatus_ORDER_STATUS_UNSPECIFIED
+	}
 	items := make([]*ordersv1.OrderItem, 0, len(o.Items))
 	for _, item := range o.Items {
 		items = append(items, &ordersv1.OrderItem{
@@ -30,7 +41,7 @@ func mapOrder(o service.Order) *ordersv1.Order {
 	return &ordersv1.Order{
 		Id:          o.ID.String(),
 		BuyerUserId: o.BuyerUserID.String(),
-		Status:      o.Status,
+		Status:      ordersv1.OrderStatus(status),
 		TotalCents:  o.TotalCents,
 		CreatedAt:   timestamppb.New(o.CreatedAt),
 		UpdatedAt:   timestamppb.New(o.UpdatedAt),
@@ -112,7 +123,7 @@ func (s *Server) UpdateOrderStatus(ctx context.Context, req *ordersv1.UpdateOrde
 		return nil, status.Error(codes.InvalidArgument, "invalid id")
 	}
 
-	order, err := s.svc.UpdateOrderStatus(ctx, id, req.GetStatus())
+	order, err := s.svc.UpdateOrderStatus(ctx, id, req.GetStatus().String())
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrInvalidStatus):

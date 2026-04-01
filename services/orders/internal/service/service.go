@@ -21,6 +21,13 @@ var (
 	ErrInvalidStatus    = errors.New("invalid order status")
 )
 
+const (
+	OrderStatusUnspecified = "ORDER_STATUS_UNSPECIFIED"
+	OrderStatusPending     = "ORDER_STATUS_PENDING"
+	OrderStatusPaid        = "ORDER_STATUS_PAID"
+	OrderStatusFailed      = "ORDER_STATUS_FAILED"
+)
+
 type OrderItemInput struct {
 	ProductID      uuid.UUID
 	Quantity       int32
@@ -89,7 +96,7 @@ func (s *Service) CreateOrder(ctx context.Context, buyerUserID uuid.UUID, items 
 	created, err := queries.CreateOrder(ctx, database.CreateOrderParams{
 		ID:          uuid.New(),
 		BuyerUserID: buyerUserID,
-		Status:      "PENDING",
+		Status:      OrderStatusPending,
 		TotalCents:  totalCents,
 	})
 	if err != nil {
@@ -186,7 +193,10 @@ func (s *Service) UpdateOrderStatus(ctx context.Context, id uuid.UUID, status st
 		return Order{}, ErrOrderNotFound
 	}
 	status = strings.TrimSpace(strings.ToUpper(status))
-	if status == "" {
+	if status == "" || status == OrderStatusUnspecified {
+		return Order{}, ErrInvalidStatus
+	}
+	if status != OrderStatusPending && status != OrderStatusPaid && status != OrderStatusFailed {
 		return Order{}, ErrInvalidStatus
 	}
 

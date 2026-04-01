@@ -13,6 +13,13 @@ service OrdersService {
   rpc UpdateOrderStatus(UpdateOrderStatusRequest) returns (Order);
 }
 
+enum OrderStatus {
+  ORDER_STATUS_UNSPECIFIED = 0;
+  ORDER_STATUS_PENDING = 1;
+  ORDER_STATUS_PAID = 2;
+  ORDER_STATUS_FAILED = 3;
+}
+
 message OrderItem {
   string id = 1;
   string order_id = 2;
@@ -26,7 +33,7 @@ message OrderItem {
 message Order {
   string id = 1;
   string buyer_user_id = 2;
-  string status = 3;
+  OrderStatus status = 3;
   int64 total_cents = 4;
   repeated OrderItem items = 5;
   google.protobuf.Timestamp created_at = 6;
@@ -61,5 +68,5 @@ message ListOrdersByBuyerResponse {
 
 message UpdateOrderStatusRequest {
   string id = 1;
-  string status = 2;
+  OrderStatus status = 2;
 }

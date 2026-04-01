@@ -96,7 +96,7 @@ func (h *Handler) handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 		itemResponses = append(itemResponses, mapOrderItem(item.Id, item.OrderId, item.ProductId, item.Quantity, item.UnitPriceCents, item.LineTotalCents, item.CreatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00")))
 	}
 
-	writeJSON(w, http.StatusCreated, mapOrder(order.Id, order.BuyerUserId, order.Status, order.TotalCents, itemResponses, order.CreatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00"), order.UpdatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00")))
+	writeJSON(w, http.StatusCreated, mapOrder(order.Id, order.BuyerUserId, order.Status.String(), order.TotalCents, itemResponses, order.CreatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00"), order.UpdatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00")))
 }
 
 func (h *Handler) handleGetOrderByID(w http.ResponseWriter, r *http.Request) {
@@ -117,7 +117,7 @@ func (h *Handler) handleGetOrderByID(w http.ResponseWriter, r *http.Request) {
 		items = append(items, mapOrderItem(item.Id, item.OrderId, item.ProductId, item.Quantity, item.UnitPriceCents, item.LineTotalCents, item.CreatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00")))
 	}
 
-	writeJSON(w, http.StatusOK, mapOrder(order.Id, order.BuyerUserId, order.Status, order.TotalCents, items, order.CreatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00"), order.UpdatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00")))
+	writeJSON(w, http.StatusOK, mapOrder(order.Id, order.BuyerUserId, order.Status.String(), order.TotalCents, items, order.CreatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00"), order.UpdatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00")))
 }
 
 func (h *Handler) handleListOrdersByBuyer(w http.ResponseWriter, r *http.Request) {
@@ -139,48 +139,8 @@ func (h *Handler) handleListOrdersByBuyer(w http.ResponseWriter, r *http.Request
 		for _, item := range order.Items {
 			orderItems = append(orderItems, mapOrderItem(item.Id, item.OrderId, item.ProductId, item.Quantity, item.UnitPriceCents, item.LineTotalCents, item.CreatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00")))
 		}
-		items = append(items, mapOrder(order.Id, order.BuyerUserId, order.Status, order.TotalCents, orderItems, order.CreatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00"), order.UpdatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00")))
+		items = append(items, mapOrder(order.Id, order.BuyerUserId, order.Status.String(), order.TotalCents, orderItems, order.CreatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00"), order.UpdatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00")))
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{"orders": items})
-}
-
-func (h *Handler) handleConfirmOrder(w http.ResponseWriter, r *http.Request) {
-	id := strings.TrimSpace(r.PathValue("id"))
-	if id == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid order id"})
-		return
-	}
-
-	order, err := h.orders.UpdateOrderStatus(r.Context(), id, "CONFIRMED")
-	if err != nil {
-		writeGRPCError(w, err)
-		return
-	}
-
-	items := make([]orderItemResponse, 0, len(order.Items))
-	for _, item := range order.Items {
-		items = append(items, mapOrderItem(item.Id, item.OrderId, item.ProductId, item.Quantity, item.UnitPriceCents, item.LineTotalCents, item.CreatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00")))
-	}
-	writeJSON(w, http.StatusOK, mapOrder(order.Id, order.BuyerUserId, order.Status, order.TotalCents, items, order.CreatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00"), order.UpdatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00")))
-}
-
-func (h *Handler) handleCancelOrder(w http.ResponseWriter, r *http.Request) {
-	id := strings.TrimSpace(r.PathValue("id"))
-	if id == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid order id"})
-		return
-	}
-
-	order, err := h.orders.UpdateOrderStatus(r.Context(), id, "CANCELED")
-	if err != nil {
-		writeGRPCError(w, err)
-		return
-	}
-
-	items := make([]orderItemResponse, 0, len(order.Items))
-	for _, item := range order.Items {
-		items = append(items, mapOrderItem(item.Id, item.OrderId, item.ProductId, item.Quantity, item.UnitPriceCents, item.LineTotalCents, item.CreatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00")))
-	}
-	writeJSON(w, http.StatusOK, mapOrder(order.Id, order.BuyerUserId, order.Status, order.TotalCents, items, order.CreatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00"), order.UpdatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00")))
 }

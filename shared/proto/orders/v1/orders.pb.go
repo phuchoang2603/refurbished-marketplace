@@ -22,6 +22,58 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type OrderStatus int32
+
+const (
+	OrderStatus_ORDER_STATUS_UNSPECIFIED OrderStatus = 0
+	OrderStatus_ORDER_STATUS_PENDING     OrderStatus = 1
+	OrderStatus_ORDER_STATUS_PAID        OrderStatus = 2
+	OrderStatus_ORDER_STATUS_FAILED      OrderStatus = 3
+)
+
+// Enum value maps for OrderStatus.
+var (
+	OrderStatus_name = map[int32]string{
+		0: "ORDER_STATUS_UNSPECIFIED",
+		1: "ORDER_STATUS_PENDING",
+		2: "ORDER_STATUS_PAID",
+		3: "ORDER_STATUS_FAILED",
+	}
+	OrderStatus_value = map[string]int32{
+		"ORDER_STATUS_UNSPECIFIED": 0,
+		"ORDER_STATUS_PENDING":     1,
+		"ORDER_STATUS_PAID":        2,
+		"ORDER_STATUS_FAILED":      3,
+	}
+)
+
+func (x OrderStatus) Enum() *OrderStatus {
+	p := new(OrderStatus)
+	*p = x
+	return p
+}
+
+func (x OrderStatus) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (OrderStatus) Descriptor() protoreflect.EnumDescriptor {
+	return file_shared_proto_orders_v1_orders_proto_enumTypes[0].Descriptor()
+}
+
+func (OrderStatus) Type() protoreflect.EnumType {
+	return &file_shared_proto_orders_v1_orders_proto_enumTypes[0]
+}
+
+func (x OrderStatus) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use OrderStatus.Descriptor instead.
+func (OrderStatus) EnumDescriptor() ([]byte, []int) {
+	return file_shared_proto_orders_v1_orders_proto_rawDescGZIP(), []int{0}
+}
+
 type OrderItem struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
@@ -118,7 +170,7 @@ type Order struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	BuyerUserId   string                 `protobuf:"bytes,2,opt,name=buyer_user_id,json=buyerUserId,proto3" json:"buyer_user_id,omitempty"`
-	Status        string                 `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
+	Status        OrderStatus            `protobuf:"varint,3,opt,name=status,proto3,enum=orders.v1.OrderStatus" json:"status,omitempty"`
 	TotalCents    int64                  `protobuf:"varint,4,opt,name=total_cents,json=totalCents,proto3" json:"total_cents,omitempty"`
 	Items         []*OrderItem           `protobuf:"bytes,5,rep,name=items,proto3" json:"items,omitempty"`
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
@@ -171,11 +223,11 @@ func (x *Order) GetBuyerUserId() string {
 	return ""
 }
 
-func (x *Order) GetStatus() string {
+func (x *Order) GetStatus() OrderStatus {
 	if x != nil {
 		return x.Status
 	}
-	return ""
+	return OrderStatus_ORDER_STATUS_UNSPECIFIED
 }
 
 func (x *Order) GetTotalCents() int64 {
@@ -477,7 +529,7 @@ func (x *ListOrdersByBuyerResponse) GetOrders() []*Order {
 type UpdateOrderStatusRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	Status        string                 `protobuf:"bytes,2,opt,name=status,proto3" json:"status,omitempty"`
+	Status        OrderStatus            `protobuf:"varint,2,opt,name=status,proto3,enum=orders.v1.OrderStatus" json:"status,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -519,11 +571,11 @@ func (x *UpdateOrderStatusRequest) GetId() string {
 	return ""
 }
 
-func (x *UpdateOrderStatusRequest) GetStatus() string {
+func (x *UpdateOrderStatusRequest) GetStatus() OrderStatus {
 	if x != nil {
 		return x.Status
 	}
-	return ""
+	return OrderStatus_ORDER_STATUS_UNSPECIFIED
 }
 
 var File_shared_proto_orders_v1_orders_proto protoreflect.FileDescriptor
@@ -540,11 +592,11 @@ const file_shared_proto_orders_v1_orders_proto_rawDesc = "" +
 	"\x10unit_price_cents\x18\x05 \x01(\x03R\x0eunitPriceCents\x12(\n" +
 	"\x10line_total_cents\x18\x06 \x01(\x03R\x0elineTotalCents\x129\n" +
 	"\n" +
-	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\x96\x02\n" +
+	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xae\x02\n" +
 	"\x05Order\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\"\n" +
-	"\rbuyer_user_id\x18\x02 \x01(\tR\vbuyerUserId\x12\x16\n" +
-	"\x06status\x18\x03 \x01(\tR\x06status\x12\x1f\n" +
+	"\rbuyer_user_id\x18\x02 \x01(\tR\vbuyerUserId\x12.\n" +
+	"\x06status\x18\x03 \x01(\x0e2\x16.orders.v1.OrderStatusR\x06status\x12\x1f\n" +
 	"\vtotal_cents\x18\x04 \x01(\x03R\n" +
 	"totalCents\x12*\n" +
 	"\x05items\x18\x05 \x03(\v2\x14.orders.v1.OrderItemR\x05items\x129\n" +
@@ -569,10 +621,15 @@ const file_shared_proto_orders_v1_orders_proto_rawDesc = "" +
 	"\x05limit\x18\x02 \x01(\x05R\x05limit\x12\x16\n" +
 	"\x06offset\x18\x03 \x01(\x05R\x06offset\"E\n" +
 	"\x19ListOrdersByBuyerResponse\x12(\n" +
-	"\x06orders\x18\x01 \x03(\v2\x10.orders.v1.OrderR\x06orders\"B\n" +
+	"\x06orders\x18\x01 \x03(\v2\x10.orders.v1.OrderR\x06orders\"Z\n" +
 	"\x18UpdateOrderStatusRequest\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x16\n" +
-	"\x06status\x18\x02 \x01(\tR\x06status2\xbd\x02\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12.\n" +
+	"\x06status\x18\x02 \x01(\x0e2\x16.orders.v1.OrderStatusR\x06status*u\n" +
+	"\vOrderStatus\x12\x1c\n" +
+	"\x18ORDER_STATUS_UNSPECIFIED\x10\x00\x12\x18\n" +
+	"\x14ORDER_STATUS_PENDING\x10\x01\x12\x15\n" +
+	"\x11ORDER_STATUS_PAID\x10\x02\x12\x17\n" +
+	"\x13ORDER_STATUS_FAILED\x10\x032\xbd\x02\n" +
 	"\rOrdersService\x12>\n" +
 	"\vCreateOrder\x12\x1d.orders.v1.CreateOrderRequest\x1a\x10.orders.v1.Order\x12@\n" +
 	"\fGetOrderByID\x12\x1e.orders.v1.GetOrderByIDRequest\x1a\x10.orders.v1.Order\x12^\n" +
@@ -591,38 +648,42 @@ func file_shared_proto_orders_v1_orders_proto_rawDescGZIP() []byte {
 	return file_shared_proto_orders_v1_orders_proto_rawDescData
 }
 
+var file_shared_proto_orders_v1_orders_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_shared_proto_orders_v1_orders_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_shared_proto_orders_v1_orders_proto_goTypes = []any{
-	(*OrderItem)(nil),                 // 0: orders.v1.OrderItem
-	(*Order)(nil),                     // 1: orders.v1.Order
-	(*CreateOrderItem)(nil),           // 2: orders.v1.CreateOrderItem
-	(*CreateOrderRequest)(nil),        // 3: orders.v1.CreateOrderRequest
-	(*GetOrderByIDRequest)(nil),       // 4: orders.v1.GetOrderByIDRequest
-	(*ListOrdersByBuyerRequest)(nil),  // 5: orders.v1.ListOrdersByBuyerRequest
-	(*ListOrdersByBuyerResponse)(nil), // 6: orders.v1.ListOrdersByBuyerResponse
-	(*UpdateOrderStatusRequest)(nil),  // 7: orders.v1.UpdateOrderStatusRequest
-	(*timestamppb.Timestamp)(nil),     // 8: google.protobuf.Timestamp
+	(OrderStatus)(0),                  // 0: orders.v1.OrderStatus
+	(*OrderItem)(nil),                 // 1: orders.v1.OrderItem
+	(*Order)(nil),                     // 2: orders.v1.Order
+	(*CreateOrderItem)(nil),           // 3: orders.v1.CreateOrderItem
+	(*CreateOrderRequest)(nil),        // 4: orders.v1.CreateOrderRequest
+	(*GetOrderByIDRequest)(nil),       // 5: orders.v1.GetOrderByIDRequest
+	(*ListOrdersByBuyerRequest)(nil),  // 6: orders.v1.ListOrdersByBuyerRequest
+	(*ListOrdersByBuyerResponse)(nil), // 7: orders.v1.ListOrdersByBuyerResponse
+	(*UpdateOrderStatusRequest)(nil),  // 8: orders.v1.UpdateOrderStatusRequest
+	(*timestamppb.Timestamp)(nil),     // 9: google.protobuf.Timestamp
 }
 var file_shared_proto_orders_v1_orders_proto_depIdxs = []int32{
-	8,  // 0: orders.v1.OrderItem.created_at:type_name -> google.protobuf.Timestamp
-	0,  // 1: orders.v1.Order.items:type_name -> orders.v1.OrderItem
-	8,  // 2: orders.v1.Order.created_at:type_name -> google.protobuf.Timestamp
-	8,  // 3: orders.v1.Order.updated_at:type_name -> google.protobuf.Timestamp
-	2,  // 4: orders.v1.CreateOrderRequest.items:type_name -> orders.v1.CreateOrderItem
-	1,  // 5: orders.v1.ListOrdersByBuyerResponse.orders:type_name -> orders.v1.Order
-	3,  // 6: orders.v1.OrdersService.CreateOrder:input_type -> orders.v1.CreateOrderRequest
-	4,  // 7: orders.v1.OrdersService.GetOrderByID:input_type -> orders.v1.GetOrderByIDRequest
-	5,  // 8: orders.v1.OrdersService.ListOrdersByBuyer:input_type -> orders.v1.ListOrdersByBuyerRequest
-	7,  // 9: orders.v1.OrdersService.UpdateOrderStatus:input_type -> orders.v1.UpdateOrderStatusRequest
-	1,  // 10: orders.v1.OrdersService.CreateOrder:output_type -> orders.v1.Order
-	1,  // 11: orders.v1.OrdersService.GetOrderByID:output_type -> orders.v1.Order
-	6,  // 12: orders.v1.OrdersService.ListOrdersByBuyer:output_type -> orders.v1.ListOrdersByBuyerResponse
-	1,  // 13: orders.v1.OrdersService.UpdateOrderStatus:output_type -> orders.v1.Order
-	10, // [10:14] is the sub-list for method output_type
-	6,  // [6:10] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	9,  // 0: orders.v1.OrderItem.created_at:type_name -> google.protobuf.Timestamp
+	0,  // 1: orders.v1.Order.status:type_name -> orders.v1.OrderStatus
+	1,  // 2: orders.v1.Order.items:type_name -> orders.v1.OrderItem
+	9,  // 3: orders.v1.Order.created_at:type_name -> google.protobuf.Timestamp
+	9,  // 4: orders.v1.Order.updated_at:type_name -> google.protobuf.Timestamp
+	3,  // 5: orders.v1.CreateOrderRequest.items:type_name -> orders.v1.CreateOrderItem
+	2,  // 6: orders.v1.ListOrdersByBuyerResponse.orders:type_name -> orders.v1.Order
+	0,  // 7: orders.v1.UpdateOrderStatusRequest.status:type_name -> orders.v1.OrderStatus
+	4,  // 8: orders.v1.OrdersService.CreateOrder:input_type -> orders.v1.CreateOrderRequest
+	5,  // 9: orders.v1.OrdersService.GetOrderByID:input_type -> orders.v1.GetOrderByIDRequest
+	6,  // 10: orders.v1.OrdersService.ListOrdersByBuyer:input_type -> orders.v1.ListOrdersByBuyerRequest
+	8,  // 11: orders.v1.OrdersService.UpdateOrderStatus:input_type -> orders.v1.UpdateOrderStatusRequest
+	2,  // 12: orders.v1.OrdersService.CreateOrder:output_type -> orders.v1.Order
+	2,  // 13: orders.v1.OrdersService.GetOrderByID:output_type -> orders.v1.Order
+	7,  // 14: orders.v1.OrdersService.ListOrdersByBuyer:output_type -> orders.v1.ListOrdersByBuyerResponse
+	2,  // 15: orders.v1.OrdersService.UpdateOrderStatus:output_type -> orders.v1.Order
+	12, // [12:16] is the sub-list for method output_type
+	8,  // [8:12] is the sub-list for method input_type
+	8,  // [8:8] is the sub-list for extension type_name
+	8,  // [8:8] is the sub-list for extension extendee
+	0,  // [0:8] is the sub-list for field type_name
 }
 
 func init() { file_shared_proto_orders_v1_orders_proto_init() }
@@ -635,13 +696,14 @@ func file_shared_proto_orders_v1_orders_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_shared_proto_orders_v1_orders_proto_rawDesc), len(file_shared_proto_orders_v1_orders_proto_rawDesc)),
-			NumEnums:      0,
+			NumEnums:      1,
 			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
 		GoTypes:           file_shared_proto_orders_v1_orders_proto_goTypes,
 		DependencyIndexes: file_shared_proto_orders_v1_orders_proto_depIdxs,
+		EnumInfos:         file_shared_proto_orders_v1_orders_proto_enumTypes,
 		MessageInfos:      file_shared_proto_orders_v1_orders_proto_msgTypes,
 	}.Build()
 	File_shared_proto_orders_v1_orders_proto = out.File

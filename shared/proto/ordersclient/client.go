@@ -45,6 +45,6 @@ func (c *Client) ListOrdersByBuyer(ctx context.Context, buyerUserID string, limi
 	return c.client.ListOrdersByBuyer(ctx, &ordersv1.ListOrdersByBuyerRequest{BuyerUserId: buyerUserID, Limit: limit, Offset: offset})
 }
 
-func (c *Client) UpdateOrderStatus(ctx context.Context, id, status string) (*ordersv1.Order, error) {
+func (c *Client) UpdateOrderStatus(ctx context.Context, id string, status ordersv1.OrderStatus) (*ordersv1.Order, error) {
 	return c.client.UpdateOrderStatus(ctx, &ordersv1.UpdateOrderStatusRequest{Id: id, Status: status})
 }

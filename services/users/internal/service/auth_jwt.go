@@ -3,9 +3,10 @@ package service
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	errorspkg "errors"
-	sharedjwt "refurbished-marketplace/shared/auth/jwt"
+	"errors"
 	"time"
+
+	sharedjwt "refurbished-marketplace/shared/auth/jwt"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -36,7 +37,7 @@ func (s *Service) signToken(tokenType, jti string, userID uuid.UUID, email strin
 func (s *Service) parseToken(raw string, expectedType string) (jwt.RegisteredClaims, error) {
 	claims, err := sharedjwt.ParseAndValidate(raw, s.cfg.JWTSecret, expectedType, s.cfg.JWTIssuer, s.cfg.JWTAudience)
 	if err != nil {
-		if errorspkg.Is(err, sharedjwt.ErrExpiredToken) {
+		if errors.Is(err, sharedjwt.ErrExpiredToken) {
 			return jwt.RegisteredClaims{}, ErrTokenExpired
 		}
 		return jwt.RegisteredClaims{}, ErrInvalidToken

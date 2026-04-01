@@ -32,8 +32,6 @@ func (h *Handler) Register(mux *http.ServeMux) {
 
 	mux.Handle("POST /orders", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleCreateOrder)))
 	mux.Handle("GET /orders", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleListOrdersByBuyer)))
-	mux.Handle("POST /orders/{id}/confirm", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleConfirmOrder)))
-	mux.Handle("POST /orders/{id}/cancel", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleCancelOrder)))
 	mux.HandleFunc("GET /orders/{id}", h.handleGetOrderByID)
 
 	mux.HandleFunc("POST /auth/login", h.handleLogin)

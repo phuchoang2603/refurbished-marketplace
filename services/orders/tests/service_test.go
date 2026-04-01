@@ -57,12 +57,12 @@ func TestCreateGetListOrder(t *testing.T) {
 		t.Fatalf("expected 1 order, got %d", len(list))
 	}
 
-	updated, err := svc.UpdateOrderStatus(ctx, created.ID, "confirmed")
+	updated, err := svc.UpdateOrderStatus(ctx, created.ID, service.OrderStatusPaid)
 	if err != nil {
 		t.Fatalf("update order: %v", err)
 	}
-	if updated.Status != "CONFIRMED" {
-		t.Fatalf("expected CONFIRMED, got %s", updated.Status)
+	if updated.Status != service.OrderStatusPaid {
+		t.Fatalf("expected %s, got %s", service.OrderStatusPaid, updated.Status)
 	}
 }
 
@@ -98,6 +98,11 @@ func TestOrderValidation(t *testing.T) {
 	_, err = svc.UpdateOrderStatus(ctx, uuid.Nil, "")
 	if !errors.Is(err, service.ErrOrderNotFound) {
 		t.Fatalf("expected ErrOrderNotFound, got %v", err)
+	}
+
+	_, err = svc.UpdateOrderStatus(ctx, uuid.New(), "CONFIRMED")
+	if !errors.Is(err, service.ErrInvalidStatus) {
+		t.Fatalf("expected ErrInvalidStatus, got %v", err)
 	}
 }
 
