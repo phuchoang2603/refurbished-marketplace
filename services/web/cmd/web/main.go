@@ -7,6 +7,7 @@ import (
 
 	"refurbished-marketplace/services/web/internal/handlers"
 	authconfig "refurbished-marketplace/shared/auth/config"
+	"refurbished-marketplace/shared/proto/ordersclient"
 	"refurbished-marketplace/shared/proto/productsclient"
 	"refurbished-marketplace/shared/proto/usersclient"
 )
@@ -39,12 +40,23 @@ func main() {
 	}
 	defer productsClient.Close()
 
+	ordersGRPCAddr := os.Getenv("ORDERS_SVC_ADDR")
+	if ordersGRPCAddr == "" {
+		log.Fatal("ORDERS_SVC_ADDR is required")
+	}
+
+	ordersClient, err := ordersclient.New(ordersGRPCAddr)
+	if err != nil {
+		log.Fatalf("orders grpc client: %v", err)
+	}
+	defer ordersClient.Close()
+
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
 		log.Fatal("JWT_SECRET is required")
 	}
 
-	h := handlers.New(usersClient, productsClient, authconfig.DefaultConfig(jwtSecret))
+	h := handlers.New(usersClient, productsClient, ordersClient, authconfig.DefaultConfig(jwtSecret))
 	mux := http.NewServeMux()
 	h.Register(mux)
 

@@ -96,6 +96,17 @@ k8s_resource('products', port_forwards=['9092:9092'], resource_deps=['products-d
 
 ### Orders Service ###
 docker_build(
+  'refurbished-marketplace/orders-migrator',
+  '.',
+  dockerfile='./infra/development/docker/orders-migrator.Dockerfile',
+  only=[
+    './services/orders/db/migrations',
+    './go.mod',
+    './go.sum',
+  ],
+)
+
+docker_build(
   'refurbished-marketplace/orders',
   '.',
   dockerfile='./infra/development/docker/orders.Dockerfile',
@@ -108,4 +119,5 @@ docker_build(
 )
 
 k8s_resource('orders-db', extra_pod_selectors=[{'cnpg.io/cluster': 'orders-db'}], port_forwards=['5434:5432'], resource_deps=['cnpg-operator-install'], labels='orders')
-k8s_resource('orders', port_forwards=['8083:8083'], resource_deps=['orders-db'], labels='orders')
+k8s_resource('orders-migrate', resource_deps=['orders-db'], labels='orders')
+k8s_resource('orders', port_forwards=['9093:9093'], resource_deps=['orders-db'], labels='orders')

@@ -1,23 +1,55 @@
 package main
 
 import (
+	"database/sql"
 	"log"
-	"net/http"
+	"net"
 	"os"
+
+	"refurbished-marketplace/services/orders/internal/database"
+	"refurbished-marketplace/services/orders/internal/grpcserver"
+	"refurbished-marketplace/services/orders/internal/service"
+
+	_ "github.com/lib/pq"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
+	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
 )
 
 func main() {
-	addr := os.Getenv("HTTP_ADDR")
+	addr := os.Getenv("GRPC_ADDR")
 	if addr == "" {
-		addr = ":8083"
+		addr = ":9093"
 	}
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte("ok"))
-	})
+	dbURL := os.Getenv("DB_URL")
+	if dbURL == "" {
+		log.Fatal("DB_URL is required")
+	}
 
-	log.Printf("starting orders service on %s", addr)
-	log.Fatal(http.ListenAndServe(addr, mux))
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatalf("open db: %v", err)
+	}
+	defer db.Close()
+
+	if err := db.Ping(); err != nil {
+		log.Fatalf("ping db: %v", err)
+	}
+
+	queries := database.New(db)
+	svc := service.New(queries)
+	grpcSvc := grpcserver.New(svc)
+
+	lis, err := net.Listen("tcp", addr)
+	if err != nil {
+		log.Fatalf("listen: %v", err)
+	}
+
+	server := grpc.NewServer()
+	ordersv1.RegisterOrdersServiceServer(server, grpcSvc)
+	reflection.Register(server)
+
+	log.Printf("starting orders grpc service on %s", addr)
+	log.Fatal(server.Serve(lis))
 }
