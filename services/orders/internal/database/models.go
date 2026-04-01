@@ -13,10 +13,18 @@ import (
 type Order struct {
 	ID          uuid.UUID
 	BuyerUserID uuid.UUID
-	ProductID   uuid.UUID
-	Quantity    int32
 	Status      string
 	TotalCents  int64
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+}
+
+type OrderItem struct {
+	ID             uuid.UUID
+	OrderID        uuid.UUID
+	ProductID      uuid.UUID
+	Quantity       int32
+	UnitPriceCents int64
+	LineTotalCents int64
+	CreatedAt      time.Time
 }

@@ -12,16 +12,14 @@ import (
 )
 
 const createOrder = `-- name: CreateOrder :one
-INSERT INTO orders (id, buyer_user_id, product_id, quantity, status, total_cents)
-VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING orders.id, orders.buyer_user_id, orders.product_id, orders.quantity, orders.status, orders.total_cents, orders.created_at, orders.updated_at
+INSERT INTO orders (id, buyer_user_id, status, total_cents)
+VALUES ($1, $2, $3, $4)
+RETURNING orders.id, orders.buyer_user_id, orders.status, orders.total_cents, orders.created_at, orders.updated_at
 `
 
 type CreateOrderParams struct {
 	ID          uuid.UUID
 	BuyerUserID uuid.UUID
-	ProductID   uuid.UUID
-	Quantity    int32
 	Status      string
 	TotalCents  int64
 }
@@ -30,8 +28,6 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (Order
 	row := q.db.QueryRowContext(ctx, createOrder,
 		arg.ID,
 		arg.BuyerUserID,
-		arg.ProductID,
-		arg.Quantity,
 		arg.Status,
 		arg.TotalCents,
 	)
@@ -39,8 +35,6 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (Order
 	err := row.Scan(
 		&i.ID,
 		&i.BuyerUserID,
-		&i.ProductID,
-		&i.Quantity,
 		&i.Status,
 		&i.TotalCents,
 		&i.CreatedAt,
@@ -49,8 +43,45 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (Order
 	return i, err
 }
 
+const createOrderItem = `-- name: CreateOrderItem :one
+INSERT INTO order_items (id, order_id, product_id, quantity, unit_price_cents, line_total_cents)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING order_items.id, order_items.order_id, order_items.product_id, order_items.quantity, order_items.unit_price_cents, order_items.line_total_cents, order_items.created_at
+`
+
+type CreateOrderItemParams struct {
+	ID             uuid.UUID
+	OrderID        uuid.UUID
+	ProductID      uuid.UUID
+	Quantity       int32
+	UnitPriceCents int64
+	LineTotalCents int64
+}
+
+func (q *Queries) CreateOrderItem(ctx context.Context, arg CreateOrderItemParams) (OrderItem, error) {
+	row := q.db.QueryRowContext(ctx, createOrderItem,
+		arg.ID,
+		arg.OrderID,
+		arg.ProductID,
+		arg.Quantity,
+		arg.UnitPriceCents,
+		arg.LineTotalCents,
+	)
+	var i OrderItem
+	err := row.Scan(
+		&i.ID,
+		&i.OrderID,
+		&i.ProductID,
+		&i.Quantity,
+		&i.UnitPriceCents,
+		&i.LineTotalCents,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getOrderByID = `-- name: GetOrderByID :one
-SELECT orders.id, orders.buyer_user_id, orders.product_id, orders.quantity, orders.status, orders.total_cents, orders.created_at, orders.updated_at
+SELECT orders.id, orders.buyer_user_id, orders.status, orders.total_cents, orders.created_at, orders.updated_at
 FROM orders
 WHERE id = $1
 `
@@ -61,8 +92,6 @@ func (q *Queries) GetOrderByID(ctx context.Context, id uuid.UUID) (Order, error)
 	err := row.Scan(
 		&i.ID,
 		&i.BuyerUserID,
-		&i.ProductID,
-		&i.Quantity,
 		&i.Status,
 		&i.TotalCents,
 		&i.CreatedAt,
@@ -71,8 +100,46 @@ func (q *Queries) GetOrderByID(ctx context.Context, id uuid.UUID) (Order, error)
 	return i, err
 }
 
+const listOrderItemsByOrderID = `-- name: ListOrderItemsByOrderID :many
+SELECT order_items.id, order_items.order_id, order_items.product_id, order_items.quantity, order_items.unit_price_cents, order_items.line_total_cents, order_items.created_at
+FROM order_items
+WHERE order_id = $1
+ORDER BY created_at ASC
+`
+
+func (q *Queries) ListOrderItemsByOrderID(ctx context.Context, orderID uuid.UUID) ([]OrderItem, error) {
+	rows, err := q.db.QueryContext(ctx, listOrderItemsByOrderID, orderID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []OrderItem
+	for rows.Next() {
+		var i OrderItem
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrderID,
+			&i.ProductID,
+			&i.Quantity,
+			&i.UnitPriceCents,
+			&i.LineTotalCents,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listOrdersByBuyer = `-- name: ListOrdersByBuyer :many
-SELECT orders.id, orders.buyer_user_id, orders.product_id, orders.quantity, orders.status, orders.total_cents, orders.created_at, orders.updated_at
+SELECT orders.id, orders.buyer_user_id, orders.status, orders.total_cents, orders.created_at, orders.updated_at
 FROM orders
 WHERE buyer_user_id = $1
 ORDER BY created_at DESC
@@ -97,8 +164,6 @@ func (q *Queries) ListOrdersByBuyer(ctx context.Context, arg ListOrdersByBuyerPa
 		if err := rows.Scan(
 			&i.ID,
 			&i.BuyerUserID,
-			&i.ProductID,
-			&i.Quantity,
 			&i.Status,
 			&i.TotalCents,
 			&i.CreatedAt,
@@ -122,7 +187,7 @@ UPDATE orders
 SET status = $2,
     updated_at = NOW()
 WHERE id = $1
-RETURNING orders.id, orders.buyer_user_id, orders.product_id, orders.quantity, orders.status, orders.total_cents, orders.created_at, orders.updated_at
+RETURNING orders.id, orders.buyer_user_id, orders.status, orders.total_cents, orders.created_at, orders.updated_at
 `
 
 type UpdateOrderStatusParams struct {
@@ -136,8 +201,6 @@ func (q *Queries) UpdateOrderStatus(ctx context.Context, arg UpdateOrderStatusPa
 	err := row.Scan(
 		&i.ID,
 		&i.BuyerUserID,
-		&i.ProductID,
-		&i.Quantity,
 		&i.Status,
 		&i.TotalCents,
 		&i.CreatedAt,

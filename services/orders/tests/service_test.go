@@ -24,7 +24,7 @@ func newOrdersService(t *testing.T) *service.Service {
 		"../db/migrations",
 	)
 
-	return service.New(database.New(db))
+	return service.New(db)
 }
 
 func TestCreateGetListOrder(t *testing.T) {
@@ -33,12 +33,12 @@ func TestCreateGetListOrder(t *testing.T) {
 
 	buyerID := uuid.New()
 	productID := uuid.New()
-	created, err := svc.CreateOrder(ctx, buyerID, productID, 2, 19900)
+	created, err := svc.CreateOrder(ctx, buyerID, []service.OrderItemInput{{ProductID: productID, Quantity: 2, UnitPriceCents: 9950}}, 19900)
 	if err != nil {
 		t.Fatalf("create order: %v", err)
 	}
-	if created.BuyerUserID != buyerID || created.ProductID != productID {
-		t.Fatalf("unexpected order ids")
+	if created.BuyerUserID != buyerID || len(created.Items) != 1 || created.Items[0].ProductID != productID {
+		t.Fatalf("unexpected order items")
 	}
 
 	got, err := svc.GetOrderByID(ctx, created.ID)
@@ -70,17 +70,17 @@ func TestOrderValidation(t *testing.T) {
 	svc := newOrdersService(t)
 	ctx := t.Context()
 
-	_, err := svc.CreateOrder(ctx, uuid.Nil, uuid.New(), 1, 100)
+	_, err := svc.CreateOrder(ctx, uuid.Nil, []service.OrderItemInput{{ProductID: uuid.New(), Quantity: 1, UnitPriceCents: 100}}, 100)
 	if !errors.Is(err, service.ErrInvalidBuyerID) {
 		t.Fatalf("expected ErrInvalidBuyerID, got %v", err)
 	}
 
-	_, err = svc.CreateOrder(ctx, uuid.New(), uuid.Nil, 1, 100)
+	_, err = svc.CreateOrder(ctx, uuid.New(), []service.OrderItemInput{{ProductID: uuid.Nil, Quantity: 1, UnitPriceCents: 100}}, 100)
 	if !errors.Is(err, service.ErrInvalidProductID) {
 		t.Fatalf("expected ErrInvalidProductID, got %v", err)
 	}
 
-	_, err = svc.CreateOrder(ctx, uuid.New(), uuid.New(), 0, 100)
+	_, err = svc.CreateOrder(ctx, uuid.New(), []service.OrderItemInput{{ProductID: uuid.New(), Quantity: 0, UnitPriceCents: 100}}, 100)
 	if !errors.Is(err, service.ErrInvalidQuantity) {
 		t.Fatalf("expected ErrInvalidQuantity, got %v", err)
 	}

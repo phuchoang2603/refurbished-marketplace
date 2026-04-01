@@ -29,11 +29,10 @@ func (c *Client) Close() error {
 	return nil
 }
 
-func (c *Client) CreateOrder(ctx context.Context, buyerUserID, productID string, quantity int32, totalCents int64) (*ordersv1.Order, error) {
+func (c *Client) CreateOrder(ctx context.Context, buyerUserID string, items []*ordersv1.CreateOrderItem, totalCents int64) (*ordersv1.Order, error) {
 	return c.client.CreateOrder(ctx, &ordersv1.CreateOrderRequest{
 		BuyerUserId: buyerUserID,
-		ProductId:   productID,
-		Quantity:    quantity,
+		Items:       items,
 		TotalCents:  totalCents,
 	})
 }

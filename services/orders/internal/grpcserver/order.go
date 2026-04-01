@@ -14,15 +14,27 @@ import (
 )
 
 func mapOrder(o service.Order) *ordersv1.Order {
+	items := make([]*ordersv1.OrderItem, 0, len(o.Items))
+	for _, item := range o.Items {
+		items = append(items, &ordersv1.OrderItem{
+			Id:             item.ID.String(),
+			OrderId:        item.OrderID.String(),
+			ProductId:      item.ProductID.String(),
+			Quantity:       item.Quantity,
+			UnitPriceCents: item.UnitPriceCents,
+			LineTotalCents: item.LineTotalCents,
+			CreatedAt:      timestamppb.New(item.CreatedAt),
+		})
+	}
+
 	return &ordersv1.Order{
 		Id:          o.ID.String(),
 		BuyerUserId: o.BuyerUserID.String(),
-		ProductId:   o.ProductID.String(),
-		Quantity:    o.Quantity,
 		Status:      o.Status,
 		TotalCents:  o.TotalCents,
 		CreatedAt:   timestamppb.New(o.CreatedAt),
 		UpdatedAt:   timestamppb.New(o.UpdatedAt),
+		Items:       items,
 	}
 }
 
@@ -31,12 +43,16 @@ func (s *Server) CreateOrder(ctx context.Context, req *ordersv1.CreateOrderReque
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid buyer user id")
 	}
-	productID, err := uuid.Parse(req.GetProductId())
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid product id")
+	items := make([]service.OrderItemInput, 0, len(req.GetItems()))
+	for _, item := range req.GetItems() {
+		productID, err := uuid.Parse(item.GetProductId())
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, "invalid product id")
+		}
+		items = append(items, service.OrderItemInput{ProductID: productID, Quantity: item.GetQuantity(), UnitPriceCents: item.GetUnitPriceCents()})
 	}
 
-	order, err := s.svc.CreateOrder(ctx, buyerID, productID, req.GetQuantity(), req.TotalCents)
+	order, err := s.svc.CreateOrder(ctx, buyerID, items, req.TotalCents)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrInvalidBuyerID), errors.Is(err, service.ErrInvalidProductID), errors.Is(err, service.ErrInvalidQuantity):

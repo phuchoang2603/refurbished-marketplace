@@ -6,7 +6,6 @@ import (
 	"net"
 	"os"
 
-	"refurbished-marketplace/services/orders/internal/database"
 	"refurbished-marketplace/services/orders/internal/grpcserver"
 	"refurbished-marketplace/services/orders/internal/service"
 
@@ -37,8 +36,7 @@ func main() {
 		log.Fatalf("ping db: %v", err)
 	}
 
-	queries := database.New(db)
-	svc := service.New(queries)
+	svc := service.New(db)
 	grpcSvc := grpcserver.New(svc)
 
 	lis, err := net.Listen("tcp", addr)
