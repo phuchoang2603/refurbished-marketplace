@@ -4,6 +4,8 @@
 
 Use `web` as the authorization gateway for REST endpoints while keeping auth session logic in `users` service.
 
+This repository is scoped as a normal ecommerce platform, not C2C escrow.
+
 ## Responsibility Split
 
 ### users service
@@ -26,6 +28,17 @@ Use `web` as the authorization gateway for REST endpoints while keeping auth ses
 - Owns resource authorization invariants:
   - persist `owner_user_id` for each product
   - enforce owner-only write semantics for update/delete
+
+## Payments / Events
+
+- Orders will emit domain events for downstream payment/fraud/recommender consumers.
+- Prefer Kafka/Strimzi for async consumers and ML integrations.
+- CDC is not the default starting point; prefer explicit domain events first.
+
+## Scope Note
+
+- Recommender is a later consumer of product/order events.
+- External payment/fraud platform is a separate project and should be integrated by API/event contracts later.
 
 ## Endpoint Access Policy
 

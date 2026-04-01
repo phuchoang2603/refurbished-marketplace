@@ -46,7 +46,7 @@ Migration is now complete for users transport boundary. Current order going forw
 ## Related Architecture
 
 - Synchronous internal calls: gRPC
-- Asynchronous integration: RabbitMQ events
+- Asynchronous integration: Kafka events (Strimzi preferred for Kubernetes)
 - Mesh policy (Istio): authn/authz/traffic controls, but not token issuance or refresh business logic
 
 ## Authorization Boundary
@@ -54,3 +54,9 @@ Migration is now complete for users transport boundary. Current order going forw
 - Authentication session lifecycle remains in `users` service.
 - Authorization for REST route access is enforced in `web`.
 - Domain authorization invariants (e.g. product ownership for mutations) are enforced in the owning service as well.
+
+## Product and Order Scope
+
+- Scope is normal ecommerce, not C2C escrow.
+- Recommender is a later consumer of event history.
+- External payment/fraud platform is a separate project and integrates through service APIs/events.

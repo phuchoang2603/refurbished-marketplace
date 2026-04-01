@@ -28,3 +28,10 @@ This repository uses a pragmatic testing policy focused on service confidence wi
   - service-level integration tests in `services/users/tests/service_test.go`
 - Products:
   - service-level integration tests in `services/products/tests/service_test.go`
+- Orders:
+  - service-level integration tests in `services/orders/tests/service_test.go`
+
+## Scope Notes
+
+- The repo is scoped as normal ecommerce, not C2C escrow.
+- Recommender and external payment/fraud systems are later integrations, not core test targets yet.

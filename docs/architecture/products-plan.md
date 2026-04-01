@@ -10,6 +10,7 @@ Implement the first products vertical slice with the same conventions as users:
 - gRPC handlers
 - tests in `services/products/tests/`
 - owner-based authorization support for product mutations
+- normal ecommerce product lifecycle (not C2C inspection/escrow)
 
 ## Scope
 
@@ -28,6 +29,7 @@ Use a minimal model for v1:
 - `description TEXT NOT NULL DEFAULT ''`
 - `price_cents BIGINT NOT NULL`
 - `stock INT NOT NULL`
+- `status TEXT NOT NULL`
 - `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`
 - `updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`
 
@@ -52,6 +54,7 @@ Use a minimal model for v1:
 - `name`: non-empty
 - `price_cents`: must be positive
 - `stock`: zero or positive
+- `status`: one of `DRAFT`, `ACTIVE`, `PAUSED`, `SOLD_OUT`
 - `owner_user_id`: must be valid UUID
 
 ## Testing
@@ -60,7 +63,6 @@ All tests stay under `services/products/tests/`:
 
 - integration tests for create/get/list and constraints using `shared/testutil`
 - service tests for validation/error mapping and owner-guarded mutations
-- minimal gRPC smoke tests for method wiring/status mapping
 
 ## Implementation Sequence
 

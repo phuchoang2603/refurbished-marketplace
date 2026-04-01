@@ -9,6 +9,9 @@
 - `users` is the first implemented vertical slice (migration + sqlc queries + service + handlers + integration tests).
 - Users auth is implemented with JWT login/refresh/logout and DB-backed refresh token sessions.
 - Web edge service exists and now owns REST entrypoints while users is served via gRPC.
+- Product listing/checkout is now being shaped as a normal ecommerce flow (not C2C escrow/inspection).
+- C2C escrow/inspection was dropped from scope; focus is normal ecommerce with later recommender + payment/fraud integration points.
+- `orders` vertical slice is implemented as gRPC-first with PostgreSQL migrations, sqlc, and service tests.
 
 ## Canonical Repo Tree
 
@@ -78,7 +81,7 @@
 - Database: PostgreSQL.
 - Migrations: `goose`.
 - Query generation: `sqlc`.
-- Event bus target: RabbitMQ (not wired yet).
+- Event bus target: Kafka via Strimzi (preferred for future recommender/ML integrations; not wired yet).
 - Style: small packages, explicit SQL, straightforward handlers, table-driven tests.
 
 ## Service Layout Rules
@@ -100,7 +103,7 @@
   - Web service composes calls to internal services via gRPC clients.
 - Internal:
   - `users`, `products`, and `orders` communicate through gRPC only.
-  - Domain events continue to use RabbitMQ for async workflows.
+  - Domain events will use Kafka for async workflows and downstream ML/analytics consumers.
 - Transition:
   - Existing users REST endpoints are considered transitional and will be replaced by web-edge REST + users gRPC.
 
@@ -169,7 +172,7 @@
 - Current values include:
   - `USERS_SVC_ADDR=users:9091`
   - `PRODUCTS_SVC_ADDR=products:9092`
-  - `ORDERS_SVC_ADDR=orders:8083`
+  - `ORDERS_SVC_ADDR=orders:9093`
 
 ## gRPC Contracts and Clients (Current)
 
@@ -179,6 +182,9 @@
 - Products protobuf contract is centralized at `shared/proto/products/v1/products.proto`.
 - Generated products gRPC code lives in `shared/proto/products/v1/`.
 - Reusable products gRPC client lives in `shared/proto/productsclient/`.
+- Orders protobuf contract is centralized at `shared/proto/orders/v1/orders.proto`.
+- Generated orders gRPC code lives in `shared/proto/orders/v1/`.
+- Reusable orders gRPC client lives in `shared/proto/ordersclient/`.
 
 ## Testing Strategy (Current)
 
@@ -189,10 +195,12 @@
   - coverage includes create/read, missing-user behavior, unique-email constraint, refresh rotation, and logout revocation
 - Products tests:
   - `services/products/tests/service_test.go` validates product service create/read/list behavior and query-level no-row behavior
+- Orders tests:
+  - `services/orders/tests/service_test.go` validates order service create/read/list/state transition behavior
 - Shared test utilities:
   - `shared/testutil/postgres.go` contains reusable Postgres+Goose setup logic for future service tests
 
-## Products Service (In Progress)
+## Products Service (Implemented)
 
 - Runtime:
   - `services/products/cmd/products/main.go`
@@ -214,10 +222,37 @@
   - `POST /products`
   - `GET /products/{id}`
   - `GET /products?limit=&offset=`
-  - `PATCH /products/{id}` (planned)
-  - `DELETE /products/{id}` (planned)
+  - `PATCH /products/{id}`
+  - `DELETE /products/{id}`
 - Tests:
   - `services/products/tests/service_test.go` covers service/query behavior
+
+## Orders Service (Implemented)
+
+- Runtime:
+  - `services/orders/cmd/orders/main.go`
+  - requires `DB_URL` (no hardcoded fallback)
+  - serves gRPC on `GRPC_ADDR` (default `:9093`)
+- SQL and migrations:
+  - migrations:
+    - `001_orders.sql`
+  - queries:
+    - order create/read/list/status update queries
+- sqlc:
+  - config at `services/orders/sqlc.yaml`
+  - generated package at `services/orders/internal/database`
+- Service layer:
+  - order validation + lifecycle logic in `services/orders/internal/service`
+- gRPC server:
+  - `services/orders/internal/grpcserver`
+- Web edge endpoints:
+  - `POST /orders`
+  - `GET /orders`
+  - `GET /orders/{id}`
+  - `POST /orders/{id}/confirm`
+  - `POST /orders/{id}/cancel`
+- Tests:
+  - `services/orders/tests/service_test.go` covers service/query behavior
 
 ## Auth + Authorization Direction (Committed)
 
@@ -235,6 +270,13 @@
   - `PATCH /products/{id}`
   - `DELETE /products/{id}`
 
+## Payments / Fulfillment Direction
+
+- This repository is now scoped as normal ecommerce, not C2C escrow.
+- External payments/fraud platform is a separate project and integrates over API/events.
+- Orders will own the purchase lifecycle and emit domain events for downstream payment/fraud/recommender consumers.
+- CDC is deferred; start with explicit domain events and outbox only if reliable publishing becomes necessary.
+
 ## Environment and Tooling
 
 - Nix + direnv enabled.
@@ -244,9 +286,6 @@
 
 ## Next Steps
 
-1. Add web JWT middleware and endpoint protection for product mutations.
-2. Extend products model/queries/proto with `owner_user_id` and mutation methods (`UpdateProduct`, `DeleteProduct`).
-3. Implement `PATCH /products/{id}` and `DELETE /products/{id}` in web and enforce owner-only authorization.
-4. Implement `orders` vertical slice with gRPC-first transport (`goose` + `sqlc` + service + tests).
-5. Add orders migration job + orders migrator image once orders migrations exist.
-6. Introduce RabbitMQ contracts and one async workflow.
+1. Tighten the plan around order state transitions and any remaining product ownership edge cases.
+2. Introduce Kafka/Strimzi contracts and one async workflow for downstream consumers.
+3. Decide the first external integration boundary for payment/fraud or recommender.
