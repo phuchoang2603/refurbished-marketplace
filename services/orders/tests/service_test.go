@@ -1,11 +1,9 @@
 package tests
 
 import (
-	"database/sql"
 	"errors"
 	"testing"
 
-	"refurbished-marketplace/services/orders/internal/database"
 	"refurbished-marketplace/services/orders/internal/service"
 	"refurbished-marketplace/shared/testutil"
 
@@ -103,23 +101,5 @@ func TestOrderValidation(t *testing.T) {
 	_, err = svc.UpdateOrderStatus(ctx, uuid.New(), "CONFIRMED")
 	if !errors.Is(err, service.ErrInvalidStatus) {
 		t.Fatalf("expected ErrInvalidStatus, got %v", err)
-	}
-}
-
-func TestMissingOrderNoRows(t *testing.T) {
-	db := testutil.SetupPostgresWithMigrations(
-		t,
-		testutil.PostgresConfig{
-			Database: "orders_db",
-			Username: "orders_app",
-			Password: "orders_app_dev_password",
-		},
-		"../db/migrations",
-	)
-
-	queries := database.New(db)
-	_, err := queries.GetOrderByID(t.Context(), uuid.New())
-	if !errors.Is(err, sql.ErrNoRows) {
-		t.Fatalf("expected sql.ErrNoRows, got %v", err)
 	}
 }

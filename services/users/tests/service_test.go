@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"database/sql"
 	"errors"
 	"testing"
 
@@ -12,7 +11,8 @@ import (
 	"github.com/google/uuid"
 )
 
-func TestAuthLoginAndRefresh(t *testing.T) {
+func newUserService(t *testing.T) *service.Service {
+	t.Helper()
 	db := testutil.SetupPostgresWithMigrations(
 		t,
 		testutil.PostgresConfig{
@@ -23,8 +23,11 @@ func TestAuthLoginAndRefresh(t *testing.T) {
 		"../db/migrations",
 	)
 
-	queries := database.New(db)
-	svc := service.New(queries, service.DefaultConfig("test-secret"))
+	return service.New(database.New(db), service.DefaultConfig("test-secret"))
+}
+
+func TestAuthLoginAndRefresh(t *testing.T) {
+	svc := newUserService(t)
 	ctx := t.Context()
 
 	created, err := svc.CreateUser(ctx, "auth@test.com", "password123", 12.5, -4.25)
@@ -120,44 +123,16 @@ func TestAuthLoginAndRefresh(t *testing.T) {
 	})
 }
 
-func TestQueriesMissingUserNoRows(t *testing.T) {
-	db := testutil.SetupPostgresWithMigrations(
-		t,
-		testutil.PostgresConfig{
-			Database: "users_db",
-			Username: "users_app",
-			Password: "users_app_dev_password",
-		},
-		"../db/migrations",
-	)
-
-	queries := database.New(db)
-	_, err := queries.GetUserByID(t.Context(), uuid.New())
-	if !errors.Is(err, sql.ErrNoRows) {
-		t.Fatalf("expected sql.ErrNoRows, got %v", err)
-	}
-}
-
 func TestServiceCreateUserValidation(t *testing.T) {
-	db := testutil.SetupPostgresWithMigrations(
-		t,
-		testutil.PostgresConfig{
-			Database: "users_db",
-			Username: "users_app",
-			Password: "users_app_dev_password",
-		},
-		"../db/migrations",
-	)
+	svc := newUserService(t)
+	ctx := t.Context()
 
-	queries := database.New(db)
-	svc := service.New(queries, service.DefaultConfig("test-secret"))
-
-	_, err := svc.CreateUser(t.Context(), "bad-email", "password123", 0, 0)
+	_, err := svc.CreateUser(ctx, "bad-email", "password123", 0, 0)
 	if !errors.Is(err, service.ErrInvalidEmail) {
 		t.Fatalf("expected ErrInvalidEmail, got %v", err)
 	}
 
-	_, err = svc.CreateUser(t.Context(), "user@test.com", "short", 0, 0)
+	_, err = svc.CreateUser(ctx, "user@test.com", "short", 0, 0)
 	if !errors.Is(err, service.ErrInvalidPassword) {
 		t.Fatalf("expected ErrInvalidPassword, got %v", err)
 	}

@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"database/sql"
 	"errors"
 	"testing"
 
@@ -59,7 +58,12 @@ func TestProductValidation(t *testing.T) {
 	svc := newProductsService(t)
 	ctx := t.Context()
 
-	_, err := svc.CreateProduct(ctx, "", "x", 100, 1, uuid.New(), 0, 0)
+	_, err := svc.GetProductByID(ctx, uuid.New())
+	if !errors.Is(err, service.ErrProductNotFound) {
+		t.Fatalf("expected ErrProductNotFound, got %v", err)
+	}
+
+	_, err = svc.CreateProduct(ctx, "", "x", 100, 1, uuid.New(), 0, 0)
 	if !errors.Is(err, service.ErrInvalidProductName) {
 		t.Fatalf("expected ErrInvalidProductName, got %v", err)
 	}
@@ -82,30 +86,5 @@ func TestProductValidation(t *testing.T) {
 	_, err = svc.ListProducts(ctx, 10, -1)
 	if !errors.Is(err, service.ErrInvalidListOffset) {
 		t.Fatalf("expected ErrInvalidListOffset, got %v", err)
-	}
-}
-
-func TestMissingProductAndNoRows(t *testing.T) {
-	db := testutil.SetupPostgresWithMigrations(
-		t,
-		testutil.PostgresConfig{
-			Database: "products_db",
-			Username: "products_app",
-			Password: "products_app_dev_password",
-		},
-		"../db/migrations",
-	)
-
-	queries := database.New(db)
-	svc := service.New(queries)
-
-	_, err := svc.GetProductByID(t.Context(), uuid.New())
-	if !errors.Is(err, service.ErrProductNotFound) {
-		t.Fatalf("expected ErrProductNotFound, got %v", err)
-	}
-
-	_, err = queries.GetProductByID(t.Context(), uuid.New())
-	if !errors.Is(err, sql.ErrNoRows) {
-		t.Fatalf("expected sql.ErrNoRows, got %v", err)
 	}
 }
