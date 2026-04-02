@@ -121,3 +121,18 @@ docker_build(
 k8s_resource('orders-db', extra_pod_selectors=[{'cnpg.io/cluster': 'orders-db'}], port_forwards=['5434:5432'], resource_deps=['cnpg-operator-install'], labels='orders')
 k8s_resource('orders-migrate', resource_deps=['orders-db'], labels='orders')
 k8s_resource('orders', port_forwards=['9093:9093'], resource_deps=['orders-db'], labels='orders')
+
+### Cart Service ###
+docker_build(
+  'refurbished-marketplace/cart',
+  '.',
+  dockerfile='./infra/development/docker/cart.Dockerfile',
+  only=[
+    './services/cart',
+    './shared',
+    './go.mod',
+    './go.sum',
+  ],
+)
+
+k8s_resource('cart', port_forwards=['9094:9094'],  labels='cart')

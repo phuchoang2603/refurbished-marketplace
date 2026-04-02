@@ -9,6 +9,11 @@ services:
     auth:
       secretName: users-auth
       secretKey: JWT_SECRET
+    env:
+      USERS_SVC_ADDR: users:9091
+      PRODUCTS_SVC_ADDR: products:9092
+      ORDERS_SVC_ADDR: orders:9093
+      CART_SVC_ADDR: cart:9094
 
   users:
     enabled: true
@@ -66,3 +71,16 @@ services:
       passwordKey: password
       instances: 1
       storageSize: 1Gi
+
+  cart:
+    enabled: true
+    image: refurbished-marketplace/cart
+    port: 9094
+    env:
+      REDIS_ADDR: cache:6379
+
+cache:
+  enabled: true
+  image: docker.io/valkey/valkey:7.2.5
+  port: 6379
+  instances: 1

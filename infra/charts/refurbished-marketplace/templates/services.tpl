@@ -34,7 +34,6 @@ spec:
           imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
           ports:
             - containerPort: {{ $svc.port }}
-{{- if or $svc.db $svc.auth $svc.env (eq $name "web") }}
           env:
 {{- if $svc.db }}
             - name: DB_USER
@@ -57,19 +56,10 @@ spec:
                   name: {{ $svc.auth.secretName }}
                   key: {{ $svc.auth.secretKey }}
 {{- end }}
-{{- if eq $name "web" }}
-            - name: USERS_SVC_ADDR
-              value: {{ printf "users:%v" $.Values.services.users.port | quote }}
-            - name: PRODUCTS_SVC_ADDR
-              value: {{ printf "products:%v" $.Values.services.products.port | quote }}
-            - name: ORDERS_SVC_ADDR
-              value: {{ printf "orders:%v" $.Values.services.orders.port | quote }}
-{{- end }}
 {{- if $svc.env }}
 {{- range $key, $value := $svc.env }}
             - name: {{ $key }}
               value: {{ $value | quote }}
-{{- end }}
 {{- end }}
 {{- end }}
 ---

@@ -10,6 +10,7 @@
 - Users auth is implemented with JWT login/refresh/logout and DB-backed refresh token sessions.
 - Web edge service exists and now owns REST entrypoints while users is served via gRPC.
 - `orders` vertical slice is implemented as gRPC-first with PostgreSQL migrations, sqlc, and service tests.
+- `cart` is implemented as a Redis-backed session service, separate from `users` and `orders`.
 
 ## Data Model Direction
 
@@ -28,6 +29,17 @@ Implement the schema changes above in the database layer first, then update the 
 - `products`: add merchant/terminal metadata columns.
 - `orders`: keep order header state and totals.
 - `payment`: add fraud/transaction tracking fields when the service is introduced.
+
+## Cart Service Direction
+
+- Build `cart` as a separate service with Redis-backed session carts.
+- Keep cart state ephemeral and isolated from `users` and `orders`.
+- Use cart for pre-checkout item collection only; `orders` remains the checkout/finalization boundary.
+- Prefer a cookie/session `cart_id` so guest carts and logged-in carts can share the same flow.
+- Keep product price snapshots in the cart only for display; recompute final totals during checkout.
+- Add TTL-based cart expiry and clear the cart after successful order creation.
+- Expose cart actions through the web edge and gRPC internally.
+- Cart tests live in `services/cart/tests/` and should use Redis testcontainers or an in-memory Redis substitute.
 
 ## Canonical Repo Tree
 
@@ -147,6 +159,7 @@ Implement the schema changes above in the database layer first, then update the 
 - Keep `users` as identity/profile plus auth session source of truth.
 - Keep `products` as read-only catalog data in the public API.
 - Keep `orders` as order headers plus line items.
+- Keep `cart` separate from order state and payment state.
 - Introduce `payment` as the bank/fraud boundary later.
 - Update docs in `docs/architecture/` when a topic becomes stable enough to move out of `PLAN.md`.
 
@@ -156,11 +169,12 @@ Implement the schema changes above in the database layer first, then update the 
 - `products`: `id`, `name`, `description`, `price_cents`, `stock`, `terminal_id`, `x_pos`, `y_pos`
 - `orders`: `id`, `buyer_user_id`, `status`, `total_cents`
 - `order_items`: `id`, `order_id`, `product_id`, `quantity`, `unit_price_cents`, `line_total_cents`
+- `cart`: Redis session state only; no Postgres schema required
 - `payment`: `id`, `order_id`, `tx_fraud`, `tx_fraud_scenario`, `tx_time_seconds`
 
 ## Next Steps
 
 1. Implement the DB schema changes for `users`, `products`, `orders`, and the future `payment` boundary.
-2. Remove remaining product write paths from the public web API.
+2. Add the `cart` service with Redis-backed session carts and checkout handoff.
 3. Add the `payment` service and its bank/fraud event flow.
 4. Introduce Kafka/Strimzi contracts for payment outcomes and downstream consumers.
