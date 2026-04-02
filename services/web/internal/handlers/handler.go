@@ -6,6 +6,7 @@ import (
 
 	webAuth "refurbished-marketplace/services/web/internal/auth"
 	authconfig "refurbished-marketplace/shared/auth/config"
+	"refurbished-marketplace/shared/proto/cartclient"
 	"refurbished-marketplace/shared/proto/ordersclient"
 	"refurbished-marketplace/shared/proto/productsclient"
 	"refurbished-marketplace/shared/proto/usersclient"
@@ -15,11 +16,12 @@ type Handler struct {
 	users    *usersclient.Client
 	products *productsclient.Client
 	orders   *ordersclient.Client
+	cart     *cartclient.Client
 	auth     authconfig.Config
 }
 
-func New(users *usersclient.Client, products *productsclient.Client, orders *ordersclient.Client, authCfg authconfig.Config) *Handler {
-	return &Handler{users: users, products: products, orders: orders, auth: authCfg}
+func New(users *usersclient.Client, products *productsclient.Client, orders *ordersclient.Client, cart *cartclient.Client, authCfg authconfig.Config) *Handler {
+	return &Handler{users: users, products: products, orders: orders, cart: cart, auth: authCfg}
 }
 
 func (h *Handler) Register(mux *http.ServeMux) {
@@ -33,6 +35,12 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.Handle("POST /orders", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleCreateOrder)))
 	mux.Handle("GET /orders", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleListOrdersByBuyer)))
 	mux.HandleFunc("GET /orders/{id}", h.handleGetOrderByID)
+
+	mux.HandleFunc("POST /cart/items", h.handleAddCartItem)
+	mux.HandleFunc("PATCH /cart/items/{product_id}", h.handleSetCartItemQuantity)
+	mux.HandleFunc("DELETE /cart/items/{product_id}", h.handleRemoveCartItem)
+	mux.Handle("POST /cart/checkout", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleCheckoutCart)))
+	mux.HandleFunc("GET /cart", h.handleGetCart)
 
 	mux.HandleFunc("POST /auth/login", h.handleLogin)
 	mux.HandleFunc("POST /auth/refresh", h.handleRefresh)

@@ -7,6 +7,7 @@ import (
 
 	"refurbished-marketplace/services/web/internal/handlers"
 	authconfig "refurbished-marketplace/shared/auth/config"
+	"refurbished-marketplace/shared/proto/cartclient"
 	"refurbished-marketplace/shared/proto/ordersclient"
 	"refurbished-marketplace/shared/proto/productsclient"
 	"refurbished-marketplace/shared/proto/usersclient"
@@ -51,12 +52,23 @@ func main() {
 	}
 	defer ordersClient.Close()
 
+	cartGRPCAddr := os.Getenv("CART_SVC_ADDR")
+	if cartGRPCAddr == "" {
+		log.Fatal("CART_SVC_ADDR is required")
+	}
+
+	cartClient, err := cartclient.New(cartGRPCAddr)
+	if err != nil {
+		log.Fatalf("cart grpc client: %v", err)
+	}
+	defer cartClient.Close()
+
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
 		log.Fatal("JWT_SECRET is required")
 	}
 
-	h := handlers.New(usersClient, productsClient, ordersClient, authconfig.DefaultConfig(jwtSecret))
+	h := handlers.New(usersClient, productsClient, ordersClient, cartClient, authconfig.DefaultConfig(jwtSecret))
 	mux := http.NewServeMux()
 	h.Register(mux)
 
