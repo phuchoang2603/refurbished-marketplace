@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/google/uuid"
 )
@@ -76,6 +77,39 @@ func (q *Queries) CreateOrderItem(ctx context.Context, arg CreateOrderItemParams
 		&i.UnitPriceCents,
 		&i.LineTotalCents,
 		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const createOrderOutbox = `-- name: CreateOrderOutbox :one
+INSERT INTO orders_outbox (id, aggregate_id, event_type, payload)
+VALUES ($1, $2, $3, $4)
+RETURNING orders_outbox.id, orders_outbox.aggregate_id, orders_outbox.event_type, orders_outbox.payload, orders_outbox.publish_attempts, orders_outbox.created_at, orders_outbox.published_at
+`
+
+type CreateOrderOutboxParams struct {
+	ID          uuid.UUID
+	AggregateID uuid.UUID
+	EventType   string
+	Payload     json.RawMessage
+}
+
+func (q *Queries) CreateOrderOutbox(ctx context.Context, arg CreateOrderOutboxParams) (OrdersOutbox, error) {
+	row := q.db.QueryRowContext(ctx, createOrderOutbox,
+		arg.ID,
+		arg.AggregateID,
+		arg.EventType,
+		arg.Payload,
+	)
+	var i OrdersOutbox
+	err := row.Scan(
+		&i.ID,
+		&i.AggregateID,
+		&i.EventType,
+		&i.Payload,
+		&i.PublishAttempts,
+		&i.CreatedAt,
+		&i.PublishedAt,
 	)
 	return i, err
 }

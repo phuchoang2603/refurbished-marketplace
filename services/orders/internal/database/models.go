@@ -5,6 +5,8 @@
 package database
 
 import (
+	"database/sql"
+	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -27,4 +29,14 @@ type OrderItem struct {
 	UnitPriceCents int64
 	LineTotalCents int64
 	CreatedAt      time.Time
+}
+
+type OrdersOutbox struct {
+	ID              uuid.UUID
+	AggregateID     uuid.UUID
+	EventType       string
+	Payload         json.RawMessage
+	PublishAttempts int32
+	CreatedAt       time.Time
+	PublishedAt     sql.NullTime
 }

@@ -1,16 +1,18 @@
 package tests
 
 import (
+	"encoding/json"
 	"errors"
 	"testing"
 
 	"refurbished-marketplace/services/orders/internal/service"
+	"refurbished-marketplace/shared/messaging"
 	"refurbished-marketplace/shared/testutil"
 
 	"github.com/google/uuid"
 )
 
-func newOrdersService(t *testing.T) *service.Service {
+func newOrdersService(t *testing.T) (*service.Service, func(aggregateID uuid.UUID) (string, []byte, error)) {
 	t.Helper()
 	db := testutil.SetupPostgresWithMigrations(
 		t,
@@ -22,16 +24,29 @@ func newOrdersService(t *testing.T) *service.Service {
 		"../db/migrations",
 	)
 
-	return service.New(db)
+	svc := service.New(db)
+	readOutbox := func(aggregateID uuid.UUID) (string, []byte, error) {
+		var eventType string
+		var payloadBytes []byte
+		err := db.QueryRowContext(t.Context(), `SELECT event_type, payload FROM orders_outbox WHERE aggregate_id = $1`, aggregateID).Scan(&eventType, &payloadBytes)
+		return eventType, payloadBytes, err
+	}
+
+	return svc, readOutbox
 }
 
 func TestCreateGetListOrder(t *testing.T) {
-	svc := newOrdersService(t)
+	svc, _ := newOrdersService(t)
 	ctx := t.Context()
 
 	buyerID := uuid.New()
 	productID := uuid.New()
-	created, err := svc.CreateOrder(ctx, buyerID, []service.OrderItemInput{{ProductID: productID, Quantity: 2, UnitPriceCents: 9950}}, 19900)
+	created, err := svc.CreateOrder(
+		ctx,
+		buyerID,
+		[]service.OrderItemInput{{ProductID: productID, Quantity: 2, UnitPriceCents: 9950}},
+		19900,
+	)
 	if err != nil {
 		t.Fatalf("create order: %v", err)
 	}
@@ -65,7 +80,7 @@ func TestCreateGetListOrder(t *testing.T) {
 }
 
 func TestOrderValidation(t *testing.T) {
-	svc := newOrdersService(t)
+	svc, _ := newOrdersService(t)
 	ctx := t.Context()
 
 	_, err := svc.CreateOrder(ctx, uuid.Nil, []service.OrderItemInput{{ProductID: uuid.New(), Quantity: 1, UnitPriceCents: 100}}, 100)
@@ -101,5 +116,48 @@ func TestOrderValidation(t *testing.T) {
 	_, err = svc.UpdateOrderStatus(ctx, uuid.New(), "CONFIRMED")
 	if !errors.Is(err, service.ErrInvalidStatus) {
 		t.Fatalf("expected ErrInvalidStatus, got %v", err)
+	}
+}
+
+func TestCreateOrderWritesOutbox(t *testing.T) {
+	svc, readOutbox := newOrdersService(t)
+	ctx := t.Context()
+
+	buyerID := uuid.New()
+	productID := uuid.New()
+	created, err := svc.CreateOrder(ctx, buyerID, []service.OrderItemInput{{ProductID: productID, Quantity: 2, UnitPriceCents: 9950}}, 19900)
+	if err != nil {
+		t.Fatalf("create order: %v", err)
+	}
+
+	eventType, payloadBytes, err := readOutbox(created.ID)
+	if err != nil {
+		t.Fatalf("load outbox: %v", err)
+	}
+	if eventType != string(messaging.EventTypeOrderCreated) {
+		t.Fatalf("expected order.created, got %s", eventType)
+	}
+
+	type itemPayload struct {
+		ProductID      string `json:"product_id"`
+		Quantity       int32  `json:"quantity"`
+		UnitPriceCents int64  `json:"unit_price_cents"`
+	}
+	type orderPayload struct {
+		OrderID     string        `json:"order_id"`
+		BuyerUserID string        `json:"buyer_user_id"`
+		TotalCents  int64         `json:"total_cents"`
+		Items       []itemPayload `json:"items"`
+	}
+
+	var got orderPayload
+	if err := json.Unmarshal(payloadBytes, &got); err != nil {
+		t.Fatalf("unmarshal payload: %v", err)
+	}
+	if got.OrderID != created.ID.String() || got.BuyerUserID != buyerID.String() || got.TotalCents != 19900 {
+		t.Fatalf("unexpected payload: %#v", got)
+	}
+	if len(got.Items) != 1 || got.Items[0].ProductID != productID.String() || got.Items[0].Quantity != 2 {
+		t.Fatalf("unexpected payload items: %#v", got.Items)
 	}
 }
