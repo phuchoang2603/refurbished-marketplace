@@ -12,21 +12,22 @@
 - `orders` vertical slice is implemented as gRPC-first with PostgreSQL migrations, sqlc, and service tests.
 - `cart` is implemented as a Redis-backed session service, separate from `users` and `orders`.
 
-## Data Model Direction
+## Data Model Direction | Service | Responsibility | Key Fields Added |
 
-| Service  | Responsibility       | Key Fields Added                                      |
 | -------- | -------------------- | ----------------------------------------------------- |
-| Users    | Identity & Profile   | `x_pos`, `y_pos`                                      |
-| Products | Inventory & Merchant | `terminal_id`, `x_pos`, `y_pos`                       |
-| Orders   | Intent to Buy        | `status` (`PENDING`, `PAID`, `FAILED`), `total_cents` |
-| Payment  | Financial & ML Logic | `tx_fraud`, `tx_fraud_scenario`, `tx_time_seconds`    |
+| Users | Identity & Profile | `x_pos`, `y_pos` |
+| Products | Catalog & Merchant | `terminal_id`, `x_pos`, `y_pos` |
+| Inventory | Stock Control | `available_qty`, `reserved_qty` |
+| Orders | Intent to Buy | `status` (`PENDING`, `PAID`, `FAILED`), `total_cents` |
+| Payment | Financial & ML Logic | `tx_fraud`, `tx_fraud_scenario`, `tx_time_seconds` |
 
-## Schema Next Step
+## Schema next Step
 
 Implement the schema changes above in the database layer first, then update the service code around those schemas.
 
 - `users`: add location columns only; derive spending aggregates from transaction history when needed.
 - `products`: add merchant/terminal metadata columns.
+- `inventory`: own stock and reservation state, separate from catalog data.
 - `orders`: keep order header state and totals.
 - `payment`: add fraud/transaction tracking fields when the service is introduced.
 
@@ -78,7 +79,6 @@ Implement the schema changes above in the database layer first, then update the 
       internal/
       tests/
   shared/
-    contracts/
     messaging/
     proto/
       users/v1/
@@ -158,15 +158,25 @@ Implement the schema changes above in the database layer first, then update the 
 
 - Keep `users` as identity/profile plus auth session source of truth.
 - Keep `products` as read-only catalog data in the public API.
+- Keep `inventory` as the source of truth for available/reserved stock.
 - Keep `orders` as order headers plus line items.
 - Keep `cart` separate from order state and payment state.
 - Introduce `payment` as the bank/fraud boundary later.
 - Update docs in `docs/architecture/` when a topic becomes stable enough to move out of `PLAN.md`.
 
+## Eventing Reliability
+
+- Kafka remains the async backbone for downstream consumers.
+- `orders` and later `payment` should persist domain events to a local outbox table inside the same database transaction as the business write.
+- Debezium should stream outbox rows from Postgres into Kafka.
+- Consumers such as `payment` should use an inbox table to dedupe repeated deliveries.
+- Fraud and analytics should consume the canonical event stream, not application-generated ad hoc payloads.
+
 ## Minimal Schema
 
 - `users`: `id`, `email`, `password_hash`, `x_pos`, `y_pos`
 - `products`: `id`, `name`, `description`, `price_cents`, `stock`, `terminal_id`, `x_pos`, `y_pos`
+- `inventory`: `product_id`, `available_qty`, `reserved_qty`
 - `orders`: `id`, `buyer_user_id`, `status`, `total_cents`
 - `order_items`: `id`, `order_id`, `product_id`, `quantity`, `unit_price_cents`, `line_total_cents`
 - `cart`: Redis session state only; no Postgres schema required
@@ -174,7 +184,7 @@ Implement the schema changes above in the database layer first, then update the 
 
 ## Next Steps
 
-1. Implement the DB schema changes for `users`, `products`, `orders`, and the future `payment` boundary.
-2. Add the `cart` service with Redis-backed session carts and checkout handoff.
-3. Add the `payment` service and its bank/fraud event flow.
-4. Introduce Kafka/Strimzi contracts for payment outcomes and downstream consumers.
+1. Add the `inventory` reservation flow and connect it to order creation.
+2. Add the `payment` service and its bank/fraud event flow.
+3. Introduce Kafka/Strimzi contracts for payment outcomes and downstream consumers.
+4. Add outbox/inbox tables where event reliability matters.

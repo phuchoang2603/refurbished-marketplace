@@ -10,6 +10,7 @@ Implement the first products vertical slice with the same conventions as users:
 - gRPC handlers
 - tests in `services/products/tests/`
 - normal ecommerce product lifecycle (not C2C inspection/escrow)
+- keep stock management out of products; inventory owns reservations
 
 ## Scope
 
@@ -20,7 +21,7 @@ Implement the first products vertical slice with the same conventions as users:
 
 ## Product Model
 
-Use a minimal model for v1:
+Use a minimal catalog model for v1:
 
 - `id UUID PRIMARY KEY`
 - `terminal_id UUID NOT NULL`
@@ -29,7 +30,6 @@ Use a minimal model for v1:
 - `name TEXT NOT NULL`
 - `description TEXT NOT NULL DEFAULT ''`
 - `price_cents BIGINT NOT NULL`
-- `stock INT NOT NULL`
 - `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`
 - `updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`
 
@@ -49,7 +49,6 @@ Use a minimal model for v1:
 
 - `name`: non-empty
 - `price_cents`: must be positive
-- `stock`: zero or positive
 - `terminal_id`: must be valid UUID
 - `x_pos` / `y_pos`: required coordinate values
 
@@ -59,6 +58,7 @@ All tests stay under `services/products/tests/`:
 
 - integration tests for create/get/list and constraints using `shared/testutil`
 - service tests for validation/error mapping
+- no inventory mutation tests here; those belong to `services/inventory/tests/`
 
 ## Implementation Sequence
 

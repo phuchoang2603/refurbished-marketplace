@@ -7,7 +7,7 @@ Adopt a strict transport boundary:
 - REST only at the edge (`web` service)
 - gRPC for internal service-to-service communication
 
-This applies to `users`, `products`, and `orders`.
+This applies to `users`, `products`, `inventory`, and `orders`.
 
 ## Why
 
@@ -24,7 +24,7 @@ This applies to `users`, `products`, and `orders`.
 - Calls internal services using gRPC clients.
 - Enforces REST authorization (JWT validation + route protection).
 
-### users/products/orders (internal)
+### users/products/inventory/orders (internal)
 
 - Expose gRPC services and protobuf contracts.
 - Own domain logic, DB access, migrations, and events.
@@ -41,7 +41,7 @@ Migration is now complete for users transport boundary. Current order going forw
 
 1. Web REST endpoints call users gRPC for auth and user lookup.
 2. Users REST handlers are removed; users is internal gRPC only.
-3. Apply same pattern for products and orders.
+3. Apply same pattern for products, inventory, and orders.
 
 ## API Ownership
 
