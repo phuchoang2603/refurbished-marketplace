@@ -79,6 +79,24 @@ services:
     env:
       REDIS_ADDR: cache:6379
 
+  inventory:
+    enabled: true
+    image: refurbished-marketplace/inventory
+    port: 9095
+    migration:
+      enabled: true
+      image: refurbished-marketplace/inventory-migrator
+    db:
+      host: inventory-db-rw
+      port: 5432
+      name: inventory_db
+      owner: inventory_app
+      secretName: inventory-app
+      usernameKey: username
+      passwordKey: password
+      instances: 1
+      storageSize: 1Gi
+
 cache:
   enabled: true
   image: docker.io/valkey/valkey:7.2.5

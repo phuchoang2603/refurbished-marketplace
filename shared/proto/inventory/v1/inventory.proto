@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package inventory.v1;
+
+option go_package = "refurbished-marketplace/shared/proto/inventory/v1;inventoryv1";
+
+import "google/protobuf/timestamp.proto";
+
+service InventoryService {
+  rpc CreateInventory(CreateInventoryRequest) returns (Inventory);
+  rpc GetInventoryByProductID(GetInventoryByProductIDRequest) returns (Inventory);
+  rpc ReserveStock(ReserveStockRequest) returns (Inventory);
+  rpc CommitReservation(CommitReservationRequest) returns (Inventory);
+  rpc ReleaseReservation(ReleaseReservationRequest) returns (Inventory);
+}
+
+message Inventory {
+  string product_id = 1;
+  int32 available_qty = 2;
+  int32 reserved_qty = 3;
+  google.protobuf.Timestamp created_at = 4;
+  google.protobuf.Timestamp updated_at = 5;
+}
+
+message CreateInventoryRequest {
+  string product_id = 1;
+  int32 available_qty = 2;
+}
+
+message GetInventoryByProductIDRequest {
+  string product_id = 1;
+}
+
+message ReserveStockRequest {
+  string product_id = 1;
+  int32 quantity = 2;
+}
+
+message CommitReservationRequest {
+  string product_id = 1;
+  int32 quantity = 2;
+}
+
+message ReleaseReservationRequest {
+  string product_id = 1;
+  int32 quantity = 2;
+}

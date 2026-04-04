@@ -1,0 +1,21 @@
+FROM golang:1.25-alpine AS builder
+
+WORKDIR /src
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY services ./services
+COPY shared ./shared
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/inventory ./services/inventory/cmd/inventory
+
+FROM gcr.io/distroless/static-debian12
+
+WORKDIR /app
+
+COPY --from=builder /out/inventory /app/inventory
+
+EXPOSE 8083
+
+ENTRYPOINT ["/app/inventory"]
