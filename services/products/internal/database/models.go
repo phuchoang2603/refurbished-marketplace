@@ -15,7 +15,6 @@ type Product struct {
 	Name        string
 	Description string
 	PriceCents  int64
-	Stock       int32
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	TerminalID  uuid.UUID

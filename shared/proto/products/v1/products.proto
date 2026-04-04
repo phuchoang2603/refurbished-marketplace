@@ -17,22 +17,20 @@ message Product {
   string name = 2;
   string description = 3;
   int64 price_cents = 4;
-  int32 stock = 5;
-  string terminal_id = 6;
-  double x_pos = 7;
-  double y_pos = 8;
-  google.protobuf.Timestamp created_at = 9;
-  google.protobuf.Timestamp updated_at = 10;
+  string terminal_id = 5;
+  double x_pos = 6;
+  double y_pos = 7;
+  google.protobuf.Timestamp created_at = 8;
+  google.protobuf.Timestamp updated_at = 9;
 }
 
 message CreateProductRequest {
   string name = 1;
   string description = 2;
   int64 price_cents = 3;
-  int32 stock = 4;
-  string terminal_id = 5;
-  double x_pos = 6;
-  double y_pos = 7;
+  string terminal_id = 4;
+  double x_pos = 5;
+  double y_pos = 6;
 }
 
 message GetProductByIDRequest {

@@ -19,7 +19,6 @@ func mapProduct(p service.Product) *productsv1.Product {
 		Name:        p.Name,
 		Description: p.Description,
 		PriceCents:  p.PriceCents,
-		Stock:       p.Stock,
 		TerminalId:  p.TerminalID.String(),
 		XPos:        p.XPos,
 		YPos:        p.YPos,
@@ -34,10 +33,10 @@ func (s *Server) CreateProduct(ctx context.Context, req *productsv1.CreateProduc
 		return nil, status.Error(codes.InvalidArgument, "invalid terminal id")
 	}
 
-	p, err := s.svc.CreateProduct(ctx, req.GetName(), req.GetDescription(), req.GetPriceCents(), req.GetStock(), terminalID, req.GetXPos(), req.GetYPos())
+	p, err := s.svc.CreateProduct(ctx, req.GetName(), req.GetDescription(), req.GetPriceCents(), terminalID, req.GetXPos(), req.GetYPos())
 	if err != nil {
 		switch {
-		case errors.Is(err, service.ErrInvalidProductName), errors.Is(err, service.ErrInvalidPrice), errors.Is(err, service.ErrInvalidStock):
+		case errors.Is(err, service.ErrInvalidProductName), errors.Is(err, service.ErrInvalidPrice):
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		default:
 			return nil, status.Error(codes.Internal, "internal error")

@@ -17,7 +17,6 @@ type Product struct {
 	Name        string
 	Description string
 	PriceCents  int64
-	Stock       int32
 	TerminalID  uuid.UUID
 	XPos        float64
 	YPos        float64
@@ -25,7 +24,7 @@ type Product struct {
 	UpdatedAt   time.Time
 }
 
-func (s *Service) CreateProduct(ctx context.Context, name, description string, priceCents int64, stock int32, terminalID uuid.UUID, xPos, yPos float64) (Product, error) {
+func (s *Service) CreateProduct(ctx context.Context, name, description string, priceCents int64, terminalID uuid.UUID, xPos, yPos float64) (Product, error) {
 	cleanName := strings.TrimSpace(name)
 	if cleanName == "" {
 		return Product{}, ErrInvalidProductName
@@ -39,10 +38,6 @@ func (s *Service) CreateProduct(ctx context.Context, name, description string, p
 	if priceCents <= 0 {
 		return Product{}, ErrInvalidPrice
 	}
-
-	if stock < 0 {
-		return Product{}, ErrInvalidStock
-	}
 	if terminalID == uuid.Nil {
 		return Product{}, ErrInvalidTerminalID
 	}
@@ -52,7 +47,6 @@ func (s *Service) CreateProduct(ctx context.Context, name, description string, p
 		Name:        cleanName,
 		Description: desc,
 		PriceCents:  priceCents,
-		Stock:       stock,
 		TerminalID:  terminalID,
 		XPos:        xPos,
 		YPos:        yPos,
@@ -102,7 +96,6 @@ func mapDBProduct(p database.Product) Product {
 		Name:        p.Name,
 		Description: p.Description,
 		PriceCents:  p.PriceCents,
-		Stock:       p.Stock,
 		TerminalID:  p.TerminalID,
 		XPos:        p.XPos,
 		YPos:        p.YPos,
