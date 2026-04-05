@@ -34,7 +34,7 @@ type queryStore interface {
 	CreateOrderOutbox(ctx context.Context, arg database.CreateOrderOutboxParams) (database.OrdersOutbox, error)
 	GetOrderByID(ctx context.Context, id uuid.UUID) (database.Order, error)
 	ListOrdersByBuyer(ctx context.Context, arg database.ListOrdersByBuyerParams) ([]database.Order, error)
-	ListOrderItemsByOrderID(ctx context.Context, orderID uuid.UUID) ([]database.OrderItem, error)
+	ListOrderItemsByOrderIDs(ctx context.Context, orderIds []uuid.UUID) ([]database.OrderItem, error)
 	UpdateOrderStatus(ctx context.Context, arg database.UpdateOrderStatusParams) (database.Order, error)
 }
 

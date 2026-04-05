@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 const createOrder = `-- name: CreateOrder :one
@@ -134,15 +135,15 @@ func (q *Queries) GetOrderByID(ctx context.Context, id uuid.UUID) (Order, error)
 	return i, err
 }
 
-const listOrderItemsByOrderID = `-- name: ListOrderItemsByOrderID :many
+const listOrderItemsByOrderIDs = `-- name: ListOrderItemsByOrderIDs :many
 SELECT order_items.id, order_items.order_id, order_items.product_id, order_items.quantity, order_items.unit_price_cents, order_items.line_total_cents, order_items.created_at
 FROM order_items
-WHERE order_id = $1
-ORDER BY created_at ASC
+WHERE order_id = ANY($1::uuid[])
+ORDER BY order_id ASC, created_at ASC
 `
 
-func (q *Queries) ListOrderItemsByOrderID(ctx context.Context, orderID uuid.UUID) ([]OrderItem, error) {
-	rows, err := q.db.QueryContext(ctx, listOrderItemsByOrderID, orderID)
+func (q *Queries) ListOrderItemsByOrderIDs(ctx context.Context, dollar_1 []uuid.UUID) ([]OrderItem, error) {
+	rows, err := q.db.QueryContext(ctx, listOrderItemsByOrderIDs, pq.Array(dollar_1))
 	if err != nil {
 		return nil, err
 	}

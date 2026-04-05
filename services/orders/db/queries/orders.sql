@@ -32,8 +32,8 @@ SET status = $2,
 WHERE id = $1
 RETURNING orders.*;
 
--- name: ListOrderItemsByOrderID :many
+-- name: ListOrderItemsByOrderIDs :many
 SELECT order_items.*
 FROM order_items
-WHERE order_id = $1
-ORDER BY created_at ASC;
+WHERE order_id = ANY($1::uuid[])
+ORDER BY order_id ASC, created_at ASC;

@@ -36,29 +36,9 @@ func (s *Service) CreateOrder(ctx context.Context, buyerUserID uuid.UUID, items 
 		return Order{}, err
 	}
 
-	orderItems := make([]OrderItem, 0, len(items))
-	for _, item := range items {
-		createdItem, err := queries.CreateOrderItem(ctx, database.CreateOrderItemParams{
-			ID:             uuid.New(),
-			OrderID:        created.ID,
-			ProductID:      item.ProductID,
-			Quantity:       item.Quantity,
-			UnitPriceCents: item.UnitPriceCents,
-			LineTotalCents: item.UnitPriceCents * int64(item.Quantity),
-		})
-		if err != nil {
-			return Order{}, err
-		}
-		orderItems = append(orderItems, mapDBOrderItem(createdItem))
-	}
-
-	encodedItems := make([]outboxItem, 0, len(items))
-	for _, item := range items {
-		encodedItems = append(encodedItems, outboxItem{
-			ProductID:      item.ProductID.String(),
-			Quantity:       item.Quantity,
-			UnitPriceCents: item.UnitPriceCents,
-		})
+	orderItems, encodedItems, err := createOrderItems(ctx, queries, created.ID, items)
+	if err != nil {
+		return Order{}, err
 	}
 
 	payload, err := json.Marshal(outboxPayload{
@@ -103,17 +83,7 @@ func (s *Service) GetOrderByID(ctx context.Context, id uuid.UUID) (Order, error)
 		return Order{}, err
 	}
 
-	items, err := queries.ListOrderItemsByOrderID(ctx, id)
-	if err != nil {
-		return Order{}, err
-	}
-
-	order := mapDBOrder(got)
-	order.Items = make([]OrderItem, 0, len(items))
-	for _, item := range items {
-		order.Items = append(order.Items, mapDBOrderItem(item))
-	}
-	return order, nil
+	return loadOrderWithItems(ctx, queries, got)
 }
 
 func (s *Service) ListOrdersByBuyer(ctx context.Context, buyerUserID uuid.UUID, limit, offset int32) ([]Order, error) {
@@ -133,20 +103,7 @@ func (s *Service) ListOrdersByBuyer(ctx context.Context, buyerUserID uuid.UUID, 
 		return nil, err
 	}
 
-	result := make([]Order, 0, len(rows))
-	for _, row := range rows {
-		order := mapDBOrder(row)
-		items, err := queries.ListOrderItemsByOrderID(ctx, row.ID)
-		if err != nil {
-			return nil, err
-		}
-		order.Items = make([]OrderItem, 0, len(items))
-		for _, item := range items {
-			order.Items = append(order.Items, mapDBOrderItem(item))
-		}
-		result = append(result, order)
-	}
-	return result, nil
+	return loadOrdersWithItems(ctx, queries, rows)
 }
 
 func (s *Service) UpdateOrderStatus(ctx context.Context, id uuid.UUID, status string) (Order, error) {
@@ -167,14 +124,5 @@ func (s *Service) UpdateOrderStatus(ctx context.Context, id uuid.UUID, status st
 		return Order{}, err
 	}
 
-	order := mapDBOrder(updated)
-	items, err := queries.ListOrderItemsByOrderID(ctx, id)
-	if err != nil {
-		return Order{}, err
-	}
-	order.Items = make([]OrderItem, 0, len(items))
-	for _, item := range items {
-		order.Items = append(order.Items, mapDBOrderItem(item))
-	}
-	return order, nil
+	return loadOrderWithItems(ctx, queries, updated)
 }
