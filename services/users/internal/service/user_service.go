@@ -2,9 +2,6 @@ package service
 
 import (
 	"context"
-	"database/sql"
-	"errors"
-	"strings"
 	"time"
 
 	"refurbished-marketplace/services/users/internal/database"
@@ -24,8 +21,8 @@ type User struct {
 }
 
 func (s *Service) CreateUser(ctx context.Context, email string, password string, xPos, yPos float64) (User, error) {
-	cleanEmail := strings.TrimSpace(strings.ToLower(email))
-	if !strings.Contains(cleanEmail, "@") || len(cleanEmail) < 3 {
+	cleanEmail := normalizeEmail(email)
+	if !isValidEmailShape(cleanEmail) {
 		return User{}, ErrInvalidEmail
 	}
 
@@ -35,7 +32,7 @@ func (s *Service) CreateUser(ctx context.Context, email string, password string,
 
 	if _, err := s.queries.GetUserByEmail(ctx, cleanEmail); err == nil {
 		return User{}, ErrEmailTaken
-	} else if !errors.Is(err, sql.ErrNoRows) {
+	} else if err = mapNotFound(err, ErrUserNotFound); err != ErrUserNotFound {
 		return User{}, err
 	}
 
@@ -61,23 +58,8 @@ func (s *Service) CreateUser(ctx context.Context, email string, password string,
 func (s *Service) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 	u, err := s.queries.GetUserByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return User{}, ErrUserNotFound
-		}
-		return User{}, err
+		return User{}, mapNotFound(err, ErrUserNotFound)
 	}
 
 	return mapDBUser(database.User(u)), nil
-}
-
-func mapDBUser(u database.User) User {
-	return User{
-		ID:           u.ID,
-		Email:        u.Email,
-		PasswordHash: u.PasswordHash,
-		XPos:         u.XPos,
-		YPos:         u.YPos,
-		CreatedAt:    u.CreatedAt,
-		UpdatedAt:    u.UpdatedAt,
-	}
 }
