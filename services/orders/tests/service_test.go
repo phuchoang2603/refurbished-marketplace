@@ -39,125 +39,206 @@ func TestCreateGetListOrder(t *testing.T) {
 	svc, _ := newOrdersService(t)
 	ctx := t.Context()
 
-	buyerID := uuid.New()
-	productID := uuid.New()
-	created, err := svc.CreateOrder(
-		ctx,
-		buyerID,
-		[]service.OrderItemInput{{ProductID: productID, Quantity: 2, UnitPriceCents: 9950}},
-		19900,
-	)
-	if err != nil {
-		t.Fatalf("create order: %v", err)
-	}
-	if created.BuyerUserID != buyerID || len(created.Items) != 1 || created.Items[0].ProductID != productID {
-		t.Fatalf("unexpected order items")
-	}
+	t.Run("create order", func(t *testing.T) {
+		buyerID := uuid.New()
+		productID := uuid.New()
+		created, err := svc.CreateOrder(
+			ctx,
+			buyerID,
+			[]service.OrderItemInput{{ProductID: productID, Quantity: 2, UnitPriceCents: 9950}},
+			19900,
+		)
+		if err != nil {
+			t.Fatalf("create order: %v", err)
+		}
+		if created.BuyerUserID != buyerID || len(created.Items) != 1 || created.Items[0].ProductID != productID {
+			t.Fatalf("unexpected order items")
+		}
+	})
 
-	got, err := svc.GetOrderByID(ctx, created.ID)
-	if err != nil {
-		t.Fatalf("get order: %v", err)
-	}
-	if got.ID != created.ID {
-		t.Fatalf("expected same id")
-	}
+	t.Run("get order by id", func(t *testing.T) {
+		createdBuyerID := uuid.New()
+		createdProductID := uuid.New()
+		created, err := svc.CreateOrder(
+			ctx,
+			createdBuyerID,
+			[]service.OrderItemInput{{ProductID: createdProductID, Quantity: 2, UnitPriceCents: 9950}},
+			19900,
+		)
+		if err != nil {
+			t.Fatalf("create order: %v", err)
+		}
 
-	list, err := svc.ListOrdersByBuyer(ctx, buyerID, 20, 0)
-	if err != nil {
-		t.Fatalf("list orders: %v", err)
-	}
-	if len(list) != 1 {
-		t.Fatalf("expected 1 order, got %d", len(list))
-	}
+		got, err := svc.GetOrderByID(ctx, created.ID)
+		if err != nil {
+			t.Fatalf("get order: %v", err)
+		}
+		if got.ID != created.ID {
+			t.Fatalf("expected same id")
+		}
+	})
 
-	updated, err := svc.UpdateOrderStatus(ctx, created.ID, service.OrderStatusPaid)
-	if err != nil {
-		t.Fatalf("update order: %v", err)
-	}
-	if updated.Status != service.OrderStatusPaid {
-		t.Fatalf("expected %s, got %s", service.OrderStatusPaid, updated.Status)
-	}
+	t.Run("list orders by buyer", func(t *testing.T) {
+		buyerID := uuid.New()
+		productID := uuid.New()
+		created, err := svc.CreateOrder(
+			ctx,
+			buyerID,
+			[]service.OrderItemInput{{ProductID: productID, Quantity: 2, UnitPriceCents: 9950}},
+			19900,
+		)
+		if err != nil {
+			t.Fatalf("create order: %v", err)
+		}
+
+		list, err := svc.ListOrdersByBuyer(ctx, buyerID, 20, 0)
+		if err != nil {
+			t.Fatalf("list orders: %v", err)
+		}
+		if len(list) != 1 {
+			t.Fatalf("expected 1 order, got %d", len(list))
+		}
+		if list[0].ID != created.ID {
+			t.Fatalf("expected created order in list")
+		}
+	})
+
+	t.Run("update order status", func(t *testing.T) {
+		buyerID := uuid.New()
+		productID := uuid.New()
+		created, err := svc.CreateOrder(
+			ctx,
+			buyerID,
+			[]service.OrderItemInput{{ProductID: productID, Quantity: 2, UnitPriceCents: 9950}},
+			19900,
+		)
+		if err != nil {
+			t.Fatalf("create order: %v", err)
+		}
+
+		updated, err := svc.UpdateOrderStatus(ctx, created.ID, service.OrderStatusPaid)
+		if err != nil {
+			t.Fatalf("update order: %v", err)
+		}
+		if updated.Status != service.OrderStatusPaid {
+			t.Fatalf("expected %s, got %s", service.OrderStatusPaid, updated.Status)
+		}
+	})
 }
 
 func TestOrderValidation(t *testing.T) {
-	svc, _ := newOrdersService(t)
-	ctx := t.Context()
+	t.Run("invalid buyer id", func(t *testing.T) {
+		svc, _ := newOrdersService(t)
+		ctx := t.Context()
 
-	_, err := svc.CreateOrder(ctx, uuid.Nil, []service.OrderItemInput{{ProductID: uuid.New(), Quantity: 1, UnitPriceCents: 100}}, 100)
-	if !errors.Is(err, service.ErrInvalidBuyerID) {
-		t.Fatalf("expected ErrInvalidBuyerID, got %v", err)
-	}
+		_, err := svc.CreateOrder(ctx, uuid.Nil, []service.OrderItemInput{{ProductID: uuid.New(), Quantity: 1, UnitPriceCents: 100}}, 100)
+		if !errors.Is(err, service.ErrInvalidBuyerID) {
+			t.Fatalf("expected ErrInvalidBuyerID, got %v", err)
+		}
+	})
 
-	_, err = svc.CreateOrder(ctx, uuid.New(), []service.OrderItemInput{{ProductID: uuid.Nil, Quantity: 1, UnitPriceCents: 100}}, 100)
-	if !errors.Is(err, service.ErrInvalidProductID) {
-		t.Fatalf("expected ErrInvalidProductID, got %v", err)
-	}
+	t.Run("invalid product id", func(t *testing.T) {
+		svc, _ := newOrdersService(t)
+		ctx := t.Context()
 
-	_, err = svc.CreateOrder(ctx, uuid.New(), []service.OrderItemInput{{ProductID: uuid.New(), Quantity: 0, UnitPriceCents: 100}}, 100)
-	if !errors.Is(err, service.ErrInvalidQuantity) {
-		t.Fatalf("expected ErrInvalidQuantity, got %v", err)
-	}
+		_, err := svc.CreateOrder(ctx, uuid.New(), []service.OrderItemInput{{ProductID: uuid.Nil, Quantity: 1, UnitPriceCents: 100}}, 100)
+		if !errors.Is(err, service.ErrInvalidProductID) {
+			t.Fatalf("expected ErrInvalidProductID, got %v", err)
+		}
+	})
 
-	_, err = svc.GetOrderByID(ctx, uuid.Nil)
-	if !errors.Is(err, service.ErrOrderNotFound) {
-		t.Fatalf("expected ErrOrderNotFound, got %v", err)
-	}
+	t.Run("invalid quantity", func(t *testing.T) {
+		svc, _ := newOrdersService(t)
+		ctx := t.Context()
 
-	_, err = svc.ListOrdersByBuyer(ctx, uuid.Nil, 10, 0)
-	if !errors.Is(err, service.ErrInvalidBuyerID) {
-		t.Fatalf("expected ErrInvalidBuyerID, got %v", err)
-	}
+		_, err := svc.CreateOrder(ctx, uuid.New(), []service.OrderItemInput{{ProductID: uuid.New(), Quantity: 0, UnitPriceCents: 100}}, 100)
+		if !errors.Is(err, service.ErrInvalidQuantity) {
+			t.Fatalf("expected ErrInvalidQuantity, got %v", err)
+		}
+	})
 
-	_, err = svc.UpdateOrderStatus(ctx, uuid.Nil, "")
-	if !errors.Is(err, service.ErrOrderNotFound) {
-		t.Fatalf("expected ErrOrderNotFound, got %v", err)
-	}
+	t.Run("missing order", func(t *testing.T) {
+		svc, _ := newOrdersService(t)
+		ctx := t.Context()
 
-	_, err = svc.UpdateOrderStatus(ctx, uuid.New(), "CONFIRMED")
-	if !errors.Is(err, service.ErrInvalidStatus) {
-		t.Fatalf("expected ErrInvalidStatus, got %v", err)
-	}
+		_, err := svc.GetOrderByID(ctx, uuid.Nil)
+		if !errors.Is(err, service.ErrOrderNotFound) {
+			t.Fatalf("expected ErrOrderNotFound, got %v", err)
+		}
+	})
+
+	t.Run("invalid buyer id for list", func(t *testing.T) {
+		svc, _ := newOrdersService(t)
+		ctx := t.Context()
+
+		_, err := svc.ListOrdersByBuyer(ctx, uuid.Nil, 10, 0)
+		if !errors.Is(err, service.ErrInvalidBuyerID) {
+			t.Fatalf("expected ErrInvalidBuyerID, got %v", err)
+		}
+	})
+
+	t.Run("missing order on update", func(t *testing.T) {
+		svc, _ := newOrdersService(t)
+		ctx := t.Context()
+
+		_, err := svc.UpdateOrderStatus(ctx, uuid.Nil, "")
+		if !errors.Is(err, service.ErrOrderNotFound) {
+			t.Fatalf("expected ErrOrderNotFound, got %v", err)
+		}
+	})
+
+	t.Run("invalid status", func(t *testing.T) {
+		svc, _ := newOrdersService(t)
+		ctx := t.Context()
+
+		_, err := svc.UpdateOrderStatus(ctx, uuid.New(), "CONFIRMED")
+		if !errors.Is(err, service.ErrInvalidStatus) {
+			t.Fatalf("expected ErrInvalidStatus, got %v", err)
+		}
+	})
 }
 
 func TestCreateOrderWritesOutbox(t *testing.T) {
-	svc, readOutbox := newOrdersService(t)
-	ctx := t.Context()
+	t.Run("writes outbox event", func(t *testing.T) {
+		svc, readOutbox := newOrdersService(t)
+		ctx := t.Context()
 
-	buyerID := uuid.New()
-	productID := uuid.New()
-	created, err := svc.CreateOrder(ctx, buyerID, []service.OrderItemInput{{ProductID: productID, Quantity: 2, UnitPriceCents: 9950}}, 19900)
-	if err != nil {
-		t.Fatalf("create order: %v", err)
-	}
+		buyerID := uuid.New()
+		productID := uuid.New()
+		created, err := svc.CreateOrder(ctx, buyerID, []service.OrderItemInput{{ProductID: productID, Quantity: 2, UnitPriceCents: 9950}}, 19900)
+		if err != nil {
+			t.Fatalf("create order: %v", err)
+		}
 
-	eventType, payloadBytes, err := readOutbox(created.ID)
-	if err != nil {
-		t.Fatalf("load outbox: %v", err)
-	}
-	if eventType != string(messaging.EventTypeOrderCreated) {
-		t.Fatalf("expected order.created, got %s", eventType)
-	}
+		eventType, payloadBytes, err := readOutbox(created.ID)
+		if err != nil {
+			t.Fatalf("load outbox: %v", err)
+		}
+		if eventType != string(messaging.EventTypeOrderCreated) {
+			t.Fatalf("expected order.created, got %s", eventType)
+		}
 
-	type itemPayload struct {
-		ProductID      string `json:"product_id"`
-		Quantity       int32  `json:"quantity"`
-		UnitPriceCents int64  `json:"unit_price_cents"`
-	}
-	type orderPayload struct {
-		OrderID     string        `json:"order_id"`
-		BuyerUserID string        `json:"buyer_user_id"`
-		TotalCents  int64         `json:"total_cents"`
-		Items       []itemPayload `json:"items"`
-	}
+		type itemPayload struct {
+			ProductID      string `json:"product_id"`
+			Quantity       int32  `json:"quantity"`
+			UnitPriceCents int64  `json:"unit_price_cents"`
+		}
+		type orderPayload struct {
+			OrderID     string        `json:"order_id"`
+			BuyerUserID string        `json:"buyer_user_id"`
+			TotalCents  int64         `json:"total_cents"`
+			Items       []itemPayload `json:"items"`
+		}
 
-	var got orderPayload
-	if err := json.Unmarshal(payloadBytes, &got); err != nil {
-		t.Fatalf("unmarshal payload: %v", err)
-	}
-	if got.OrderID != created.ID.String() || got.BuyerUserID != buyerID.String() || got.TotalCents != 19900 {
-		t.Fatalf("unexpected payload: %#v", got)
-	}
-	if len(got.Items) != 1 || got.Items[0].ProductID != productID.String() || got.Items[0].Quantity != 2 {
-		t.Fatalf("unexpected payload items: %#v", got.Items)
-	}
+		var got orderPayload
+		if err := json.Unmarshal(payloadBytes, &got); err != nil {
+			t.Fatalf("unmarshal payload: %v", err)
+		}
+		if got.OrderID != created.ID.String() || got.BuyerUserID != buyerID.String() || got.TotalCents != 19900 {
+			t.Fatalf("unexpected payload: %#v", got)
+		}
+		if len(got.Items) != 1 || got.Items[0].ProductID != productID.String() || got.Items[0].Quantity != 2 {
+			t.Fatalf("unexpected payload items: %#v", got.Items)
+		}
+	})
 }

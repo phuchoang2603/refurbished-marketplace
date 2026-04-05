@@ -35,8 +35,7 @@
             gopls
             gofumpt
             golangci-lint
-
-            python312
+            delve
 
             goose
             sqlc
@@ -48,6 +47,7 @@
             kubectl
             kubernetes-helm
             tilt
+            python312
           ];
 
           shellHook = ''

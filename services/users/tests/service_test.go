@@ -124,16 +124,23 @@ func TestAuthLoginAndRefresh(t *testing.T) {
 }
 
 func TestServiceCreateUserValidation(t *testing.T) {
-	svc := newUserService(t)
-	ctx := t.Context()
+	t.Run("invalid email", func(t *testing.T) {
+		svc := newUserService(t)
+		ctx := t.Context()
 
-	_, err := svc.CreateUser(ctx, "bad-email", "password123", 0, 0)
-	if !errors.Is(err, service.ErrInvalidEmail) {
-		t.Fatalf("expected ErrInvalidEmail, got %v", err)
-	}
+		_, err := svc.CreateUser(ctx, "bad-email", "password123", 0, 0)
+		if !errors.Is(err, service.ErrInvalidEmail) {
+			t.Fatalf("expected ErrInvalidEmail, got %v", err)
+		}
+	})
 
-	_, err = svc.CreateUser(ctx, "user@test.com", "short", 0, 0)
-	if !errors.Is(err, service.ErrInvalidPassword) {
-		t.Fatalf("expected ErrInvalidPassword, got %v", err)
-	}
+	t.Run("invalid password", func(t *testing.T) {
+		svc := newUserService(t)
+		ctx := t.Context()
+
+		_, err := svc.CreateUser(ctx, "user@test.com", "short", 0, 0)
+		if !errors.Is(err, service.ErrInvalidPassword) {
+			t.Fatalf("expected ErrInvalidPassword, got %v", err)
+		}
+	})
 }
