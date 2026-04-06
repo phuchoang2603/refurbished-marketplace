@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 )
 
@@ -10,11 +9,7 @@ type loginRequest struct {
 	Password string `json:"password"`
 }
 
-type refreshRequest struct {
-	RefreshToken string `json:"refresh_token"`
-}
-
-type logoutRequest struct {
+type refreshTokenRequest struct {
 	RefreshToken string `json:"refresh_token"`
 }
 
@@ -31,8 +26,7 @@ func mapTokens(access, refresh, tokenType string, expiresIn int64) tokenResponse
 
 func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 	var req loginRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+	if !decodeJSON(w, r, &req) {
 		return
 	}
 
@@ -46,9 +40,8 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleRefresh(w http.ResponseWriter, r *http.Request) {
-	var req refreshRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+	var req refreshTokenRequest
+	if !decodeJSON(w, r, &req) {
 		return
 	}
 
@@ -62,9 +55,8 @@ func (h *Handler) handleRefresh(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleLogout(w http.ResponseWriter, r *http.Request) {
-	var req logoutRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+	var req refreshTokenRequest
+	if !decodeJSON(w, r, &req) {
 		return
 	}
 

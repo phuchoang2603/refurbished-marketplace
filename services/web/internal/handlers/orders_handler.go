@@ -1,11 +1,9 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 	"strings"
 
-	webAuth "refurbished-marketplace/services/web/internal/auth"
 	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
 )
 
@@ -38,24 +36,66 @@ type orderItemResponse struct {
 	CreatedAt      string `json:"created_at"`
 }
 
-func mapOrderItem(id, orderID, productID string, quantity int32, unitPriceCents, lineTotalCents int64, createdAt string) orderItemResponse {
-	return orderItemResponse{ID: id, OrderID: orderID, ProductID: productID, Quantity: quantity, UnitPriceCents: unitPriceCents, LineTotalCents: lineTotalCents, CreatedAt: createdAt}
+func mapProtoOrderItem(item *ordersv1.OrderItem) orderItemResponse {
+	return orderItemResponse{
+		ID:             item.GetId(),
+		OrderID:        item.GetOrderId(),
+		ProductID:      item.GetProductId(),
+		Quantity:       item.GetQuantity(),
+		UnitPriceCents: item.GetUnitPriceCents(),
+		LineTotalCents: item.GetLineTotalCents(),
+		CreatedAt:      formatTimestamp(item.GetCreatedAt()),
+	}
 }
 
-func mapOrder(id, buyerUserID, status string, totalCents int64, items []orderItemResponse, createdAt, updatedAt string) orderResponse {
-	return orderResponse{ID: id, BuyerUserID: buyerUserID, Status: status, TotalCents: totalCents, Items: items, CreatedAt: createdAt, UpdatedAt: updatedAt}
+func mapProtoOrder(order *ordersv1.Order) orderResponse {
+	items := make([]orderItemResponse, 0, len(order.GetItems()))
+	for _, item := range order.GetItems() {
+		items = append(items, mapProtoOrderItem(item))
+	}
+	return orderResponse{
+		ID:          order.GetId(),
+		BuyerUserID: order.GetBuyerUserId(),
+		Status:      order.GetStatus().String(),
+		TotalCents:  order.GetTotalCents(),
+		Items:       items,
+		CreatedAt:   formatTimestamp(order.GetCreatedAt()),
+		UpdatedAt:   formatTimestamp(order.GetUpdatedAt()),
+	}
+}
+
+func (h *Handler) buildCreateOrderItems(w http.ResponseWriter, r *http.Request, reqItems []createOrderItemRequest) ([]*ordersv1.CreateOrderItem, int64, bool) {
+	items := make([]*ordersv1.CreateOrderItem, 0, len(reqItems))
+	var totalCents int64
+	for _, item := range reqItems {
+		productID := strings.TrimSpace(item.ProductID)
+		if productID == "" || item.Quantity <= 0 {
+			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+			return nil, 0, false
+		}
+
+		product, err := h.products.GetProductByID(r.Context(), productID)
+		if err != nil {
+			writeGRPCError(w, err)
+			return nil, 0, false
+		}
+
+		lineTotal := product.PriceCents * int64(item.Quantity)
+		totalCents += lineTotal
+		items = append(items, &ordersv1.CreateOrderItem{ProductId: productID, Quantity: item.Quantity, UnitPriceCents: product.PriceCents})
+	}
+
+	return items, totalCents, true
 }
 
 func (h *Handler) handleCreateOrder(w http.ResponseWriter, r *http.Request) {
-	buyerUserID, ok := webAuth.UserIDFromContext(r.Context())
-	if !ok || buyerUserID == "" {
-		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+	buyerUserID, ok := requireUserID(w, r)
+	if !ok {
 		return
 	}
 
 	var req createOrderRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+	if !decodeJSON(w, r, &req) {
 		return
 	}
 	if len(req.Items) == 0 {
@@ -63,26 +103,9 @@ func (h *Handler) handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := make([]*ordersv1.CreateOrderItem, 0, len(req.Items))
-	itemResponses := make([]orderItemResponse, 0, len(req.Items))
-	var totalCents int64
-	for _, item := range req.Items {
-		productID := strings.TrimSpace(item.ProductID)
-		if productID == "" || item.Quantity <= 0 {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
-			return
-		}
-
-		product, err := h.products.GetProductByID(r.Context(), productID)
-		if err != nil {
-			writeGRPCError(w, err)
-			return
-		}
-
-		lineTotal := product.PriceCents * int64(item.Quantity)
-		totalCents += lineTotal
-		items = append(items, &ordersv1.CreateOrderItem{ProductId: productID, Quantity: item.Quantity, UnitPriceCents: product.PriceCents})
-		itemResponses = append(itemResponses, mapOrderItem("", "", productID, item.Quantity, product.PriceCents, lineTotal, ""))
+	items, totalCents, ok := h.buildCreateOrderItems(w, r, req.Items)
+	if !ok {
+		return
 	}
 
 	order, err := h.orders.CreateOrder(r.Context(), buyerUserID, items, totalCents)
@@ -91,18 +114,12 @@ func (h *Handler) handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	itemResponses = itemResponses[:0]
-	for _, item := range order.Items {
-		itemResponses = append(itemResponses, mapOrderItem(item.Id, item.OrderId, item.ProductId, item.Quantity, item.UnitPriceCents, item.LineTotalCents, item.CreatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00")))
-	}
-
-	writeJSON(w, http.StatusCreated, mapOrder(order.Id, order.BuyerUserId, order.Status.String(), order.TotalCents, itemResponses, order.CreatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00"), order.UpdatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00")))
+	writeJSON(w, http.StatusCreated, mapProtoOrder(order))
 }
 
 func (h *Handler) handleGetOrderByID(w http.ResponseWriter, r *http.Request) {
-	id := strings.TrimSpace(r.PathValue("id"))
-	if id == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid order id"})
+	id, ok := requirePathValue(w, r, "id", "invalid order id")
+	if !ok {
 		return
 	}
 
@@ -112,18 +129,12 @@ func (h *Handler) handleGetOrderByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := make([]orderItemResponse, 0, len(order.Items))
-	for _, item := range order.Items {
-		items = append(items, mapOrderItem(item.Id, item.OrderId, item.ProductId, item.Quantity, item.UnitPriceCents, item.LineTotalCents, item.CreatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00")))
-	}
-
-	writeJSON(w, http.StatusOK, mapOrder(order.Id, order.BuyerUserId, order.Status.String(), order.TotalCents, items, order.CreatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00"), order.UpdatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00")))
+	writeJSON(w, http.StatusOK, mapProtoOrder(order))
 }
 
 func (h *Handler) handleListOrdersByBuyer(w http.ResponseWriter, r *http.Request) {
-	buyerUserID, ok := webAuth.UserIDFromContext(r.Context())
-	if !ok || buyerUserID == "" {
-		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+	buyerUserID, ok := requireUserID(w, r)
+	if !ok {
 		return
 	}
 
@@ -135,11 +146,7 @@ func (h *Handler) handleListOrdersByBuyer(w http.ResponseWriter, r *http.Request
 
 	items := make([]orderResponse, 0, len(resp.Orders))
 	for _, order := range resp.Orders {
-		orderItems := make([]orderItemResponse, 0, len(order.Items))
-		for _, item := range order.Items {
-			orderItems = append(orderItems, mapOrderItem(item.Id, item.OrderId, item.ProductId, item.Quantity, item.UnitPriceCents, item.LineTotalCents, item.CreatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00")))
-		}
-		items = append(items, mapOrder(order.Id, order.BuyerUserId, order.Status.String(), order.TotalCents, orderItems, order.CreatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00"), order.UpdatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00")))
+		items = append(items, mapProtoOrder(order))
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{"orders": items})

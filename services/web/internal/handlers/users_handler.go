@@ -1,9 +1,7 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
-	"strings"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -25,21 +23,19 @@ type userResponse struct {
 }
 
 func mapUser(id, email string, xPos, yPos float64, createdAt, updatedAt *timestamppb.Timestamp) userResponse {
-	var created string
-	var updated string
-	if createdAt != nil {
-		created = createdAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00")
+	return userResponse{
+		ID:        id,
+		Email:     email,
+		XPos:      xPos,
+		YPos:      yPos,
+		CreatedAt: formatTimestamp(createdAt),
+		UpdatedAt: formatTimestamp(updatedAt),
 	}
-	if updatedAt != nil {
-		updated = updatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00")
-	}
-	return userResponse{ID: id, Email: email, XPos: xPos, YPos: yPos, CreatedAt: created, UpdatedAt: updated}
 }
 
 func (h *Handler) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 	var req createUserRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+	if !decodeJSON(w, r, &req) {
 		return
 	}
 
@@ -53,9 +49,8 @@ func (h *Handler) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleGetUserByID(w http.ResponseWriter, r *http.Request) {
-	id := strings.TrimSpace(r.PathValue("id"))
-	if id == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid user id"})
+	id, ok := requirePathValue(w, r, "id", "invalid user id")
+	if !ok {
 		return
 	}
 

@@ -2,9 +2,6 @@ package service
 
 import (
 	"context"
-	"database/sql"
-	"errors"
-	"strings"
 	"time"
 
 	"refurbished-marketplace/services/products/internal/database"
@@ -25,15 +22,12 @@ type Product struct {
 }
 
 func (s *Service) CreateProduct(ctx context.Context, name, description string, priceCents int64, terminalID uuid.UUID, xPos, yPos float64) (Product, error) {
-	cleanName := strings.TrimSpace(name)
+	cleanName := normalizeProductName(name)
 	if cleanName == "" {
 		return Product{}, ErrInvalidProductName
 	}
 
-	desc := strings.TrimSpace(description)
-	if desc == "" {
-		desc = cleanName
-	}
+	desc := normalizeProductDescription(description, cleanName)
 
 	if priceCents <= 0 {
 		return Product{}, ErrInvalidPrice
@@ -61,10 +55,7 @@ func (s *Service) CreateProduct(ctx context.Context, name, description string, p
 func (s *Service) GetProductByID(ctx context.Context, id uuid.UUID) (Product, error) {
 	p, err := s.queries.GetProductByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return Product{}, ErrProductNotFound
-		}
-		return Product{}, err
+		return Product{}, mapProductNotFound(err)
 	}
 
 	return mapDBProduct(p), nil

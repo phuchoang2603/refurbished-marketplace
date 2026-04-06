@@ -32,17 +32,21 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("GET /products", h.handleListProducts)
 	mux.HandleFunc("GET /products/{id}", h.handleGetProductByID)
 
-	mux.Handle("POST /orders", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleCreateOrder)))
-	mux.Handle("GET /orders", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleListOrdersByBuyer)))
-	mux.HandleFunc("GET /orders/{id}", h.handleGetOrderByID)
-
 	mux.HandleFunc("POST /cart/items", h.handleAddCartItem)
 	mux.HandleFunc("PATCH /cart/items/{product_id}", h.handleSetCartItemQuantity)
 	mux.HandleFunc("DELETE /cart/items/{product_id}", h.handleRemoveCartItem)
 	mux.Handle("POST /cart/checkout", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleCheckoutCart)))
 	mux.HandleFunc("GET /cart", h.handleGetCart)
 
+	mux.Handle("POST /orders", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleCreateOrder)))
+	mux.Handle("GET /orders", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleListOrdersByBuyer)))
+	mux.HandleFunc("GET /orders/{id}", h.handleGetOrderByID)
+
 	mux.HandleFunc("POST /auth/login", h.handleLogin)
 	mux.HandleFunc("POST /auth/refresh", h.handleRefresh)
 	mux.Handle("POST /auth/logout", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleLogout)))
+}
+
+func (h *Handler) handleHealthz(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
 }

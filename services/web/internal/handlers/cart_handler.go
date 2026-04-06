@@ -5,12 +5,10 @@ import (
 	"net/http"
 	"strings"
 
-	webAuth "refurbished-marketplace/services/web/internal/auth"
 	cartv1 "refurbished-marketplace/shared/proto/cart/v1"
 	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
 
 	"github.com/google/uuid"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 const cartCookieName = "cart_id"
@@ -32,19 +30,12 @@ type cartItemRequest struct {
 	Quantity  int32  `json:"quantity"`
 }
 
-func timestampString(ts *timestamppb.Timestamp) string {
-	if ts == nil {
-		return ""
-	}
-	return ts.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00")
-}
-
 func mapCart(c *cartv1.Cart) cartResponse {
 	items := make([]cartItemResponse, 0, len(c.GetItems()))
 	for _, item := range c.GetItems() {
 		items = append(items, cartItemResponse{ProductID: item.GetProductId(), Quantity: item.GetQuantity()})
 	}
-	return cartResponse{CartID: c.GetCartId(), Items: items, CreatedAt: timestampString(c.GetCreatedAt()), UpdatedAt: timestampString(c.GetUpdatedAt())}
+	return cartResponse{CartID: c.GetCartId(), Items: items, CreatedAt: formatTimestamp(c.GetCreatedAt()), UpdatedAt: formatTimestamp(c.GetUpdatedAt())}
 }
 
 func cartIDFromRequest(r *http.Request) string {
@@ -102,9 +93,8 @@ func (h *Handler) handleAddCartItem(w http.ResponseWriter, r *http.Request) {
 
 func (h *Handler) handleSetCartItemQuantity(w http.ResponseWriter, r *http.Request) {
 	cartID := h.getOrCreateCartID(w, r)
-	productID := strings.TrimSpace(r.PathValue("product_id"))
-	if productID == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid product id"})
+	productID, ok := requirePathValue(w, r, "product_id", "invalid product id")
+	if !ok {
 		return
 	}
 	req, err := decodeCartItemRequest(r)
@@ -122,9 +112,8 @@ func (h *Handler) handleSetCartItemQuantity(w http.ResponseWriter, r *http.Reque
 
 func (h *Handler) handleRemoveCartItem(w http.ResponseWriter, r *http.Request) {
 	cartID := h.getOrCreateCartID(w, r)
-	productID := strings.TrimSpace(r.PathValue("product_id"))
-	if productID == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid product id"})
+	productID, ok := requirePathValue(w, r, "product_id", "invalid product id")
+	if !ok {
 		return
 	}
 	cart, err := h.cart.RemoveCartItem(r.Context(), cartID, productID)
@@ -136,9 +125,8 @@ func (h *Handler) handleRemoveCartItem(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
-	buyerUserID, ok := webAuth.UserIDFromContext(r.Context())
-	if !ok || buyerUserID == "" {
-		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+	buyerUserID, ok := requireUserID(w, r)
+	if !ok {
 		return
 	}
 	cartID := cartIDFromRequest(r)
@@ -174,9 +162,5 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = h.cart.ClearCart(r.Context(), cartID)
 	h.clearCartCookie(w)
-	orderItems := make([]orderItemResponse, 0, len(order.Items))
-	for _, item := range order.Items {
-		orderItems = append(orderItems, mapOrderItem(item.Id, item.OrderId, item.ProductId, item.Quantity, item.UnitPriceCents, item.LineTotalCents, item.CreatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00")))
-	}
-	writeJSON(w, http.StatusCreated, mapOrder(order.Id, order.BuyerUserId, order.Status.String(), order.TotalCents, orderItems, order.CreatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00"), order.UpdatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00")))
+	writeJSON(w, http.StatusCreated, mapProtoOrder(order))
 }

@@ -2,8 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"strconv"
-	"strings"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -22,15 +20,6 @@ type productResponse struct {
 }
 
 func mapProduct(id, name, description string, priceCents int64, stock int32, terminalID string, xPos, yPos float64, createdAt, updatedAt *timestamppb.Timestamp) productResponse {
-	var created string
-	var updated string
-	if createdAt != nil {
-		created = createdAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00")
-	}
-	if updatedAt != nil {
-		updated = updatedAt.AsTime().UTC().Format("2006-01-02T15:04:05Z07:00")
-	}
-
 	return productResponse{
 		ID:          id,
 		Name:        name,
@@ -40,15 +29,14 @@ func mapProduct(id, name, description string, priceCents int64, stock int32, ter
 		TerminalID:  terminalID,
 		XPos:        xPos,
 		YPos:        yPos,
-		CreatedAt:   created,
-		UpdatedAt:   updated,
+		CreatedAt:   formatTimestamp(createdAt),
+		UpdatedAt:   formatTimestamp(updatedAt),
 	}
 }
 
 func (h *Handler) handleGetProductByID(w http.ResponseWriter, r *http.Request) {
-	id := strings.TrimSpace(r.PathValue("id"))
-	if id == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid product id"})
+	id, ok := requirePathValue(w, r, "id", "invalid product id")
+	if !ok {
 		return
 	}
 
@@ -58,29 +46,17 @@ func (h *Handler) handleGetProductByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, mapProduct(p.Id, p.Name, p.Description, p.PriceCents, p.Stock, p.TerminalId, p.XPos, p.YPos, p.CreatedAt, p.UpdatedAt))
+	writeJSON(w, http.StatusOK, mapProduct(p.Id, p.Name, p.Description, p.PriceCents, 0, p.TerminalId, p.XPos, p.YPos, p.CreatedAt, p.UpdatedAt))
 }
 
 func (h *Handler) handleListProducts(w http.ResponseWriter, r *http.Request) {
-	limit := int32(20)
-	offset := int32(0)
-
-	if raw := strings.TrimSpace(r.URL.Query().Get("limit")); raw != "" {
-		v, err := strconv.ParseInt(raw, 10, 32)
-		if err != nil || v <= 0 {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid limit"})
-			return
-		}
-		limit = int32(v)
+	limit, ok := queryInt32Param(w, r, "limit", 20, 1, "invalid limit")
+	if !ok {
+		return
 	}
-
-	if raw := strings.TrimSpace(r.URL.Query().Get("offset")); raw != "" {
-		v, err := strconv.ParseInt(raw, 10, 32)
-		if err != nil || v < 0 {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid offset"})
-			return
-		}
-		offset = int32(v)
+	offset, ok := queryInt32Param(w, r, "offset", 0, 0, "invalid offset")
+	if !ok {
+		return
 	}
 
 	resp, err := h.products.ListProducts(r.Context(), limit, offset)
@@ -91,7 +67,7 @@ func (h *Handler) handleListProducts(w http.ResponseWriter, r *http.Request) {
 
 	items := make([]productResponse, 0, len(resp.Products))
 	for _, p := range resp.Products {
-		items = append(items, mapProduct(p.Id, p.Name, p.Description, p.PriceCents, p.Stock, p.TerminalId, p.XPos, p.YPos, p.CreatedAt, p.UpdatedAt))
+		items = append(items, mapProduct(p.Id, p.Name, p.Description, p.PriceCents, 0, p.TerminalId, p.XPos, p.YPos, p.CreatedAt, p.UpdatedAt))
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{"products": items})

@@ -23,14 +23,14 @@ func RequireAccessToken(cfg authconfig.Config, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		raw := bearerToken(r.Header.Get("Authorization"))
 		if raw == "" {
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			writeUnauthorized(w)
 			return
 		}
 
 		claims, err := sharedjwt.ParseAndValidate(raw, cfg.JWTSecret, "access", cfg.JWTIssuer, cfg.JWTAudience)
 		if err != nil {
 			if errors.Is(err, sharedjwt.ErrExpiredToken) || errors.Is(err, sharedjwt.ErrInvalidToken) {
-				http.Error(w, "unauthorized", http.StatusUnauthorized)
+				writeUnauthorized(w)
 				return
 			}
 			http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -59,4 +59,8 @@ func bearerToken(header string) string {
 	}
 
 	return token
+}
+
+func writeUnauthorized(w http.ResponseWriter) {
+	http.Error(w, "unauthorized", http.StatusUnauthorized)
 }
