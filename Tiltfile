@@ -2,18 +2,22 @@
 load('ext://namespace', 'namespace_create')
 namespace_create('ecommerce')
 namespace_create('cnpg-system')
+namespace_create('kafka-system')
 
 # Deploy cnpg operator
-load('ext://helm_resource', 'helm_resource', 'helm_repo')
 k8s_kind('Cluster', pod_readiness='wait')
-helm_repo('cnpg-repo', 'https://cloudnative-pg.github.io/charts')
-helm_resource(
-    'cnpg-operator-install',
-    'cnpg-repo/cloudnative-pg', 
-    namespace='cnpg-system',
+local_resource(
+  'cnpg-operator-install',
+  'helm repo add cnpg https://cloudnative-pg.github.io/charts && helm repo update && helm upgrade --install cnpg --namespace cnpg-system --create-namespace cnpg/cloudnative-pg',
+  )
+
+# Deploy Kafka cluster
+local_resource(
+  'kafka-cluster-install',
+  'helm upgrade --install strimzi-cluster-operator oci://quay.io/strimzi-helm/strimzi-kafka-operator --namespace kafka-system --create-namespace --set watchAnyNamespace=true',
 )
 
-# Deploy everything
+# Deploy our application
 k8s_yaml('./infra/development/k8s/secrets.yaml')
 app_yaml = helm(
     './infra/charts/refurbished-marketplace',
@@ -165,3 +169,39 @@ k8s_resource('inventory-db', extra_pod_selectors=[{'cnpg.io/cluster': 'inventory
 k8s_resource('inventory-migrate', resource_deps=['inventory-db'], labels='inventory')
 k8s_resource('inventory', port_forwards=['9095:9095'], resource_deps=['inventory-db'], labels='inventory')
 
+### Kafka Cluster and Topics ###
+k8s_resource(
+    new_name='kafka-cluster', 
+    objects=[
+        'ecommerce-kafka-cluster:kafka',
+        'ecommerce-kafka-cluster-dual-role:kafkanodepool'
+    ],
+    resource_deps=['kafka-cluster-install'],
+    labels=['kafka']
+)
+
+k8s_resource(
+    new_name='kafka-topics',
+    objects=['orders.created:kafkatopic'],
+    resource_deps=['kafka-cluster'],
+    labels=['kafka']
+)
+
+k8s_resource(
+    new_name='debezium-connect',
+    objects=['ecommerce-connect-cluster:kafkaconnect'],
+    resource_deps=['kafka-cluster'],
+    labels=['kafka']
+)
+
+# The specific Outbox Connector and its RBAC
+k8s_resource(
+    new_name='orders-outbox-connector',
+    objects=[
+        'orders-outbox:kafkaconnector',
+        'orders-debezium-connector-role:role',
+        'orders-debezium-connector-rolebinding:rolebinding'
+    ],
+    resource_deps=['debezium-connect'],
+    labels=['kafka']
+)

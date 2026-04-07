@@ -33,6 +33,7 @@ Use a reservation-friendly model:
 - Inventory should consume order/payment events through the async backbone.
 - Use inbox dedupe for repeated deliveries.
 - Emit stock failure/reservation events when needed for order state transitions.
+- The first real consumer flow should be `orders.created` -> reserve stock.
 
 ## Why Reservations
 
@@ -44,3 +45,4 @@ Use a reservation-friendly model:
 
 - Keep tests in `services/inventory/tests/`.
 - Cover reserve/commit/release behavior and validation.
+- Add event-consumer tests once Kafka or a polling bridge exists.

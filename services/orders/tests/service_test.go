@@ -215,7 +215,7 @@ func TestCreateOrderWritesOutbox(t *testing.T) {
 			t.Fatalf("load outbox: %v", err)
 		}
 		if eventType != string(messaging.EventTypeOrderCreated) {
-			t.Fatalf("expected order.created, got %s", eventType)
+			t.Fatalf("expected orders.created, got %s", eventType)
 		}
 
 		type itemPayload struct {

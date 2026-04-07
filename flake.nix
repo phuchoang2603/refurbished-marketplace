@@ -47,7 +47,6 @@
             kubectl
             kubernetes-helm
             tilt
-            python312
           ];
 
           shellHook = ''

@@ -33,7 +33,8 @@ This applies to `users`, `products`, `inventory`, and `orders`.
 ### products scope
 
 - Public reads only in the web API.
-- Product catalog writes are not part of the public ecommerce flow.
+- Product catalog writes stay internal/admin-only.
+- Inventory is a separate internal service and should not be folded into products.
 
 ## Migration Path from Current State
 
@@ -59,6 +60,8 @@ Migration is now complete for users transport boundary. Current order going forw
 - Orders protobuf contract is centralized at `shared/proto/orders/v1/orders.proto`.
 - Generated orders gRPC code lives in `shared/proto/orders/v1/`.
 - Reusable orders gRPC client lives in `shared/proto/ordersclient/`.
+- Inventory protobuf contract lives at `shared/proto/inventory/v1/inventory.proto`.
+- Generated inventory gRPC code lives in `shared/proto/inventory/v1/`.
 
 ## Related Architecture
 

@@ -29,6 +29,13 @@ spec:
               do echo "waiting for database {{ $svc.db.host }}"; sleep 2; done
 {{- end }}
       containers:
+{{- if eq $name "cart" }}
+        - name: redis
+          image: docker.io/valkey/valkey:7.2.5
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+          ports:
+            - containerPort: 6379
+{{- end }}
         - name: {{ $name }}
           image: {{ $svc.image }}
           imagePullPolicy: {{ $.Values.global.imagePullPolicy }}

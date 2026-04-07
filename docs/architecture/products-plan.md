@@ -51,6 +51,7 @@ Use a minimal catalog model for v1:
 - `price_cents`: must be positive
 - `terminal_id`: must be valid UUID
 - `x_pos` / `y_pos`: required coordinate values
+- product creation is handled by an internal/admin flow, not the public catalog read path
 
 ## Testing
 
@@ -70,4 +71,7 @@ All tests stay under `services/products/tests/`:
 6. Wire `cmd/products/main.go` with required `DB_URL`.
 7. Add tests in `services/products/tests/`.
 8. Add products migrator Dockerfile and enable migration job in k8s chart values.
-9. Keep product writes out of the public web API.
+9. Keep catalog reads public and product writes internal/admin only.
+10. Keep inventory mutations out of products entirely.
+11. Implement inventory reservations flow hooked to orders.created
+12. Add admin orchestration flow for product creation (CLI or internal API) if time allows.

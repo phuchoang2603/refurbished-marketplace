@@ -3,18 +3,22 @@
 ## Current Status
 
 - Repository bootstrapped as a single Go module with `go.mod` and `go.sum`.
-- Initial services exist: `users`, `products`, `orders`.
+- Initial services exist: `users`, `products`, `orders`, `inventory`.
 - Architecture direction is now explicit: REST at edge (`web` service), gRPC for all internal service-to-service traffic.
 - Development now standardizes on Kubernetes (Tilt + Helm + CloudNativePG).
 - `users` is the first implemented vertical slice (migration + sqlc queries + service + handlers + integration tests).
 - Users auth is implemented with JWT login/refresh/logout and DB-backed refresh token sessions.
 - Web edge service exists and now owns REST entrypoints while users is served via gRPC.
-- `orders` vertical slice is implemented as gRPC-first with PostgreSQL migrations, sqlc, and service tests.
+- `orders` vertical slice is implemented as gRPC-first with PostgreSQL migrations, sqlc, service tests, and a transactional outbox row for `orders.created`.
 - `cart` is implemented as a Redis-backed session service, separate from `users` and `orders`.
+- `products` is catalog-only now; stock moved out into `inventory`.
+- `inventory` is scaffolded as the stock/reservation service.
 
-## Data Model Direction | Service | Responsibility | Key Fields Added |
+## Data Model Direction
 
-| -------- | -------------------- | ----------------------------------------------------- |
+| Service | Responsibility | Key Fields Added |
+| ------- | -------------- | ---------------- |
+
 | Users | Identity & Profile | `x_pos`, `y_pos` |
 | Products | Catalog & Merchant | `terminal_id`, `x_pos`, `y_pos` |
 | Inventory | Stock Control | `available_qty`, `reserved_qty` |
@@ -26,9 +30,9 @@
 Implement the schema changes above in the database layer first, then update the service code around those schemas.
 
 - `users`: add location columns only; derive spending aggregates from transaction history when needed.
-- `products`: add merchant/terminal metadata columns.
+- `products`: keep merchant/terminal metadata only; no stock column.
 - `inventory`: own stock and reservation state, separate from catalog data.
-- `orders`: keep order header state and totals.
+- `orders`: keep order header state and totals; write outbox events in the same transaction.
 - `payment`: add fraud/transaction tracking fields when the service is introduced.
 
 ## Cart Service Direction
@@ -157,9 +161,10 @@ Implement the schema changes above in the database layer first, then update the 
 ## Focus Areas
 
 - Keep `users` as identity/profile plus auth session source of truth.
-- Keep `products` as read-only catalog data in the public API.
+- Keep `products` as catalog data with internal/admin writes.
 - Keep `inventory` as the source of truth for available/reserved stock.
 - Keep `orders` as order headers plus line items.
+- Keep `orders` responsible for the canonical checkout event stream.
 - Keep `cart` separate from order state and payment state.
 - Introduce `payment` as the bank/fraud boundary later.
 - Update docs in `docs/architecture/` when a topic becomes stable enough to move out of `PLAN.md`.
@@ -175,16 +180,18 @@ Implement the schema changes above in the database layer first, then update the 
 ## Minimal Schema
 
 - `users`: `id`, `email`, `password_hash`, `x_pos`, `y_pos`
-- `products`: `id`, `name`, `description`, `price_cents`, `stock`, `terminal_id`, `x_pos`, `y_pos`
+- `products`: `id`, `name`, `description`, `price_cents`, `terminal_id`, `x_pos`, `y_pos`
 - `inventory`: `product_id`, `available_qty`, `reserved_qty`
 - `orders`: `id`, `buyer_user_id`, `status`, `total_cents`
 - `order_items`: `id`, `order_id`, `product_id`, `quantity`, `unit_price_cents`, `line_total_cents`
+- `orders_outbox`: `id`, `aggregate_id`, `event_type`, `payload`, `publish_attempts`, `created_at`, `published_at`
 - `cart`: Redis session state only; no Postgres schema required
 - `payment`: `id`, `order_id`, `tx_fraud`, `tx_fraud_scenario`, `tx_time_seconds`
 
 ## Next Steps
 
-1. Add the `inventory` reservation flow and connect it to order creation.
-2. Add the `payment` service and its bank/fraud event flow.
-3. Introduce Kafka/Strimzi contracts for payment outcomes and downstream consumers.
-4. Add outbox/inbox tables where event reliability matters.
+1. Implement inventory consumption of `orders.created` and reservation state transitions.
+2. Add an outbox publisher/CDC path from `orders` to Kafka.
+3. Add the `payment` service and its bank/fraud event flow.
+4. Introduce inbox dedupe in consumers that need at-least-once safety.
+5. Add admin orchestration later if you want a single product + inventory creation path.
