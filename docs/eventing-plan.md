@@ -6,7 +6,7 @@ Use Kafka as the async backbone, but make event publishing reliable with outbox/
 
 ## Outbox
 
-- `orders` already writes its business row and an outbox row in the same db transaction.
+- `orders` writes one outbox row per order item in the same db transaction.
 - `payment` should do the same when introduced.
 - The outbox row is the durable event source of truth.
 - Keep the outbox table local to the service that owns the business change.
@@ -14,7 +14,7 @@ Use Kafka as the async backbone, but make event publishing reliable with outbox/
 ### `orders_outbox` Shape
 
 - `id UUID PRIMARY KEY`
-- `aggregate_id UUID NOT NULL` (`products.id` for item events)
+- `aggregate_id UUID NOT NULL` (`product_id` for item events)
 - `event_type TEXT NOT NULL` (for example, `orders.item.created`)
 - `payload JSONB NOT NULL`
 - `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`
@@ -30,7 +30,7 @@ The shared event names live in `shared/messaging`.
 3. Insert all order items.
 4. Insert one outbox row per order item with the canonical item payload.
 5. Commit the transaction.
-6. A separate publisher/CDC process forwards the outbox row to Kafka later.
+6. A separate publisher/CDC process forwards the outbox rows to Kafka later.
 
 ### Event Payload
 
@@ -54,7 +54,7 @@ The shared event names live in `shared/messaging`.
 
 1. `web` calls `orders`.
 2. `orders` stores the order, items, and one outbox event per item in one transaction.
-3. Debezium streams the outbox row into Kafka.
+3. Debezium streams the outbox rows into Kafka.
 4. `inventory` consumes the event and reserves stock keyed by `product_id`.
 5. `payment` consumes the event and checks its inbox table before processing.
 6. `payment` records success/failure and emits follow-up events as needed.

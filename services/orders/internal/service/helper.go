@@ -2,9 +2,11 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 
 	"refurbished-marketplace/services/orders/internal/database"
+	"refurbished-marketplace/shared/messaging"
 
 	"github.com/google/uuid"
 )
@@ -25,6 +27,7 @@ func mapDBOrderItem(i database.OrderItem) OrderItem {
 		ID:             i.ID,
 		OrderID:        i.OrderID,
 		ProductID:      i.ProductID,
+		MerchantID:     i.MerchantID,
 		Quantity:       i.Quantity,
 		UnitPriceCents: i.UnitPriceCents,
 		LineTotalCents: i.LineTotalCents,
@@ -67,32 +70,53 @@ func validateOrderStatus(status string) (string, error) {
 	return status, nil
 }
 
-func createOrderItems(ctx context.Context, queries *database.Queries, orderID uuid.UUID, items []OrderItemInput) ([]OrderItem, []outboxItem, error) {
+func createOrderItems(ctx context.Context, queries *database.Queries, orderID, buyerUserID uuid.UUID, items []OrderItemInput) ([]OrderItem, error) {
 	orderItems := make([]OrderItem, 0, len(items))
-	encodedItems := make([]outboxItem, 0, len(items))
 
 	for _, item := range items {
+		itemID := uuid.New()
+		lineTotal := item.UnitPriceCents * int64(item.Quantity)
 		createdItem, err := queries.CreateOrderItem(ctx, database.CreateOrderItemParams{
-			ID:             uuid.New(),
+			ID:             itemID,
 			OrderID:        orderID,
 			ProductID:      item.ProductID,
+			MerchantID:     item.MerchantID,
 			Quantity:       item.Quantity,
 			UnitPriceCents: item.UnitPriceCents,
-			LineTotalCents: item.UnitPriceCents * int64(item.Quantity),
+			LineTotalCents: lineTotal,
 		})
 		if err != nil {
-			return nil, nil, err
+			return nil, err
+		}
+
+		payload := outboxItem{
+			OrderID:        orderID.String(),
+			OrderItemID:    itemID.String(),
+			BuyerUserID:    buyerUserID.String(),
+			ProductID:      item.ProductID.String(),
+			MerchantID:     item.MerchantID.String(),
+			Quantity:       item.Quantity,
+			UnitPriceCents: item.UnitPriceCents,
+			LineTotalCents: lineTotal,
+		}
+		payloadBytes, err := json.Marshal(payload)
+		if err != nil {
+			return nil, err
+		}
+
+		if _, err := queries.CreateOrderOutbox(ctx, database.CreateOrderOutboxParams{
+			ID:          uuid.New(),
+			AggregateID: item.ProductID,
+			EventType:   string(messaging.EventTypeOrderItemCreated),
+			Payload:     payloadBytes,
+		}); err != nil {
+			return nil, err
 		}
 
 		orderItems = append(orderItems, mapDBOrderItem(createdItem))
-		encodedItems = append(encodedItems, outboxItem{
-			ProductID:      item.ProductID.String(),
-			Quantity:       item.Quantity,
-			UnitPriceCents: item.UnitPriceCents,
-		})
 	}
 
-	return orderItems, encodedItems, nil
+	return orderItems, nil
 }
 
 func loadOrderWithItems(ctx context.Context, queries *database.Queries, dbOrder database.Order) (Order, error) {

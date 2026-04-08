@@ -73,5 +73,5 @@ All tests stay under `services/products/tests/`:
 8. Add products migrator Dockerfile and enable migration job in k8s chart values.
 9. Keep catalog reads public and product writes internal/admin only.
 10. Keep inventory mutations out of products entirely.
-11. Implement inventory reservations flow hooked to orders.created
+11. Implement inventory reservations flow hooked to orders.item.created
 12. Add admin orchestration flow for product creation (CLI or internal API) if time allows.

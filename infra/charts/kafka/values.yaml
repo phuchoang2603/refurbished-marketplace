@@ -13,8 +13,8 @@ connect:
 entities:
   orders:
     topic:
-      name: orders.created
-      partitions: 1
+      name: orders.item.created
+      partitions: 6
       retention: 604800000 # 7 days
     connector:
       name: orders-outbox

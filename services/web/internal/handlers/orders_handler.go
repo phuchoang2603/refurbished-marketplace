@@ -82,7 +82,7 @@ func (h *Handler) buildCreateOrderItems(w http.ResponseWriter, r *http.Request, 
 
 		lineTotal := product.PriceCents * int64(item.Quantity)
 		totalCents += lineTotal
-		items = append(items, &ordersv1.CreateOrderItem{ProductId: productID, Quantity: item.Quantity, UnitPriceCents: product.PriceCents})
+		items = append(items, &ordersv1.CreateOrderItem{ProductId: productID, MerchantId: product.GetMerchantId(), Quantity: item.Quantity, UnitPriceCents: product.PriceCents})
 	}
 
 	return items, totalCents, true

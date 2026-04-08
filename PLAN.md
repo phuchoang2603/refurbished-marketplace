@@ -9,7 +9,7 @@
 - `users` is the first implemented vertical slice (migration + sqlc queries + service + handlers + integration tests).
 - Users auth is implemented with JWT login/refresh/logout and DB-backed refresh token sessions.
 - Web edge service exists and now owns REST entrypoints while users is served via gRPC.
-- `orders` vertical slice is implemented as gRPC-first with PostgreSQL migrations, sqlc, service tests, and a transactional outbox row per `orders.item.created` event.
+- `orders` vertical slice is implemented as gRPC-first with PostgreSQL migrations, sqlc, service tests, and per-item `orders.item.created` outbox rows keyed by `product_id`.
 - `products` is catalog-only now; stock moved out into `inventory`.
 - `inventory` is scaffolded as the stock/reservation service.
 
@@ -115,9 +115,10 @@
 ## Eventing Reliability
 
 - Kafka remains the async backbone for downstream consumers.
-- `orders` and later `payment` should persist domain events to a local outbox table inside the same database transaction as the business write.
+- `orders` writes one outbox row per item and keys it by `product_id`.
+- `payment` should persist its own domain events to a local outbox table when introduced.
 - Debezium should stream outbox rows from Postgres into Kafka.
-- Consumers such as `payment` should use an inbox table to dedupe repeated deliveries.
+- Consumers such as `inventory` and `payment` should use an inbox table to dedupe repeated deliveries.
 - Fraud and analytics should consume the canonical event stream, not application-generated ad hoc payloads.
 
 ## Minimal Schema

@@ -79,10 +79,11 @@ type OrderItem struct {
 	Id             string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	OrderId        string                 `protobuf:"bytes,2,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
 	ProductId      string                 `protobuf:"bytes,3,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
-	Quantity       int32                  `protobuf:"varint,4,opt,name=quantity,proto3" json:"quantity,omitempty"`
-	UnitPriceCents int64                  `protobuf:"varint,5,opt,name=unit_price_cents,json=unitPriceCents,proto3" json:"unit_price_cents,omitempty"`
-	LineTotalCents int64                  `protobuf:"varint,6,opt,name=line_total_cents,json=lineTotalCents,proto3" json:"line_total_cents,omitempty"`
-	CreatedAt      *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	MerchantId     string                 `protobuf:"bytes,4,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
+	Quantity       int32                  `protobuf:"varint,5,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	UnitPriceCents int64                  `protobuf:"varint,6,opt,name=unit_price_cents,json=unitPriceCents,proto3" json:"unit_price_cents,omitempty"`
+	LineTotalCents int64                  `protobuf:"varint,7,opt,name=line_total_cents,json=lineTotalCents,proto3" json:"line_total_cents,omitempty"`
+	CreatedAt      *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -134,6 +135,13 @@ func (x *OrderItem) GetOrderId() string {
 func (x *OrderItem) GetProductId() string {
 	if x != nil {
 		return x.ProductId
+	}
+	return ""
+}
+
+func (x *OrderItem) GetMerchantId() string {
+	if x != nil {
+		return x.MerchantId
 	}
 	return ""
 }
@@ -261,8 +269,9 @@ func (x *Order) GetUpdatedAt() *timestamppb.Timestamp {
 type CreateOrderItem struct {
 	state          protoimpl.MessageState `protogen:"open.v1"`
 	ProductId      string                 `protobuf:"bytes,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
-	Quantity       int32                  `protobuf:"varint,2,opt,name=quantity,proto3" json:"quantity,omitempty"`
-	UnitPriceCents int64                  `protobuf:"varint,3,opt,name=unit_price_cents,json=unitPriceCents,proto3" json:"unit_price_cents,omitempty"`
+	MerchantId     string                 `protobuf:"bytes,2,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
+	Quantity       int32                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	UnitPriceCents int64                  `protobuf:"varint,4,opt,name=unit_price_cents,json=unitPriceCents,proto3" json:"unit_price_cents,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -300,6 +309,13 @@ func (*CreateOrderItem) Descriptor() ([]byte, []int) {
 func (x *CreateOrderItem) GetProductId() string {
 	if x != nil {
 		return x.ProductId
+	}
+	return ""
+}
+
+func (x *CreateOrderItem) GetMerchantId() string {
+	if x != nil {
+		return x.MerchantId
 	}
 	return ""
 }
@@ -582,17 +598,19 @@ var File_shared_proto_orders_v1_orders_proto protoreflect.FileDescriptor
 
 const file_shared_proto_orders_v1_orders_proto_rawDesc = "" +
 	"\n" +
-	"#shared/proto/orders/v1/orders.proto\x12\torders.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x80\x02\n" +
+	"#shared/proto/orders/v1/orders.proto\x12\torders.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa1\x02\n" +
 	"\tOrderItem\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
 	"\border_id\x18\x02 \x01(\tR\aorderId\x12\x1d\n" +
 	"\n" +
-	"product_id\x18\x03 \x01(\tR\tproductId\x12\x1a\n" +
-	"\bquantity\x18\x04 \x01(\x05R\bquantity\x12(\n" +
-	"\x10unit_price_cents\x18\x05 \x01(\x03R\x0eunitPriceCents\x12(\n" +
-	"\x10line_total_cents\x18\x06 \x01(\x03R\x0elineTotalCents\x129\n" +
+	"product_id\x18\x03 \x01(\tR\tproductId\x12\x1f\n" +
+	"\vmerchant_id\x18\x04 \x01(\tR\n" +
+	"merchantId\x12\x1a\n" +
+	"\bquantity\x18\x05 \x01(\x05R\bquantity\x12(\n" +
+	"\x10unit_price_cents\x18\x06 \x01(\x03R\x0eunitPriceCents\x12(\n" +
+	"\x10line_total_cents\x18\a \x01(\x03R\x0elineTotalCents\x129\n" +
 	"\n" +
-	"created_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xae\x02\n" +
+	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\"\xae\x02\n" +
 	"\x05Order\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\"\n" +
 	"\rbuyer_user_id\x18\x02 \x01(\tR\vbuyerUserId\x12.\n" +
@@ -603,12 +621,14 @@ const file_shared_proto_orders_v1_orders_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"v\n" +
+	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\x97\x01\n" +
 	"\x0fCreateOrderItem\x12\x1d\n" +
 	"\n" +
-	"product_id\x18\x01 \x01(\tR\tproductId\x12\x1a\n" +
-	"\bquantity\x18\x02 \x01(\x05R\bquantity\x12(\n" +
-	"\x10unit_price_cents\x18\x03 \x01(\x03R\x0eunitPriceCents\"\x8b\x01\n" +
+	"product_id\x18\x01 \x01(\tR\tproductId\x12\x1f\n" +
+	"\vmerchant_id\x18\x02 \x01(\tR\n" +
+	"merchantId\x12\x1a\n" +
+	"\bquantity\x18\x03 \x01(\x05R\bquantity\x12(\n" +
+	"\x10unit_price_cents\x18\x04 \x01(\x03R\x0eunitPriceCents\"\x8b\x01\n" +
 	"\x12CreateOrderRequest\x12\"\n" +
 	"\rbuyer_user_id\x18\x01 \x01(\tR\vbuyerUserId\x120\n" +
 	"\x05items\x18\x02 \x03(\v2\x1a.orders.v1.CreateOrderItemR\x05items\x12\x1f\n" +

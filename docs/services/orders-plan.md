@@ -44,6 +44,8 @@ Each item event should include:
 - `unit_price_cents`
 - `line_total_cents`
 
+The outbox row `aggregate_id` should be the `product_id` for that item.
+
 ## Testing
 
 - Keep tests in `services/orders/tests/`.

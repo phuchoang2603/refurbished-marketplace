@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE TABLE IF NOT EXISTS orders_outbox (
     id UUID PRIMARY KEY,
-    aggregate_id UUID NOT NULL REFERENCES orders (id) ON DELETE CASCADE,
+    aggregate_id UUID NOT NULL,
     event_type TEXT NOT NULL,
     payload JSONB NOT NULL,
     publish_attempts INTEGER NOT NULL DEFAULT 0,

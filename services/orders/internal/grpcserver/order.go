@@ -60,7 +60,11 @@ func (s *Server) CreateOrder(ctx context.Context, req *ordersv1.CreateOrderReque
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, "invalid product id")
 		}
-		items = append(items, service.OrderItemInput{ProductID: productID, Quantity: item.GetQuantity(), UnitPriceCents: item.GetUnitPriceCents()})
+		merchantID, err := uuid.Parse(item.GetMerchantId())
+		if err != nil {
+			return nil, status.Error(codes.InvalidArgument, "invalid merchant id")
+		}
+		items = append(items, service.OrderItemInput{ProductID: productID, MerchantID: merchantID, Quantity: item.GetQuantity(), UnitPriceCents: item.GetUnitPriceCents()})
 	}
 
 	order, err := s.svc.CreateOrder(ctx, buyerID, items, req.TotalCents)

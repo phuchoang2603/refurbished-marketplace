@@ -8,6 +8,9 @@ metadata:
   namespace: {{ $.Release.Namespace }}
 spec:
   instances: {{ default 1 $svc.db.instances }}
+  postgresql:
+    parameters:
+      wal_level: "logical" # Required for Debezium CDC
   managed:
     roles:
       - name: {{ $svc.db.owner | quote }}

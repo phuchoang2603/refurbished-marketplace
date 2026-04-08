@@ -46,15 +46,16 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (Order
 }
 
 const createOrderItem = `-- name: CreateOrderItem :one
-INSERT INTO order_items (id, order_id, product_id, quantity, unit_price_cents, line_total_cents)
-VALUES ($1, $2, $3, $4, $5, $6)
-RETURNING order_items.id, order_items.order_id, order_items.product_id, order_items.quantity, order_items.unit_price_cents, order_items.line_total_cents, order_items.created_at
+INSERT INTO order_items (id, order_id, product_id, merchant_id, quantity, unit_price_cents, line_total_cents)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING order_items.id, order_items.order_id, order_items.product_id, order_items.quantity, order_items.unit_price_cents, order_items.line_total_cents, order_items.created_at, order_items.merchant_id
 `
 
 type CreateOrderItemParams struct {
 	ID             uuid.UUID
 	OrderID        uuid.UUID
 	ProductID      uuid.UUID
+	MerchantID     uuid.UUID
 	Quantity       int32
 	UnitPriceCents int64
 	LineTotalCents int64
@@ -65,6 +66,7 @@ func (q *Queries) CreateOrderItem(ctx context.Context, arg CreateOrderItemParams
 		arg.ID,
 		arg.OrderID,
 		arg.ProductID,
+		arg.MerchantID,
 		arg.Quantity,
 		arg.UnitPriceCents,
 		arg.LineTotalCents,
@@ -78,6 +80,7 @@ func (q *Queries) CreateOrderItem(ctx context.Context, arg CreateOrderItemParams
 		&i.UnitPriceCents,
 		&i.LineTotalCents,
 		&i.CreatedAt,
+		&i.MerchantID,
 	)
 	return i, err
 }
@@ -136,7 +139,7 @@ func (q *Queries) GetOrderByID(ctx context.Context, id uuid.UUID) (Order, error)
 }
 
 const listOrderItemsByOrderIDs = `-- name: ListOrderItemsByOrderIDs :many
-SELECT order_items.id, order_items.order_id, order_items.product_id, order_items.quantity, order_items.unit_price_cents, order_items.line_total_cents, order_items.created_at
+SELECT order_items.id, order_items.order_id, order_items.product_id, order_items.quantity, order_items.unit_price_cents, order_items.line_total_cents, order_items.created_at, order_items.merchant_id
 FROM order_items
 WHERE order_id = ANY($1::uuid[])
 ORDER BY order_id ASC, created_at ASC
@@ -159,6 +162,7 @@ func (q *Queries) ListOrderItemsByOrderIDs(ctx context.Context, dollar_1 []uuid.
 			&i.UnitPriceCents,
 			&i.LineTotalCents,
 			&i.CreatedAt,
+			&i.MerchantID,
 		); err != nil {
 			return nil, err
 		}

@@ -3,11 +3,8 @@ package service
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
-
 	"refurbished-marketplace/services/orders/internal/database"
-	"refurbished-marketplace/shared/messaging"
 
 	"github.com/google/uuid"
 )
@@ -36,27 +33,8 @@ func (s *Service) CreateOrder(ctx context.Context, buyerUserID uuid.UUID, items 
 		return Order{}, err
 	}
 
-	orderItems, encodedItems, err := createOrderItems(ctx, queries, created.ID, items)
+	orderItems, err := createOrderItems(ctx, queries, created.ID, buyerUserID, items)
 	if err != nil {
-		return Order{}, err
-	}
-
-	payload, err := json.Marshal(outboxPayload{
-		OrderID:     created.ID.String(),
-		BuyerUserID: buyerUserID.String(),
-		TotalCents:  totalCents,
-		Items:       encodedItems,
-	})
-	if err != nil {
-		return Order{}, err
-	}
-
-	if _, err := queries.CreateOrderOutbox(ctx, database.CreateOrderOutboxParams{
-		ID:          uuid.New(),
-		AggregateID: created.ID,
-		EventType:   string(messaging.EventTypeOrderCreated),
-		Payload:     payload,
-	}); err != nil {
 		return Order{}, err
 	}
 

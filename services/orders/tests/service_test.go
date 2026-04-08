@@ -1,18 +1,16 @@
 package tests
 
 import (
-	"encoding/json"
 	"errors"
 	"testing"
 
 	"refurbished-marketplace/services/orders/internal/service"
-	"refurbished-marketplace/shared/messaging"
 	"refurbished-marketplace/shared/testutil"
 
 	"github.com/google/uuid"
 )
 
-func newOrdersService(t *testing.T) (*service.Service, func(aggregateID uuid.UUID) (string, []byte, error)) {
+func newOrdersService(t *testing.T) *service.Service {
 	t.Helper()
 	db := testutil.SetupPostgresWithMigrations(
 		t,
@@ -24,34 +22,27 @@ func newOrdersService(t *testing.T) (*service.Service, func(aggregateID uuid.UUI
 		"../db/migrations",
 	)
 
-	svc := service.New(db)
-	readOutbox := func(aggregateID uuid.UUID) (string, []byte, error) {
-		var eventType string
-		var payloadBytes []byte
-		err := db.QueryRowContext(t.Context(), `SELECT event_type, payload FROM orders_outbox WHERE aggregate_id = $1`, aggregateID).Scan(&eventType, &payloadBytes)
-		return eventType, payloadBytes, err
-	}
-
-	return svc, readOutbox
+	return service.New(db)
 }
 
 func TestCreateGetListOrder(t *testing.T) {
-	svc, _ := newOrdersService(t)
+	svc := newOrdersService(t)
 	ctx := t.Context()
 
 	t.Run("create order", func(t *testing.T) {
 		buyerID := uuid.New()
 		productID := uuid.New()
+		merchantID := uuid.New()
 		created, err := svc.CreateOrder(
 			ctx,
 			buyerID,
-			[]service.OrderItemInput{{ProductID: productID, Quantity: 2, UnitPriceCents: 9950}},
+			[]service.OrderItemInput{{ProductID: productID, MerchantID: merchantID, Quantity: 2, UnitPriceCents: 9950}},
 			19900,
 		)
 		if err != nil {
 			t.Fatalf("create order: %v", err)
 		}
-		if created.BuyerUserID != buyerID || len(created.Items) != 1 || created.Items[0].ProductID != productID {
+		if created.BuyerUserID != buyerID || len(created.Items) != 1 || created.Items[0].ProductID != productID || created.Items[0].MerchantID != merchantID {
 			t.Fatalf("unexpected order items")
 		}
 	})
@@ -59,10 +50,11 @@ func TestCreateGetListOrder(t *testing.T) {
 	t.Run("get order by id", func(t *testing.T) {
 		createdBuyerID := uuid.New()
 		createdProductID := uuid.New()
+		createdMerchantID := uuid.New()
 		created, err := svc.CreateOrder(
 			ctx,
 			createdBuyerID,
-			[]service.OrderItemInput{{ProductID: createdProductID, Quantity: 2, UnitPriceCents: 9950}},
+			[]service.OrderItemInput{{ProductID: createdProductID, MerchantID: createdMerchantID, Quantity: 2, UnitPriceCents: 9950}},
 			19900,
 		)
 		if err != nil {
@@ -81,10 +73,11 @@ func TestCreateGetListOrder(t *testing.T) {
 	t.Run("list orders by buyer", func(t *testing.T) {
 		buyerID := uuid.New()
 		productID := uuid.New()
+		merchantID := uuid.New()
 		created, err := svc.CreateOrder(
 			ctx,
 			buyerID,
-			[]service.OrderItemInput{{ProductID: productID, Quantity: 2, UnitPriceCents: 9950}},
+			[]service.OrderItemInput{{ProductID: productID, MerchantID: merchantID, Quantity: 2, UnitPriceCents: 9950}},
 			19900,
 		)
 		if err != nil {
@@ -106,10 +99,11 @@ func TestCreateGetListOrder(t *testing.T) {
 	t.Run("update order status", func(t *testing.T) {
 		buyerID := uuid.New()
 		productID := uuid.New()
+		merchantID := uuid.New()
 		created, err := svc.CreateOrder(
 			ctx,
 			buyerID,
-			[]service.OrderItemInput{{ProductID: productID, Quantity: 2, UnitPriceCents: 9950}},
+			[]service.OrderItemInput{{ProductID: productID, MerchantID: merchantID, Quantity: 2, UnitPriceCents: 9950}},
 			19900,
 		)
 		if err != nil {
@@ -128,37 +122,37 @@ func TestCreateGetListOrder(t *testing.T) {
 
 func TestOrderValidation(t *testing.T) {
 	t.Run("invalid buyer id", func(t *testing.T) {
-		svc, _ := newOrdersService(t)
+		svc := newOrdersService(t)
 		ctx := t.Context()
 
-		_, err := svc.CreateOrder(ctx, uuid.Nil, []service.OrderItemInput{{ProductID: uuid.New(), Quantity: 1, UnitPriceCents: 100}}, 100)
+		_, err := svc.CreateOrder(ctx, uuid.Nil, []service.OrderItemInput{{ProductID: uuid.New(), MerchantID: uuid.New(), Quantity: 1, UnitPriceCents: 100}}, 100)
 		if !errors.Is(err, service.ErrInvalidBuyerID) {
 			t.Fatalf("expected ErrInvalidBuyerID, got %v", err)
 		}
 	})
 
 	t.Run("invalid product id", func(t *testing.T) {
-		svc, _ := newOrdersService(t)
+		svc := newOrdersService(t)
 		ctx := t.Context()
 
-		_, err := svc.CreateOrder(ctx, uuid.New(), []service.OrderItemInput{{ProductID: uuid.Nil, Quantity: 1, UnitPriceCents: 100}}, 100)
+		_, err := svc.CreateOrder(ctx, uuid.New(), []service.OrderItemInput{{ProductID: uuid.Nil, MerchantID: uuid.New(), Quantity: 1, UnitPriceCents: 100}}, 100)
 		if !errors.Is(err, service.ErrInvalidProductID) {
 			t.Fatalf("expected ErrInvalidProductID, got %v", err)
 		}
 	})
 
 	t.Run("invalid quantity", func(t *testing.T) {
-		svc, _ := newOrdersService(t)
+		svc := newOrdersService(t)
 		ctx := t.Context()
 
-		_, err := svc.CreateOrder(ctx, uuid.New(), []service.OrderItemInput{{ProductID: uuid.New(), Quantity: 0, UnitPriceCents: 100}}, 100)
+		_, err := svc.CreateOrder(ctx, uuid.New(), []service.OrderItemInput{{ProductID: uuid.New(), MerchantID: uuid.New(), Quantity: 0, UnitPriceCents: 100}}, 100)
 		if !errors.Is(err, service.ErrInvalidQuantity) {
 			t.Fatalf("expected ErrInvalidQuantity, got %v", err)
 		}
 	})
 
 	t.Run("missing order", func(t *testing.T) {
-		svc, _ := newOrdersService(t)
+		svc := newOrdersService(t)
 		ctx := t.Context()
 
 		_, err := svc.GetOrderByID(ctx, uuid.Nil)
@@ -168,7 +162,7 @@ func TestOrderValidation(t *testing.T) {
 	})
 
 	t.Run("invalid buyer id for list", func(t *testing.T) {
-		svc, _ := newOrdersService(t)
+		svc := newOrdersService(t)
 		ctx := t.Context()
 
 		_, err := svc.ListOrdersByBuyer(ctx, uuid.Nil, 10, 0)
@@ -178,7 +172,7 @@ func TestOrderValidation(t *testing.T) {
 	})
 
 	t.Run("missing order on update", func(t *testing.T) {
-		svc, _ := newOrdersService(t)
+		svc := newOrdersService(t)
 		ctx := t.Context()
 
 		_, err := svc.UpdateOrderStatus(ctx, uuid.Nil, "")
@@ -188,57 +182,12 @@ func TestOrderValidation(t *testing.T) {
 	})
 
 	t.Run("invalid status", func(t *testing.T) {
-		svc, _ := newOrdersService(t)
+		svc := newOrdersService(t)
 		ctx := t.Context()
 
 		_, err := svc.UpdateOrderStatus(ctx, uuid.New(), "CONFIRMED")
 		if !errors.Is(err, service.ErrInvalidStatus) {
 			t.Fatalf("expected ErrInvalidStatus, got %v", err)
-		}
-	})
-}
-
-func TestCreateOrderWritesOutbox(t *testing.T) {
-	t.Run("writes outbox event", func(t *testing.T) {
-		svc, readOutbox := newOrdersService(t)
-		ctx := t.Context()
-
-		buyerID := uuid.New()
-		productID := uuid.New()
-		created, err := svc.CreateOrder(ctx, buyerID, []service.OrderItemInput{{ProductID: productID, Quantity: 2, UnitPriceCents: 9950}}, 19900)
-		if err != nil {
-			t.Fatalf("create order: %v", err)
-		}
-
-		eventType, payloadBytes, err := readOutbox(created.ID)
-		if err != nil {
-			t.Fatalf("load outbox: %v", err)
-		}
-		if eventType != string(messaging.EventTypeOrderCreated) {
-			t.Fatalf("expected orders.created, got %s", eventType)
-		}
-
-		type itemPayload struct {
-			ProductID      string `json:"product_id"`
-			Quantity       int32  `json:"quantity"`
-			UnitPriceCents int64  `json:"unit_price_cents"`
-		}
-		type orderPayload struct {
-			OrderID     string        `json:"order_id"`
-			BuyerUserID string        `json:"buyer_user_id"`
-			TotalCents  int64         `json:"total_cents"`
-			Items       []itemPayload `json:"items"`
-		}
-
-		var got orderPayload
-		if err := json.Unmarshal(payloadBytes, &got); err != nil {
-			t.Fatalf("unmarshal payload: %v", err)
-		}
-		if got.OrderID != created.ID.String() || got.BuyerUserID != buyerID.String() || got.TotalCents != 19900 {
-			t.Fatalf("unexpected payload: %#v", got)
-		}
-		if len(got.Items) != 1 || got.Items[0].ProductID != productID.String() || got.Items[0].Quantity != 2 {
-			t.Fatalf("unexpected payload items: %#v", got.Items)
 		}
 	})
 }

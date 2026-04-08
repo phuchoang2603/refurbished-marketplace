@@ -1,0 +1,7 @@
+-- +goose Up
+ALTER TABLE order_items
+    ADD COLUMN IF NOT EXISTS merchant_id UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
+
+-- +goose Down
+ALTER TABLE order_items
+    DROP COLUMN IF EXISTS merchant_id;

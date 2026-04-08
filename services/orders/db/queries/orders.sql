@@ -9,8 +9,8 @@ VALUES ($1, $2, $3, $4)
 RETURNING orders_outbox.id, orders_outbox.aggregate_id, orders_outbox.event_type, orders_outbox.payload, orders_outbox.publish_attempts, orders_outbox.created_at, orders_outbox.published_at;
 
 -- name: CreateOrderItem :one
-INSERT INTO order_items (id, order_id, product_id, quantity, unit_price_cents, line_total_cents)
-VALUES ($1, $2, $3, $4, $5, $6)
+INSERT INTO order_items (id, order_id, product_id, merchant_id, quantity, unit_price_cents, line_total_cents)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
 RETURNING order_items.*;
 
 -- name: GetOrderByID :one

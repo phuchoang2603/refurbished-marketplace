@@ -36,6 +36,8 @@ Use a reservation-friendly model:
 - Partition inventory consumer processing by `product_id`.
 - The first real consumer flow should be `orders.item.created` -> reserve stock.
 
+Each event should correspond to one order item and one outbox row.
+
 ## Why Reservations
 
 - Simple `stock_quantity` is not enough for async checkout.

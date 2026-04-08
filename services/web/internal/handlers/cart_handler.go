@@ -153,7 +153,7 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 		}
 		lineTotal := product.PriceCents * int64(item.GetQuantity())
 		totalCents += lineTotal
-		items = append(items, &ordersv1.CreateOrderItem{ProductId: item.GetProductId(), Quantity: item.GetQuantity(), UnitPriceCents: product.PriceCents})
+		items = append(items, &ordersv1.CreateOrderItem{ProductId: item.GetProductId(), MerchantId: product.GetMerchantId(), Quantity: item.GetQuantity(), UnitPriceCents: product.PriceCents})
 	}
 	order, err := h.orders.CreateOrder(r.Context(), buyerUserID, items, totalCents)
 	if err != nil {

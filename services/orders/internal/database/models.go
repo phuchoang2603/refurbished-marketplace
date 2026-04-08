@@ -29,6 +29,7 @@ type OrderItem struct {
 	UnitPriceCents int64
 	LineTotalCents int64
 	CreatedAt      time.Time
+	MerchantID     uuid.UUID
 }
 
 type OrdersOutbox struct {

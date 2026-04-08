@@ -8,6 +8,7 @@ import (
 
 type OrderItemInput struct {
 	ProductID      uuid.UUID
+	MerchantID     uuid.UUID
 	Quantity       int32
 	UnitPriceCents int64
 }
@@ -26,6 +27,7 @@ type OrderItem struct {
 	ID             uuid.UUID
 	OrderID        uuid.UUID
 	ProductID      uuid.UUID
+	MerchantID     uuid.UUID
 	Quantity       int32
 	UnitPriceCents int64
 	LineTotalCents int64
@@ -33,13 +35,12 @@ type OrderItem struct {
 }
 
 type outboxItem struct {
+	OrderID        string `json:"order_id"`
+	OrderItemID    string `json:"order_item_id"`
+	BuyerUserID    string `json:"buyer_user_id"`
 	ProductID      string `json:"product_id"`
+	MerchantID     string `json:"merchant_id"`
 	Quantity       int32  `json:"quantity"`
 	UnitPriceCents int64  `json:"unit_price_cents"`
-}
-type outboxPayload struct {
-	OrderID     string       `json:"order_id"`
-	BuyerUserID string       `json:"buyer_user_id"`
-	TotalCents  int64        `json:"total_cents"`
-	Items       []outboxItem `json:"items"`
+	LineTotalCents int64  `json:"line_total_cents"`
 }
