@@ -28,11 +28,12 @@ type Product struct {
 	Name          string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Description   string                 `protobuf:"bytes,3,opt,name=description,proto3" json:"description,omitempty"`
 	PriceCents    int64                  `protobuf:"varint,4,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"`
-	TerminalId    string                 `protobuf:"bytes,5,opt,name=terminal_id,json=terminalId,proto3" json:"terminal_id,omitempty"`
-	XPos          float64                `protobuf:"fixed64,6,opt,name=x_pos,json=xPos,proto3" json:"x_pos,omitempty"`
-	YPos          float64                `protobuf:"fixed64,7,opt,name=y_pos,json=yPos,proto3" json:"y_pos,omitempty"`
-	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,8,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	MerchantId    string                 `protobuf:"bytes,5,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
+	TerminalId    string                 `protobuf:"bytes,6,opt,name=terminal_id,json=terminalId,proto3" json:"terminal_id,omitempty"`
+	XPos          float64                `protobuf:"fixed64,7,opt,name=x_pos,json=xPos,proto3" json:"x_pos,omitempty"`
+	YPos          float64                `protobuf:"fixed64,8,opt,name=y_pos,json=yPos,proto3" json:"y_pos,omitempty"`
+	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,9,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
+	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,10,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -95,6 +96,13 @@ func (x *Product) GetPriceCents() int64 {
 	return 0
 }
 
+func (x *Product) GetMerchantId() string {
+	if x != nil {
+		return x.MerchantId
+	}
+	return ""
+}
+
 func (x *Product) GetTerminalId() string {
 	if x != nil {
 		return x.TerminalId
@@ -135,9 +143,10 @@ type CreateProductRequest struct {
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Description   string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
 	PriceCents    int64                  `protobuf:"varint,3,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"`
-	TerminalId    string                 `protobuf:"bytes,4,opt,name=terminal_id,json=terminalId,proto3" json:"terminal_id,omitempty"`
-	XPos          float64                `protobuf:"fixed64,5,opt,name=x_pos,json=xPos,proto3" json:"x_pos,omitempty"`
-	YPos          float64                `protobuf:"fixed64,6,opt,name=y_pos,json=yPos,proto3" json:"y_pos,omitempty"`
+	MerchantId    string                 `protobuf:"bytes,4,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
+	TerminalId    string                 `protobuf:"bytes,5,opt,name=terminal_id,json=terminalId,proto3" json:"terminal_id,omitempty"`
+	XPos          float64                `protobuf:"fixed64,6,opt,name=x_pos,json=xPos,proto3" json:"x_pos,omitempty"`
+	YPos          float64                `protobuf:"fixed64,7,opt,name=y_pos,json=yPos,proto3" json:"y_pos,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -191,6 +200,13 @@ func (x *CreateProductRequest) GetPriceCents() int64 {
 		return x.PriceCents
 	}
 	return 0
+}
+
+func (x *CreateProductRequest) GetMerchantId() string {
+	if x != nil {
+		return x.MerchantId
+	}
+	return ""
 }
 
 func (x *CreateProductRequest) GetTerminalId() string {
@@ -358,30 +374,35 @@ var File_shared_proto_products_v1_products_proto protoreflect.FileDescriptor
 
 const file_shared_proto_products_v1_products_proto_rawDesc = "" +
 	"\n" +
-	"'shared/proto/products/v1/products.proto\x12\vproducts.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb1\x02\n" +
+	"'shared/proto/products/v1/products.proto\x12\vproducts.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xd2\x02\n" +
 	"\aProduct\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x03 \x01(\tR\vdescription\x12\x1f\n" +
 	"\vprice_cents\x18\x04 \x01(\x03R\n" +
 	"priceCents\x12\x1f\n" +
-	"\vterminal_id\x18\x05 \x01(\tR\n" +
+	"\vmerchant_id\x18\x05 \x01(\tR\n" +
+	"merchantId\x12\x1f\n" +
+	"\vterminal_id\x18\x06 \x01(\tR\n" +
 	"terminalId\x12\x13\n" +
-	"\x05x_pos\x18\x06 \x01(\x01R\x04xPos\x12\x13\n" +
-	"\x05y_pos\x18\a \x01(\x01R\x04yPos\x129\n" +
+	"\x05x_pos\x18\a \x01(\x01R\x04xPos\x12\x13\n" +
+	"\x05y_pos\x18\b \x01(\x01R\x04yPos\x129\n" +
 	"\n" +
-	"created_at\x18\b \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
+	"created_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\t \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xb8\x01\n" +
+	"updated_at\x18\n" +
+	" \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\xd9\x01\n" +
 	"\x14CreateProductRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x1f\n" +
 	"\vprice_cents\x18\x03 \x01(\x03R\n" +
 	"priceCents\x12\x1f\n" +
-	"\vterminal_id\x18\x04 \x01(\tR\n" +
+	"\vmerchant_id\x18\x04 \x01(\tR\n" +
+	"merchantId\x12\x1f\n" +
+	"\vterminal_id\x18\x05 \x01(\tR\n" +
 	"terminalId\x12\x13\n" +
-	"\x05x_pos\x18\x05 \x01(\x01R\x04xPos\x12\x13\n" +
-	"\x05y_pos\x18\x06 \x01(\x01R\x04yPos\"'\n" +
+	"\x05x_pos\x18\x06 \x01(\x01R\x04xPos\x12\x13\n" +
+	"\x05y_pos\x18\a \x01(\x01R\x04yPos\"'\n" +
 	"\x15GetProductByIDRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"C\n" +
 	"\x13ListProductsRequest\x12\x14\n" +

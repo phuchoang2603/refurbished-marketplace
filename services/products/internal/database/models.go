@@ -20,4 +20,5 @@ type Product struct {
 	TerminalID  uuid.UUID
 	XPos        float64
 	YPos        float64
+	MerchantID  uuid.UUID
 }

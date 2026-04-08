@@ -1,6 +1,6 @@
 -- name: CreateProduct :one
-INSERT INTO products (id, name, description, price_cents, terminal_id, x_pos, y_pos)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
+INSERT INTO products (id, name, description, price_cents, merchant_id, terminal_id, x_pos, y_pos)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 RETURNING products.*;
 
 -- name: GetProductByID :one
