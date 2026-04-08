@@ -9,7 +9,6 @@ Implement the first products vertical slice with the same conventions as users:
 - service layer
 - gRPC handlers
 - tests in `services/products/tests/`
-- normal ecommerce product lifecycle (not C2C inspection/escrow)
 - keep stock management out of products; inventory owns reservations
 
 ## Scope
@@ -25,6 +24,7 @@ Use a minimal catalog model for v1:
 
 - `id UUID PRIMARY KEY`
 - `terminal_id UUID NOT NULL`
+- `merchant_id UUID NOT NULL`
 - `x_pos DOUBLE PRECISION NOT NULL`
 - `y_pos DOUBLE PRECISION NOT NULL`
 - `name TEXT NOT NULL`
@@ -49,6 +49,7 @@ Use a minimal catalog model for v1:
 
 - `name`: non-empty
 - `price_cents`: must be positive
+- `merchant_id`: must be valid UUID
 - `terminal_id`: must be valid UUID
 - `x_pos` / `y_pos`: required coordinate values
 - product creation is handled by an internal/admin flow, not the public catalog read path

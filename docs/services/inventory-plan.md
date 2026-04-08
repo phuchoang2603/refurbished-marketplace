@@ -30,10 +30,11 @@ Use a reservation-friendly model:
 
 ## Events
 
-- Inventory should consume order/payment events through the async backbone.
+- Inventory should consume `orders.item.created` events through the async backbone.
 - Use inbox dedupe for repeated deliveries.
 - Emit stock failure/reservation events when needed for order state transitions.
-- The first real consumer flow should be `orders.created` -> reserve stock.
+- Partition inventory consumer processing by `product_id`.
+- The first real consumer flow should be `orders.item.created` -> reserve stock.
 
 ## Why Reservations
 

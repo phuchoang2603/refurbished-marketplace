@@ -1,4 +1,32 @@
-# Users Auth Implementation Plan
+# Users Service Plan
+
+- Runtime:
+  - `services/users/cmd/users/main.go`
+  - requires `DB_URL` (no hardcoded fallback)
+  - serves gRPC on `GRPC_ADDR` (default `:9091`)
+- SQL and migrations:
+  - migrations:
+    - `001_users.sql`
+    - `002_refresh_tokens.sql`
+  - queries:
+    - user queries: `CreateUser`, `GetUserByID`, `GetUserByEmail`
+    - auth session queries: `CreateRefreshToken`, `GetRefreshTokenByID`, `RevokeRefreshToken`
+- sqlc:
+  - config at `services/users/sqlc.yaml`
+  - generated package at `services/users/internal/database`
+- Service layer:
+  - validation + password hashing + query orchestration in `internal/service`
+- Auth endpoints:
+  - `POST /auth/login`
+  - `POST /auth/refresh`
+  - `POST /auth/logout`
+- Auth config:
+  - required env: `JWT_SECRET`
+  - code defaults:
+    - issuer: `refurbished-marketplace`
+    - audience: `refurbished-marketplace-api`
+    - access TTL: `15m`
+    - refresh TTL: `168h`
 
 ## Goal
 

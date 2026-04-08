@@ -62,6 +62,7 @@ Migration is now complete for users transport boundary. Current order going forw
 - Reusable orders gRPC client lives in `shared/proto/ordersclient/`.
 - Inventory protobuf contract lives at `shared/proto/inventory/v1/inventory.proto`.
 - Generated inventory gRPC code lives in `shared/proto/inventory/v1/`.
+- Checkout/item events are keyed by `product_id` and include merchant snapshots for payment.
 
 ## Related Architecture
 
@@ -77,6 +78,5 @@ Migration is now complete for users transport boundary. Current order going forw
 
 ## Product and Order Scope
 
-- Scope is normal ecommerce, not C2C escrow.
 - Recommender is a later consumer of event history.
 - External payment/fraud platform is a separate project and integrates through service APIs/events.

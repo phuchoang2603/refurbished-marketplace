@@ -4,8 +4,6 @@
 
 Use `web` as the authorization gateway for REST endpoints while keeping auth session logic in `users` service.
 
-This repository is scoped as a normal ecommerce platform, not C2C escrow.
-
 ## Responsibility Split
 
 ### users service

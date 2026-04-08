@@ -42,8 +42,3 @@ This repository uses a pragmatic testing policy focused on service confidence wi
 - Products schema should add terminal/location fields.
 - Orders should keep transaction-safe order headers and line items.
 - Payment testing will be added when the service exists.
-
-## Scope Notes
-
-- The repo is scoped as normal ecommerce, not C2C escrow.
-- Recommender and external payment/fraud systems are later integrations, not core test targets yet.
