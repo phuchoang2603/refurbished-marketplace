@@ -1,14 +1,14 @@
-FROM golang:1.25-alpine AS builder
+FROM golang:1.26.1-alpine AS builder
 
 WORKDIR /src
 
-COPY go.mod go.sum ./
-RUN go mod download
-
-COPY services ./services
 COPY shared ./shared
+COPY services/cart ./services/cart
 
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/cart ./services/cart/cmd/cart
+WORKDIR /src/services/cart
+ENV GOWORK=off
+RUN go mod download
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/cart ./cmd/cart
 
 FROM gcr.io/distroless/static-debian12
 

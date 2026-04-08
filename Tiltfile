@@ -33,10 +33,8 @@ docker_build(
   '.',
   dockerfile='./infra/development/docker/web.Dockerfile',
   only=[
-    './services/web',
     './shared',
-    './go.mod',
-    './go.sum',
+    './services/web',
   ],
 )
 
@@ -49,8 +47,6 @@ docker_build(
   dockerfile='./infra/development/docker/users-migrator.Dockerfile',
   only=[
     './services/users/db/migrations',
-    './go.mod',
-    './go.sum',
   ],
 )
 
@@ -61,8 +57,6 @@ docker_build(
   only=[
     './services/users',
     './shared',
-    './go.mod',
-    './go.sum',
   ],
 )
 
@@ -77,8 +71,6 @@ docker_build(
   dockerfile='./infra/development/docker/products-migrator.Dockerfile',
   only=[
     './services/products/db/migrations',
-    './go.mod',
-    './go.sum',
   ],
 )
 
@@ -89,8 +81,6 @@ docker_build(
   only=[
     './services/products',
     './shared',
-    './go.mod',
-    './go.sum',
   ],
 )
 
@@ -105,8 +95,6 @@ docker_build(
   dockerfile='./infra/development/docker/orders-migrator.Dockerfile',
   only=[
     './services/orders/db/migrations',
-    './go.mod',
-    './go.sum',
   ],
 )
 
@@ -117,8 +105,6 @@ docker_build(
   only=[
     './services/orders',
     './shared',
-    './go.mod',
-    './go.sum',
   ],
 )
 
@@ -134,8 +120,6 @@ docker_build(
   only=[
     './services/cart',
     './shared',
-    './go.mod',
-    './go.sum',
   ],
 )
 
@@ -148,8 +132,6 @@ docker_build(
   dockerfile='./infra/development/docker/inventory-migrator.Dockerfile',
   only=[
     './services/inventory/db/migrations',
-    './go.mod',
-    './go.sum',
   ],
 )
 
@@ -160,8 +142,6 @@ docker_build(
   only=[
     './services/inventory',
     './shared',
-    './go.mod',
-    './go.sum',
   ],
 )
 
@@ -181,27 +161,8 @@ k8s_resource(
 )
 
 k8s_resource(
-    new_name='kafka-topics',
-    objects=['orders.created:kafkatopic'],
-    resource_deps=['kafka-cluster'],
-    labels=['kafka']
-)
-
-k8s_resource(
     new_name='debezium-connect',
     objects=['ecommerce-connect-cluster:kafkaconnect'],
     resource_deps=['kafka-cluster'],
-    labels=['kafka']
-)
-
-# The specific Outbox Connector and its RBAC
-k8s_resource(
-    new_name='orders-outbox-connector',
-    objects=[
-        'orders-outbox:kafkaconnector',
-        'orders-debezium-connector-role:role',
-        'orders-debezium-connector-rolebinding:rolebinding'
-    ],
-    resource_deps=['debezium-connect'],
     labels=['kafka']
 )
