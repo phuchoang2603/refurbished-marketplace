@@ -1,0 +1,6 @@
+apiVersion: v2
+name: kafka
+description: Custom Kafka operators for event streaming
+type: application
+version: 0.1.0
+appVersion: "0.1.0"

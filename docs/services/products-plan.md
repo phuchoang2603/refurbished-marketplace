@@ -16,7 +16,6 @@ Implement the first products vertical slice with the same conventions as users:
 - Service: `services/products`
 - Transport: gRPC (internal service)
 - Storage: PostgreSQL (`products_db`)
-- Infra: existing Tilt + Helm + CloudNativePG and Compose setup
 
 ## Product Model
 

@@ -96,29 +96,3 @@ services:
       passwordKey: password
       instances: 1
       storageSize: 1Gi
-
-messaging:
-  kafkaClusterName: ecommerce-kafka-cluster
-  connectClusterName: ecommerce-connect-cluster
-  debeziumConnectorVersion: 3.5.0.Final
-  kafka:
-    version: 4.2.0
-    metadataVersion: 4.2-IV1
-    replicas: 1
-    replicationFactor: 1
-    minInsyncReplicas: 1
-    storage:
-      size: 10Gi
-  entities:
-    orders:
-      topic:
-        name: orders.created
-        partitions: 1
-        replicas: 1
-      connector:
-        name: orders-outbox
-        sourceSecretName: orders-app
-        databaseName: orders_db
-        databaseHost: orders-db-rw
-        databasePort: 5432
-        outboxTable: public.orders_outbox

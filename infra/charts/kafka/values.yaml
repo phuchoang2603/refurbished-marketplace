@@ -1,0 +1,30 @@
+kafka:
+  clusterName: ecommerce-kafka-cluster
+  version: 4.2.0
+  metadataVersion: 4.2-IV1
+  replicas: 1
+  replicationFactor: 1
+  minInsyncReplicas: 1
+  storage:
+    size: 10Gi
+connect:
+  clusterName: ecommerce-connect-cluster
+  image: refurbished-marketplace/connect-debezium
+entities:
+  orders:
+    topic:
+      name: orders.created
+      partitions: 1
+      retention: 604800000 # 7 days
+    connector:
+      name: orders-outbox
+      sourceSecretName: orders-app
+      databaseName: orders_db
+      databaseHost: orders-db-rw
+      databasePort: 5432
+      outboxTable: public.orders_outbox
+provectus:
+  enabled: true
+  name: kafka-ui
+  image: provectuslabs/kafka-ui:v0.7.2
+  port: 8080

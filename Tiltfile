@@ -4,34 +4,55 @@ namespace_create('ecommerce')
 namespace_create('cnpg-system')
 namespace_create('kafka-system')
 
-# Deploy cnpg operator
+### Operators ###
 k8s_kind('Cluster', pod_readiness='wait')
 local_resource(
   'cnpg-operator-install',
   'helm repo add cnpg https://cloudnative-pg.github.io/charts && helm repo update && helm upgrade --install cnpg --namespace cnpg-system --create-namespace cnpg/cloudnative-pg',
   )
-
-# Deploy Kafka cluster
 local_resource(
   'kafka-cluster-install',
   'helm upgrade --install strimzi-cluster-operator oci://quay.io/strimzi-helm/strimzi-kafka-operator --namespace kafka-system --create-namespace --set watchAnyNamespace=true',
 )
 
-# Deploy our application
-k8s_yaml('./infra/development/k8s/secrets.yaml')
+### Kafka Cluster and Topics ###
+k8s_yaml(helm(
+  './infra/charts/kafka',
+  name='ecommerce-kafka-cluster',
+  namespace='ecommerce',
+  values=['./infra/charts/kafka/values.yaml']
+))
+k8s_resource(
+    new_name='kafka-cluster', 
+    objects=[
+        'ecommerce-kafka-cluster:kafka',
+        'ecommerce-kafka-cluster-dual-role:kafkanodepool'
+    ],
+    resource_deps=['kafka-cluster-install'],
+    labels=['kafka']
+)
+k8s_resource(
+    new_name='debezium-connect',
+    objects=['ecommerce-connect-cluster:kafkaconnect'],
+    resource_deps=['kafka-cluster'],
+    labels=['kafka']
+)
+k8s_resource('kafka-ui', port_forwards=['8081:8080'], resource_deps=['kafka-cluster'], labels='kafka')
+
+### Our Application ###
+k8s_yaml('./infra/k8s/secrets.yaml')
 app_yaml = helm(
     './infra/charts/refurbished-marketplace',
     name='refurbished-marketplace',
     namespace='ecommerce',
-    values=['./infra/development/k8s/dev-helm-values.yaml']
+    values=['./infra/charts/refurbished-marketplace/values.yaml']
 )
 k8s_yaml(app_yaml)
 
-### Web Service ###
 docker_build(
   'refurbished-marketplace/web',
   '.',
-  dockerfile='./infra/development/docker/web.Dockerfile',
+  dockerfile='./infra/docker/web.Dockerfile',
   only=[
     './shared',
     './services/web',
@@ -44,7 +65,7 @@ k8s_resource('web', port_forwards=['8080:8080'])
 docker_build(
   'refurbished-marketplace/users-migrator',
   '.',
-  dockerfile='./infra/development/docker/users-migrator.Dockerfile',
+  dockerfile='./infra/docker/users-migrator.Dockerfile',
   only=[
     './services/users/db/migrations',
   ],
@@ -53,7 +74,7 @@ docker_build(
 docker_build(
   'refurbished-marketplace/users',
   '.',
-  dockerfile='./infra/development/docker/users.Dockerfile',
+  dockerfile='./infra/docker/users.Dockerfile',
   only=[
     './services/users',
     './shared',
@@ -68,7 +89,7 @@ k8s_resource('users', port_forwards=['9091:9091'], resource_deps=['users-db'], l
 docker_build(
   'refurbished-marketplace/products-migrator',
   '.',
-  dockerfile='./infra/development/docker/products-migrator.Dockerfile',
+  dockerfile='./infra/docker/products-migrator.Dockerfile',
   only=[
     './services/products/db/migrations',
   ],
@@ -77,7 +98,7 @@ docker_build(
 docker_build(
   'refurbished-marketplace/products',
   '.',
-  dockerfile='./infra/development/docker/products.Dockerfile',
+  dockerfile='./infra/docker/products.Dockerfile',
   only=[
     './services/products',
     './shared',
@@ -92,7 +113,7 @@ k8s_resource('products', port_forwards=['9092:9092'], resource_deps=['products-d
 docker_build(
   'refurbished-marketplace/orders-migrator',
   '.',
-  dockerfile='./infra/development/docker/orders-migrator.Dockerfile',
+  dockerfile='./infra/docker/orders-migrator.Dockerfile',
   only=[
     './services/orders/db/migrations',
   ],
@@ -101,7 +122,7 @@ docker_build(
 docker_build(
   'refurbished-marketplace/orders',
   '.',
-  dockerfile='./infra/development/docker/orders.Dockerfile',
+  dockerfile='./infra/docker/orders.Dockerfile',
   only=[
     './services/orders',
     './shared',
@@ -116,7 +137,7 @@ k8s_resource('orders', port_forwards=['9093:9093'], resource_deps=['orders-db'],
 docker_build(
   'refurbished-marketplace/cart',
   '.',
-  dockerfile='./infra/development/docker/cart.Dockerfile',
+  dockerfile='./infra/docker/cart.Dockerfile',
   only=[
     './services/cart',
     './shared',
@@ -129,7 +150,7 @@ k8s_resource('cart', port_forwards=['9094:9094'],  labels='cart')
 docker_build(
   'refurbished-marketplace/inventory-migrator',
   '.',
-  dockerfile='./infra/development/docker/inventory-migrator.Dockerfile',
+  dockerfile='./infra/docker/inventory-migrator.Dockerfile',
   only=[
     './services/inventory/db/migrations',
   ],
@@ -138,7 +159,7 @@ docker_build(
 docker_build(
   'refurbished-marketplace/inventory',
   '.',
-  dockerfile='./infra/development/docker/inventory.Dockerfile',
+  dockerfile='./infra/docker/inventory.Dockerfile',
   only=[
     './services/inventory',
     './shared',
@@ -148,21 +169,3 @@ docker_build(
 k8s_resource('inventory-db', extra_pod_selectors=[{'cnpg.io/cluster': 'inventory-db'}], port_forwards=['5435:5432'], resource_deps=['cnpg-operator-install'], labels='inventory')
 k8s_resource('inventory-migrate', resource_deps=['inventory-db'], labels='inventory')
 k8s_resource('inventory', port_forwards=['9095:9095'], resource_deps=['inventory-db'], labels='inventory')
-
-### Kafka Cluster and Topics ###
-k8s_resource(
-    new_name='kafka-cluster', 
-    objects=[
-        'ecommerce-kafka-cluster:kafka',
-        'ecommerce-kafka-cluster-dual-role:kafkanodepool'
-    ],
-    resource_deps=['kafka-cluster-install'],
-    labels=['kafka']
-)
-
-k8s_resource(
-    new_name='debezium-connect',
-    objects=['ecommerce-connect-cluster:kafkaconnect'],
-    resource_deps=['kafka-cluster'],
-    labels=['kafka']
-)
