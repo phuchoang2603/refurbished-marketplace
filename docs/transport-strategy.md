@@ -47,7 +47,7 @@ Migration is now complete for users transport boundary. Current order going forw
 ## API Ownership
 
 - REST schema ownership: `web` service
-- gRPC schema ownership: each internal service under `services/<service>/proto/v1/`
+- gRPC schema ownership: protobuf contracts live under `shared/proto/<domain>/v1/` and are consumed by internal services and the web edge.
 
 ### gRPC Contracts and Clients (Current)
 

@@ -7,6 +7,19 @@ This repository uses a pragmatic testing policy focused on service confidence wi
 - Prefer service-level integration tests as the primary confidence layer.
 - Add pure unit tests only for non-trivial, pure logic that does not need database setup.
 
+## Running Tests (Current Repo Layout)
+
+This repo is **multi-module** (each `services/<service>` and `shared/` has its own `go.mod`), so the most reliable way to run tests is from within a module directory:
+
+- `cd shared && go test ./...`
+- `cd services/users && go test ./...`
+- `cd services/products && go test ./...`
+- `cd services/orders && go test ./...`
+- `cd services/cart && go test ./...`
+- `cd services/inventory && go test ./...`
+
+The root `Makefile` currently runs `go test ./...` from repo root; that will only work if you’ve set up a Go workspace (for example via `go work`) that includes the modules.
+
 ## What to Test
 
 - **Service + DB integration tests (primary):**

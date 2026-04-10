@@ -2,23 +2,24 @@
 
 ## Current Status
 
-- Repository bootstrapped as a single Go module with `go.mod` and `go.sum`.
-- Initial services exist: `users`, `products`, `orders`, `inventory`.
+- Repository is a multi-module Go workspace (one `go.mod` per service, plus `shared/`).
+- Initial services exist: `web`, `users`, `products`, `orders`, `cart`, `inventory`.
 - Architecture direction is now explicit: REST at edge (`web` service), gRPC for all internal service-to-service traffic.
 - Development now standardizes on Kubernetes (Tilt + Helm + CloudNativePG).
+- Kafka dev stack (Strimzi + Kafka UI + Debezium connect) is deployed via Tilt/Helm; domain publishing/consumption is still a work in progress.
 - `users` is the first implemented vertical slice (migration + sqlc queries + service + handlers + integration tests).
 - Users auth is implemented with JWT login/refresh/logout and DB-backed refresh token sessions.
 - Web edge service exists and now owns REST entrypoints while users is served via gRPC.
 - `orders` vertical slice is implemented as gRPC-first with PostgreSQL migrations, sqlc, service tests, and per-item `orders.item.created` outbox rows keyed by `product_id`.
 - `products` is catalog-only now; stock moved out into `inventory`.
-- `inventory` is scaffolded as the stock/reservation service.
+- `inventory` is implemented as the stock/reservation service (migrations + sqlc + service + tests).
+- `cart` is implemented as an ephemeral cart service backed by Redis/Valkey.
 
 ## Canonical Repo Tree
 
 ```text
 /
   PLAN.md
-  SPEC.MD
   flake.nix
   Makefile
   Tiltfile
@@ -55,13 +56,37 @@
       tests/
       go.mod
       go.sum
+    cart/
+      cmd/cart/
+      internal/
+      tests/
+      go.mod
+      go.sum
+    inventory/
+      cmd/inventory/
+      db/migrations/
+      db/queries/
+      internal/
+      tests/
+      go.mod
+      go.sum
   shared/
     messaging/
     proto/
       users/v1/
       usersclient/
-    tracing/
+      products/v1/
+      productsclient/
+      orders/v1/
+      ordersclient/
+      cart/v1/
+      cartclient/
+      inventory/v1/
     testutil/
+    auth/
+      config/
+      jwt/
+    cache/
     go.mod
     go.sum
   infra/
@@ -69,16 +94,13 @@
       refurbished-marketplace/
         templates/
         Chart.yaml
-    development/
-      docker/
-      k8s/
-        dev-helm-values.yaml
-        secrets.yaml
-    production/
-      docker/
-      k8s/
+      kafka/
+        templates/
+        Chart.yaml
+    docker/
+    k8s/
+      secrets.yaml
   docs/
-  web/
 ```
 
 ## Stack and Conventions
@@ -88,15 +110,16 @@
 - Database: PostgreSQL.
 - Migrations: `goose`.
 - Query generation: `sqlc`.
-- Event bus target: Kafka via Strimzi (preferred for future recommender/ML integrations; not wired yet).
+- Cache: Redis/Valkey (used by `cart`).
+- Event bus: Kafka via Strimzi (deployed in dev; domain publishing/consumption still evolving).
 - Style: small packages, explicit SQL, straightforward handlers, table-driven tests.
 
 ## Service Layout Rules
 
 - Start simple per service; avoid over-abstracting.
 - Keep service code in `services/<name>/` and private code in `internal/`.
-- Internal services should expose gRPC contracts first (`proto/v1`) and avoid new REST handlers.
-- Shared gRPC contracts live under `shared/proto/<domain>/v1/` when reused by multiple services.
+- Internal services should expose gRPC contracts first and avoid new REST handlers.
+- gRPC contracts live under `shared/proto/<domain>/v1/` and are generated into the same directories.
 - Keep REST/HTTP DTO shaping in the web/edge service.
 - Keep SQL and migrations service-local:
   - `services/<service>/db/migrations/`

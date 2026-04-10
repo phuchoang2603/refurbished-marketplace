@@ -16,7 +16,7 @@
   - generated package at `services/users/internal/database`
 - Service layer:
   - validation + password hashing + query orchestration in `internal/service`
-- Auth endpoints:
+- REST endpoints (web edge mapping):
   - `POST /auth/login`
   - `POST /auth/refresh`
   - `POST /auth/logout`
@@ -142,7 +142,7 @@ Minimal claim set:
    - `Refresh(refreshToken)`
    - `Logout(refreshToken)`
 4. JWT helper package (inside users service): sign/verify tokens.
-5. HTTP handlers for auth endpoints.
+5. Web edge HTTP handlers for auth endpoints (in `services/web`).
 6. Tests in `services/users/tests/` only:
    - service behavior tests
    - integration tests with Testcontainers + Goose
