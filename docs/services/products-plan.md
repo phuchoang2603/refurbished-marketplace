@@ -22,10 +22,7 @@ Implement the first products vertical slice with the same conventions as users:
 Use a minimal catalog model for v1:
 
 - `id UUID PRIMARY KEY`
-- `terminal_id UUID NOT NULL`
 - `merchant_id UUID NOT NULL`
-- `x_pos DOUBLE PRECISION NOT NULL`
-- `y_pos DOUBLE PRECISION NOT NULL`
 - `name TEXT NOT NULL`
 - `description TEXT NOT NULL DEFAULT ''`
 - `price_cents BIGINT NOT NULL`
@@ -49,8 +46,6 @@ Use a minimal catalog model for v1:
 - `name`: non-empty
 - `price_cents`: must be positive
 - `merchant_id`: must be valid UUID
-- `terminal_id`: must be valid UUID
-- `x_pos` / `y_pos`: required coordinate values
 - product creation is handled by an internal/admin flow, not the public catalog read path
 
 ## Testing

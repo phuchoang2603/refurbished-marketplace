@@ -7,28 +7,22 @@ import (
 )
 
 type productResponse struct {
-	ID          string  `json:"id"`
-	Name        string  `json:"name"`
-	Description string  `json:"description"`
-	PriceCents  int64   `json:"price_cents"`
-	Stock       int32   `json:"stock"`
-	TerminalID  string  `json:"terminal_id"`
-	XPos        float64 `json:"x_pos"`
-	YPos        float64 `json:"y_pos"`
-	CreatedAt   string  `json:"created_at"`
-	UpdatedAt   string  `json:"updated_at"`
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	PriceCents  int64  `json:"price_cents"`
+	Stock       int32  `json:"stock"`
+	CreatedAt   string `json:"created_at"`
+	UpdatedAt   string `json:"updated_at"`
 }
 
-func mapProduct(id, name, description string, priceCents int64, stock int32, terminalID string, xPos, yPos float64, createdAt, updatedAt *timestamppb.Timestamp) productResponse {
+func mapProduct(id, name, description string, priceCents int64, stock int32, createdAt, updatedAt *timestamppb.Timestamp) productResponse {
 	return productResponse{
 		ID:          id,
 		Name:        name,
 		Description: description,
 		PriceCents:  priceCents,
 		Stock:       stock,
-		TerminalID:  terminalID,
-		XPos:        xPos,
-		YPos:        yPos,
 		CreatedAt:   formatTimestamp(createdAt),
 		UpdatedAt:   formatTimestamp(updatedAt),
 	}
@@ -46,7 +40,7 @@ func (h *Handler) handleGetProductByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, mapProduct(p.Id, p.Name, p.Description, p.PriceCents, 0, p.TerminalId, p.XPos, p.YPos, p.CreatedAt, p.UpdatedAt))
+	writeJSON(w, http.StatusOK, mapProduct(p.Id, p.Name, p.Description, p.PriceCents, 0, p.CreatedAt, p.UpdatedAt))
 }
 
 func (h *Handler) handleListProducts(w http.ResponseWriter, r *http.Request) {
@@ -67,7 +61,7 @@ func (h *Handler) handleListProducts(w http.ResponseWriter, r *http.Request) {
 
 	items := make([]productResponse, 0, len(resp.Products))
 	for _, p := range resp.Products {
-		items = append(items, mapProduct(p.Id, p.Name, p.Description, p.PriceCents, 0, p.TerminalId, p.XPos, p.YPos, p.CreatedAt, p.UpdatedAt))
+		items = append(items, mapProduct(p.Id, p.Name, p.Description, p.PriceCents, 0, p.CreatedAt, p.UpdatedAt))
 	}
 
 	writeJSON(w, http.StatusOK, map[string]any{"products": items})

@@ -2,11 +2,10 @@ package tests
 
 import (
 	"errors"
-	"testing"
-
 	"refurbished-marketplace/services/users/internal/database"
 	"refurbished-marketplace/services/users/internal/service"
 	"refurbished-marketplace/shared/testutil"
+	"testing"
 
 	"github.com/google/uuid"
 )
@@ -30,7 +29,7 @@ func TestAuthLoginAndRefresh(t *testing.T) {
 	svc := newUserService(t)
 	ctx := t.Context()
 
-	created, err := svc.CreateUser(ctx, "auth@test.com", "password123", 12.5, -4.25)
+	created, err := svc.CreateUser(ctx, "auth@test.com", "password123")
 	if err != nil {
 		t.Fatalf("create user: %v", err)
 	}
@@ -128,7 +127,7 @@ func TestServiceCreateUserValidation(t *testing.T) {
 		svc := newUserService(t)
 		ctx := t.Context()
 
-		_, err := svc.CreateUser(ctx, "bad-email", "password123", 0, 0)
+		_, err := svc.CreateUser(ctx, "bad-email", "password123")
 		if !errors.Is(err, service.ErrInvalidEmail) {
 			t.Fatalf("expected ErrInvalidEmail, got %v", err)
 		}
@@ -138,7 +137,7 @@ func TestServiceCreateUserValidation(t *testing.T) {
 		svc := newUserService(t)
 		ctx := t.Context()
 
-		_, err := svc.CreateUser(ctx, "user@test.com", "short", 0, 0)
+		_, err := svc.CreateUser(ctx, "user@test.com", "short")
 		if !errors.Is(err, service.ErrInvalidPassword) {
 			t.Fatalf("expected ErrInvalidPassword, got %v", err)
 		}

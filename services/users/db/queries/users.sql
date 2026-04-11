@@ -1,6 +1,6 @@
 -- name: CreateUser :one
-INSERT INTO users (id, email, password_hash, x_pos, y_pos)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO users (id, email, password_hash)
+VALUES ($1, $2, $3)
 RETURNING users.*;
 
 -- name: GetUserByID :one
@@ -16,7 +16,7 @@ WHERE email = $1;
 -- name: CreateRefreshToken :one
 INSERT INTO refresh_tokens (id, token_hash, user_id, expires_at)
 VALUES ($1, $2, $3, $4)
-RETURNING id, token_hash, user_id, expires_at, revoked_at, created_at, updated_at;
+RETURNING refresh_tokens.*;
 
 -- name: GetRefreshTokenByID :one
 SELECT id, token_hash, user_id, expires_at, revoked_at, created_at, updated_at

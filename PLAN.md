@@ -146,8 +146,8 @@
 
 ## Minimal Schema
 
-- `users`: `id`, `email`, `password_hash`, `x_pos`, `y_pos`
-- `products`: `id`, `name`, `description`, `price_cents`, `merchant_id`, `terminal_id`, `x_pos`, `y_pos`
+- `users`: `id`, `email`, `password_hash`
+- `products`: `id`, `name`, `description`, `price_cents`, `merchant_id`
 - `inventory`: `product_id`, `available_qty`, `reserved_qty`
 - `orders`: `id`, `buyer_user_id`, `status`, `total_cents`
 - `order_items`: `id`, `order_id`, `product_id`, `merchant_id`, `quantity`, `unit_price_cents`, `line_total_cents`

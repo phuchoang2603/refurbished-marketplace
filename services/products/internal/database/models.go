@@ -17,8 +17,5 @@ type Product struct {
 	PriceCents  int64
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
-	TerminalID  uuid.UUID
-	XPos        float64
-	YPos        float64
 	MerchantID  uuid.UUID
 }

@@ -17,15 +17,13 @@ func mapUser(u service.User) *usersv1.User {
 	return &usersv1.User{
 		Id:        u.ID.String(),
 		Email:     u.Email,
-		XPos:      u.XPos,
-		YPos:      u.YPos,
 		CreatedAt: timestamppb.New(u.CreatedAt),
 		UpdatedAt: timestamppb.New(u.UpdatedAt),
 	}
 }
 
 func (s *Server) CreateUser(ctx context.Context, req *usersv1.CreateUserRequest) (*usersv1.User, error) {
-	u, err := s.svc.CreateUser(ctx, req.GetEmail(), req.GetPassword(), req.GetXPos(), req.GetYPos())
+	u, err := s.svc.CreateUser(ctx, req.GetEmail(), req.GetPassword())
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrInvalidEmail), errors.Is(err, service.ErrInvalidPassword):

@@ -12,9 +12,21 @@ import (
 )
 
 const createProduct = `-- name: CreateProduct :one
-INSERT INTO products (id, name, description, price_cents, merchant_id, terminal_id, x_pos, y_pos)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-RETURNING products.id, products.name, products.description, products.price_cents, products.created_at, products.updated_at, products.terminal_id, products.x_pos, products.y_pos, products.merchant_id
+INSERT INTO products (
+    id,
+    name,
+    description,
+    price_cents,
+    merchant_id
+)
+VALUES (
+    $1,
+    $2,
+    $3,
+    $4,
+    $5
+)
+RETURNING products.id, products.name, products.description, products.price_cents, products.created_at, products.updated_at, products.merchant_id
 `
 
 type CreateProductParams struct {
@@ -23,9 +35,6 @@ type CreateProductParams struct {
 	Description string
 	PriceCents  int64
 	MerchantID  uuid.UUID
-	TerminalID  uuid.UUID
-	XPos        float64
-	YPos        float64
 }
 
 func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (Product, error) {
@@ -35,9 +44,6 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (P
 		arg.Description,
 		arg.PriceCents,
 		arg.MerchantID,
-		arg.TerminalID,
-		arg.XPos,
-		arg.YPos,
 	)
 	var i Product
 	err := row.Scan(
@@ -47,18 +53,16 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (P
 		&i.PriceCents,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.TerminalID,
-		&i.XPos,
-		&i.YPos,
 		&i.MerchantID,
 	)
 	return i, err
 }
 
 const getProductByID = `-- name: GetProductByID :one
-SELECT products.id, products.name, products.description, products.price_cents, products.created_at, products.updated_at, products.terminal_id, products.x_pos, products.y_pos, products.merchant_id
-FROM products
-WHERE id = $1
+SELECT products.id, products.name, products.description, products.price_cents, products.created_at, products.updated_at, products.merchant_id FROM
+    products
+WHERE
+    id = $1
 `
 
 func (q *Queries) GetProductByID(ctx context.Context, id uuid.UUID) (Product, error) {
@@ -71,18 +75,18 @@ func (q *Queries) GetProductByID(ctx context.Context, id uuid.UUID) (Product, er
 		&i.PriceCents,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.TerminalID,
-		&i.XPos,
-		&i.YPos,
 		&i.MerchantID,
 	)
 	return i, err
 }
 
 const listProducts = `-- name: ListProducts :many
-SELECT products.id, products.name, products.description, products.price_cents, products.created_at, products.updated_at, products.terminal_id, products.x_pos, products.y_pos, products.merchant_id
-FROM products
-ORDER BY created_at DESC
+SELECT
+    products.id, products.name, products.description, products.price_cents, products.created_at, products.updated_at, products.merchant_id
+FROM
+    products
+ORDER BY
+    created_at DESC
 LIMIT $1 OFFSET $2
 `
 
@@ -107,9 +111,6 @@ func (q *Queries) ListProducts(ctx context.Context, arg ListProductsParams) ([]P
 			&i.PriceCents,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.TerminalID,
-			&i.XPos,
-			&i.YPos,
 			&i.MerchantID,
 		); err != nil {
 			return nil, err

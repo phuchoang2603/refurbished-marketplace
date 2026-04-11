@@ -7,27 +7,21 @@ import (
 )
 
 type createUserRequest struct {
-	Email    string  `json:"email"`
-	Password string  `json:"password"`
-	XPos     float64 `json:"x_pos"`
-	YPos     float64 `json:"y_pos"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type userResponse struct {
-	ID        string  `json:"id"`
-	Email     string  `json:"email"`
-	XPos      float64 `json:"x_pos"`
-	YPos      float64 `json:"y_pos"`
-	CreatedAt string  `json:"created_at"`
-	UpdatedAt string  `json:"updated_at"`
+	ID        string `json:"id"`
+	Email     string `json:"email"`
+	CreatedAt string `json:"created_at"`
+	UpdatedAt string `json:"updated_at"`
 }
 
-func mapUser(id, email string, xPos, yPos float64, createdAt, updatedAt *timestamppb.Timestamp) userResponse {
+func mapUser(id, email string, createdAt, updatedAt *timestamppb.Timestamp) userResponse {
 	return userResponse{
 		ID:        id,
 		Email:     email,
-		XPos:      xPos,
-		YPos:      yPos,
 		CreatedAt: formatTimestamp(createdAt),
 		UpdatedAt: formatTimestamp(updatedAt),
 	}
@@ -39,13 +33,13 @@ func (h *Handler) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	u, err := h.users.CreateUser(r.Context(), req.Email, req.Password, req.XPos, req.YPos)
+	u, err := h.users.CreateUser(r.Context(), req.Email, req.Password)
 	if err != nil {
 		writeGRPCError(w, err)
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, mapUser(u.Id, u.Email, u.XPos, u.YPos, u.CreatedAt, u.UpdatedAt))
+	writeJSON(w, http.StatusCreated, mapUser(u.Id, u.Email, u.CreatedAt, u.UpdatedAt))
 }
 
 func (h *Handler) handleGetUserByID(w http.ResponseWriter, r *http.Request) {
@@ -60,5 +54,5 @@ func (h *Handler) handleGetUserByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, mapUser(u.Id, u.Email, u.XPos, u.YPos, u.CreatedAt, u.UpdatedAt))
+	writeJSON(w, http.StatusOK, mapUser(u.Id, u.Email, u.CreatedAt, u.UpdatedAt))
 }

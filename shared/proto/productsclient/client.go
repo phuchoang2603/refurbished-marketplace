@@ -30,15 +30,12 @@ func (c *Client) Close() error {
 	return nil
 }
 
-func (c *Client) CreateProduct(ctx context.Context, name, description string, priceCents int64, merchantID, terminalID string, xPos, yPos float64) (*productsv1.Product, error) {
+func (c *Client) CreateProduct(ctx context.Context, name, description string, priceCents int64, merchantID string) (*productsv1.Product, error) {
 	return c.client.CreateProduct(ctx, &productsv1.CreateProductRequest{
 		Name:        name,
 		Description: description,
 		PriceCents:  priceCents,
 		MerchantId:  merchantID,
-		TerminalId:  terminalID,
-		XPos:        xPos,
-		YPos:        yPos,
 	})
 }
 

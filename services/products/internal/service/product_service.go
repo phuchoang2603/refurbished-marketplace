@@ -15,14 +15,11 @@ type Product struct {
 	Description string
 	PriceCents  int64
 	MerchantID  uuid.UUID
-	TerminalID  uuid.UUID
-	XPos        float64
-	YPos        float64
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }
 
-func (s *Service) CreateProduct(ctx context.Context, name, description string, priceCents int64, merchantID, terminalID uuid.UUID, xPos, yPos float64) (Product, error) {
+func (s *Service) CreateProduct(ctx context.Context, name, description string, priceCents int64, merchantID uuid.UUID) (Product, error) {
 	cleanName := normalizeProductName(name)
 	if cleanName == "" {
 		return Product{}, ErrInvalidProductName
@@ -36,9 +33,6 @@ func (s *Service) CreateProduct(ctx context.Context, name, description string, p
 	if merchantID == uuid.Nil {
 		return Product{}, ErrInvalidMerchantID
 	}
-	if terminalID == uuid.Nil {
-		return Product{}, ErrInvalidTerminalID
-	}
 
 	created, err := s.queries.CreateProduct(ctx, database.CreateProductParams{
 		ID:          uuid.New(),
@@ -46,9 +40,6 @@ func (s *Service) CreateProduct(ctx context.Context, name, description string, p
 		Description: desc,
 		PriceCents:  priceCents,
 		MerchantID:  merchantID,
-		TerminalID:  terminalID,
-		XPos:        xPos,
-		YPos:        yPos,
 	})
 	if err != nil {
 		return Product{}, err
@@ -93,9 +84,6 @@ func mapDBProduct(p database.Product) Product {
 		Description: p.Description,
 		PriceCents:  p.PriceCents,
 		MerchantID:  p.MerchantID,
-		TerminalID:  p.TerminalID,
-		XPos:        p.XPos,
-		YPos:        p.YPos,
 		CreatedAt:   p.CreatedAt,
 		UpdatedAt:   p.UpdatedAt,
 	}

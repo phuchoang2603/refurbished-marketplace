@@ -6,10 +6,10 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
+	"refurbished-marketplace/services/users/internal/database"
 	"strings"
 	"time"
 
-	"refurbished-marketplace/services/users/internal/database"
 	sharedjwt "refurbished-marketplace/shared/auth/jwt"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -29,8 +29,6 @@ func mapDBUser(u database.User) User {
 		ID:           u.ID,
 		Email:        u.Email,
 		PasswordHash: u.PasswordHash,
-		XPos:         u.XPos,
-		YPos:         u.YPos,
 		CreatedAt:    u.CreatedAt,
 		UpdatedAt:    u.UpdatedAt,
 	}

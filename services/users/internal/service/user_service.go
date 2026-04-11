@@ -2,9 +2,8 @@ package service
 
 import (
 	"context"
-	"time"
-
 	"refurbished-marketplace/services/users/internal/database"
+	"time"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -14,13 +13,11 @@ type User struct {
 	ID           uuid.UUID
 	Email        string
 	PasswordHash string
-	XPos         float64
-	YPos         float64
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
 
-func (s *Service) CreateUser(ctx context.Context, email string, password string, xPos, yPos float64) (User, error) {
+func (s *Service) CreateUser(ctx context.Context, email string, password string) (User, error) {
 	cleanEmail := normalizeEmail(email)
 	if !isValidEmailShape(cleanEmail) {
 		return User{}, ErrInvalidEmail
@@ -45,8 +42,6 @@ func (s *Service) CreateUser(ctx context.Context, email string, password string,
 		ID:           uuid.New(),
 		Email:        cleanEmail,
 		PasswordHash: string(hash),
-		XPos:         xPos,
-		YPos:         yPos,
 	})
 	if err != nil {
 		return User{}, err
