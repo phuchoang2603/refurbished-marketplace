@@ -7,7 +7,7 @@ Use Kafka as the async backbone, but make event publishing reliable with outbox/
 ## Outbox
 
 - `orders` writes one outbox row per order item in the same db transaction.
-- `payment` should do the same when introduced.
+- `payment` writes one outbox row per payment result to publish `payment.item.*` reliably.
 - The outbox row is the durable event source of truth.
 - Keep the outbox table local to the service that owns the business change.
 
@@ -49,6 +49,7 @@ The shared event names live in `shared/messaging`.
 - Consumer services should store processed message IDs in a local inbox table.
 - This prevents duplicate processing when Kafka redelivers a message.
 - `inventory` and `payment` are likely consumers for inbox dedupe.
+- `orders` should also use inbox dedupe when consuming `payment.item.*` results.
 
 ## Flow
 

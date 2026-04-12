@@ -3,10 +3,9 @@ package service
 import (
 	"context"
 	"encoding/json"
-	"strings"
-
 	"refurbished-marketplace/services/orders/internal/database"
 	"refurbished-marketplace/shared/messaging"
+	"strings"
 
 	"github.com/google/uuid"
 )
@@ -107,7 +106,7 @@ func createOrderItems(ctx context.Context, queries *database.Queries, orderID, b
 		if _, err := queries.CreateOrderOutbox(ctx, database.CreateOrderOutboxParams{
 			ID:          uuid.New(),
 			AggregateID: item.ProductID,
-			EventType:   string(messaging.EventTypeOrderItemCreated),
+			EventType:   messaging.EventTypeOrderItemCreated,
 			Payload:     payloadBytes,
 		}); err != nil {
 			return nil, err

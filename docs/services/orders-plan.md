@@ -9,7 +9,7 @@ Implement checkout order headers and per-item outbox events that drive inventory
 - Service: `services/orders`
 - Transport: gRPC
 - Storage: PostgreSQL (`orders_db`)
-- Events: `orders.item.created`
+- Events: `orders.item.created` (outbox) and consume `payment.item.succeeded` / `payment.item.failed` to move orders to paid/failed (`cmd/orders` + `KAFKA_BOOTSTRAP_SERVERS`; see `infra/charts/refurbished-marketplace/values.yaml`).
 
 ## Data Model
 
@@ -50,3 +50,4 @@ The outbox row `aggregate_id` should be the `product_id` for that item.
 
 - Keep tests in `services/orders/tests/`.
 - Cover order creation, status updates, and outbox writes.
+- Kafka end-to-end: `go test ./tests/...` exercises `KafkaPaymentResultHandler` + `shared/messaging` consumer. The test only subscribes to `payment.item.succeeded` because an empty dev broker may not have `payment.item.failed` yet; `cmd/orders` still consumes both topics in-cluster.

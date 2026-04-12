@@ -1,13 +1,17 @@
 package main
 
 import (
+	"context"
 	"database/sql"
+	"errors"
 	"log"
 	"net"
 	"os"
-
+	"os/signal"
 	"refurbished-marketplace/services/orders/internal/grpcserver"
 	"refurbished-marketplace/services/orders/internal/service"
+	"sync"
+	"syscall"
 
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
@@ -48,6 +52,28 @@ func main() {
 	ordersv1.RegisterOrdersServiceServer(server, grpcSvc)
 	reflection.Register(server)
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	var wg sync.WaitGroup
+	if kafkaBootstrap := os.Getenv("KAFKA_BOOTSTRAP_SERVERS"); kafkaBootstrap != "" {
+		wg.Go(func() {
+			if err := runPaymentResultConsumer(ctx, svc, kafkaBootstrap); err != nil && !errors.Is(err, context.Canceled) {
+				log.Printf("kafka consumer: %v", err)
+			}
+		})
+	} else {
+		log.Print("KAFKA_BOOTSTRAP_SERVERS not set; skipping Kafka consumer")
+	}
+
+	go func() {
+		<-ctx.Done()
+		server.GracefulStop()
+	}()
+
 	log.Printf("starting orders grpc service on %s", addr)
-	log.Fatal(server.Serve(lis))
+	if err := server.Serve(lis); err != nil {
+		log.Fatalf("grpc: %v", err)
+	}
+	wg.Wait()
 }
