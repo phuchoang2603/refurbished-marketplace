@@ -9,6 +9,7 @@ import (
 	authconfig "refurbished-marketplace/shared/auth/config"
 	"refurbished-marketplace/shared/proto/cartclient"
 	"refurbished-marketplace/shared/proto/ordersclient"
+	"refurbished-marketplace/shared/proto/paymentclient"
 	"refurbished-marketplace/shared/proto/productsclient"
 	"refurbished-marketplace/shared/proto/usersclient"
 )
@@ -63,12 +64,23 @@ func main() {
 	}
 	defer cartClient.Close()
 
+	paymentGRPCAddr := os.Getenv("PAYMENT_SVC_ADDR")
+	if paymentGRPCAddr == "" {
+		log.Fatal("PAYMENT_SVC_ADDR is required")
+	}
+
+	paymentClient, err := paymentclient.New(paymentGRPCAddr)
+	if err != nil {
+		log.Fatalf("payment grpc client: %v", err)
+	}
+	defer paymentClient.Close()
+
 	jwtSecret := os.Getenv("JWT_SECRET")
 	if jwtSecret == "" {
 		log.Fatal("JWT_SECRET is required")
 	}
 
-	h := handlers.New(usersClient, productsClient, ordersClient, cartClient, authconfig.DefaultConfig(jwtSecret))
+	h := handlers.New(usersClient, productsClient, ordersClient, cartClient, paymentClient, authconfig.DefaultConfig(jwtSecret))
 	mux := http.NewServeMux()
 	h.Register(mux)
 

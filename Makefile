@@ -1,7 +1,4 @@
-.PHONY: test generate-proto
-
-test:
-	go test ./...
+.PHONY: generate-proto tidy
 
 generate-proto:
 	@set -e; \
@@ -17,4 +14,13 @@ generate-proto:
 			--go_out=. --go_opt=paths=source_relative \
 			--go-grpc_out=. --go-grpc_opt=paths=source_relative \
 			"$$file"; \
+	done
+
+tidy:
+	@echo "Tidying shared module..."
+	@cd shared && go mod tidy
+	@echo "Tidying service modules..."
+	@for dir in $$(find services -maxdepth 2 -name go.mod -exec dirname {} \;); do \
+		echo "Tidying $$dir..."; \
+		(cd $$dir && go mod tidy); \
 	done

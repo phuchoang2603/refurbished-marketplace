@@ -8,6 +8,7 @@ import (
 	authconfig "refurbished-marketplace/shared/auth/config"
 	"refurbished-marketplace/shared/proto/cartclient"
 	"refurbished-marketplace/shared/proto/ordersclient"
+	"refurbished-marketplace/shared/proto/paymentclient"
 	"refurbished-marketplace/shared/proto/productsclient"
 	"refurbished-marketplace/shared/proto/usersclient"
 )
@@ -17,11 +18,12 @@ type Handler struct {
 	products *productsclient.Client
 	orders   *ordersclient.Client
 	cart     *cartclient.Client
+	payment  *paymentclient.Client
 	auth     authconfig.Config
 }
 
-func New(users *usersclient.Client, products *productsclient.Client, orders *ordersclient.Client, cart *cartclient.Client, authCfg authconfig.Config) *Handler {
-	return &Handler{users: users, products: products, orders: orders, cart: cart, auth: authCfg}
+func New(users *usersclient.Client, products *productsclient.Client, orders *ordersclient.Client, cart *cartclient.Client, payment *paymentclient.Client, authCfg authconfig.Config) *Handler {
+	return &Handler{users: users, products: products, orders: orders, cart: cart, payment: payment, auth: authCfg}
 }
 
 func (h *Handler) Register(mux *http.ServeMux) {
@@ -45,6 +47,8 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.HandleFunc("POST /auth/login", h.handleLogin)
 	mux.HandleFunc("POST /auth/refresh", h.handleRefresh)
 	mux.Handle("POST /auth/logout", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleLogout)))
+
+	mux.HandleFunc("POST /webhooks/stripe-simulator", h.handleStripeSimWebhook)
 }
 
 func (h *Handler) handleHealthz(w http.ResponseWriter, r *http.Request) {

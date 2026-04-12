@@ -2,7 +2,6 @@ package tests
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -47,6 +46,24 @@ func TestKafkaOrdersItemCreatedHandler_EndToEnd(t *testing.T) {
 
 	topic := messaging.EventTypeOrderItemCreated
 
+	producer, err := kafka.NewProducer(&kafka.ConfigMap{
+		"bootstrap.servers":                  bootstrap,
+		"broker.address.family":              "v4",
+		"socket.connection.setup.timeout.ms": 60000,
+	})
+	if err != nil {
+		t.Fatalf("NewProducer: %v", err)
+	}
+	defer producer.Close()
+
+	if err := producer.Produce(&kafka.Message{
+		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
+		Value:          payload,
+	}, nil); err != nil {
+		t.Fatalf("Produce: %v", err)
+	}
+	producer.Flush(15 * 1000)
+
 	consumer, err := messaging.NewKafkaConsumer(messaging.KafkaConsumerConfig{
 		BootstrapServers: bootstrap,
 		GroupID:          fmt.Sprintf("payment-kafka-e2e-%s", uuid.New().String()),
@@ -65,43 +82,24 @@ func TestKafkaOrdersItemCreatedHandler_EndToEnd(t *testing.T) {
 		errRun <- consumer.Run(runCtx)
 	}()
 
-	p, err := kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers":                  bootstrap,
-		"broker.address.family":              "v4",
-		"socket.connection.setup.timeout.ms": 60000,
-	})
-	if err != nil {
-		t.Fatalf("NewProducer: %v", err)
-	}
-	defer p.Close()
+	ticker := time.NewTicker(200 * time.Millisecond)
+	defer ticker.Stop()
+	timeout := time.After(30 * time.Second)
 
-	if err := p.Produce(&kafka.Message{
-		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-		Value:          payload,
-	}, nil); err != nil {
-		t.Fatalf("Produce: %v", err)
-	}
-	p.Flush(15 * 1000)
-
-	deadline := time.Now().Add(45 * time.Second)
-	for time.Now().Before(deadline) {
-		row, err := queries.GetPaymentTransactionByOrderItemID(ctx, orderItemID)
-		if err == nil && row.OrderID == orderID && row.Status == service.PaymentTxStatusInitialized {
-			cancel()
-			if err := <-errRun; err != nil && !errors.Is(err, context.Canceled) {
-				t.Fatalf("consumer Run: %v", err)
+	for {
+		select {
+		case err := <-errRun:
+			if err != nil && !errors.Is(err, context.Canceled) {
+				t.Fatalf("Consumer exited unexpectedly: %v", err)
 			}
 			return
+		case <-timeout:
+			t.Fatal("timeout waiting for payment transaction")
+		case <-ticker.C:
+			row, err := queries.GetPaymentTransactionByOrderItemID(ctx, orderItemID)
+			if err == nil && row.OrderID == orderID && row.Status == service.PaymentTxStatusInitialized {
+				return
+			}
 		}
-		if err != nil && !errors.Is(err, sql.ErrNoRows) {
-			t.Fatalf("GetPaymentTransactionByOrderItemID: %v", err)
-		}
-		time.Sleep(200 * time.Millisecond)
 	}
-
-	cancel()
-	if err := <-errRun; err != nil && !errors.Is(err, context.Canceled) {
-		t.Fatalf("consumer Run: %v", err)
-	}
-	t.Fatal("timeout waiting for payment transaction after Kafka message")
 }
