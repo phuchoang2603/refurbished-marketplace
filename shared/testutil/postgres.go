@@ -1,3 +1,4 @@
+// Package testutil provides utilities for integration testing with PostgreSQL, Redis, Kafka, and other dependencies.
 package testutil
 
 import (
