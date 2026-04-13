@@ -3,17 +3,22 @@
 ## Current Status
 
 - Repository is a multi-module Go workspace (one `go.mod` per service, plus `shared/`).
-- Initial services exist: `web`, `users`, `products`, `orders`, `cart`, `inventory`.
-- Architecture direction is now explicit: REST at edge (`web` service), gRPC for all internal service-to-service traffic.
-- Development now standardizes on Kubernetes (Tilt + Helm + CloudNativePG).
-- Kafka dev stack (Strimzi + Kafka UI + Debezium connect) is deployed via Tilt/Helm; domain publishing/consumption is still a work in progress.
-- `users` is the first implemented vertical slice (migration + sqlc queries + service + handlers + integration tests).
-- Users auth is implemented with JWT login/refresh/logout and DB-backed refresh token sessions.
-- Web edge service exists and now owns REST entrypoints while users is served via gRPC.
-- `orders` vertical slice is implemented as gRPC-first with PostgreSQL migrations, sqlc, service tests, and per-item `orders.item.created` outbox rows keyed by `product_id`.
-- `products` is catalog-only now; stock moved out into `inventory`.
-- `inventory` is implemented as the stock/reservation service (migrations + sqlc + service + tests).
-- `cart` is implemented as an ephemeral cart service backed by Redis/Valkey.
+- Initial services exist: `web`, `users`, `products`, `orders`, `cart`, `inventory`, **`payment`**.
+- Architecture direction is explicit: REST at edge (`web` service), gRPC for internal service-to-service traffic.
+- Development standardizes on Kubernetes (Tilt + Helm + CloudNativePG).
+- Kafka dev stack (Strimzi + Kafka UI + Debezium connect) is deployed via Tilt/Helm; **domain consumers/producers for orders and payment are implemented**; full CDC/outbox→Kafka automation remains the long-term shape.
+- **`shared/messaging`** exposes `NewKafkaConsumer` / `KafkaHandler` / `KafkaMessage` backed by **franz-go (`kgo`)** — pure Go, **no** `confluent-kafka-go` / librdkafka / CGO. Consumer uses `PollFetches`, **`Fetches.EachPartition`** + **`errgroup`** (parallel across partitions, ordered within a partition), **manual commits** after successful handler batches. **`BlockRebalanceOnPoll` is not used** (simpler operation; at-least-once delivery is assumed — **inbox / idempotent handlers** mitigate duplicates where it matters).
+- **Bootstrap brokers**: `KafkaConsumerConfig.BootstrapServers []string`; env `KAFKA_BOOTSTRAP_SERVERS` is comma-split via **`messaging.ParseBootstrapServers`** in `cmd` binaries.
+- **`users`** is the first implemented vertical slice (migration + sqlc + service + handlers + integration tests).
+- Users auth: JWT login/refresh/logout and DB-backed refresh token sessions.
+- **`web`** owns REST entrypoints; internal services are gRPC. **`web`** exposes **`POST /webhooks/stripe-simulator`** and forwards to **`payment`** over gRPC where applicable.
+- **`orders`** is gRPC-first with PostgreSQL, sqlc, service tests, and per-item **`orders.item.created`** outbox rows keyed by `product_id`. It **consumes** **`payment.item.succeeded`** / **`payment.item.failed`** via Kafka and updates order status (today: **one event sets the whole-order status** — does not yet require all line items to succeed; refine later if product rules need “all items paid”).
+- **`products`** is catalog-only; stock lives in **`inventory`**.
+- **`inventory`** is stock/reservation (migrations + sqlc + service + tests).
+- **`cart`** is ephemeral, backed by Redis/Valkey.
+- **`payment`** is implemented: Postgres (intents, per-item transactions, **inbox**, **outbox**), gRPC API, Kafka consumer for **`orders.item.created`**, Stripe-simulator HTTP adapter, emits **`payment.item.*`** (outbox path for durable publish is in place; **Debezium wiring to Kafka** is still the intended production bridge).
+- **Integration tests**: Kafka via Testcontainers **`confluentinc/confluent-local:7.5.0`** (aligned with **testcontainers-go**’s Kafka module). **REST/HTTP logs in that image are not where native Kafka produce/fetch shows up** — clients use the broker listener.
+- **Dev shell**: **`flake.nix`** no longer pulls rdkafka/SASL/openssl for Go Kafka — franz-go is pure Go.
 
 ## Canonical Repo Tree
 
@@ -31,75 +36,33 @@
         usersclient/
       tests/
       go.mod
-      go.sum
     users/
-      cmd/users/
-      db/migrations/
-      db/queries/
-      internal/
-      tests/
-      go.mod
-      go.sum
     products/
-      cmd/products/
-      db/migrations/
-      db/queries/
-      internal/
-      tests/
-      go.mod
-      go.sum
     orders/
-      cmd/orders/
-      db/migrations/
-      db/queries/
-      internal/
-      tests/
-      go.mod
-      go.sum
     cart/
-      cmd/cart/
-      internal/
-      tests/
-      go.mod
-      go.sum
     inventory/
-      cmd/inventory/
+    payment/
+      cmd/payment/
       db/migrations/
       db/queries/
       internal/
       tests/
       go.mod
-      go.sum
   shared/
     messaging/
     proto/
       users/v1/
-      usersclient/
-      products/v1/
-      productsclient/
+      payment/v1/
       orders/v1/
-      ordersclient/
-      cart/v1/
-      cartclient/
-      inventory/v1/
+      ...
     testutil/
-    auth/
-      config/
-      jwt/
-    cache/
-    go.mod
-    go.sum
+    ...
   infra/
     charts/
       refurbished-marketplace/
-        templates/
-        Chart.yaml
       kafka/
-        templates/
-        Chart.yaml
     docker/
     k8s/
-      secrets.yaml
   docs/
 ```
 
@@ -111,14 +74,14 @@
 - Migrations: `goose`.
 - Query generation: `sqlc`.
 - Cache: Redis/Valkey (used by `cart`).
-- Event bus: Kafka via Strimzi (deployed in dev; domain publishing/consumption still evolving).
+- Event bus: Kafka (Strimzi in dev); **Go clients use franz-go**, not the JVM REST stack inside `confluent-local`.
 - Style: small packages, explicit SQL, straightforward handlers, table-driven tests.
 
 ## Service Layout Rules
 
 - Start simple per service; avoid over-abstracting.
 - Keep service code in `services/<name>/` and private code in `internal/`.
-- Internal services should expose gRPC contracts first and avoid new REST handlers.
+- Internal services expose gRPC contracts first and avoid new REST handlers.
 - gRPC contracts live under `shared/proto/<domain>/v1/` and are generated into the same directories.
 - Keep REST/HTTP DTO shaping in the web/edge service.
 - Keep SQL and migrations service-local:
@@ -133,16 +96,16 @@
 - Keep `inventory` as the source of truth for available/reserved stock.
 - Keep `orders` as order headers plus line items.
 - Keep `cart` separate from order state and payment state.
-- Introduce `payment` as the bank/fraud boundary later.
+- **`payment`** owns payment intents, per-item transactions, gateway simulation, inbox consumption of `orders.item.created`, and outbox for `payment.item.*`.
 
 ## Eventing Reliability
 
-- Kafka remains the async backbone for downstream consumers.
-- `orders` writes one outbox row per item and keys it by `product_id`.
-- `payment` should persist its own domain events to a local outbox table when introduced.
-- Debezium should stream outbox rows from Postgres into Kafka.
-- Consumers such as `inventory` and `payment` should use an inbox table to dedupe repeated deliveries.
-- Fraud and analytics should consume the canonical event stream, not application-generated ad hoc payloads.
+- Kafka is the async backbone for downstream consumers.
+- `orders` writes one outbox row per item; `payment` uses a local **outbox** for **`payment.item.*`**.
+- Debezium should stream outbox rows from Postgres into Kafka (operational wiring still the default target).
+- **`payment`** uses an **inbox** for Kafka dedupe on `orders.item.created`.
+- **`orders`** Kafka handler should stay safe under redelivery (ideally idempotent updates or future inbox if needed).
+- Fraud/analytics should consume canonical streams, not ad hoc payloads.
 
 ## Minimal Schema
 
@@ -153,13 +116,12 @@
 - `order_items`: `id`, `order_id`, `product_id`, `merchant_id`, `quantity`, `unit_price_cents`, `line_total_cents`
 - `orders_outbox`: `id`, `aggregate_id`, `event_type`, `payload`, `publish_attempts`, `created_at`, `published_at`
 - `cart`: Redis session state only; no Postgres schema required
-- `payment`: `id`, `order_id`, `merchant_id`, `tx_fraud`, `tx_fraud_scenario`, `tx_time_seconds`
+- **`payment`**: intents, per-item transactions, inbox, outbox — see `services/payment/db/migrations/`
 
 ## Next Steps
 
-1. Implement inventory consumption of `orders.item.created` keyed by `product_id`.
-2. Add merchant snapshots to `products`, `order_items`, and `payment` flows.
-3. Add the outbox publisher/CDC path from `orders` to Kafka with `product_id` message keys.
-4. Add the `payment` service and its bank/fraud event flow.
-5. Introduce inbox dedupe in consumers that need at-least-once safety.
-6. Add admin orchestration later if you want a single product + inventory creation path.
+1. Wire **Debezium / publisher** so `orders_outbox` and `payment_outbox` rows reliably reach Kafka topics (if not already complete in your cluster).
+2. **Inventory**: consume `orders.item.created` keyed by `product_id` (if not done).
+3. Aggregate **order payment status** from **all** line items when product rules require it (today: first `payment.item.succeeded` can mark the order paid).
+4. Merchant snapshots / admin orchestration as needed.
+5. Harden Kafka consumer options (**`BlockRebalanceOnPoll`**) only if you need stricter commit/rebalance coupling and accept the operational/test complexity.

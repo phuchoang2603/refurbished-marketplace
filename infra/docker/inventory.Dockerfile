@@ -16,6 +16,6 @@ WORKDIR /app
 
 COPY --from=builder /out/inventory /app/inventory
 
-EXPOSE 8083
+EXPOSE 9095
 
 ENTRYPOINT ["/app/inventory"]

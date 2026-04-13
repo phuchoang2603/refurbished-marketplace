@@ -24,19 +24,21 @@ roleRef:
   kind: Role
   name: {{ printf "%s-debezium-connector-role" $entityName }}
   apiGroup: rbac.authorization.k8s.io
+{{- range $entity.topics }}
 ---
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaTopic
 metadata:
-  name: {{ $entity.topic.name }}
+  name: {{ .name }}
   namespace: {{ $.Release.Namespace }}
   labels:
     strimzi.io/cluster: {{ $.Values.kafka.clusterName }}
 spec:
-  partitions: {{ $entity.topic.partitions }}
+  partitions: {{ .partitions }}
   replicas: {{ $.Values.kafka.replicas }}
   config:
-    retention.ms: {{ $entity.topic.retention }}
+    retention.ms: {{ .retention }}
+{{- end }}
 ---
 apiVersion: kafka.strimzi.io/v1beta2
 kind: KafkaConnector

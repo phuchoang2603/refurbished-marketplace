@@ -12,10 +12,10 @@ connect:
   image: refurbished-marketplace/connect-debezium
 entities:
   orders:
-    topic:
-      name: orders.item.created
-      partitions: 6
-      retention: 604800000 # 7 days
+    topics:
+      - name: orders.item.created
+        partitions: 10
+        retention: 604800000 # 7 days
     connector:
       name: orders-outbox
       sourceSecretName: orders-app
@@ -23,6 +23,21 @@ entities:
       databaseHost: orders-db-rw
       databasePort: 5432
       outboxTable: public.orders_outbox
+  payment:
+    topics:
+      - name: payment.item.succeeded
+        partitions: 6
+        retention: 604800000
+      - name: payment.item.failed
+        partitions: 6
+        retention: 604800000
+    connector:
+      name: payment-outbox
+      sourceSecretName: payment-app
+      databaseName: payment_db
+      databaseHost: payment-db-rw
+      databasePort: 5432
+      outboxTable: public.payment_outbox
 provectus:
   enabled: true
   name: kafka-ui

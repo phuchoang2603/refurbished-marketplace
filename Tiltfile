@@ -169,3 +169,27 @@ docker_build(
 k8s_resource('inventory-db', extra_pod_selectors=[{'cnpg.io/cluster': 'inventory-db'}], port_forwards=['5435:5432'], resource_deps=['cnpg-operator-install'], labels='inventory')
 k8s_resource('inventory-migrate', resource_deps=['inventory-db'], labels='inventory')
 k8s_resource('inventory', port_forwards=['9095:9095'], resource_deps=['inventory-db'], labels='inventory')
+
+### Payment Service ###
+docker_build(
+  'refurbished-marketplace/payment-migrator',
+  '.',
+  dockerfile='./infra/docker/payment-migrator.Dockerfile',
+  only=[
+    './services/payment/db/migrations',
+  ],
+)
+
+docker_build(
+  'refurbished-marketplace/payment',
+  '.',
+  dockerfile='./infra/docker/payment.Dockerfile',
+  only=[
+    './services/payment',
+    './shared',
+  ],
+)
+
+k8s_resource('payment-db', extra_pod_selectors=[{'cnpg.io/cluster': 'payment-db'}], port_forwards=['5436:5432'], resource_deps=['cnpg-operator-install'], labels='payment')
+k8s_resource('payment-migrate', resource_deps=['payment-db'], labels='payment')
+k8s_resource('payment', port_forwards=['9096:9096'], resource_deps=['payment-db'], labels='payment')

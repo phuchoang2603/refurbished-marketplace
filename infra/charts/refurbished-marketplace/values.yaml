@@ -14,6 +14,7 @@ services:
       PRODUCTS_SVC_ADDR: products:9092
       ORDERS_SVC_ADDR: orders:9093
       CART_SVC_ADDR: cart:9094
+      PAYMENT_SVC_ADDR: payment:9096
 
   users:
     enabled: true
@@ -58,6 +59,8 @@ services:
     enabled: true
     image: refurbished-marketplace/orders
     port: 9093
+    env:
+      KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap:9092
     migration:
       enabled: true
       image: refurbished-marketplace/orders-migrator
@@ -92,6 +95,26 @@ services:
       name: inventory_db
       owner: inventory_app
       secretName: inventory-app
+      usernameKey: username
+      passwordKey: password
+      instances: 1
+      storageSize: 1Gi
+
+  payment:
+    enabled: true
+    image: refurbished-marketplace/payment
+    port: 9096
+    env:
+      KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap:9092
+    migration:
+      enabled: true
+      image: refurbished-marketplace/payment-migrator
+    db:
+      host: payment-db-rw
+      port: 5432
+      name: payment_db
+      owner: payment_app
+      secretName: payment-app
       usernameKey: username
       passwordKey: password
       instances: 1
