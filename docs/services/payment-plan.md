@@ -72,9 +72,8 @@ flowchart LR
 
 | Variable                  | Meaning                                                                                  |
 | ------------------------- | ---------------------------------------------------------------------------------------- |
-| `KAFKA_BOOTSTRAP_SERVERS` | Bootstrap list (e.g. `kafka:9092`). Empty → no consumer.                                 |
+| `KAFKA_BOOTSTRAP_SERVERS` | Comma-separated broker list (e.g. `kafka:9092` or `a:9092,b:9092`). Parsed into `[]string` for the consumer. Empty → no consumer. |
 | `KAFKA_GROUP_ID`          | Consumer group (default `payment-service`).                                              |
-| `KAFKA_PREFER_IPV4`       | Set `true` or `1` to pass `PreferIPv4` to the shared consumer (Docker Desktop / Colima). |
 
 ## Data Model (Postgres)
 
@@ -104,10 +103,10 @@ Migrations live in `services/payment/db/migrations/`.
 
 ## Kafka Consumption (Go)
 
-Use `refurbished-marketplace/shared/messaging` (`NewKafkaConsumer`, `KafkaHandler`, `KafkaMessage`) which wraps `confluent-kafka-go` with:
+Use `refurbished-marketplace/shared/messaging` (`NewKafkaConsumer`, `KafkaHandler`, `KafkaMessage`) which uses **franz-go** (`kgo`) with:
 
-- **single poller goroutine** calling `Poll()`
-- commit offsets only after the handler returns nil (inbox/state durable)
+- **one goroutine** calling `PollFetches`; each poll uses `Fetches.EachPartition` with `errgroup` so **partitions run concurrently**, records **per partition stay ordered**
+- manual commits after successful handler batches; inbox/state durable before advancing offsets
 
 Integration tests can use `shared/testutil.SetupKafka(t)` (Kafka in Testcontainers, KRaft).
 
@@ -121,4 +120,4 @@ Optional dev helper: a stub HTTP server that returns `202` for charges and trigg
 
 - `services/payment/tests/` — same style as `services/orders/tests` and `services/products/tests`.
 - **Postgres** (`service_test.go`): `shared/testutil.SetupPostgresWithMigrations` + Goose on `services/payment/db/migrations`. Requires **Docker** (Testcontainers). Run: `go test ./tests/...`
-- **Kafka** (`kafka_test.go`): uses `confluent-kafka-go`, which links **librdkafka** via CGO (on macOS this pulls in `-lsasl2`, etc.).
+- **Kafka** (`kafka_test.go`): uses **franz-go** (pure Go; no CGO / librdkafka).

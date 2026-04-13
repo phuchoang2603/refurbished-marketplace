@@ -8,12 +8,11 @@ import (
 	"refurbished-marketplace/services/orders/internal/service"
 	"refurbished-marketplace/shared/messaging"
 	"refurbished-marketplace/shared/testutil"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/google/uuid"
+	"github.com/twmb/franz-go/pkg/kgo"
 )
 
 func TestKafkaPaymentResultHandler_EndToEnd(t *testing.T) {
@@ -38,8 +37,6 @@ func TestKafkaPaymentResultHandler_EndToEnd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Brokers: %v", err)
 	}
-	bootstrap := strings.Join(brokers, ",")
-
 	topic := messaging.EventTypePaymentItemSucceeded
 	payload, err := json.Marshal(map[string]string{
 		"order_id":      created.ID.String(),
@@ -49,29 +46,24 @@ func TestKafkaPaymentResultHandler_EndToEnd(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	producer, err := kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers":                  bootstrap,
-		"broker.address.family":              "v4",
-		"socket.connection.setup.timeout.ms": 60000,
-	})
+	prod, err := kgo.NewClient(
+		kgo.SeedBrokers(brokers...),
+		kgo.AllowAutoTopicCreation(),
+	)
 	if err != nil {
-		t.Fatalf("NewProducer: %v", err)
+		t.Fatalf("NewClient: %v", err)
 	}
-	defer producer.Close()
+	defer prod.Close()
 
-	if err := producer.Produce(&kafka.Message{
-		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-		Value:          payload,
-	}, nil); err != nil {
-		t.Fatalf("Produce: %v", err)
+	res := prod.ProduceSync(ctx, &kgo.Record{Topic: topic, Value: payload})
+	if err := res.FirstErr(); err != nil {
+		t.Fatalf("ProduceSync: %v", err)
 	}
-	producer.Flush(15 * 1000)
 
 	consumer, err := messaging.NewKafkaConsumer(messaging.KafkaConsumerConfig{
-		BootstrapServers: bootstrap,
+		BootstrapServers: brokers,
 		GroupID:          fmt.Sprintf("orders-kafka-e2e-%s", uuid.New().String()),
 		Topics:           []string{messaging.EventTypePaymentItemSucceeded},
-		PreferIPv4:       true,
 	}, svc.KafkaPaymentResultHandler())
 	if err != nil {
 		t.Fatalf("NewKafkaConsumer: %v", err)
@@ -104,7 +96,8 @@ func TestKafkaPaymentResultHandler_EndToEnd(t *testing.T) {
 				t.Fatalf("GetOrderByID: %v", err)
 			}
 			if got.Status == service.OrderStatusPaid {
-				return // Success!
+				cancel()
+				return
 			}
 		}
 	}

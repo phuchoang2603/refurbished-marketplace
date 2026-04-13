@@ -9,10 +9,15 @@ CREATE TABLE IF NOT EXISTS payment_outbox (
     published_at TIMESTAMPTZ NULL
 );
 
-CREATE INDEX IF NOT EXISTS payment_outbox_aggregate_id_idx ON payment_outbox (aggregate_id);
-CREATE INDEX IF NOT EXISTS payment_outbox_event_type_idx ON payment_outbox (event_type);
-CREATE INDEX IF NOT EXISTS payment_outbox_published_at_idx ON payment_outbox (published_at);
+CREATE INDEX IF NOT EXISTS payment_outbox_aggregate_id_idx ON payment_outbox (
+    aggregate_id
+);
+CREATE INDEX IF NOT EXISTS payment_outbox_event_type_idx ON payment_outbox (
+    event_type
+);
+CREATE INDEX IF NOT EXISTS payment_outbox_published_at_idx ON payment_outbox (
+    published_at
+);
 
 -- +goose Down
 DROP TABLE IF EXISTS payment_outbox;
-

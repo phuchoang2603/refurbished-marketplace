@@ -8,12 +8,11 @@ import (
 	"refurbished-marketplace/services/payment/internal/service"
 	"refurbished-marketplace/shared/messaging"
 	"refurbished-marketplace/shared/testutil"
-	"strings"
 	"testing"
 	"time"
 
-	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/google/uuid"
+	"github.com/twmb/franz-go/pkg/kgo"
 )
 
 func TestKafkaOrdersItemCreatedHandler_EndToEnd(t *testing.T) {
@@ -42,33 +41,26 @@ func TestKafkaOrdersItemCreatedHandler_EndToEnd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Brokers: %v", err)
 	}
-	bootstrap := strings.Join(brokers, ",")
-
 	topic := messaging.EventTypeOrderItemCreated
 
-	producer, err := kafka.NewProducer(&kafka.ConfigMap{
-		"bootstrap.servers":                  bootstrap,
-		"broker.address.family":              "v4",
-		"socket.connection.setup.timeout.ms": 60000,
-	})
+	prod, err := kgo.NewClient(
+		kgo.SeedBrokers(brokers...),
+		kgo.AllowAutoTopicCreation(),
+	)
 	if err != nil {
-		t.Fatalf("NewProducer: %v", err)
+		t.Fatalf("NewClient: %v", err)
 	}
-	defer producer.Close()
+	defer prod.Close()
 
-	if err := producer.Produce(&kafka.Message{
-		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
-		Value:          payload,
-	}, nil); err != nil {
-		t.Fatalf("Produce: %v", err)
+	res := prod.ProduceSync(ctx, &kgo.Record{Topic: topic, Value: payload})
+	if err := res.FirstErr(); err != nil {
+		t.Fatalf("ProduceSync: %v", err)
 	}
-	producer.Flush(15 * 1000)
 
 	consumer, err := messaging.NewKafkaConsumer(messaging.KafkaConsumerConfig{
-		BootstrapServers: bootstrap,
+		BootstrapServers: brokers,
 		GroupID:          fmt.Sprintf("payment-kafka-e2e-%s", uuid.New().String()),
 		Topics:           []string{topic},
-		PreferIPv4:       true,
 	}, svc.KafkaOrdersItemCreatedHandler())
 	if err != nil {
 		t.Fatalf("NewKafkaConsumer: %v", err)
@@ -82,7 +74,7 @@ func TestKafkaOrdersItemCreatedHandler_EndToEnd(t *testing.T) {
 		errRun <- consumer.Run(runCtx)
 	}()
 
-	ticker := time.NewTicker(200 * time.Millisecond)
+	ticker := time.NewTicker(500 * time.Millisecond)
 	defer ticker.Stop()
 	timeout := time.After(30 * time.Second)
 
@@ -98,6 +90,7 @@ func TestKafkaOrdersItemCreatedHandler_EndToEnd(t *testing.T) {
 		case <-ticker.C:
 			row, err := queries.GetPaymentTransactionByOrderItemID(ctx, orderItemID)
 			if err == nil && row.OrderID == orderID && row.Status == service.PaymentTxStatusInitialized {
+				cancel()
 				return
 			}
 		}

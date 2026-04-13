@@ -47,28 +47,11 @@
             kubectl
             kubernetes-helm
             tilt
-
-            # confluent-kafka-go (CGO): vendored librdkafka still links against libsasl2, openssl, etc.
-            pkg-config
-            rdkafka
-            cyrus_sasl
-            openssl
           ];
 
           shellHook = ''
             export GOPATH="$HOME/go"
             export PATH="$GOPATH/bin:$PATH"
-
-            # Help CGO find SASL / TLS libs (fixes: ld: library not found for -lsasl2).
-            export PKG_CONFIG_PATH=${
-              pkgs.lib.makeSearchPath "lib/pkgconfig" [
-                "${pkgs.rdkafka.dev}"
-                "${pkgs.cyrus_sasl.dev}"
-                "${pkgs.openssl.dev}"
-              ]
-            }
-            export CGO_CFLAGS="-I${pkgs.rdkafka.dev}/include"
-            export CGO_LDFLAGS="-L${pkgs.cyrus_sasl.out}/lib -lsasl2 -L${pkgs.openssl.out}/lib -lssl -lcrypto"
           '';
         };
       });

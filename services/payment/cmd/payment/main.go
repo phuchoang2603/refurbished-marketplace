@@ -11,6 +11,7 @@ import (
 	"refurbished-marketplace/services/payment/internal/database"
 	"refurbished-marketplace/services/payment/internal/grpcserver"
 	"refurbished-marketplace/services/payment/internal/service"
+	"refurbished-marketplace/shared/messaging"
 	"sync"
 	"syscall"
 
@@ -59,12 +60,17 @@ func main() {
 	defer stop()
 
 	var wg sync.WaitGroup
-	if kafkaBootstrap := os.Getenv("KAFKA_BOOTSTRAP_SERVERS"); kafkaBootstrap != "" {
-		wg.Go(func() {
-			if err := runOrdersItemCreatedConsumer(ctx, svc, kafkaBootstrap); err != nil && !errors.Is(err, context.Canceled) {
-				log.Printf("kafka consumer: %v", err)
-			}
-		})
+	if raw := os.Getenv("KAFKA_BOOTSTRAP_SERVERS"); raw != "" {
+		brokers := messaging.ParseBootstrapServers(raw)
+		if len(brokers) == 0 {
+			log.Print("KAFKA_BOOTSTRAP_SERVERS has no brokers after parsing; skipping Kafka consumer")
+		} else {
+			wg.Go(func() {
+				if err := runOrdersItemCreatedConsumer(ctx, svc, brokers); err != nil && !errors.Is(err, context.Canceled) {
+					log.Printf("kafka consumer: %v", err)
+				}
+			})
+		}
 	} else {
 		log.Print("KAFKA_BOOTSTRAP_SERVERS not set; skipping Kafka consumer")
 	}
