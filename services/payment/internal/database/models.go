@@ -33,7 +33,7 @@ type PaymentOutbox struct {
 	ID              uuid.UUID
 	AggregateID     uuid.UUID
 	EventType       string
-	Payload         json.RawMessage
+	Payload         []byte
 	PublishAttempts int32
 	CreatedAt       time.Time
 	PublishedAt     sql.NullTime

@@ -6,7 +6,6 @@ package database
 
 import (
 	"database/sql"
-	"encoding/json"
 	"time"
 
 	"github.com/google/uuid"
@@ -36,7 +35,7 @@ type OrdersOutbox struct {
 	ID              uuid.UUID
 	AggregateID     uuid.UUID
 	EventType       string
-	Payload         json.RawMessage
+	Payload         []byte
 	PublishAttempts int32
 	CreatedAt       time.Time
 	PublishedAt     sql.NullTime

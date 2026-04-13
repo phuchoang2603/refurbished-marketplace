@@ -6,10 +6,12 @@ import (
 	"refurbished-marketplace/services/payment/internal/database"
 	"refurbished-marketplace/services/payment/internal/service"
 	"refurbished-marketplace/shared/messaging"
+	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
 	"refurbished-marketplace/shared/testutil"
 	"testing"
 
 	"github.com/google/uuid"
+	"google.golang.org/protobuf/proto"
 )
 
 func newPaymentFixture(t *testing.T) (*service.Service, *database.Queries) {
@@ -28,17 +30,17 @@ func newPaymentFixture(t *testing.T) (*service.Service, *database.Queries) {
 }
 
 func orderItemCreatedPayload(orderID, orderItemID, merchantID uuid.UUID, lineTotal int64) []byte {
-	p := service.OrderItemCreatedPayload{
-		OrderID:        orderID.String(),
-		OrderItemID:    orderItemID.String(),
-		BuyerUserID:    uuid.New().String(),
-		ProductID:      uuid.New().String(),
-		MerchantID:     merchantID.String(),
+	msg := &ordersv1.OrderItemCreated{
+		OrderId:        orderID.String(),
+		OrderItemId:    orderItemID.String(),
+		BuyerUserId:    uuid.New().String(),
+		ProductId:      uuid.New().String(),
+		MerchantId:     merchantID.String(),
 		Quantity:       1,
 		UnitPriceCents: lineTotal,
 		LineTotalCents: lineTotal,
 	}
-	b, err := json.Marshal(p)
+	b, err := proto.Marshal(msg)
 	if err != nil {
 		panic(err)
 	}

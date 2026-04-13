@@ -2,17 +2,18 @@ package tests
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"refurbished-marketplace/services/orders/internal/service"
 	"refurbished-marketplace/shared/messaging"
+	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
 	"refurbished-marketplace/shared/testutil"
 	"testing"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/twmb/franz-go/pkg/kgo"
+	"google.golang.org/protobuf/proto"
 )
 
 func TestKafkaPaymentResultHandler_EndToEnd(t *testing.T) {
@@ -38,9 +39,9 @@ func TestKafkaPaymentResultHandler_EndToEnd(t *testing.T) {
 		t.Fatalf("Brokers: %v", err)
 	}
 	topic := messaging.EventTypePaymentItemSucceeded
-	payload, err := json.Marshal(map[string]string{
-		"order_id":      created.ID.String(),
-		"order_item_id": created.Items[0].ID.String(),
+	payload, err := proto.Marshal(&paymentv1.PaymentItemOutbox{
+		OrderId:     created.ID.String(),
+		OrderItemId: created.Items[0].ID.String(),
 	})
 	if err != nil {
 		t.Fatal(err)

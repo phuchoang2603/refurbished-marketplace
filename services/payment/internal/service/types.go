@@ -53,19 +53,3 @@ type InitiatePaymentParams struct {
 	ShippingAddress json.RawMessage
 }
 
-// OrderItemCreatedPayload matches the JSON emitted on the orders.item.created topic.
-type OrderItemCreatedPayload struct {
-	OrderID        string `json:"order_id"`
-	OrderItemID    string `json:"order_item_id"`
-	BuyerUserID    string `json:"buyer_user_id"`
-	ProductID      string `json:"product_id"`
-	MerchantID     string `json:"merchant_id"`
-	Quantity       int32  `json:"quantity"`
-	UnitPriceCents int64  `json:"unit_price_cents"`
-	LineTotalCents int64  `json:"line_total_cents"`
-}
-
-type paymentItemOutboxPayload struct {
-	OrderID     string `json:"order_id"`
-	OrderItemID string `json:"order_item_id"`
-}

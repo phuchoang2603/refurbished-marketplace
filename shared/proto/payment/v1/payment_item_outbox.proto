@@ -1,0 +1,11 @@
+syntax = "proto3";
+
+package payment.v1;
+
+option go_package = "refurbished-marketplace/shared/proto/payment/v1;paymentv1";
+
+// Payload for payment_outbox rows (topics payment.item.succeeded | payment.item.failed).
+message PaymentItemOutbox {
+  string order_id = 1;
+  string order_item_id = 2;
+}

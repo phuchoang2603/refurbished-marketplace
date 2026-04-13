@@ -7,7 +7,6 @@ package database
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/google/uuid"
 )
@@ -22,7 +21,7 @@ type CreatePaymentOutboxParams struct {
 	ID          uuid.UUID
 	AggregateID uuid.UUID
 	EventType   string
-	Payload     json.RawMessage
+	Payload     []byte
 }
 
 func (q *Queries) CreatePaymentOutbox(ctx context.Context, arg CreatePaymentOutboxParams) (PaymentOutbox, error) {

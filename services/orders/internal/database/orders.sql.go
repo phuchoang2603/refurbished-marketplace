@@ -7,7 +7,6 @@ package database
 
 import (
 	"context"
-	"encoding/json"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -95,7 +94,7 @@ type CreateOrderOutboxParams struct {
 	ID          uuid.UUID
 	AggregateID uuid.UUID
 	EventType   string
-	Payload     json.RawMessage
+	Payload     []byte
 }
 
 func (q *Queries) CreateOrderOutbox(ctx context.Context, arg CreateOrderOutboxParams) (OrdersOutbox, error) {

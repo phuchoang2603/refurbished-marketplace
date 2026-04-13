@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package orders.v1;
+
+option go_package = "refurbished-marketplace/shared/proto/orders/v1;ordersv1";
+
+// Emitted on orders.item.created (outbox → Kafka). Field names align with legacy JSON for consumers.
+message OrderItemCreated {
+  string order_id = 1;
+  string order_item_id = 2;
+  string buyer_user_id = 3;
+  string product_id = 4;
+  string merchant_id = 5;
+  int32 quantity = 6;
+  int64 unit_price_cents = 7;
+  int64 line_total_cents = 8;
+}

@@ -2,18 +2,12 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"refurbished-marketplace/shared/messaging"
+	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
 
 	"github.com/google/uuid"
 )
-
-type paymentItemResult struct {
-	OrderID     string `json:"order_id"`
-	OrderItemID string `json:"order_item_id"`
-	Status      string `json:"status"`
-}
 
 // KafkaPaymentResultHandler consumes payment.item.succeeded / payment.item.failed and updates order status.
 func (s *Service) KafkaPaymentResultHandler() messaging.KafkaHandler {
@@ -28,11 +22,11 @@ func (s *Service) KafkaPaymentResultHandler() messaging.KafkaHandler {
 			return nil
 		}
 
-		var payload paymentItemResult
-		if err := json.Unmarshal(msg.Value, &payload); err != nil {
-			return fmt.Errorf("payment result json: %w", err)
+		var payload paymentv1.PaymentItemOutbox
+		if err := messaging.UnmarshalKafkaProtobuf(msg.Value, &payload); err != nil {
+			return fmt.Errorf("payment result decode: %w", err)
 		}
-		orderID, err := uuid.Parse(payload.OrderID)
+		orderID, err := uuid.Parse(payload.GetOrderId())
 		if err != nil {
 			return fmt.Errorf("payment result order_id: %w", err)
 		}

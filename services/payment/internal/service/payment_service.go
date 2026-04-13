@@ -2,14 +2,16 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 
 	"refurbished-marketplace/services/payment/internal/database"
 	"refurbished-marketplace/shared/messaging"
+	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
+	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
 
 	"github.com/google/uuid"
+	"google.golang.org/protobuf/proto"
 )
 
 // InitiatePayment upserts a payment intent for an order (web confirmation).
@@ -65,9 +67,9 @@ func (s *Service) ApplyGatewayWebhook(ctx context.Context, transactionID uuid.UU
 	if succeeded {
 		eventType = messaging.EventTypePaymentItemSucceeded
 	}
-	payload, err := json.Marshal(paymentItemOutboxPayload{
-		OrderID:     updated.OrderID.String(),
-		OrderItemID: updated.OrderItemID.String(),
+	payload, err := proto.Marshal(&paymentv1.PaymentItemOutbox{
+		OrderId:     updated.OrderID.String(),
+		OrderItemId: updated.OrderItemID.String(),
 	})
 	if err != nil {
 		return err
@@ -95,16 +97,16 @@ func (s *Service) GetPaymentTransaction(ctx context.Context, id uuid.UUID) (Paym
 }
 
 // HandleOrdersItemCreated records inbox dedupe and creates a per-item payment transaction when intent exists.
-func (s *Service) HandleOrdersItemCreated(ctx context.Context, messageID string, payloadJSON []byte) error {
+func (s *Service) HandleOrdersItemCreated(ctx context.Context, messageID string, value []byte) error {
 	if messageID == "" {
 		return errors.New("messageID is required")
 	}
 
-	var payload OrderItemCreatedPayload
-	if err := json.Unmarshal(payloadJSON, &payload); err != nil {
-		return fmt.Errorf("unmarshal orders.item.created payload: %w", err)
+	var msg ordersv1.OrderItemCreated
+	if err := messaging.UnmarshalKafkaProtobuf(value, &msg); err != nil {
+		return fmt.Errorf("decode orders.item.created payload: %w", err)
 	}
-	if payload.OrderItemID == "" || payload.OrderID == "" {
+	if msg.GetOrderItemId() == "" || msg.GetOrderId() == "" {
 		return errors.New("invalid orders.item.created payload: missing order_id or order_item_id")
 	}
 
@@ -112,7 +114,7 @@ func (s *Service) HandleOrdersItemCreated(ctx context.Context, messageID string,
 		return err
 	}
 
-	orderID, orderItemID, merchantID, err := parseOrderItemCreatedUUIDs(payload)
+	orderID, orderItemID, merchantID, err := parseOrderItemCreatedUUIDs(&msg)
 	if err != nil {
 		return err
 	}
@@ -135,7 +137,7 @@ func (s *Service) HandleOrdersItemCreated(ctx context.Context, messageID string,
 		OrderID:        orderID,
 		OrderItemID:    orderItemID,
 		MerchantID:     merchantID,
-		AmountCents:    payload.LineTotalCents,
+		AmountCents:    msg.GetLineTotalCents(),
 		Currency:       intent.Currency,
 		Status:         PaymentTxStatusInitialized,
 		IdempotencyKey: "order_item:" + orderItemID.String(),

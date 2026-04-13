@@ -48,16 +48,20 @@ func paymentTransactionExistsForOrderItem(ctx context.Context, q queryStore, ord
 	return false, err
 }
 
-func parseOrderItemCreatedUUIDs(payload OrderItemCreatedPayload) (orderID, orderItemID, merchantID uuid.UUID, err error) {
-	orderID, err = uuid.Parse(payload.OrderID)
+func parseOrderItemCreatedUUIDs(msg interface {
+	GetOrderId() string
+	GetOrderItemId() string
+	GetMerchantId() string
+}) (orderID, orderItemID, merchantID uuid.UUID, err error) {
+	orderID, err = uuid.Parse(msg.GetOrderId())
 	if err != nil {
 		return uuid.Nil, uuid.Nil, uuid.Nil, fmt.Errorf("order_id: %w", err)
 	}
-	orderItemID, err = uuid.Parse(payload.OrderItemID)
+	orderItemID, err = uuid.Parse(msg.GetOrderItemId())
 	if err != nil {
 		return uuid.Nil, uuid.Nil, uuid.Nil, fmt.Errorf("order_item_id: %w", err)
 	}
-	merchantID, err = uuid.Parse(payload.MerchantID)
+	merchantID, err = uuid.Parse(msg.GetMerchantId())
 	if err != nil {
 		return uuid.Nil, uuid.Nil, uuid.Nil, fmt.Errorf("merchant_id: %w", err)
 	}

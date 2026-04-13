@@ -2,12 +2,13 @@ package service
 
 import (
 	"context"
-	"encoding/json"
 	"refurbished-marketplace/services/orders/internal/database"
 	"refurbished-marketplace/shared/messaging"
+	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
 	"strings"
 
 	"github.com/google/uuid"
+	"google.golang.org/protobuf/proto"
 )
 
 func mapDBOrder(o database.Order) Order {
@@ -88,17 +89,17 @@ func createOrderItems(ctx context.Context, queries *database.Queries, orderID, b
 			return nil, err
 		}
 
-		payload := outboxItem{
-			OrderID:        orderID.String(),
-			OrderItemID:    itemID.String(),
-			BuyerUserID:    buyerUserID.String(),
-			ProductID:      item.ProductID.String(),
-			MerchantID:     item.MerchantID.String(),
+		msg := &ordersv1.OrderItemCreated{
+			OrderId:        orderID.String(),
+			OrderItemId:    itemID.String(),
+			BuyerUserId:    buyerUserID.String(),
+			ProductId:      item.ProductID.String(),
+			MerchantId:     item.MerchantID.String(),
 			Quantity:       item.Quantity,
 			UnitPriceCents: item.UnitPriceCents,
 			LineTotalCents: lineTotal,
 		}
-		payloadBytes, err := json.Marshal(payload)
+		payloadBytes, err := proto.Marshal(msg)
 		if err != nil {
 			return nil, err
 		}
