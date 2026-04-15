@@ -4,7 +4,7 @@
 
 Implement `services/payment` as the orchestrator between:
 
-- async checkout intent (`orders.item.created`)
+- async checkout intent (today: `orders.item.created`; optional future: `orders.pay_ready`)
 - an external Stripe-like gateway (future project)
 - async webhook results
 - reliable downstream events (`payment.item.*`)
@@ -27,7 +27,7 @@ sequenceDiagram
     Web->>Orders: Create order (items)
     Orders->>Kafka: orders.item.created (via orders_outbox + CDC)
     Kafka->>Pay: consume orders.item.created
-    Pay->>DB: payment_inbox dedupe + payment_transactions (per item)
+    Pay->>DB: payment_inbox dedupe + payment_transactions
     Note over Pay,Sim: Optional: Pay calls simulator HTTP to submit charge
     Pay->>Sim: POST /v1/charges (clients/stripesim client)
     Sim->>Web: POST /webhooks/stripe-simulator (async callback)
@@ -100,6 +100,17 @@ Migrations live in `services/payment/db/migrations/`.
 - Emit (via `payment_outbox` + Debezium):
   - `payment.item.succeeded`
   - `payment.item.failed`
+
+## Optional future: inventory-first gate (`orders.pay_ready`)
+
+If you later move to **per-merchant orders** and want **reserve-then-pay**, add a gate event produced by inventory:
+
+- Inventory consumes `orders.item.created` keyed by `product_id`, reserves each line, and when **all lines for `order_id`** are reserved, publishes **one** event:
+  - Topic: `orders.pay_ready`
+  - Key: `order_id`
+- Payment subscribes only to `orders.pay_ready` and creates **one** payment transaction per `order_id` (instead of per item).
+
+This keeps inventory’s per-SKU partitioning while simplifying payment’s “when is an order complete?” logic.
 
 ## Kafka Consumption (Go)
 

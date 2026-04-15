@@ -17,6 +17,7 @@
 - **`inventory`** is stock/reservation (migrations + sqlc + service + tests).
 - **`cart`** is ephemeral, backed by Redis/Valkey.
 - **`payment`** is implemented: Postgres (intents, per-item transactions, **inbox**, **outbox**), gRPC API, Kafka consumer for **`orders.item.created`**, Stripe-simulator HTTP adapter, emits **`payment.item.*`** (outbox path for durable publish is in place; **Debezium wiring to Kafka** is still the intended production bridge).
+  - Optional future: inventory-first gate event **`orders.pay_ready`** (key = `order_id`) so payment can be **reserve-then-pay** without aggregating item events.
 - **Integration tests**: Kafka via Testcontainers **`confluentinc/confluent-local:7.5.0`** (aligned with **testcontainers-go**’s Kafka module). **REST/HTTP logs in that image are not where native Kafka produce/fetch shows up** — clients use the broker listener.
 - **Dev shell**: **`flake.nix`** no longer pulls rdkafka/SASL/openssl for Go Kafka — franz-go is pure Go.
 

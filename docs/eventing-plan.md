@@ -81,6 +81,36 @@ sequenceDiagram
     P->>P: inbox dedupe + process
 ```
 
+## Optional future: inventory-first payment gate (`orders.pay_ready`)
+
+If you want **reserve-then-pay** semantics (avoid charging before inventory confirms all line reservations), introduce a second stage:
+
+- Keep `orders.item.created` **keyed by `product_id`** for inventory throughput and per-SKU ordering.
+- Inventory (or a small orchestrator service) consumes line events, reserves stock, and when **all lines for an `order_id`** are reserved, it emits **one** event **keyed by `order_id`**:
+  - **Topic / event type**: `orders.pay_ready`
+  - **Kafka key**: `order_id`
+  - **Consumer**: `payment` (creates one payment transaction per merchant-order)
+
+This requires **durable cross-partition completion state** in inventory because one order’s lines are distributed across partitions (key = `product_id`).
+
+### `inventory_outbox` (gate publisher) shape
+
+Mirror `orders_outbox` so the same Debezium outbox pattern applies, but set keying for the gate event:
+
+- `id UUID PRIMARY KEY`
+- `aggregate_id UUID NOT NULL` (**set to `order_id`** for `orders.pay_ready`)
+- `event_type TEXT NOT NULL` (literal `orders.pay_ready`)
+- `payload BYTEA NOT NULL` (protobuf gate payload)
+- `created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()`
+- `published_at TIMESTAMPTZ NULL`
+- `publish_attempts INT NOT NULL DEFAULT 0`
+
+### Inventory completion algorithm (high level)
+
+- Inventory stores one row per `(order_id, order_item_id)` to make reserving **idempotent**.
+- Inventory stores/locks one row per `order_id` (e.g. `SELECT … FOR UPDATE`) to serialize “did we reach `lines_total` yet?” and ensure **exactly one** `inventory_outbox` insert for `orders.pay_ready`.
+- `lines_total` is provided on every `orders.item.created` message so inventory knows when the set is complete without calling `orders`.
+
 ## Why This Matters
 
 - Prevents lost events when a service crashes after a db write.

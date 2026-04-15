@@ -38,6 +38,22 @@ Use a reservation-friendly model:
 
 Each event should correspond to one order item and one outbox row.
 
+## Optional future: inventory-first payment gate (`orders.pay_ready`)
+
+If you want to enforce **reserve-then-pay**, inventory can also act as a gate:
+
+- Ingress stays `orders.item.created` keyed by `product_id`.
+- Inventory reserves each line idempotently and tracks completion for the parent `order_id`.
+- Once all lines for the order are reserved, inventory emits exactly one `orders.pay_ready` event keyed by `order_id` for payment to consume.
+
+Implementation notes (high level):
+
+- **Completion metadata:** include `lines_total` on each `orders.item.created` payload so inventory can know when the set is complete without calling `orders`.
+- **Durable state:** use two tables in the inventory DB:
+  - `inventory_line_reservations` keyed by `(order_id, order_item_id)` for idempotency and audit
+  - `inventory_order_gate` keyed by `order_id` to serialize completion checks (`SELECT … FOR UPDATE`) and ensure only one gate event is emitted
+- **Outbox for gate:** `inventory_outbox` mirrors `orders_outbox`, but for `orders.pay_ready` rows set `aggregate_id = order_id` so Kafka key is `order_id`.
+
 ## Why Reservations
 
 - Simple `stock_quantity` is not enough for async checkout.
