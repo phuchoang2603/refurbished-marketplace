@@ -8,11 +8,12 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"sync"
+	"syscall"
+
 	"refurbished-marketplace/services/orders/internal/grpcserver"
 	"refurbished-marketplace/services/orders/internal/service"
 	"refurbished-marketplace/shared/messaging"
-	"sync"
-	"syscall"
 
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"

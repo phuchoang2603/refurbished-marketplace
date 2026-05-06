@@ -2,8 +2,9 @@ package service
 
 import (
 	"context"
-	"refurbished-marketplace/services/users/internal/database"
 	"time"
+
+	"refurbished-marketplace/services/users/internal/database"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"

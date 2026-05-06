@@ -2,9 +2,10 @@ package service
 
 import (
 	"errors"
-	authconfig "refurbished-marketplace/shared/auth/config"
 	"strings"
 	"time"
+
+	authconfig "refurbished-marketplace/shared/auth/config"
 )
 
 type Config struct {

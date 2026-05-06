@@ -52,4 +52,3 @@ type InitiatePaymentParams struct {
 	BillingAddress  json.RawMessage
 	ShippingAddress json.RawMessage
 }
-

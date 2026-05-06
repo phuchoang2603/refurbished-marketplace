@@ -67,4 +67,3 @@ func (c *Client) CreateCharge(ctx context.Context, req ChargeRequest) (ChargeRes
 	}
 	return out, nil
 }
-

@@ -6,9 +6,10 @@ import (
 	"database/sql"
 	"encoding/hex"
 	"errors"
-	"refurbished-marketplace/services/users/internal/database"
 	"strings"
 	"time"
+
+	"refurbished-marketplace/services/users/internal/database"
 
 	sharedjwt "refurbished-marketplace/shared/auth/jwt"
 

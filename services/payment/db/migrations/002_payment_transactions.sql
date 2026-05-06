@@ -1,7 +1,9 @@
 -- +goose Up
 CREATE TABLE IF NOT EXISTS payment_transactions (
     id UUID PRIMARY KEY,
-    order_id UUID NOT NULL REFERENCES payment_intents(order_id) ON DELETE CASCADE,
+    order_id UUID NOT NULL REFERENCES payment_intents (
+        order_id
+    ) ON DELETE CASCADE,
     order_item_id UUID NOT NULL,
     merchant_id UUID NOT NULL,
     amount_cents BIGINT NOT NULL,
@@ -14,11 +16,18 @@ CREATE TABLE IF NOT EXISTS payment_transactions (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE UNIQUE INDEX IF NOT EXISTS payment_transactions_order_item_id_uniq ON payment_transactions (order_item_id);
-CREATE UNIQUE INDEX IF NOT EXISTS payment_transactions_idempotency_key_uniq ON payment_transactions (idempotency_key);
-CREATE INDEX IF NOT EXISTS payment_transactions_order_id_idx ON payment_transactions (order_id);
-CREATE INDEX IF NOT EXISTS payment_transactions_status_idx ON payment_transactions (status);
+CREATE UNIQUE INDEX IF NOT EXISTS payment_transactions_order_item_id_uniq ON payment_transactions (
+    order_item_id
+);
+CREATE UNIQUE INDEX IF NOT EXISTS payment_transactions_idempotency_key_uniq ON payment_transactions (
+    idempotency_key
+);
+CREATE INDEX IF NOT EXISTS payment_transactions_order_id_idx ON payment_transactions (
+    order_id
+);
+CREATE INDEX IF NOT EXISTS payment_transactions_status_idx ON payment_transactions (
+    status
+);
 
 -- +goose Down
 DROP TABLE IF EXISTS payment_transactions;
-

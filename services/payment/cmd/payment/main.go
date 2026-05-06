@@ -8,12 +8,13 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"sync"
+	"syscall"
+
 	"refurbished-marketplace/services/payment/internal/database"
 	"refurbished-marketplace/services/payment/internal/grpcserver"
 	"refurbished-marketplace/services/payment/internal/service"
 	"refurbished-marketplace/shared/messaging"
-	"sync"
-	"syscall"
 
 	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
 

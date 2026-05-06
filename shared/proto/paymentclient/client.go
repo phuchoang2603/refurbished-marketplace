@@ -40,4 +40,3 @@ func (c *Client) HandleGatewayWebhook(ctx context.Context, req *paymentv1.Handle
 func (c *Client) GetTransaction(ctx context.Context, paymentTransactionID string) (*paymentv1.PaymentTransaction, error) {
 	return c.client.GetTransaction(ctx, &paymentv1.GetTransactionRequest{PaymentTransactionId: paymentTransactionID})
 }
-

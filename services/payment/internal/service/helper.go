@@ -52,7 +52,8 @@ func parseOrderItemCreatedUUIDs(msg interface {
 	GetOrderId() string
 	GetOrderItemId() string
 	GetMerchantId() string
-}) (orderID, orderItemID, merchantID uuid.UUID, err error) {
+},
+) (orderID, orderItemID, merchantID uuid.UUID, err error) {
 	orderID, err = uuid.Parse(msg.GetOrderId())
 	if err != nil {
 		return uuid.Nil, uuid.Nil, uuid.Nil, fmt.Errorf("order_id: %w", err)

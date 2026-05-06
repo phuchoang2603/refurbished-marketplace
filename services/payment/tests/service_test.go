@@ -3,12 +3,13 @@ package tests
 import (
 	"encoding/json"
 	"errors"
+	"testing"
+
 	"refurbished-marketplace/services/payment/internal/database"
 	"refurbished-marketplace/services/payment/internal/service"
 	"refurbished-marketplace/shared/messaging"
 	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
 	"refurbished-marketplace/shared/testutil"
-	"testing"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"

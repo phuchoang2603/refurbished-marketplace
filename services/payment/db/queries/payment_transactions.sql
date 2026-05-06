@@ -24,7 +24,8 @@ WHERE order_item_id = $1;
 
 -- name: UpdatePaymentTransactionGatewayResult :one
 UPDATE payment_transactions
-SET status = $2,
+SET
+    status = $2,
     gateway_transaction_id = $3,
     failure_reason = $4,
     updated_at = NOW()

@@ -9,9 +9,15 @@ CREATE TABLE IF NOT EXISTS orders_outbox (
     published_at TIMESTAMPTZ NULL
 );
 
-CREATE INDEX IF NOT EXISTS orders_outbox_aggregate_id_idx ON orders_outbox (aggregate_id);
-CREATE INDEX IF NOT EXISTS orders_outbox_event_type_idx ON orders_outbox (event_type);
-CREATE INDEX IF NOT EXISTS orders_outbox_published_at_idx ON orders_outbox (published_at);
+CREATE INDEX IF NOT EXISTS orders_outbox_aggregate_id_idx ON orders_outbox (
+    aggregate_id
+);
+CREATE INDEX IF NOT EXISTS orders_outbox_event_type_idx ON orders_outbox (
+    event_type
+);
+CREATE INDEX IF NOT EXISTS orders_outbox_published_at_idx ON orders_outbox (
+    published_at
+);
 
 -- +goose Down
 DROP TABLE IF EXISTS orders_outbox;

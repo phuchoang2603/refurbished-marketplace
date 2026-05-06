@@ -7,4 +7,3 @@ sql:
       go:
         out: "internal/database"
         package: "database"
-

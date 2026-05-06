@@ -2,10 +2,11 @@ package service
 
 import (
 	"context"
+	"strings"
+
 	"refurbished-marketplace/services/orders/internal/database"
 	"refurbished-marketplace/shared/messaging"
 	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
-	"strings"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"

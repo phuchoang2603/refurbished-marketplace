@@ -70,10 +70,10 @@ flowchart LR
 
 **Kafka env (`cmd/payment`):**
 
-| Variable                  | Meaning                                                                                  |
-| ------------------------- | ---------------------------------------------------------------------------------------- |
+| Variable                  | Meaning                                                                                                                           |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | `KAFKA_BOOTSTRAP_SERVERS` | Comma-separated broker list (e.g. `kafka:9092` or `a:9092,b:9092`). Parsed into `[]string` for the consumer. Empty → no consumer. |
-| `KAFKA_GROUP_ID`          | Consumer group (default `payment-service`).                                              |
+| `KAFKA_GROUP_ID`          | Consumer group (default `payment-service`).                                                                                       |
 
 ## Data Model (Postgres)
 

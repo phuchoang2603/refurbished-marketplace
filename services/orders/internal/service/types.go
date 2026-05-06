@@ -33,4 +33,3 @@ type OrderItem struct {
 	LineTotalCents int64
 	CreatedAt      time.Time
 }
-

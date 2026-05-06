@@ -2,10 +2,11 @@ package tests
 
 import (
 	"errors"
+	"testing"
+
 	"refurbished-marketplace/services/users/internal/database"
 	"refurbished-marketplace/services/users/internal/service"
 	"refurbished-marketplace/shared/testutil"
-	"testing"
 
 	"github.com/google/uuid"
 )

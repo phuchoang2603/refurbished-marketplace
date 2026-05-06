@@ -6,4 +6,3 @@ CREATE TABLE IF NOT EXISTS payment_inbox (
 
 -- +goose Down
 DROP TABLE IF EXISTS payment_inbox;
-
