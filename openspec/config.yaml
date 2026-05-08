@@ -1,0 +1,36 @@
+schema: spec-driven
+
+context: |
+  Project: Refurbished Marketplace
+  Domain: multi-service e-commerce marketplace
+
+  Stack:
+  - Go multi-module workspace (one go.mod per service plus shared/)
+  - REST at the web edge, gRPC for internal service-to-service traffic
+  - PostgreSQL with goose migrations and sqlc queries
+  - Kafka for async eventing, using franz-go in Go services
+  - Redis/Valkey for ephemeral cart state
+  - Kubernetes-based development with Tilt, Helm, CloudNativePG, Strimzi, Kafka UI, and Debezium
+  - devenv.nix manages local development tooling
+
+  Repo conventions:
+  - Keep service code under services/<name>/ and private code in internal/
+  - Keep SQL and migrations service-local under services/<service>/db/
+  - Keep tests under services/<service>/tests/
+  - Keep protobuf contracts under shared/proto/<domain>/v1/
+  - Keep docs/ for stable architecture notes, Mermaid diagrams, ADR-style decisions, and service ownership notes
+  - Keep one repo-level architecture overview doc; create per-service notes only where they add unique value
+  - Rename or delete docs/services/*-plan.md files when migrating away from planning notes
+
+rules:
+  proposal:
+    - Keep proposals concise and tied to the real repo state
+    - Include explicit non-goals when scope can expand
+    - Separate change proposals from durable docs
+  design:
+    - Respect the REST-at-edge and gRPC-internal boundary
+    - Keep service-local persistence and eventing details with the owning service
+    - Capture repo-wide documentation boundaries when relevant
+  tasks:
+    - Break work into small, verifiable steps
+    - Prefer tasks that map directly to repo structure and service ownership

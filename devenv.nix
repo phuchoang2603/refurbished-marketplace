@@ -30,6 +30,8 @@ in
     kubectl
     kubernetes-helm
     tilt
+
+    nodejs
   ];
 
   languages.go = {
