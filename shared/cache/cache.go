@@ -46,6 +46,42 @@ func (s *JSONStore) Delete(ctx context.Context, key string) error {
 	return s.client.Del(ctx, s.key(key)).Err()
 }
 
+func (s *JSONStore) Update(ctx context.Context, key string, dest any, fn func(exists bool) error) error {
+	storeKey := s.key(key)
+	for range 3 {
+		err := s.client.Watch(ctx, func(tx *redis.Tx) error {
+			val, err := tx.Get(ctx, storeKey).Bytes()
+			exists := true
+			if err != nil {
+				if !errors.Is(err, redis.Nil) {
+					return err
+				}
+				exists = false
+			} else if err := json.Unmarshal(val, dest); err != nil {
+				return err
+			}
+
+			if err := fn(exists); err != nil {
+				return err
+			}
+
+			buf, err := json.Marshal(dest)
+			if err != nil {
+				return err
+			}
+			_, err = tx.TxPipelined(ctx, func(pipe redis.Pipeliner) error {
+				pipe.Set(ctx, storeKey, buf, s.ttl)
+				return nil
+			})
+			return err
+		}, storeKey)
+		if !errors.Is(err, redis.TxFailedErr) {
+			return err
+		}
+	}
+	return redis.TxFailedErr
+}
+
 func (s *JSONStore) key(key string) string {
 	if s.prefix == "" {
 		return key

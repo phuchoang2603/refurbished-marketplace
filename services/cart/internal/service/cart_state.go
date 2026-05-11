@@ -36,9 +36,6 @@ func (s *Service) GetCart(ctx context.Context, cartID string) (Cart, error) {
 	}
 	if !ok {
 		state = newCartState(cartID)
-		if err := s.store.Set(ctx, cartID, state); err != nil {
-			return Cart{}, err
-		}
 	}
 
 	if state.Items == nil {
@@ -59,16 +56,17 @@ func (s *Service) AddCartItem(ctx context.Context, cartID, productID string, qua
 	}
 
 	var state cartState
-	ok, err := s.store.Load(ctx, cartID, &state)
-	if err != nil {
-		return Cart{}, err
-	}
-	if !ok {
-		state = newCartState(cartID)
-	}
-	state.Items[productID] += quantity
-	state.UpdatedAt = time.Now().UTC()
-	if err := s.store.Set(ctx, cartID, state); err != nil {
+	if err := s.store.Update(ctx, cartID, &state, func(exists bool) error {
+		if !exists {
+			state = newCartState(cartID)
+		}
+		if state.Items == nil {
+			state.Items = map[string]int32{}
+		}
+		state.Items[productID] += quantity
+		state.UpdatedAt = time.Now().UTC()
+		return nil
+	}); err != nil {
 		return Cart{}, err
 	}
 	return toCart(state), nil
@@ -78,7 +76,28 @@ func (s *Service) SetCartItemQuantity(ctx context.Context, cartID, productID str
 	if quantity <= 0 {
 		return s.RemoveCartItem(ctx, cartID, productID)
 	}
-	return s.AddCartItem(ctx, cartID, productID, quantity)
+	if err := validate(cartID, ErrInvalidCartID); err != nil {
+		return Cart{}, err
+	}
+	if err := validate(productID, ErrInvalidProductID); err != nil {
+		return Cart{}, err
+	}
+
+	var state cartState
+	if err := s.store.Update(ctx, cartID, &state, func(exists bool) error {
+		if !exists {
+			state = newCartState(cartID)
+		}
+		if state.Items == nil {
+			state.Items = map[string]int32{}
+		}
+		state.Items[productID] = quantity
+		state.UpdatedAt = time.Now().UTC()
+		return nil
+	}); err != nil {
+		return Cart{}, err
+	}
+	return toCart(state), nil
 }
 
 func (s *Service) RemoveCartItem(ctx context.Context, cartID, productID string) (Cart, error) {
@@ -90,19 +109,17 @@ func (s *Service) RemoveCartItem(ctx context.Context, cartID, productID string) 
 	}
 
 	var state cartState
-	ok, err := s.store.Load(ctx, cartID, &state)
-	if err != nil {
-		return Cart{}, err
-	}
-	if !ok {
-		return Cart{}, ErrItemNotFound
-	}
-	if _, exists := state.Items[productID]; !exists {
-		return Cart{}, ErrItemNotFound
-	}
-	delete(state.Items, productID)
-	state.UpdatedAt = time.Now().UTC()
-	if err := s.store.Set(ctx, cartID, state); err != nil {
+	if err := s.store.Update(ctx, cartID, &state, func(exists bool) error {
+		if !exists {
+			return ErrItemNotFound
+		}
+		if _, exists := state.Items[productID]; !exists {
+			return ErrItemNotFound
+		}
+		delete(state.Items, productID)
+		state.UpdatedAt = time.Now().UTC()
+		return nil
+	}); err != nil {
 		return Cart{}, err
 	}
 	return toCart(state), nil

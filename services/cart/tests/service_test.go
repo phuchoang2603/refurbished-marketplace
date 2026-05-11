@@ -57,8 +57,8 @@ func TestCartLifecycle(t *testing.T) {
 		if err != nil {
 			t.Fatalf("set quantity: %v", err)
 		}
-		if updated.Items[0].Quantity != 7 {
-			t.Fatalf("expected quantity 7, got %d", updated.Items[0].Quantity)
+		if updated.Items[0].Quantity != 5 {
+			t.Fatalf("expected quantity 5, got %d", updated.Items[0].Quantity)
 		}
 	})
 

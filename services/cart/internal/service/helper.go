@@ -1,6 +1,7 @@
 package service
 
 import (
+	"sort"
 	"time"
 
 	"github.com/google/uuid"
@@ -8,7 +9,13 @@ import (
 
 func toCart(state cartState) Cart {
 	items := make([]CartItem, 0, len(state.Items))
-	for productID, quantity := range state.Items {
+	productIDs := make([]string, 0, len(state.Items))
+	for productID := range state.Items {
+		productIDs = append(productIDs, productID)
+	}
+	sort.Strings(productIDs)
+	for _, productID := range productIDs {
+		quantity := state.Items[productID]
 		items = append(items, CartItem{ProductID: productID, Quantity: quantity})
 	}
 	return Cart{CartID: state.CartID, Items: items, CreatedAt: state.CreatedAt, UpdatedAt: state.UpdatedAt}
