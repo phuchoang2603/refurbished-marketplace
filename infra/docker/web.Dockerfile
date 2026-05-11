@@ -15,6 +15,7 @@ FROM gcr.io/distroless/static-debian12
 WORKDIR /app
 
 COPY --from=builder /out/web /app/web
+COPY --from=builder /src/services/web/static /static
 
 EXPOSE 8080
 

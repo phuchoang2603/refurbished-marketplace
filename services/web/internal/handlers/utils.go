@@ -13,6 +13,7 @@ import (
 	webAuth "refurbished-marketplace/services/web/internal/auth"
 
 	"github.com/a-h/templ"
+	"github.com/starfederation/datastar-go/datastar"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -29,26 +30,26 @@ func formatTimestamp(ts *timestamppb.Timestamp) string {
 	return ts.AsTime().UTC().Format(timestampFormat)
 }
 
-func writeGRPCError(w http.ResponseWriter, err error) {
+func writeGRPCError(w http.ResponseWriter, r *http.Request, err error) {
 	st, ok := status.FromError(err)
 	if !ok {
-		writeHTML(w, nil, http.StatusInternalServerError, views.MessagePage("Error", "internal server error"))
+		writeHTML(w, r, http.StatusInternalServerError, views.MessagePage("Error", "internal server error"))
 		return
 	}
 
 	switch st.Code() {
 	case codes.InvalidArgument:
-		writeHTML(w, nil, http.StatusBadRequest, views.MessagePage("Bad request", st.Message()))
+		writeHTML(w, r, http.StatusBadRequest, views.MessagePage("Bad request", st.Message()))
 	case codes.NotFound:
-		writeHTML(w, nil, http.StatusNotFound, views.MessagePage("Not found", st.Message()))
+		writeHTML(w, r, http.StatusNotFound, views.MessagePage("Not found", st.Message()))
 	case codes.PermissionDenied:
-		writeHTML(w, nil, http.StatusForbidden, views.MessagePage("Forbidden", st.Message()))
+		writeHTML(w, r, http.StatusForbidden, views.MessagePage("Forbidden", st.Message()))
 	case codes.AlreadyExists:
-		writeHTML(w, nil, http.StatusConflict, views.MessagePage("Conflict", st.Message()))
+		writeHTML(w, r, http.StatusConflict, views.MessagePage("Conflict", st.Message()))
 	case codes.Unauthenticated:
-		writeHTML(w, nil, http.StatusUnauthorized, views.MessagePage("Unauthorized", st.Message()))
+		writeHTML(w, r, http.StatusUnauthorized, views.MessagePage("Unauthorized", st.Message()))
 	default:
-		writeHTML(w, nil, http.StatusInternalServerError, views.MessagePage("Error", "internal server error"))
+		writeHTML(w, r, http.StatusInternalServerError, views.MessagePage("Error", "internal server error"))
 	}
 }
 
@@ -71,12 +72,26 @@ func writeHTML(w http.ResponseWriter, r *http.Request, status int, component tem
 }
 
 func writeFragment(w http.ResponseWriter, r *http.Request, status int, selector string, component templ.Component) {
+	if r != nil && acceptsDatastar(r) {
+		sse := datastar.NewSSE(w, r)
+		opts := []datastar.PatchElementOption{datastar.WithModeOuter()}
+		if selector != "" {
+			opts = append(opts, datastar.WithSelector(selector))
+		}
+		_ = sse.PatchElementTempl(component, opts...)
+		return
+	}
+
 	headers := http.Header{}
 	if selector != "" {
 		headers.Set("datastar-selector", selector)
 		headers.Set("datastar-mode", "outer")
 	}
 	renderComponent(w, r, status, headers, component)
+}
+
+func acceptsDatastar(r *http.Request) bool {
+	return strings.Contains(r.Header.Get("Accept"), "text/event-stream")
 }
 
 func renderComponent(w http.ResponseWriter, r *http.Request, status int, headers http.Header, component templ.Component) {
@@ -110,10 +125,14 @@ func writeBadRequest(w http.ResponseWriter, r *http.Request, message string) {
 	writeHTML(w, r, http.StatusBadRequest, views.MessagePage("Bad request", message))
 }
 
+func writeUnauthorized(w http.ResponseWriter, r *http.Request) {
+	writeHTML(w, r, http.StatusUnauthorized, views.MessagePage("Unauthorized", "unauthorized"))
+}
+
 func requireUserID(w http.ResponseWriter, r *http.Request) (string, bool) {
 	userID, ok := webAuth.UserIDFromContext(r.Context())
 	if !ok || userID == "" {
-		writeHTML(w, r, http.StatusUnauthorized, views.MessagePage("Unauthorized", "unauthorized"))
+		writeUnauthorized(w, r)
 		return "", false
 	}
 	return userID, true

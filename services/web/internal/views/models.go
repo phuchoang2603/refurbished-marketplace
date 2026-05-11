@@ -1,17 +1,40 @@
 package views
 
-import "fmt"
+import (
+	"context"
+	"fmt"
+)
 
 type NavLink struct {
-	Label string
-	Href  string
+	Label     string
+	Href      string
+	GuestOnly bool
 }
 
 var DefaultNav = []NavLink{
 	{Label: "Products", Href: "/products"},
 	{Label: "Cart", Href: "/cart"},
 	{Label: "Orders", Href: "/orders"},
-	{Label: "Auth", Href: "/auth/login"},
+	{Label: "Account", Href: "/auth/login", GuestOnly: true},
+	{Label: "Sign up", Href: "/auth/register", GuestOnly: true},
+}
+
+type authStateKey struct{}
+
+type AuthState struct {
+	Authenticated bool
+}
+
+func WithAuthState(ctx context.Context, state AuthState) context.Context {
+	return context.WithValue(ctx, authStateKey{}, state)
+}
+
+func sessionSignals(ctx context.Context) string {
+	state, _ := ctx.Value(authStateKey{}).(AuthState)
+	if state.Authenticated {
+		return `{"session":{"authenticated":true}}`
+	}
+	return `{"session":{"authenticated":false}}`
 }
 
 type ProductView struct {
@@ -32,22 +55,25 @@ type UserView struct {
 }
 
 type TokenView struct {
-	AccessToken  string
-	RefreshToken string
-	TokenType    string
-	ExpiresIn    int64
+	TokenType string
+	ExpiresIn int64
 }
 
 type CartItemView struct {
-	ProductID string
-	Quantity  int32
+	ProductID      string
+	ProductName    string
+	ProductPrice   int64
+	LineTotalCents int64
+	Available      bool
+	Quantity       int32
 }
 
 type CartView struct {
-	CartID    string
-	Items     []CartItemView
-	CreatedAt string
-	UpdatedAt string
+	CartID              string
+	Items               []CartItemView
+	EstimatedTotalCents int64
+	CreatedAt           string
+	UpdatedAt           string
 }
 
 type OrderItemView struct {

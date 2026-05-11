@@ -5,9 +5,9 @@ templ UserPage(user UserView) {
 }
 
 templ UserDetailSection(user UserView) {
-	<section id={ "user-" + user.ID } class="card">
-		<h1>{ user.Email }</h1>
+	@Card(CardArgs{ID: "user-" + user.ID}) {
+		@PageHeader(user.Email, "Account details")
 		<p><strong>User ID:</strong> <code>{ user.ID }</code></p>
-		<p><small>{ user.CreatedAt } | { user.UpdatedAt }</small></p>
-	</section>
+		@MetaLine(user.CreatedAt, user.UpdatedAt)
+	}
 }

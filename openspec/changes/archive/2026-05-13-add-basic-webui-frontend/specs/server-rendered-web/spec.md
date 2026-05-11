@@ -1,10 +1,4 @@
-# Server Rendered Web
-
-## Purpose
-
-The server-rendered web capability defines how marketplace browser pages and interactive fragments are rendered by the web service.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Web renders server-side pages
 

@@ -26,9 +26,9 @@ rules:
     - Include explicit non-goals when scope can expand
     - Separate change proposals from durable docs
   design:
-    - Respect the REST-at-edge and gRPC-internal boundary
     - Keep service-local persistence and eventing details with the owning service
     - Capture repo-wide documentation boundaries when relevant
+    - Use context7 mcp server to look up documentation if unsure
   tasks:
     - Break work into small, verifiable steps
     - Prefer tasks that map directly to repo structure and service ownership

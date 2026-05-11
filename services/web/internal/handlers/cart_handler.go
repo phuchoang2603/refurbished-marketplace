@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"strings"
 
@@ -10,16 +11,34 @@ import (
 	"refurbished-marketplace/services/web/internal/views"
 
 	"github.com/google/uuid"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 const cartCookieName = "cart_id"
 
-func mapCartView(c *cartv1.Cart) views.CartView {
+func (h *Handler) mapCartView(ctx context.Context, c *cartv1.Cart) (views.CartView, error) {
 	items := make([]views.CartItemView, 0, len(c.GetItems()))
+	var estimatedTotalCents int64
 	for _, item := range c.GetItems() {
-		items = append(items, views.CartItemView{ProductID: item.GetProductId(), Quantity: item.GetQuantity()})
+		view := views.CartItemView{ProductID: item.GetProductId(), Quantity: item.GetQuantity()}
+		if h.products != nil {
+			product, err := h.products.GetProductByID(ctx, item.GetProductId())
+			if err != nil {
+				if st, ok := status.FromError(err); !ok || st.Code() != codes.NotFound {
+					return views.CartView{}, err
+				}
+			} else {
+				view.ProductName = product.GetName()
+				view.ProductPrice = product.GetPriceCents()
+				view.LineTotalCents = product.GetPriceCents() * int64(item.GetQuantity())
+				view.Available = true
+				estimatedTotalCents += view.LineTotalCents
+			}
+		}
+		items = append(items, view)
 	}
-	return views.CartView{CartID: c.GetCartId(), Items: items, CreatedAt: formatTimestamp(c.GetCreatedAt()), UpdatedAt: formatTimestamp(c.GetUpdatedAt())}
+	return views.CartView{CartID: c.GetCartId(), Items: items, EstimatedTotalCents: estimatedTotalCents, CreatedAt: formatTimestamp(c.GetCreatedAt()), UpdatedAt: formatTimestamp(c.GetUpdatedAt())}, nil
 }
 
 func cartIDFromRequest(r *http.Request) string {
@@ -57,10 +76,15 @@ func (h *Handler) handleGetCart(w http.ResponseWriter, r *http.Request) {
 	cartID := h.getOrCreateCartID(w, r)
 	cart, err := h.cart.GetCart(r.Context(), cartID)
 	if err != nil {
-		writeGRPCError(w, err)
+		writeGRPCError(w, r, err)
 		return
 	}
-	writeHTML(w, r, http.StatusOK, views.CartPage(mapCartView(cart)))
+	view, err := h.mapCartView(r.Context(), cart)
+	if err != nil {
+		writeGRPCError(w, r, err)
+		return
+	}
+	writeHTML(w, r, http.StatusOK, views.CartPage(view))
 }
 
 func (h *Handler) handleAddCartItem(w http.ResponseWriter, r *http.Request) {
@@ -72,10 +96,15 @@ func (h *Handler) handleAddCartItem(w http.ResponseWriter, r *http.Request) {
 	}
 	cart, err := h.cart.AddCartItem(r.Context(), cartID, strings.TrimSpace(productID), quantity)
 	if err != nil {
-		writeGRPCError(w, err)
+		writeGRPCError(w, r, err)
 		return
 	}
-	writeFragment(w, r, http.StatusOK, "#cart", views.CartSection(mapCartView(cart)))
+	view, err := h.mapCartView(r.Context(), cart)
+	if err != nil {
+		writeGRPCError(w, r, err)
+		return
+	}
+	writeFragment(w, r, http.StatusOK, "#cart", views.CartSection(view))
 }
 
 func (h *Handler) handleSetCartItemQuantity(w http.ResponseWriter, r *http.Request) {
@@ -91,10 +120,15 @@ func (h *Handler) handleSetCartItemQuantity(w http.ResponseWriter, r *http.Reque
 	}
 	cart, err := h.cart.SetCartItemQuantity(r.Context(), cartID, productID, quantity)
 	if err != nil {
-		writeGRPCError(w, err)
+		writeGRPCError(w, r, err)
 		return
 	}
-	writeFragment(w, r, http.StatusOK, "#cart", views.CartSection(mapCartView(cart)))
+	view, err := h.mapCartView(r.Context(), cart)
+	if err != nil {
+		writeGRPCError(w, r, err)
+		return
+	}
+	writeFragment(w, r, http.StatusOK, "#cart", views.CartSection(view))
 }
 
 func (h *Handler) handleRemoveCartItem(w http.ResponseWriter, r *http.Request) {
@@ -105,10 +139,15 @@ func (h *Handler) handleRemoveCartItem(w http.ResponseWriter, r *http.Request) {
 	}
 	cart, err := h.cart.RemoveCartItem(r.Context(), cartID, productID)
 	if err != nil {
-		writeGRPCError(w, err)
+		writeGRPCError(w, r, err)
 		return
 	}
-	writeFragment(w, r, http.StatusOK, "#cart", views.CartSection(mapCartView(cart)))
+	view, err := h.mapCartView(r.Context(), cart)
+	if err != nil {
+		writeGRPCError(w, r, err)
+		return
+	}
+	writeFragment(w, r, http.StatusOK, "#cart", views.CartSection(view))
 }
 
 func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
@@ -123,7 +162,7 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 	}
 	cart, err := h.cart.GetCart(r.Context(), cartID)
 	if err != nil {
-		writeGRPCError(w, err)
+		writeGRPCError(w, r, err)
 		return
 	}
 	if len(cart.GetItems()) == 0 {
@@ -135,7 +174,7 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 	for _, item := range cart.GetItems() {
 		product, err := h.products.GetProductByID(r.Context(), item.GetProductId())
 		if err != nil {
-			writeGRPCError(w, err)
+			writeGRPCError(w, r, err)
 			return
 		}
 		lineTotal := product.PriceCents * int64(item.GetQuantity())
@@ -144,7 +183,7 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 	}
 	order, err := h.orders.CreateOrder(r.Context(), buyerUserID, items, totalCents)
 	if err != nil {
-		writeGRPCError(w, err)
+		writeGRPCError(w, r, err)
 		return
 	}
 	_ = h.cart.ClearCart(r.Context(), cartID)

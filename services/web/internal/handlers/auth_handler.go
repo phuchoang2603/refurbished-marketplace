@@ -3,11 +3,12 @@ package handlers
 import (
 	"net/http"
 
+	webAuth "refurbished-marketplace/services/web/internal/auth"
 	"refurbished-marketplace/services/web/internal/views"
 )
 
-func mapTokenView(access, refresh, tokenType string, expiresIn int64) views.TokenView {
-	return views.TokenView{AccessToken: access, RefreshToken: refresh, TokenType: tokenType, ExpiresIn: expiresIn}
+func sessionTokenView(tokenType string, expiresIn int64) views.TokenView {
+	return views.TokenView{TokenType: tokenType, ExpiresIn: expiresIn}
 }
 
 func loginCredentialsFromForm(r *http.Request) (string, string, error) {
@@ -37,43 +38,32 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 
 	tokens, err := h.users.Login(r.Context(), email, password)
 	if err != nil {
-		writeGRPCError(w, err)
+		writeGRPCError(w, r, err)
 		return
 	}
+	webAuth.SetTokenCookies(w, r, tokens.AccessToken, tokens.RefreshToken, tokens.ExpiresIn, tokens.RefreshExpiresIn)
+	r = r.WithContext(views.WithAuthState(r.Context(), views.AuthState{Authenticated: true}))
 
-	writeHTML(w, r, http.StatusOK, views.TokensPage(mapTokenView(tokens.AccessToken, tokens.RefreshToken, tokens.TokenType, tokens.ExpiresIn)))
-}
-
-func (h *Handler) handleRefreshPage(w http.ResponseWriter, r *http.Request) {
-	writeHTML(w, r, http.StatusOK, views.RefreshPage())
-}
-
-func (h *Handler) handleRefresh(w http.ResponseWriter, r *http.Request) {
-	refreshToken, err := refreshTokenFromForm(r)
-	if err != nil || refreshToken == "" {
-		writeBadRequest(w, r, "invalid request body")
-		return
-	}
-
-	tokens, err := h.users.Refresh(r.Context(), refreshToken)
-	if err != nil {
-		writeGRPCError(w, err)
-		return
-	}
-
-	writeHTML(w, r, http.StatusOK, views.TokensPage(mapTokenView(tokens.AccessToken, tokens.RefreshToken, tokens.TokenType, tokens.ExpiresIn)))
+	writeHTML(w, r, http.StatusOK, views.TokensPage(sessionTokenView(tokens.TokenType, tokens.ExpiresIn)))
 }
 
 func (h *Handler) handleLogout(w http.ResponseWriter, r *http.Request) {
 	refreshToken, err := refreshTokenFromForm(r)
 	if err != nil || refreshToken == "" {
-		writeBadRequest(w, r, "invalid request body")
+		refreshToken = webAuth.RefreshTokenFromRequest(r)
+	}
+	if refreshToken == "" {
+		webAuth.ClearTokenCookies(w, r)
+		r = r.WithContext(views.WithAuthState(r.Context(), views.AuthState{Authenticated: false}))
+		writeHTML(w, r, http.StatusOK, views.MessagePage("Logged out", "Your browser session has been cleared."))
 		return
 	}
 
 	_, err = h.users.Logout(r.Context(), refreshToken)
+	webAuth.ClearTokenCookies(w, r)
+	r = r.WithContext(views.WithAuthState(r.Context(), views.AuthState{Authenticated: false}))
 	if err != nil {
-		writeGRPCError(w, err)
+		writeGRPCError(w, r, err)
 		return
 	}
 

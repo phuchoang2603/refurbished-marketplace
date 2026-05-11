@@ -9,12 +9,12 @@ templ OrderDetailPage(order OrderView) {
 }
 
 templ OrderListSection(orders []OrderView) {
-	<section id="orders" class="card">
-		<h1>Orders</h1>
+	@Card(CardArgs{ID: "orders"}) {
+		@PageHeader("Orders", "Your recent marketplace orders.")
 		if len(orders) == 0 {
-			<p class="muted">No orders yet.</p>
+			@EmptyState("No orders yet.")
 		} else {
-			<table>
+			<table class="responsive-table">
 				<thead>
 					<tr>
 						<th>ID</th>
@@ -26,26 +26,26 @@ templ OrderListSection(orders []OrderView) {
 				<tbody>
 					for _, order := range orders {
 						<tr id={ "order-" + order.ID }>
-							<td><a href={ "/orders/" + order.ID }>{ order.ID }</a></td>
-							<td>{ order.Status }</td>
-							<td>{ formatCents(order.TotalCents) }</td>
-							<td>{ order.UpdatedAt }</td>
+							<td data-label="ID"><a href={ "/orders/" + order.ID }>{ order.ID }</a></td>
+							<td data-label="Status">@Badge(order.Status)</td>
+							<td data-label="Total">{ formatCents(order.TotalCents) }</td>
+							<td data-label="Updated">{ order.UpdatedAt }</td>
 						</tr>
 					}
 				</tbody>
 			</table>
 		}
-	</section>
+	}
 }
 
 templ OrderDetailSection(order OrderView) {
-	<section id={ "order-" + order.ID } class="card">
-		<h1>Order { order.ID }</h1>
-		<p><strong>Status:</strong> { order.Status }</p>
-		<p><strong>Total:</strong> { formatCents(order.TotalCents) }</p>
+	@Card(CardArgs{ID: "order-" + order.ID}) {
+		@PageHeader("Order " + order.ID, "Buyer " + order.BuyerUserID)
+		<p><strong>Status:</strong> @Badge(order.Status)</p>
+		<p class="price">{ formatCents(order.TotalCents) }</p>
 		<p><small>Buyer { order.BuyerUserID }</small></p>
 		if len(order.Items) > 0 {
-			<table>
+			<table class="responsive-table">
 				<thead>
 					<tr>
 						<th>Product</th>
@@ -57,15 +57,15 @@ templ OrderDetailSection(order OrderView) {
 				<tbody>
 					for _, item := range order.Items {
 						<tr>
-							<td>{ item.ProductID }</td>
-							<td>{ formatInt32(item.Quantity) }</td>
-							<td>{ formatCents(item.UnitPriceCents) }</td>
-							<td>{ formatCents(item.LineTotalCents) }</td>
+							<td data-label="Product">{ item.ProductID }</td>
+							<td data-label="Qty">{ formatInt32(item.Quantity) }</td>
+							<td data-label="Unit">{ formatCents(item.UnitPriceCents) }</td>
+							<td data-label="Line">{ formatCents(item.LineTotalCents) }</td>
 						</tr>
 					}
 				</tbody>
 			</table>
 		}
-		<p><small>{ order.CreatedAt } | { order.UpdatedAt }</small></p>
-	</section>
+		@MetaLine(order.CreatedAt, order.UpdatedAt)
+	}
 }

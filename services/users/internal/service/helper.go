@@ -105,10 +105,11 @@ func (s *Service) issueTokenPair(ctx context.Context, userID uuid.UUID, email st
 	}
 
 	return Tokens{
-		AccessToken:  accessToken,
-		RefreshToken: refreshToken,
-		TokenType:    "Bearer",
-		ExpiresIn:    int64(s.cfg.JWTAccessTTL.Seconds()),
+		AccessToken:      accessToken,
+		RefreshToken:     refreshToken,
+		TokenType:        "Bearer",
+		ExpiresIn:        int64(s.cfg.JWTAccessTTL.Seconds()),
+		RefreshExpiresIn: int64(s.cfg.JWTRefreshTTL.Seconds()),
 	}, nil
 }
 

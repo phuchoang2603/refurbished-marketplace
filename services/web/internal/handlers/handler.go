@@ -4,14 +4,19 @@ package handlers
 import (
 	"net/http"
 
-	webAuth "refurbished-marketplace/services/web/internal/auth"
-	authconfig "refurbished-marketplace/shared/auth/config"
+	"refurbished-marketplace/services/web/internal/views"
 	"refurbished-marketplace/shared/proto/cartclient"
 	"refurbished-marketplace/shared/proto/ordersclient"
 	"refurbished-marketplace/shared/proto/paymentclient"
 	"refurbished-marketplace/shared/proto/productsclient"
 	"refurbished-marketplace/shared/proto/usersclient"
+
+	webAuth "refurbished-marketplace/services/web/internal/auth"
+
+	authconfig "refurbished-marketplace/shared/auth/config"
 )
+
+const staticDir = "/static"
 
 type Handler struct {
 	users    *usersclient.Client
@@ -23,36 +28,64 @@ type Handler struct {
 }
 
 func New(users *usersclient.Client, products *productsclient.Client, orders *ordersclient.Client, cart *cartclient.Client, payment *paymentclient.Client, authCfg authconfig.Config) *Handler {
-	return &Handler{users: users, products: products, orders: orders, cart: cart, payment: payment, auth: authCfg}
+	return &Handler{
+		users:    users,
+		products: products,
+		orders:   orders,
+		cart:     cart,
+		payment:  payment,
+		auth:     authCfg,
+	}
+}
+
+func (h *Handler) requireAccessToken(next http.Handler) http.Handler {
+	return webAuth.RequireAccessToken(h.auth, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		state := views.AuthState{Authenticated: true}
+		next.ServeHTTP(w, r.WithContext(views.WithAuthState(r.Context(), state)))
+	}), writeUnauthorized)
+}
+
+func (h *Handler) withViewAuth(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		state := views.AuthState{Authenticated: webAuth.HasValidAccessToken(h.auth, r)}
+		next(w, r.WithContext(views.WithAuthState(r.Context(), state)))
+	}
 }
 
 func (h *Handler) Register(mux *http.ServeMux) {
+	view := h.withViewAuth
 	mux.HandleFunc("GET /healthz", h.handleHealthz)
-	mux.HandleFunc("POST /users", h.handleCreateUser)
-	mux.HandleFunc("GET /users/{id}", h.handleGetUserByID)
+	mux.HandleFunc("GET /", view(h.handleHome))
+	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir(staticDir))))
 
-	mux.HandleFunc("GET /products", h.handleListProducts)
-	mux.HandleFunc("GET /products/{id}", h.handleGetProductByID)
+	mux.HandleFunc("POST /users", view(h.handleCreateUser))
+	mux.HandleFunc("GET /users/{id}", view(h.handleGetUserByID))
 
-	mux.HandleFunc("POST /cart/items", h.handleAddCartItem)
-	mux.HandleFunc("PATCH /cart/items/{product_id}", h.handleSetCartItemQuantity)
-	mux.HandleFunc("DELETE /cart/items/{product_id}", h.handleRemoveCartItem)
-	mux.Handle("POST /cart/checkout", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleCheckoutCart)))
-	mux.HandleFunc("GET /cart", h.handleGetCart)
+	mux.HandleFunc("GET /auth/login", view(h.handleLoginPage))
+	mux.HandleFunc("POST /auth/login", view(h.handleLogin))
+	mux.HandleFunc("GET /auth/register", view(h.handleRegisterPage))
+	mux.HandleFunc("POST /auth/logout", view(h.handleLogout))
 
-	mux.Handle("POST /orders", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleCreateOrder)))
-	mux.Handle("GET /orders", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleListOrdersByBuyer)))
-	mux.HandleFunc("GET /orders/{id}", h.handleGetOrderByID)
+	mux.HandleFunc("GET /products", view(h.handleListProducts))
+	mux.HandleFunc("GET /products/{id}", view(h.handleGetProductByID))
 
-	mux.HandleFunc("GET /auth/login", h.handleLoginPage)
-	mux.HandleFunc("POST /auth/login", h.handleLogin)
-	mux.HandleFunc("GET /auth/refresh", h.handleRefreshPage)
-	mux.HandleFunc("POST /auth/refresh", h.handleRefresh)
-	mux.Handle("POST /auth/logout", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleLogout)))
+	mux.HandleFunc("POST /cart/items", view(h.handleAddCartItem))
+	mux.HandleFunc("PATCH /cart/items/{product_id}", view(h.handleSetCartItemQuantity))
+	mux.HandleFunc("DELETE /cart/items/{product_id}", view(h.handleRemoveCartItem))
+	mux.Handle("POST /cart/checkout", h.requireAccessToken(http.HandlerFunc(h.handleCheckoutCart)))
+	mux.HandleFunc("GET /cart", view(h.handleGetCart))
+
+	mux.Handle("POST /orders", h.requireAccessToken(http.HandlerFunc(h.handleCreateOrder)))
+	mux.Handle("GET /orders", h.requireAccessToken(http.HandlerFunc(h.handleListOrdersByBuyer)))
+	mux.Handle("GET /orders/{id}", h.requireAccessToken(http.HandlerFunc(h.handleGetOrderByID)))
 
 	mux.HandleFunc("POST /webhooks/stripe-simulator", h.handleStripeSimWebhook)
 }
 
 func (h *Handler) handleHealthz(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+}
+
+func (h *Handler) handleHome(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "/products", http.StatusSeeOther)
 }

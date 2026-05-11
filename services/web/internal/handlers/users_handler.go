@@ -32,11 +32,15 @@ func (h *Handler) handleCreateUser(w http.ResponseWriter, r *http.Request) {
 
 	u, err := h.users.CreateUser(r.Context(), email, password)
 	if err != nil {
-		writeGRPCError(w, err)
+		writeGRPCError(w, r, err)
 		return
 	}
 
 	writeHTML(w, r, http.StatusCreated, views.UserPage(mapUserView(u.Id, u.Email, u.CreatedAt, u.UpdatedAt)))
+}
+
+func (h *Handler) handleRegisterPage(w http.ResponseWriter, r *http.Request) {
+	writeHTML(w, r, http.StatusOK, views.RegisterPage())
 }
 
 func (h *Handler) handleGetUserByID(w http.ResponseWriter, r *http.Request) {
@@ -47,7 +51,7 @@ func (h *Handler) handleGetUserByID(w http.ResponseWriter, r *http.Request) {
 
 	u, err := h.users.GetUserByID(r.Context(), id)
 	if err != nil {
-		writeGRPCError(w, err)
+		writeGRPCError(w, r, err)
 		return
 	}
 

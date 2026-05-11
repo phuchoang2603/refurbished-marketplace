@@ -27,7 +27,7 @@ func (h *Handler) handleGetProductByID(w http.ResponseWriter, r *http.Request) {
 
 	p, err := h.products.GetProductByID(r.Context(), id)
 	if err != nil {
-		writeGRPCError(w, err)
+		writeGRPCError(w, r, err)
 		return
 	}
 
@@ -46,7 +46,7 @@ func (h *Handler) handleListProducts(w http.ResponseWriter, r *http.Request) {
 
 	resp, err := h.products.ListProducts(r.Context(), limit, offset)
 	if err != nil {
-		writeGRPCError(w, err)
+		writeGRPCError(w, r, err)
 		return
 	}
 

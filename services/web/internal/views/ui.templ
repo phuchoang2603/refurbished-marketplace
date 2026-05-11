@@ -1,0 +1,151 @@
+package views
+
+templ Button(args ButtonArgs) {
+	{{
+		buttonType := args.Type
+		if buttonType == "" {
+			buttonType = "button"
+		}
+		classes := classNames("button", args.Variant, args.Class)
+		attrs := componentAttrs(args.Attributes, "button", classes, "")
+		if args.Disabled {
+			attrs["disabled"] = true
+		}
+		if buttonType == "submit" {
+			attrs["data-attr-disabled"] = "$fetching"
+			attrs["data-attr-aria-busy"] = "$fetching ? 'true' : 'false'"
+		}
+	}}
+	<button type={ buttonType } { attrs... }>
+		{ children... }
+		if buttonType == "submit" {
+			<span class="button-loading" data-show="$fetching">Loading...</span>
+		}
+	</button>
+}
+
+templ Card(args CardArgs) {
+	{{ attrs := componentAttrs(args.Attributes, "card", classNames("card", args.Class), args.ID) }}
+	<div { attrs... }>
+		{ children... }
+	</div>
+}
+
+templ CardHeader(args SlotArgs) {
+	{{ attrs := componentAttrs(args.Attributes, "card-header", classNames("card-header", args.Class), args.ID) }}
+	<div { attrs... }>
+		{ children... }
+	</div>
+}
+
+templ CardTitle(args SlotArgs) {
+	{{ attrs := componentAttrs(args.Attributes, "card-title", classNames("card-title", args.Class), args.ID) }}
+	<h1 { attrs... }>
+		{ children... }
+	</h1>
+}
+
+templ CardDescription(args SlotArgs) {
+	{{ attrs := componentAttrs(args.Attributes, "card-description", classNames("card-description", "muted", args.Class), args.ID) }}
+	<p { attrs... }>
+		{ children... }
+	</p>
+}
+
+templ Form(args FormArgs) {
+	{{ attrs := formAttrs(args) }}
+	<form { attrs... }>
+		{ children... }
+	</form>
+}
+
+templ FormItem(args SlotArgs) {
+	{{ attrs := componentAttrs(args.Attributes, "form-item", classNames("form-item", args.Class), args.ID) }}
+	<div { attrs... }>
+		{ children... }
+	</div>
+}
+
+templ FormLabel(args LabelArgs) {
+	{{
+		attrs := componentAttrs(args.Attributes, "form-label", classNames("form-label", args.Class), "")
+		if args.For != "" {
+			attrs["for"] = args.For
+		}
+		if args.HasError {
+			attrs["data-error"] = true
+		}
+	}}
+	<label { attrs... }>
+		{ children... }
+	</label>
+}
+
+templ FormDescription(args SlotArgs) {
+	{{ attrs := componentAttrs(args.Attributes, "form-description", classNames("form-description", args.Class), args.ID) }}
+	<p { attrs... }>
+		{ children... }
+	</p>
+}
+
+templ Input(args InputArgs) {
+	{{
+		attrs := componentAttrs(args.Attributes, "input", classNames("input", args.Class), args.ID)
+		inputType := args.Type
+		if inputType == "" {
+			inputType = "text"
+		}
+		attrs["type"] = inputType
+		if args.Name != "" {
+			attrs["name"] = args.Name
+		}
+		if args.Value != "" {
+			attrs["value"] = args.Value
+		}
+		if args.Autocomplete != "" {
+			attrs["autocomplete"] = args.Autocomplete
+		}
+		if args.Min != "" {
+			attrs["min"] = args.Min
+		}
+		if args.Required {
+			attrs["required"] = true
+		}
+		if args.Disabled {
+			attrs["disabled"] = true
+		}
+	}}
+	<input { attrs... }/>
+}
+
+templ PageHeader(title string, subtitle string) {
+	@CardHeader(SlotArgs{Class: "page-header"}) {
+		@CardTitle(SlotArgs{}) {
+			{ title }
+		}
+		if subtitle != "" {
+			@CardDescription(SlotArgs{}) {
+				{ subtitle }
+			}
+		}
+	}
+}
+
+templ EmptyState(message string) {
+	<div class="empty-state" data-slot="empty-state">
+		<p>{ message }</p>
+	</div>
+}
+
+templ Badge(text string) {
+	<span class="badge" data-slot="badge">{ text }</span>
+}
+
+templ MetaLine(left string, right string) {
+	<div class="meta-line" data-slot="card-footer">
+		<small>{ left }</small>
+		if right != "" {
+			<small>{ right }</small>
+		}
+	</div>
+}

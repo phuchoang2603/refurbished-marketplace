@@ -11,10 +11,11 @@ import (
 )
 
 type Tokens struct {
-	AccessToken  string
-	RefreshToken string
-	TokenType    string
-	ExpiresIn    int64
+	AccessToken      string
+	RefreshToken     string
+	TokenType        string
+	ExpiresIn        int64
+	RefreshExpiresIn int64
 }
 
 func (s *Service) Login(ctx context.Context, email string, password string) (Tokens, error) {

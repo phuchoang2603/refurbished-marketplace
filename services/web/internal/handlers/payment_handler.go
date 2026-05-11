@@ -49,7 +49,7 @@ func (h *Handler) handleStripeSimWebhook(w http.ResponseWriter, r *http.Request)
 		FailureReason:        req.FailureReason,
 	})
 	if err != nil {
-		writeGRPCError(w, err)
+		writeGRPCError(w, r, err)
 		return
 	}
 

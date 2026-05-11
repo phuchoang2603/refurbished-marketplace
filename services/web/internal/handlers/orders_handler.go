@@ -55,7 +55,7 @@ func (h *Handler) buildCreateOrderItem(w http.ResponseWriter, r *http.Request, p
 
 	product, err := h.products.GetProductByID(r.Context(), productID)
 	if err != nil {
-		writeGRPCError(w, err)
+		writeGRPCError(w, r, err)
 		return nil, 0, false
 	}
 
@@ -82,7 +82,7 @@ func (h *Handler) handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 
 	order, err := h.orders.CreateOrder(r.Context(), buyerUserID, []*ordersv1.CreateOrderItem{item}, totalCents)
 	if err != nil {
-		writeGRPCError(w, err)
+		writeGRPCError(w, r, err)
 		return
 	}
 
@@ -90,6 +90,10 @@ func (h *Handler) handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleGetOrderByID(w http.ResponseWriter, r *http.Request) {
+	buyerUserID, ok := requireUserID(w, r)
+	if !ok {
+		return
+	}
 	id, ok := requirePathValue(w, r, "id", "invalid order id")
 	if !ok {
 		return
@@ -97,7 +101,11 @@ func (h *Handler) handleGetOrderByID(w http.ResponseWriter, r *http.Request) {
 
 	order, err := h.orders.GetOrderByID(r.Context(), id)
 	if err != nil {
-		writeGRPCError(w, err)
+		writeGRPCError(w, r, err)
+		return
+	}
+	if order.GetBuyerUserId() != buyerUserID {
+		writeHTML(w, r, http.StatusForbidden, views.MessagePage("Forbidden", "order does not belong to the current user"))
 		return
 	}
 
@@ -112,7 +120,7 @@ func (h *Handler) handleListOrdersByBuyer(w http.ResponseWriter, r *http.Request
 
 	resp, err := h.orders.ListOrdersByBuyer(r.Context(), buyerUserID, 20, 0)
 	if err != nil {
-		writeGRPCError(w, err)
+		writeGRPCError(w, r, err)
 		return
 	}
 

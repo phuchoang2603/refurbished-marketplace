@@ -9,46 +9,47 @@ templ ProductDetailPage(product ProductView) {
 }
 
 templ ProductListSection(products []ProductView) {
-	<section id="products" class="card">
-		<h1>Products</h1>
-		<p class="muted">Server-rendered catalog built with templ and Datastar-compatible fragments.</p>
-		<table>
-			<thead>
-				<tr>
-					<th>Name</th>
-					<th>Price</th>
-					<th>Stock</th>
-					<th>Updated</th>
-				</tr>
-			</thead>
-			<tbody>
+	@Card(CardArgs{ID: "products"}) {
+		@PageHeader("Products", "Server-rendered catalog built with templ and Datastar-compatible fragments.")
+		if len(products) == 0 {
+			@EmptyState("No products are available yet.")
+		} else {
+			<div class="product-grid">
 				for _, product := range products {
-					<tr id={ "product-" + product.ID }>
-						<td><a href={ "/products/" + product.ID }>{ product.Name }</a></td>
-						<td>{ formatCents(product.PriceCents) }</td>
-						<td>{ formatInt32(product.Stock) }</td>
-						<td>{ product.UpdatedAt }</td>
-					</tr>
+					<article id={ "product-" + product.ID } class="product-card">
+						<div>
+							<h2><a href={ "/products/" + product.ID }>{ product.Name }</a></h2>
+							<p class="muted">{ product.Description }</p>
+						</div>
+						<div class="product-card__footer">
+							<strong>{ formatCents(product.PriceCents) }</strong>
+							@Badge("Stock " + formatInt32(product.Stock))
+						</div>
+					</article>
 				}
-			</tbody>
-		</table>
-	</section>
+			</div>
+		}
+	}
 }
 
 templ ProductDetailSection(product ProductView) {
-	<section id={ "product-" + product.ID } class="card">
-		<h1>{ product.Name }</h1>
-		<p>{ product.Description }</p>
-		<p><strong>Price:</strong> { formatCents(product.PriceCents) }</p>
-		<p><strong>Stock:</strong> { formatInt32(product.Stock) }</p>
-		<form method="post" action="/cart/items" data-on-submit__prevent="@post('/cart/items')">
+	@Card(CardArgs{ID: "product-" + product.ID}) {
+		@PageHeader(product.Name, product.Description)
+		<p class="price">{ formatCents(product.PriceCents) }</p>
+		@Badge("Stock " + formatInt32(product.Stock))
+		<div class="divider"></div>
+		<h2>Add to cart</h2>
+		@Form(FormArgs{Action: "/cart/items", Datastar: datastarFormAction("post", "/cart/items")}) {
 			<input type="hidden" name="product_id" value={ product.ID }/>
-			<label>Quantity <input name="quantity" type="number" min="1" value="1" required/></label>
-			<button type="submit">Add to cart</button>
-		</form>
-		<section id="cart" class="card">
+			@FormItem(SlotArgs{}) {
+				@FormLabel(LabelArgs{For: "product-quantity"}) { Quantity }
+				@Input(InputArgs{ID: "product-quantity", Name: "quantity", Type: "number", Min: "1", Value: "1", Required: true})
+			}
+			@Button(ButtonArgs{Type: "submit"}) { Add to cart }
+		}
+		@Card(CardArgs{ID: "cart", Class: "nested-card"}) {
 			<p class="muted">Add this product to update the cart summary here.</p>
-		</section>
-		<p><small>{ product.CreatedAt } | { product.UpdatedAt }</small></p>
-	</section>
+		}
+		@MetaLine(product.CreatedAt, product.UpdatedAt)
+	}
 }

@@ -13,10 +13,11 @@ import (
 
 func mapTokens(t service.Tokens) *usersv1.TokenResponse {
 	return &usersv1.TokenResponse{
-		AccessToken:  t.AccessToken,
-		RefreshToken: t.RefreshToken,
-		TokenType:    t.TokenType,
-		ExpiresIn:    t.ExpiresIn,
+		AccessToken:      t.AccessToken,
+		RefreshToken:     t.RefreshToken,
+		TokenType:        t.TokenType,
+		ExpiresIn:        t.ExpiresIn,
+		RefreshExpiresIn: t.RefreshExpiresIn,
 	}
 }
 

@@ -5,41 +5,56 @@ templ CartPage(cart CartView) {
 }
 
 templ CartSection(cart CartView) {
-	<section id="cart" class="card">
-		<h1>Cart</h1>
+	@Card(CardArgs{ID: "cart"}) {
+		@PageHeader("Cart", "Review quantities and check out when you are ready.")
 		<p><strong>Cart ID:</strong> <code>{ cart.CartID }</code></p>
 		if len(cart.Items) == 0 {
-			<p class="muted">Your cart is empty.</p>
+			@EmptyState("Your cart is empty.")
 		} else {
-			<table>
+			<table class="responsive-table">
 				<thead>
 					<tr>
 						<th>Product</th>
 						<th>Quantity</th>
+						<th>Current price</th>
+						<th>Estimated line</th>
 					</tr>
 				</thead>
 				<tbody>
 					for _, item := range cart.Items {
 						<tr id={ "cart-item-" + item.ProductID }>
-							<td>{ item.ProductID }</td>
-							<td>
-								<form method="post" action={ "/cart/items/" + item.ProductID } data-on-submit__prevent="@patch(this.action)">
-									<input type="hidden" name="product_id" value={ item.ProductID }/>
-									<input name="quantity" type="number" min="0" value={ formatInt32(item.Quantity) } required/>
-									<button type="submit">Update</button>
-								</form>
-								<form method="post" action={ "/cart/items/" + item.ProductID } data-on-submit__prevent="@delete(this.action)">
-									<button type="submit">Remove</button>
-								</form>
+							<td data-label="Product">
+								if item.Available {
+									<a href={ "/products/" + item.ProductID }>{ item.ProductName }</a>
+									<br/>
+									<small>{ item.ProductID }</small>
+								} else {
+									<span>{ item.ProductID }</span>
+									<br/>
+									@Badge("Unavailable")
+								}
 							</td>
+							<td data-label="Quantity">
+								@Form(FormArgs{Action: "/cart/items/" + item.ProductID, Datastar: datastarFormAction("patch", "/cart/items/" + item.ProductID), Class: "inline-form"}) {
+									<input type="hidden" name="product_id" value={ item.ProductID }/>
+									@Input(InputArgs{Name: "quantity", Type: "number", Min: "0", Value: formatInt32(item.Quantity), Required: true})
+									@Button(ButtonArgs{Type: "submit"}) { Update }
+								}
+								@Form(FormArgs{Action: "/cart/items/" + item.ProductID, Datastar: datastarFormAction("delete", "/cart/items/" + item.ProductID), Class: "inline-form remove-form"}) {
+									@Button(ButtonArgs{Type: "submit", Variant: "danger"}) { Remove }
+								}
+							</td>
+							<td data-label="Current price">{ formatCents(item.ProductPrice) }</td>
+							<td data-label="Estimated line">{ formatCents(item.LineTotalCents) }</td>
 						</tr>
 					}
 				</tbody>
 			</table>
+			<p class="cart-total"><span>Estimated total</span><strong>{ formatCents(cart.EstimatedTotalCents) }</strong></p>
 		}
-		<form method="post" action="/cart/checkout" data-on-submit__prevent="@post('/cart/checkout')">
-			<button type="submit">Checkout</button>
-		</form>
-		<p><small>{ cart.CreatedAt } | { cart.UpdatedAt }</small></p>
-	</section>
+		@Form(FormArgs{Action: "/cart/checkout", Datastar: datastarFormAction("post", "/cart/checkout"), Class: "checkout-form"}) {
+			@Button(ButtonArgs{Type: "submit"}) { Checkout }
+		}
+		@MetaLine(cart.CreatedAt, cart.UpdatedAt)
+	}
 }
