@@ -16,9 +16,8 @@ type queryStore interface {
 	GetPaymentTransactionByID(ctx context.Context, id uuid.UUID) (database.PaymentTransaction, error)
 	UpdatePaymentTransactionGatewayResult(ctx context.Context, arg database.UpdatePaymentTransactionGatewayResultParams) (database.PaymentTransaction, error)
 	CreatePaymentOutbox(ctx context.Context, arg database.CreatePaymentOutboxParams) (database.PaymentOutbox, error)
-	InsertPaymentInboxMessage(ctx context.Context, messageID string) error
+	InsertPaymentInboxMessage(ctx context.Context, messageID string) (bool, error)
 	GetPaymentIntentByOrderID(ctx context.Context, orderID uuid.UUID) (database.PaymentIntent, error)
-	GetPaymentTransactionByOrderItemID(ctx context.Context, orderItemID uuid.UUID) (database.PaymentTransaction, error)
 	CreatePaymentTransaction(ctx context.Context, arg database.CreatePaymentTransactionParams) (database.PaymentTransaction, error)
 }
 

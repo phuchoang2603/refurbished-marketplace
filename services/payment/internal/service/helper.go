@@ -7,16 +7,17 @@ import (
 	"fmt"
 
 	"refurbished-marketplace/services/payment/internal/database"
+	"refurbished-marketplace/shared/dberrors"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
 )
 
-// loadPaymentTransaction loads a row or returns ErrTransactionNotFound (never sql.ErrNoRows).
+// loadPaymentTransaction loads a row or returns ErrTransactionNotFound.
 func loadPaymentTransaction(ctx context.Context, q queryStore, id uuid.UUID) (database.PaymentTransaction, error) {
 	row, err := q.GetPaymentTransactionByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if dberrors.IsNoRows(err) {
 			return database.PaymentTransaction{}, ErrTransactionNotFound
 		}
 		return database.PaymentTransaction{}, err
@@ -24,28 +25,16 @@ func loadPaymentTransaction(ctx context.Context, q queryStore, id uuid.UUID) (da
 	return row, nil
 }
 
-// loadPaymentIntentByOrderID loads a row or returns ErrIntentNotFound (never sql.ErrNoRows).
+// loadPaymentIntentByOrderID loads a row or returns ErrIntentNotFound.
 func loadPaymentIntentByOrderID(ctx context.Context, q queryStore, orderID uuid.UUID) (database.PaymentIntent, error) {
 	row, err := q.GetPaymentIntentByOrderID(ctx, orderID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if dberrors.IsNoRows(err) {
 			return database.PaymentIntent{}, ErrIntentNotFound
 		}
 		return database.PaymentIntent{}, err
 	}
 	return row, nil
-}
-
-// paymentTransactionExistsForOrderItem reports whether a transaction row exists for the order item.
-func paymentTransactionExistsForOrderItem(ctx context.Context, q queryStore, orderItemID uuid.UUID) (exists bool, err error) {
-	_, err = q.GetPaymentTransactionByOrderItemID(ctx, orderItemID)
-	if err == nil {
-		return true, nil
-	}
-	if errors.Is(err, sql.ErrNoRows) {
-		return false, nil
-	}
-	return false, err
 }
 
 func parseOrderItemCreatedUUIDs(msg interface {

@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"refurbished-marketplace/services/payment/internal/database"
+	"refurbished-marketplace/shared/dberrors"
 	"refurbished-marketplace/shared/messaging"
 	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
 	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
@@ -39,15 +40,6 @@ func (s *Service) ApplyGatewayWebhook(ctx context.Context, transactionID uuid.UU
 
 	q := database.New(tx)
 
-	row, err := loadPaymentTransaction(ctx, q, transactionID)
-	if err != nil {
-		return err
-	}
-
-	if paymentTransactionIsTerminal(row.Status) {
-		return tx.Commit()
-	}
-
 	newStatus := PaymentTxStatusFailed
 	if succeeded {
 		newStatus = PaymentTxStatusSucceeded
@@ -60,6 +52,15 @@ func (s *Service) ApplyGatewayWebhook(ctx context.Context, transactionID uuid.UU
 		FailureReason:        optionalNullString(failureReason),
 	})
 	if err != nil {
+		if dberrors.IsNoRows(err) {
+			row, loadErr := loadPaymentTransaction(ctx, q, transactionID)
+			if loadErr != nil {
+				return loadErr
+			}
+			if paymentTransactionIsTerminal(row.Status) {
+				return tx.Commit()
+			}
+		}
 		return err
 	}
 
@@ -110,7 +111,10 @@ func (s *Service) HandleOrdersItemCreated(ctx context.Context, messageID string,
 		return errors.New("invalid orders.item.created payload: missing order_id or order_item_id")
 	}
 
-	if err := s.queries.InsertPaymentInboxMessage(ctx, messageID); err != nil {
+	if _, err := s.queries.InsertPaymentInboxMessage(ctx, messageID); err != nil {
+		if dberrors.IsNoRows(err) {
+			return nil
+		}
 		return err
 	}
 
@@ -124,14 +128,6 @@ func (s *Service) HandleOrdersItemCreated(ctx context.Context, messageID string,
 		return err
 	}
 
-	exists, err := paymentTransactionExistsForOrderItem(ctx, s.queries, orderItemID)
-	if err != nil {
-		return err
-	}
-	if exists {
-		return nil
-	}
-
 	_, err = s.queries.CreatePaymentTransaction(ctx, database.CreatePaymentTransactionParams{
 		ID:             uuid.New(),
 		OrderID:        orderID,
@@ -143,7 +139,7 @@ func (s *Service) HandleOrdersItemCreated(ctx context.Context, messageID string,
 		IdempotencyKey: "order_item:" + orderItemID.String(),
 	})
 	if err != nil {
-		if isPostgresUniqueViolation(err) {
+		if dberrors.IsNoRows(err) || isPostgresUniqueViolation(err) {
 			return nil
 		}
 		return err

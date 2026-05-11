@@ -79,13 +79,16 @@ func (q *Queries) GetPaymentOutboxByAggregateIDAndEventType(ctx context.Context,
 	return i, err
 }
 
-const insertPaymentInboxMessage = `-- name: InsertPaymentInboxMessage :exec
+const insertPaymentInboxMessage = `-- name: InsertPaymentInboxMessage :one
 INSERT INTO payment_inbox (message_id)
 VALUES ($1)
 ON CONFLICT (message_id) DO NOTHING
+RETURNING TRUE
 `
 
-func (q *Queries) InsertPaymentInboxMessage(ctx context.Context, messageID string) error {
-	_, err := q.db.ExecContext(ctx, insertPaymentInboxMessage, messageID)
-	return err
+func (q *Queries) InsertPaymentInboxMessage(ctx context.Context, messageID string) (bool, error) {
+	row := q.db.QueryRowContext(ctx, insertPaymentInboxMessage, messageID)
+	var column_1 bool
+	err := row.Scan(&column_1)
+	return column_1, err
 }

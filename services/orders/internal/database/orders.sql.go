@@ -15,7 +15,7 @@ import (
 const createOrder = `-- name: CreateOrder :one
 INSERT INTO orders (id, buyer_user_id, status, total_cents)
 VALUES ($1, $2, $3, $4)
-RETURNING orders.id, orders.buyer_user_id, orders.status, orders.total_cents, orders.created_at, orders.updated_at
+RETURNING id, buyer_user_id, status, total_cents, created_at, updated_at
 `
 
 type CreateOrderParams struct {
@@ -55,7 +55,8 @@ INSERT INTO order_items (
     line_total_cents
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7)
-RETURNING order_items.id, order_items.order_id, order_items.product_id, order_items.quantity, order_items.unit_price_cents, order_items.line_total_cents, order_items.created_at, order_items.merchant_id
+RETURNING
+    id, order_id, product_id, quantity, unit_price_cents, line_total_cents, created_at, merchant_id
 `
 
 type CreateOrderItemParams struct {
@@ -127,7 +128,7 @@ func (q *Queries) CreateOrderOutbox(ctx context.Context, arg CreateOrderOutboxPa
 }
 
 const getOrderByID = `-- name: GetOrderByID :one
-SELECT orders.id, orders.buyer_user_id, orders.status, orders.total_cents, orders.created_at, orders.updated_at
+SELECT id, buyer_user_id, status, total_cents, created_at, updated_at
 FROM orders
 WHERE id = $1
 `
@@ -147,7 +148,15 @@ func (q *Queries) GetOrderByID(ctx context.Context, id uuid.UUID) (Order, error)
 }
 
 const listOrderItemsByOrderIDs = `-- name: ListOrderItemsByOrderIDs :many
-SELECT order_items.id, order_items.order_id, order_items.product_id, order_items.quantity, order_items.unit_price_cents, order_items.line_total_cents, order_items.created_at, order_items.merchant_id
+SELECT
+    id,
+    order_id,
+    product_id,
+    quantity,
+    unit_price_cents,
+    line_total_cents,
+    created_at,
+    merchant_id
 FROM order_items
 WHERE order_id = ANY($1::uuid [])
 ORDER BY order_id ASC, created_at ASC
@@ -186,7 +195,7 @@ func (q *Queries) ListOrderItemsByOrderIDs(ctx context.Context, dollar_1 []uuid.
 }
 
 const listOrdersByBuyer = `-- name: ListOrdersByBuyer :many
-SELECT orders.id, orders.buyer_user_id, orders.status, orders.total_cents, orders.created_at, orders.updated_at
+SELECT id, buyer_user_id, status, total_cents, created_at, updated_at
 FROM orders
 WHERE buyer_user_id = $1
 ORDER BY created_at DESC
@@ -235,7 +244,7 @@ SET
     status = $2,
     updated_at = NOW()
 WHERE id = $1
-RETURNING orders.id, orders.buyer_user_id, orders.status, orders.total_cents, orders.created_at, orders.updated_at
+RETURNING id, buyer_user_id, status, total_cents, created_at, updated_at
 `
 
 type UpdateOrderStatusParams struct {

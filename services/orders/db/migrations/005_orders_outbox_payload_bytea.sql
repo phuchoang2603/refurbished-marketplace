@@ -1,5 +1,4 @@
 -- +goose Up
--- Outbox payloads are canonical protobuf (orders service); JSONB rows cannot be converted reliably — clear before type change.
 TRUNCATE TABLE orders_outbox;
 
 ALTER TABLE orders_outbox
