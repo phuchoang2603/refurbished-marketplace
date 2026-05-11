@@ -14,21 +14,21 @@ import (
 const commitReservation = `-- name: CommitReservation :one
 UPDATE inventory
 SET
-    reserved_qty = reserved_qty - $2,
+    reserved_qty = reserved_qty - $1,
     updated_at = NOW()
 WHERE
-    product_id = $1
-    AND reserved_qty >= $2
-RETURNING inventory.product_id, inventory.available_qty, inventory.reserved_qty, inventory.created_at, inventory.updated_at
+    product_id = $2
+    AND reserved_qty >= $1
+RETURNING product_id, available_qty, reserved_qty, created_at, updated_at
 `
 
 type CommitReservationParams struct {
-	ProductID   uuid.UUID
-	ReservedQty int32
+	Quantity  int32
+	ProductID uuid.UUID
 }
 
 func (q *Queries) CommitReservation(ctx context.Context, arg CommitReservationParams) (Inventory, error) {
-	row := q.db.QueryRowContext(ctx, commitReservation, arg.ProductID, arg.ReservedQty)
+	row := q.db.QueryRowContext(ctx, commitReservation, arg.Quantity, arg.ProductID)
 	var i Inventory
 	err := row.Scan(
 		&i.ProductID,
@@ -43,7 +43,7 @@ func (q *Queries) CommitReservation(ctx context.Context, arg CommitReservationPa
 const createInventory = `-- name: CreateInventory :one
 INSERT INTO inventory (product_id, available_qty, reserved_qty)
 VALUES ($1, $2, 0)
-RETURNING inventory.product_id, inventory.available_qty, inventory.reserved_qty, inventory.created_at, inventory.updated_at
+RETURNING product_id, available_qty, reserved_qty, created_at, updated_at
 `
 
 type CreateInventoryParams struct {
@@ -65,7 +65,7 @@ func (q *Queries) CreateInventory(ctx context.Context, arg CreateInventoryParams
 }
 
 const getInventoryByProductID = `-- name: GetInventoryByProductID :one
-SELECT inventory.product_id, inventory.available_qty, inventory.reserved_qty, inventory.created_at, inventory.updated_at
+SELECT product_id, available_qty, reserved_qty, created_at, updated_at
 FROM inventory
 WHERE product_id = $1
 `
@@ -86,22 +86,22 @@ func (q *Queries) GetInventoryByProductID(ctx context.Context, productID uuid.UU
 const releaseReservation = `-- name: ReleaseReservation :one
 UPDATE inventory
 SET
-    available_qty = available_qty + $2,
-    reserved_qty = reserved_qty - $2,
+    available_qty = available_qty + $1,
+    reserved_qty = reserved_qty - $1,
     updated_at = NOW()
 WHERE
-    product_id = $1
-    AND reserved_qty >= $2
-RETURNING inventory.product_id, inventory.available_qty, inventory.reserved_qty, inventory.created_at, inventory.updated_at
+    product_id = $2
+    AND reserved_qty >= $1
+RETURNING product_id, available_qty, reserved_qty, created_at, updated_at
 `
 
 type ReleaseReservationParams struct {
-	ProductID    uuid.UUID
-	AvailableQty int32
+	Quantity  int32
+	ProductID uuid.UUID
 }
 
 func (q *Queries) ReleaseReservation(ctx context.Context, arg ReleaseReservationParams) (Inventory, error) {
-	row := q.db.QueryRowContext(ctx, releaseReservation, arg.ProductID, arg.AvailableQty)
+	row := q.db.QueryRowContext(ctx, releaseReservation, arg.Quantity, arg.ProductID)
 	var i Inventory
 	err := row.Scan(
 		&i.ProductID,
@@ -116,22 +116,22 @@ func (q *Queries) ReleaseReservation(ctx context.Context, arg ReleaseReservation
 const reserveStock = `-- name: ReserveStock :one
 UPDATE inventory
 SET
-    available_qty = available_qty - $2,
-    reserved_qty = reserved_qty + $2,
+    available_qty = available_qty - $1,
+    reserved_qty = reserved_qty + $1,
     updated_at = NOW()
 WHERE
-    product_id = $1
-    AND available_qty >= $2
-RETURNING inventory.product_id, inventory.available_qty, inventory.reserved_qty, inventory.created_at, inventory.updated_at
+    product_id = $2
+    AND available_qty >= $1
+RETURNING product_id, available_qty, reserved_qty, created_at, updated_at
 `
 
 type ReserveStockParams struct {
-	ProductID    uuid.UUID
-	AvailableQty int32
+	Quantity  int32
+	ProductID uuid.UUID
 }
 
 func (q *Queries) ReserveStock(ctx context.Context, arg ReserveStockParams) (Inventory, error) {
-	row := q.db.QueryRowContext(ctx, reserveStock, arg.ProductID, arg.AvailableQty)
+	row := q.db.QueryRowContext(ctx, reserveStock, arg.Quantity, arg.ProductID)
 	var i Inventory
 	err := row.Scan(
 		&i.ProductID,

@@ -13,19 +13,21 @@ VALUES (
     $4,
     $5
 )
-RETURNING products.*;
+RETURNING
+    id, name, description, price_cents, created_at, updated_at, merchant_id;
 
 -- name: GetProductByID :one
-SELECT products.* FROM
+SELECT id, name, description, price_cents, created_at, updated_at, merchant_id
+FROM
     products
 WHERE
     id = $1;
 
 -- name: ListProducts :many
 SELECT
-    products.*
+    id, name, description, price_cents, created_at, updated_at, merchant_id
 FROM
     products
 ORDER BY
-    created_at DESC
+    created_at DESC, id DESC
 LIMIT $1 OFFSET $2;

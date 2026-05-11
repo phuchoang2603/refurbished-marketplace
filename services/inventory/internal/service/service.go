@@ -2,11 +2,11 @@ package service
 
 import (
 	"context"
-	"database/sql"
 	"errors"
 	"time"
 
 	"refurbished-marketplace/services/inventory/internal/database"
+	"refurbished-marketplace/shared/dberrors"
 
 	"github.com/google/uuid"
 )
@@ -43,8 +43,8 @@ func New(queries queryStore) *Service {
 }
 
 func (s *Service) CreateInventory(ctx context.Context, productID uuid.UUID, availableQty int32) (Inventory, error) {
-	if productID == uuid.Nil {
-		return Inventory{}, ErrInvalidProductID
+	if err := validateProductID(productID); err != nil {
+		return Inventory{}, err
 	}
 	if availableQty < 0 {
 		return Inventory{}, ErrInvalidQuantity
@@ -58,13 +58,13 @@ func (s *Service) CreateInventory(ctx context.Context, productID uuid.UUID, avai
 }
 
 func (s *Service) GetInventoryByProductID(ctx context.Context, productID uuid.UUID) (Inventory, error) {
-	if productID == uuid.Nil {
-		return Inventory{}, ErrInvalidProductID
+	if err := validateProductID(productID); err != nil {
+		return Inventory{}, err
 	}
 
 	inv, err := s.queries.GetInventoryByProductID(ctx, productID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if dberrors.IsNoRows(err) {
 			return Inventory{}, ErrInventoryNotFound
 		}
 		return Inventory{}, err
@@ -74,16 +74,21 @@ func (s *Service) GetInventoryByProductID(ctx context.Context, productID uuid.UU
 }
 
 func (s *Service) ReserveStock(ctx context.Context, productID uuid.UUID, quantity int32) (Inventory, error) {
-	if productID == uuid.Nil {
-		return Inventory{}, ErrInvalidProductID
+	if err := validateProductID(productID); err != nil {
+		return Inventory{}, err
 	}
-	if quantity <= 0 {
-		return Inventory{}, ErrInvalidQuantity
+	if err := validatePositiveQuantity(quantity); err != nil {
+		return Inventory{}, err
 	}
 
-	inv, err := s.queries.ReserveStock(ctx, database.ReserveStockParams{ProductID: productID, AvailableQty: quantity})
+	inv, err := s.queries.ReserveStock(ctx, database.ReserveStockParams{ProductID: productID, Quantity: quantity})
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if dberrors.IsNoRows(err) {
+			if _, getErr := s.queries.GetInventoryByProductID(ctx, productID); dberrors.IsNoRows(getErr) {
+				return Inventory{}, ErrInventoryNotFound
+			} else if getErr != nil {
+				return Inventory{}, getErr
+			}
 			return Inventory{}, ErrInsufficientStock
 		}
 		return Inventory{}, err
@@ -93,16 +98,16 @@ func (s *Service) ReserveStock(ctx context.Context, productID uuid.UUID, quantit
 }
 
 func (s *Service) CommitReservation(ctx context.Context, productID uuid.UUID, quantity int32) (Inventory, error) {
-	if productID == uuid.Nil {
-		return Inventory{}, ErrInvalidProductID
+	if err := validateProductID(productID); err != nil {
+		return Inventory{}, err
 	}
-	if quantity <= 0 {
-		return Inventory{}, ErrInvalidQuantity
+	if err := validatePositiveQuantity(quantity); err != nil {
+		return Inventory{}, err
 	}
 
-	inv, err := s.queries.CommitReservation(ctx, database.CommitReservationParams{ProductID: productID, ReservedQty: quantity})
+	inv, err := s.queries.CommitReservation(ctx, database.CommitReservationParams{ProductID: productID, Quantity: quantity})
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if dberrors.IsNoRows(err) {
 			return Inventory{}, ErrInventoryNotFound
 		}
 		return Inventory{}, err
@@ -112,22 +117,36 @@ func (s *Service) CommitReservation(ctx context.Context, productID uuid.UUID, qu
 }
 
 func (s *Service) ReleaseReservation(ctx context.Context, productID uuid.UUID, quantity int32) (Inventory, error) {
-	if productID == uuid.Nil {
-		return Inventory{}, ErrInvalidProductID
+	if err := validateProductID(productID); err != nil {
+		return Inventory{}, err
 	}
-	if quantity <= 0 {
-		return Inventory{}, ErrInvalidQuantity
+	if err := validatePositiveQuantity(quantity); err != nil {
+		return Inventory{}, err
 	}
 
-	inv, err := s.queries.ReleaseReservation(ctx, database.ReleaseReservationParams{ProductID: productID, AvailableQty: quantity})
+	inv, err := s.queries.ReleaseReservation(ctx, database.ReleaseReservationParams{ProductID: productID, Quantity: quantity})
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if dberrors.IsNoRows(err) {
 			return Inventory{}, ErrInventoryNotFound
 		}
 		return Inventory{}, err
 	}
 
 	return mapDBInventory(inv), nil
+}
+
+func validateProductID(productID uuid.UUID) error {
+	if productID == uuid.Nil {
+		return ErrInvalidProductID
+	}
+	return nil
+}
+
+func validatePositiveQuantity(quantity int32) error {
+	if quantity <= 0 {
+		return ErrInvalidQuantity
+	}
+	return nil
 }
 
 func mapDBInventory(i database.Inventory) Inventory {

@@ -26,7 +26,8 @@ VALUES (
     $4,
     $5
 )
-RETURNING products.id, products.name, products.description, products.price_cents, products.created_at, products.updated_at, products.merchant_id
+RETURNING
+    id, name, description, price_cents, created_at, updated_at, merchant_id
 `
 
 type CreateProductParams struct {
@@ -59,7 +60,8 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (P
 }
 
 const getProductByID = `-- name: GetProductByID :one
-SELECT products.id, products.name, products.description, products.price_cents, products.created_at, products.updated_at, products.merchant_id FROM
+SELECT id, name, description, price_cents, created_at, updated_at, merchant_id
+FROM
     products
 WHERE
     id = $1
@@ -82,11 +84,11 @@ func (q *Queries) GetProductByID(ctx context.Context, id uuid.UUID) (Product, er
 
 const listProducts = `-- name: ListProducts :many
 SELECT
-    products.id, products.name, products.description, products.price_cents, products.created_at, products.updated_at, products.merchant_id
+    id, name, description, price_cents, created_at, updated_at, merchant_id
 FROM
     products
 ORDER BY
-    created_at DESC
+    created_at DESC, id DESC
 LIMIT $1 OFFSET $2
 `
 

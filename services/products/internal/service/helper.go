@@ -1,8 +1,9 @@
 package service
 
 import (
-	"database/sql"
 	"strings"
+
+	"refurbished-marketplace/shared/dberrors"
 )
 
 func normalizeProductName(name string) string {
@@ -21,7 +22,7 @@ func mapProductNotFound(err error) error {
 	if err == nil {
 		return nil
 	}
-	if err == sql.ErrNoRows {
+	if dberrors.IsNoRows(err) {
 		return ErrProductNotFound
 	}
 	return err
