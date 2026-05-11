@@ -28,7 +28,6 @@ in
 
     # templ
     templ
-    gofumpt
 
     # kubernetes
     kubectl
@@ -38,6 +37,10 @@ in
     # ai stuff
     nodejs
     openspec
+
+    # formatter
+    gofumpt
+    sqruff
   ];
 
   languages.go = {

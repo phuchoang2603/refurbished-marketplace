@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"crypto/sha256"
-	"database/sql"
 	"encoding/hex"
 	"errors"
 	"strings"
@@ -12,9 +11,11 @@ import (
 	"refurbished-marketplace/services/users/internal/database"
 
 	sharedjwt "refurbished-marketplace/shared/auth/jwt"
+	"refurbished-marketplace/shared/dberrors"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
 func normalizeEmail(email string) string {
@@ -39,7 +40,7 @@ func mapNotFound(err error, notFoundErr error) error {
 	if err == nil {
 		return nil
 	}
-	if err == sql.ErrNoRows {
+	if dberrors.IsNoRows(err) {
 		return notFoundErr
 	}
 	return err
@@ -120,7 +121,7 @@ func mapInvalidToken(err error) error {
 	if err == nil {
 		return nil
 	}
-	if err == sql.ErrNoRows {
+	if dberrors.IsNoRows(err) {
 		return ErrInvalidToken
 	}
 	return err
@@ -142,8 +143,13 @@ func mapInvalidCredentials(err error) error {
 	if err == nil {
 		return nil
 	}
-	if err == sql.ErrNoRows {
+	if dberrors.IsNoRows(err) {
 		return ErrInvalidCredentials
 	}
 	return err
+}
+
+func isPostgresUniqueViolation(err error) bool {
+	var pqErr *pq.Error
+	return errors.As(err, &pqErr) && pqErr.Code == "23505"
 }

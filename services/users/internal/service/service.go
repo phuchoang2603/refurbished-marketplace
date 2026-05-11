@@ -16,7 +16,7 @@ type queryStore interface {
 	GetUserByID(ctx context.Context, id uuid.UUID) (database.User, error)
 	CreateRefreshToken(ctx context.Context, arg database.CreateRefreshTokenParams) (database.RefreshToken, error)
 	GetRefreshTokenByID(ctx context.Context, id uuid.UUID) (database.RefreshToken, error)
-	RevokeRefreshToken(ctx context.Context, id uuid.UUID) error
+	RevokeRefreshToken(ctx context.Context, id uuid.UUID) (database.RefreshToken, error)
 }
 
 var (

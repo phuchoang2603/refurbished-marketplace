@@ -28,12 +28,6 @@ func (s *Service) CreateUser(ctx context.Context, email string, password string)
 		return User{}, ErrInvalidPassword
 	}
 
-	if _, err := s.queries.GetUserByEmail(ctx, cleanEmail); err == nil {
-		return User{}, ErrEmailTaken
-	} else if err = mapNotFound(err, ErrUserNotFound); err != ErrUserNotFound {
-		return User{}, err
-	}
-
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
 		return User{}, err
@@ -45,6 +39,9 @@ func (s *Service) CreateUser(ctx context.Context, email string, password string)
 		PasswordHash: string(hash),
 	})
 	if err != nil {
+		if isPostgresUniqueViolation(err) {
+			return User{}, ErrEmailTaken
+		}
 		return User{}, err
 	}
 

@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"refurbished-marketplace/shared/dberrors"
+
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -62,7 +64,10 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (Tokens, err
 		return Tokens{}, ErrInvalidToken
 	}
 
-	if err := s.queries.RevokeRefreshToken(ctx, refreshID); err != nil {
+	if _, err := s.queries.RevokeRefreshToken(ctx, refreshID); err != nil {
+		if dberrors.IsNoRows(err) {
+			return Tokens{}, ErrTokenRevoked
+		}
 		return Tokens{}, err
 	}
 
@@ -98,7 +103,10 @@ func (s *Service) Logout(ctx context.Context, refreshToken string) error {
 		return ErrInvalidToken
 	}
 
-	if err := s.queries.RevokeRefreshToken(ctx, refreshID); err != nil {
+	if _, err := s.queries.RevokeRefreshToken(ctx, refreshID); err != nil {
+		if dberrors.IsNoRows(err) {
+			return nil
+		}
 		return err
 	}
 
