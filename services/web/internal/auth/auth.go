@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 
+	"refurbished-marketplace/services/web/internal/views"
 	authconfig "refurbished-marketplace/shared/auth/config"
 	sharedjwt "refurbished-marketplace/shared/auth/jwt"
 )
@@ -62,5 +63,7 @@ func bearerToken(header string) string {
 }
 
 func writeUnauthorized(w http.ResponseWriter) {
-	http.Error(w, "unauthorized", http.StatusUnauthorized)
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	w.WriteHeader(http.StatusUnauthorized)
+	_ = views.MessagePage("Unauthorized", "unauthorized").Render(context.Background(), w)
 }

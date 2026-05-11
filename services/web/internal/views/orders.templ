@@ -1,0 +1,71 @@
+package views
+
+templ OrdersPage(orders []OrderView) {
+	@AppShell("Orders", DefaultNav, OrderListSection(orders))
+}
+
+templ OrderDetailPage(order OrderView) {
+	@AppShell("Order", DefaultNav, OrderDetailSection(order))
+}
+
+templ OrderListSection(orders []OrderView) {
+	<section id="orders" class="card">
+		<h1>Orders</h1>
+		if len(orders) == 0 {
+			<p class="muted">No orders yet.</p>
+		} else {
+			<table>
+				<thead>
+					<tr>
+						<th>ID</th>
+						<th>Status</th>
+						<th>Total</th>
+						<th>Updated</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, order := range orders {
+						<tr id={ "order-" + order.ID }>
+							<td><a href={ "/orders/" + order.ID }>{ order.ID }</a></td>
+							<td>{ order.Status }</td>
+							<td>{ formatCents(order.TotalCents) }</td>
+							<td>{ order.UpdatedAt }</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+	</section>
+}
+
+templ OrderDetailSection(order OrderView) {
+	<section id={ "order-" + order.ID } class="card">
+		<h1>Order { order.ID }</h1>
+		<p><strong>Status:</strong> { order.Status }</p>
+		<p><strong>Total:</strong> { formatCents(order.TotalCents) }</p>
+		<p><small>Buyer { order.BuyerUserID }</small></p>
+		if len(order.Items) > 0 {
+			<table>
+				<thead>
+					<tr>
+						<th>Product</th>
+						<th>Qty</th>
+						<th>Unit</th>
+						<th>Line</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, item := range order.Items {
+						<tr>
+							<td>{ item.ProductID }</td>
+							<td>{ formatInt32(item.Quantity) }</td>
+							<td>{ formatCents(item.UnitPriceCents) }</td>
+							<td>{ formatCents(item.LineTotalCents) }</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+		<p><small>{ order.CreatedAt } | { order.UpdatedAt }</small></p>
+	</section>
+}

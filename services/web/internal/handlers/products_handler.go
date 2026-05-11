@@ -4,20 +4,11 @@ import (
 	"net/http"
 
 	"google.golang.org/protobuf/types/known/timestamppb"
+	"refurbished-marketplace/services/web/internal/views"
 )
 
-type productResponse struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	PriceCents  int64  `json:"price_cents"`
-	Stock       int32  `json:"stock"`
-	CreatedAt   string `json:"created_at"`
-	UpdatedAt   string `json:"updated_at"`
-}
-
-func mapProduct(id, name, description string, priceCents int64, stock int32, createdAt, updatedAt *timestamppb.Timestamp) productResponse {
-	return productResponse{
+func mapProductView(id, name, description string, priceCents int64, stock int32, createdAt, updatedAt *timestamppb.Timestamp) views.ProductView {
+	return views.ProductView{
 		ID:          id,
 		Name:        name,
 		Description: description,
@@ -40,7 +31,7 @@ func (h *Handler) handleGetProductByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, mapProduct(p.Id, p.Name, p.Description, p.PriceCents, 0, p.CreatedAt, p.UpdatedAt))
+	writeHTML(w, r, http.StatusOK, views.ProductDetailPage(mapProductView(p.Id, p.Name, p.Description, p.PriceCents, 0, p.CreatedAt, p.UpdatedAt)))
 }
 
 func (h *Handler) handleListProducts(w http.ResponseWriter, r *http.Request) {
@@ -59,10 +50,10 @@ func (h *Handler) handleListProducts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items := make([]productResponse, 0, len(resp.Products))
+	items := make([]views.ProductView, 0, len(resp.Products))
 	for _, p := range resp.Products {
-		items = append(items, mapProduct(p.Id, p.Name, p.Description, p.PriceCents, 0, p.CreatedAt, p.UpdatedAt))
+		items = append(items, mapProductView(p.Id, p.Name, p.Description, p.PriceCents, 0, p.CreatedAt, p.UpdatedAt))
 	}
 
-	writeJSON(w, http.StatusOK, map[string]any{"products": items})
+	writeHTML(w, r, http.StatusOK, views.ProductsPage(items))
 }

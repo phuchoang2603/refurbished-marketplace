@@ -14,71 +14,51 @@ import (
 	"refurbished-marketplace/shared/proto/usersclient"
 )
 
+func requiredEnv(name string) string {
+	value := os.Getenv(name)
+	if value == "" {
+		log.Fatalf("%s is required", name)
+	}
+	return value
+}
+
 func main() {
 	addr := os.Getenv("HTTP_ADDR")
 	if addr == "" {
 		addr = ":8080"
 	}
 
-	usersGRPCAddr := os.Getenv("USERS_SVC_ADDR")
-	if usersGRPCAddr == "" {
-		log.Fatal("USERS_SVC_ADDR is required")
-	}
-
-	usersClient, err := usersclient.New(usersGRPCAddr)
+	usersClient, err := usersclient.New(requiredEnv("USERS_SVC_ADDR"))
 	if err != nil {
 		log.Fatalf("users grpc client: %v", err)
 	}
 	defer usersClient.Close()
 
-	productsGRPCAddr := os.Getenv("PRODUCTS_SVC_ADDR")
-	if productsGRPCAddr == "" {
-		log.Fatal("PRODUCTS_SVC_ADDR is required")
-	}
-
-	productsClient, err := productsclient.New(productsGRPCAddr)
+	productsClient, err := productsclient.New(requiredEnv("PRODUCTS_SVC_ADDR"))
 	if err != nil {
 		log.Fatalf("products grpc client: %v", err)
 	}
 	defer productsClient.Close()
 
-	ordersGRPCAddr := os.Getenv("ORDERS_SVC_ADDR")
-	if ordersGRPCAddr == "" {
-		log.Fatal("ORDERS_SVC_ADDR is required")
-	}
-
-	ordersClient, err := ordersclient.New(ordersGRPCAddr)
+	ordersClient, err := ordersclient.New(requiredEnv("ORDERS_SVC_ADDR"))
 	if err != nil {
 		log.Fatalf("orders grpc client: %v", err)
 	}
 	defer ordersClient.Close()
 
-	cartGRPCAddr := os.Getenv("CART_SVC_ADDR")
-	if cartGRPCAddr == "" {
-		log.Fatal("CART_SVC_ADDR is required")
-	}
-
-	cartClient, err := cartclient.New(cartGRPCAddr)
+	cartClient, err := cartclient.New(requiredEnv("CART_SVC_ADDR"))
 	if err != nil {
 		log.Fatalf("cart grpc client: %v", err)
 	}
 	defer cartClient.Close()
 
-	paymentGRPCAddr := os.Getenv("PAYMENT_SVC_ADDR")
-	if paymentGRPCAddr == "" {
-		log.Fatal("PAYMENT_SVC_ADDR is required")
-	}
-
-	paymentClient, err := paymentclient.New(paymentGRPCAddr)
+	paymentClient, err := paymentclient.New(requiredEnv("PAYMENT_SVC_ADDR"))
 	if err != nil {
 		log.Fatalf("payment grpc client: %v", err)
 	}
 	defer paymentClient.Close()
 
-	jwtSecret := os.Getenv("JWT_SECRET")
-	if jwtSecret == "" {
-		log.Fatal("JWT_SECRET is required")
-	}
+	jwtSecret := requiredEnv("JWT_SECRET")
 
 	h := handlers.New(usersClient, productsClient, ordersClient, cartClient, paymentClient, authconfig.DefaultConfig(jwtSecret))
 	mux := http.NewServeMux()

@@ -3,6 +3,7 @@ module refurbished-marketplace/services/web
 go 1.26.1
 
 require (
+	github.com/a-h/templ v0.3.1001
 	github.com/google/uuid v1.6.0
 	google.golang.org/grpc v1.80.0
 	google.golang.org/protobuf v1.36.11

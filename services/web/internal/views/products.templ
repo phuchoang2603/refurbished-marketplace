@@ -1,0 +1,54 @@
+package views
+
+templ ProductsPage(products []ProductView) {
+	@AppShell("Products", DefaultNav, ProductListSection(products))
+}
+
+templ ProductDetailPage(product ProductView) {
+	@AppShell(product.Name, DefaultNav, ProductDetailSection(product))
+}
+
+templ ProductListSection(products []ProductView) {
+	<section id="products" class="card">
+		<h1>Products</h1>
+		<p class="muted">Server-rendered catalog built with templ and Datastar-compatible fragments.</p>
+		<table>
+			<thead>
+				<tr>
+					<th>Name</th>
+					<th>Price</th>
+					<th>Stock</th>
+					<th>Updated</th>
+				</tr>
+			</thead>
+			<tbody>
+				for _, product := range products {
+					<tr id={ "product-" + product.ID }>
+						<td><a href={ "/products/" + product.ID }>{ product.Name }</a></td>
+						<td>{ formatCents(product.PriceCents) }</td>
+						<td>{ formatInt32(product.Stock) }</td>
+						<td>{ product.UpdatedAt }</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</section>
+}
+
+templ ProductDetailSection(product ProductView) {
+	<section id={ "product-" + product.ID } class="card">
+		<h1>{ product.Name }</h1>
+		<p>{ product.Description }</p>
+		<p><strong>Price:</strong> { formatCents(product.PriceCents) }</p>
+		<p><strong>Stock:</strong> { formatInt32(product.Stock) }</p>
+		<form method="post" action="/cart/items" data-on-submit__prevent="@post('/cart/items')">
+			<input type="hidden" name="product_id" value={ product.ID }/>
+			<label>Quantity <input name="quantity" type="number" min="1" value="1" required/></label>
+			<button type="submit">Add to cart</button>
+		</form>
+		<section id="cart" class="card">
+			<p class="muted">Add this product to update the cart summary here.</p>
+		</section>
+		<p><small>{ product.CreatedAt } | { product.UpdatedAt }</small></p>
+	</section>
+}

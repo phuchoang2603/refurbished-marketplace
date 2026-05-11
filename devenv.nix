@@ -26,12 +26,18 @@ in
     protoc-gen-go
     protoc-gen-go-grpc
 
+    # templ
+    templ
+    gofumpt
+
     # kubernetes
     kubectl
     kubernetes-helm
     tilt
 
+    # ai stuff
     nodejs
+    openspec
   ];
 
   languages.go = {

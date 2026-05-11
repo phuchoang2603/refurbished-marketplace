@@ -1,0 +1,55 @@
+package views
+
+templ LoginPage() {
+	@AppShell("Login", DefaultNav, LoginSection())
+}
+
+templ RefreshPage() {
+	@AppShell("Refresh session", DefaultNav, RefreshSection())
+}
+
+templ TokensPage(tokens TokenView) {
+	@AppShell("Session", DefaultNav, TokensSection(tokens))
+}
+
+templ MessagePage(title string, message string) {
+	@AppShell(title, DefaultNav, MessageSection(title, message))
+}
+
+templ LoginSection() {
+	<section id="auth" class="card">
+		<h1>Login</h1>
+		<form method="post" action="/auth/login" data-on-submit__prevent="@post('/auth/login')">
+			<p><label>Email <input name="email" type="email" autocomplete="email" required/></label></p>
+			<p><label>Password <input name="password" type="password" autocomplete="current-password" required/></label></p>
+			<button type="submit">Login</button>
+		</form>
+	</section>
+}
+
+templ RefreshSection() {
+	<section id="auth" class="card">
+		<h1>Refresh session</h1>
+		<form method="post" action="/auth/refresh" data-on-submit__prevent="@post('/auth/refresh')">
+			<p><label>Refresh token <input name="refresh_token" type="text" autocomplete="off" required/></label></p>
+			<button type="submit">Refresh</button>
+		</form>
+	</section>
+}
+
+templ TokensSection(tokens TokenView) {
+	<section id="session" class="card">
+		<h1>Session</h1>
+		<p><strong>Token type:</strong> { tokens.TokenType }</p>
+		<p><strong>Expires in:</strong> { formatInt64(tokens.ExpiresIn) }</p>
+		<p><strong>Access token:</strong> <code>{ tokens.AccessToken }</code></p>
+		<p><strong>Refresh token:</strong> <code>{ tokens.RefreshToken }</code></p>
+	</section>
+}
+
+templ MessageSection(title string, message string) {
+	<section class="card">
+		<h1>{ title }</h1>
+		<p>{ message }</p>
+	</section>
+}

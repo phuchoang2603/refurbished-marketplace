@@ -44,7 +44,9 @@ func (h *Handler) Register(mux *http.ServeMux) {
 	mux.Handle("GET /orders", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleListOrdersByBuyer)))
 	mux.HandleFunc("GET /orders/{id}", h.handleGetOrderByID)
 
+	mux.HandleFunc("GET /auth/login", h.handleLoginPage)
 	mux.HandleFunc("POST /auth/login", h.handleLogin)
+	mux.HandleFunc("GET /auth/refresh", h.handleRefreshPage)
 	mux.HandleFunc("POST /auth/refresh", h.handleRefresh)
 	mux.Handle("POST /auth/logout", webAuth.RequireAccessToken(h.auth, http.HandlerFunc(h.handleLogout)))
 

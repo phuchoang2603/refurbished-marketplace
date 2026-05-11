@@ -1,0 +1,13 @@
+package views
+
+templ UserPage(user UserView) {
+	@AppShell("User", DefaultNav, UserDetailSection(user))
+}
+
+templ UserDetailSection(user UserView) {
+	<section id={ "user-" + user.ID } class="card">
+		<h1>{ user.Email }</h1>
+		<p><strong>User ID:</strong> <code>{ user.ID }</code></p>
+		<p><small>{ user.CreatedAt } | { user.UpdatedAt }</small></p>
+	</section>
+}

@@ -4,56 +4,27 @@ import (
 	"net/http"
 	"strings"
 
+	"refurbished-marketplace/services/web/internal/views"
 	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
 )
 
-type createOrderRequest struct {
-	Items []createOrderItemRequest `json:"items"`
-}
-
-type createOrderItemRequest struct {
-	ProductID string `json:"product_id"`
-	Quantity  int32  `json:"quantity"`
-}
-
-type orderResponse struct {
-	ID          string              `json:"id"`
-	BuyerUserID string              `json:"buyer_user_id"`
-	Status      string              `json:"status"`
-	TotalCents  int64               `json:"total_cents"`
-	Items       []orderItemResponse `json:"items"`
-	CreatedAt   string              `json:"created_at"`
-	UpdatedAt   string              `json:"updated_at"`
-}
-
-type orderItemResponse struct {
-	ID             string `json:"id"`
-	OrderID        string `json:"order_id"`
-	ProductID      string `json:"product_id"`
-	Quantity       int32  `json:"quantity"`
-	UnitPriceCents int64  `json:"unit_price_cents"`
-	LineTotalCents int64  `json:"line_total_cents"`
-	CreatedAt      string `json:"created_at"`
-}
-
-func mapProtoOrderItem(item *ordersv1.OrderItem) orderItemResponse {
-	return orderItemResponse{
-		ID:             item.GetId(),
-		OrderID:        item.GetOrderId(),
-		ProductID:      item.GetProductId(),
-		Quantity:       item.GetQuantity(),
-		UnitPriceCents: item.GetUnitPriceCents(),
-		LineTotalCents: item.GetLineTotalCents(),
-		CreatedAt:      formatTimestamp(item.GetCreatedAt()),
-	}
-}
-
-func mapProtoOrder(order *ordersv1.Order) orderResponse {
-	items := make([]orderItemResponse, 0, len(order.GetItems()))
+func mapOrderView(order *ordersv1.Order) views.OrderView {
+	items := make([]views.OrderItemView, 0, len(order.GetItems()))
 	for _, item := range order.GetItems() {
-		items = append(items, mapProtoOrderItem(item))
+		items = append(
+			items,
+			views.OrderItemView{
+				ID:             item.GetId(),
+				OrderID:        item.GetOrderId(),
+				ProductID:      item.GetProductId(),
+				Quantity:       item.GetQuantity(),
+				UnitPriceCents: item.GetUnitPriceCents(),
+				LineTotalCents: item.GetLineTotalCents(),
+				CreatedAt:      formatTimestamp(item.GetCreatedAt()),
+			},
+		)
 	}
-	return orderResponse{
+	return views.OrderView{
 		ID:          order.GetId(),
 		BuyerUserID: order.GetBuyerUserId(),
 		Status:      order.GetStatus().String(),
@@ -64,28 +35,32 @@ func mapProtoOrder(order *ordersv1.Order) orderResponse {
 	}
 }
 
-func (h *Handler) buildCreateOrderItems(w http.ResponseWriter, r *http.Request, reqItems []createOrderItemRequest) ([]*ordersv1.CreateOrderItem, int64, bool) {
-	items := make([]*ordersv1.CreateOrderItem, 0, len(reqItems))
-	var totalCents int64
-	for _, item := range reqItems {
-		productID := strings.TrimSpace(item.ProductID)
-		if productID == "" || item.Quantity <= 0 {
-			writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
-			return nil, 0, false
-		}
+func createOrderItemFromForm(r *http.Request) (string, int32, error) {
+	if !parseForm(r) {
+		return "", 0, errInvalidRequestBody
+	}
+	quantity, err := parseInt32FormValue(r, "quantity")
+	if err != nil {
+		return "", 0, err
+	}
+	return r.FormValue("product_id"), quantity, nil
+}
 
-		product, err := h.products.GetProductByID(r.Context(), productID)
-		if err != nil {
-			writeGRPCError(w, err)
-			return nil, 0, false
-		}
-
-		lineTotal := product.PriceCents * int64(item.Quantity)
-		totalCents += lineTotal
-		items = append(items, &ordersv1.CreateOrderItem{ProductId: productID, MerchantId: product.GetMerchantId(), Quantity: item.Quantity, UnitPriceCents: product.PriceCents})
+func (h *Handler) buildCreateOrderItem(w http.ResponseWriter, r *http.Request, productID string, quantity int32) (*ordersv1.CreateOrderItem, int64, bool) {
+	productID = strings.TrimSpace(productID)
+	if productID == "" || quantity <= 0 {
+		writeBadRequest(w, r, "invalid request body")
+		return nil, 0, false
 	}
 
-	return items, totalCents, true
+	product, err := h.products.GetProductByID(r.Context(), productID)
+	if err != nil {
+		writeGRPCError(w, err)
+		return nil, 0, false
+	}
+
+	item := &ordersv1.CreateOrderItem{ProductId: productID, MerchantId: product.GetMerchantId(), Quantity: quantity, UnitPriceCents: product.PriceCents}
+	return item, product.PriceCents * int64(quantity), true
 }
 
 func (h *Handler) handleCreateOrder(w http.ResponseWriter, r *http.Request) {
@@ -94,27 +69,24 @@ func (h *Handler) handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var req createOrderRequest
-	if !decodeJSON(w, r, &req) {
-		return
-	}
-	if len(req.Items) == 0 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+	productID, quantity, err := createOrderItemFromForm(r)
+	if err != nil {
+		writeBadRequest(w, r, "invalid request body")
 		return
 	}
 
-	items, totalCents, ok := h.buildCreateOrderItems(w, r, req.Items)
+	item, totalCents, ok := h.buildCreateOrderItem(w, r, productID, quantity)
 	if !ok {
 		return
 	}
 
-	order, err := h.orders.CreateOrder(r.Context(), buyerUserID, items, totalCents)
+	order, err := h.orders.CreateOrder(r.Context(), buyerUserID, []*ordersv1.CreateOrderItem{item}, totalCents)
 	if err != nil {
 		writeGRPCError(w, err)
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, mapProtoOrder(order))
+	writeHTML(w, r, http.StatusCreated, views.OrderDetailPage(mapOrderView(order)))
 }
 
 func (h *Handler) handleGetOrderByID(w http.ResponseWriter, r *http.Request) {
@@ -129,7 +101,7 @@ func (h *Handler) handleGetOrderByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	writeJSON(w, http.StatusOK, mapProtoOrder(order))
+	writeHTML(w, r, http.StatusOK, views.OrderDetailPage(mapOrderView(order)))
 }
 
 func (h *Handler) handleListOrdersByBuyer(w http.ResponseWriter, r *http.Request) {
@@ -144,10 +116,10 @@ func (h *Handler) handleListOrdersByBuyer(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	items := make([]orderResponse, 0, len(resp.Orders))
+	items := make([]views.OrderView, 0, len(resp.Orders))
 	for _, order := range resp.Orders {
-		items = append(items, mapProtoOrder(order))
+		items = append(items, mapOrderView(order))
 	}
 
-	writeJSON(w, http.StatusOK, map[string]any{"orders": items})
+	writeHTML(w, r, http.StatusOK, views.OrdersPage(items))
 }

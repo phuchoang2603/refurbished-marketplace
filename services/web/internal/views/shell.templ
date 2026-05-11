@@ -1,0 +1,40 @@
+package views
+
+import templpkg "github.com/a-h/templ"
+
+templ AppShell(title string, nav []NavLink, body templpkg.Component) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<title>{ title }</title>
+			<script type="module" src="https://cdn.jsdelivr.net/npm/@starfederation/datastar@latest/dist/datastar.js"></script>
+			<style>
+				body { font-family: system-ui, sans-serif; margin: 0; background: #0f172a; color: #e2e8f0; }
+				a { color: #7dd3fc; text-decoration: none; }
+				a:hover { text-decoration: underline; }
+				header, main { max-width: 1024px; margin: 0 auto; padding: 1.25rem; }
+				nav { display: flex; gap: 1rem; flex-wrap: wrap; }
+				.card, table { width: 100%; border: 1px solid #334155; border-radius: 12px; background: #111827; }
+				.card { padding: 1rem; margin: 0.75rem 0; }
+				table { border-collapse: collapse; overflow: hidden; }
+				th, td { padding: 0.75rem; border-bottom: 1px solid #334155; text-align: left; }
+				small, .muted { color: #94a3b8; }
+				code { background: #1e293b; padding: 0.15rem 0.35rem; border-radius: 6px; }
+			</style>
+		</head>
+		<body>
+			<header>
+				<nav>
+					for _, link := range nav {
+						<a href={ link.Href }>{ link.Label }</a>
+					}
+				</nav>
+			</header>
+			<main id="app">
+				@body
+			</main>
+		</body>
+	</html>
+}

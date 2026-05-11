@@ -2,69 +2,80 @@ package handlers
 
 import (
 	"net/http"
+
+	"refurbished-marketplace/services/web/internal/views"
 )
 
-type loginRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+func mapTokenView(access, refresh, tokenType string, expiresIn int64) views.TokenView {
+	return views.TokenView{AccessToken: access, RefreshToken: refresh, TokenType: tokenType, ExpiresIn: expiresIn}
 }
 
-type refreshTokenRequest struct {
-	RefreshToken string `json:"refresh_token"`
+func loginCredentialsFromForm(r *http.Request) (string, string, error) {
+	if !parseForm(r) {
+		return "", "", errInvalidRequestBody
+	}
+	return r.FormValue("email"), r.FormValue("password"), nil
 }
 
-type tokenResponse struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	TokenType    string `json:"token_type"`
-	ExpiresIn    int64  `json:"expires_in"`
+func refreshTokenFromForm(r *http.Request) (string, error) {
+	if !parseForm(r) {
+		return "", errInvalidRequestBody
+	}
+	return r.FormValue("refresh_token"), nil
 }
 
-func mapTokens(access, refresh, tokenType string, expiresIn int64) tokenResponse {
-	return tokenResponse{AccessToken: access, RefreshToken: refresh, TokenType: tokenType, ExpiresIn: expiresIn}
+func (h *Handler) handleLoginPage(w http.ResponseWriter, r *http.Request) {
+	writeHTML(w, r, http.StatusOK, views.LoginPage())
 }
 
 func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
-	var req loginRequest
-	if !decodeJSON(w, r, &req) {
+	email, password, err := loginCredentialsFromForm(r)
+	if err != nil || email == "" || password == "" {
+		writeBadRequest(w, r, "invalid request body")
 		return
 	}
 
-	tokens, err := h.users.Login(r.Context(), req.Email, req.Password)
+	tokens, err := h.users.Login(r.Context(), email, password)
 	if err != nil {
 		writeGRPCError(w, err)
 		return
 	}
 
-	writeJSON(w, http.StatusOK, mapTokens(tokens.AccessToken, tokens.RefreshToken, tokens.TokenType, tokens.ExpiresIn))
+	writeHTML(w, r, http.StatusOK, views.TokensPage(mapTokenView(tokens.AccessToken, tokens.RefreshToken, tokens.TokenType, tokens.ExpiresIn)))
+}
+
+func (h *Handler) handleRefreshPage(w http.ResponseWriter, r *http.Request) {
+	writeHTML(w, r, http.StatusOK, views.RefreshPage())
 }
 
 func (h *Handler) handleRefresh(w http.ResponseWriter, r *http.Request) {
-	var req refreshTokenRequest
-	if !decodeJSON(w, r, &req) {
+	refreshToken, err := refreshTokenFromForm(r)
+	if err != nil || refreshToken == "" {
+		writeBadRequest(w, r, "invalid request body")
 		return
 	}
 
-	tokens, err := h.users.Refresh(r.Context(), req.RefreshToken)
+	tokens, err := h.users.Refresh(r.Context(), refreshToken)
 	if err != nil {
 		writeGRPCError(w, err)
 		return
 	}
 
-	writeJSON(w, http.StatusOK, mapTokens(tokens.AccessToken, tokens.RefreshToken, tokens.TokenType, tokens.ExpiresIn))
+	writeHTML(w, r, http.StatusOK, views.TokensPage(mapTokenView(tokens.AccessToken, tokens.RefreshToken, tokens.TokenType, tokens.ExpiresIn)))
 }
 
 func (h *Handler) handleLogout(w http.ResponseWriter, r *http.Request) {
-	var req refreshTokenRequest
-	if !decodeJSON(w, r, &req) {
+	refreshToken, err := refreshTokenFromForm(r)
+	if err != nil || refreshToken == "" {
+		writeBadRequest(w, r, "invalid request body")
 		return
 	}
 
-	_, err := h.users.Logout(r.Context(), req.RefreshToken)
+	_, err = h.users.Logout(r.Context(), refreshToken)
 	if err != nil {
 		writeGRPCError(w, err)
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	writeHTML(w, r, http.StatusOK, views.MessagePage("Logged out", "Your session has been cleared."))
 }

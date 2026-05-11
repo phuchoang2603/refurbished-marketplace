@@ -1,4 +1,4 @@
-## ADDED Requirements
+## MODIFIED Requirements
 
 ### Requirement: Web owns the public browser edge
 
@@ -8,15 +8,6 @@ The web service MUST own the public browser surface and authorization boundary.
 
 - **WHEN** a client calls a protected browser endpoint
 - **THEN** the web service SHALL validate the access token and forward trusted identity to internal services
-
-### Requirement: Web delegates auth session logic to users
-
-The web service MUST delegate login, refresh, and logout session logic to the users service.
-
-#### Scenario: Login request arrives
-
-- **WHEN** a client calls the login endpoint
-- **THEN** the web service SHALL invoke the users service for session issuance
 
 ### Requirement: Web exposes the documented public routes
 

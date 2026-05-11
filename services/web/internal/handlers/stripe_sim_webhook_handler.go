@@ -18,7 +18,7 @@ type stripeSimWebhookRequest struct {
 
 func (h *Handler) handleStripeSimWebhook(w http.ResponseWriter, r *http.Request) {
 	var req stripeSimWebhookRequest
-	if !decodeJSON(w, r, &req) {
+	if !decodeJSONResponse(w, r, &req) {
 		return
 	}
 	if req.PaymentTransactionID == "" {

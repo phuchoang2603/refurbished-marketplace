@@ -1,41 +1,25 @@
 package handlers
 
 import (
-	"encoding/json"
 	"net/http"
 	"strings"
 
 	cartv1 "refurbished-marketplace/shared/proto/cart/v1"
 	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
 
+	"refurbished-marketplace/services/web/internal/views"
+
 	"github.com/google/uuid"
 )
 
 const cartCookieName = "cart_id"
 
-type cartResponse struct {
-	CartID    string             `json:"cart_id"`
-	Items     []cartItemResponse `json:"items"`
-	CreatedAt string             `json:"created_at"`
-	UpdatedAt string             `json:"updated_at"`
-}
-
-type cartItemResponse struct {
-	ProductID string `json:"product_id"`
-	Quantity  int32  `json:"quantity"`
-}
-
-type cartItemRequest struct {
-	ProductID string `json:"product_id"`
-	Quantity  int32  `json:"quantity"`
-}
-
-func mapCart(c *cartv1.Cart) cartResponse {
-	items := make([]cartItemResponse, 0, len(c.GetItems()))
+func mapCartView(c *cartv1.Cart) views.CartView {
+	items := make([]views.CartItemView, 0, len(c.GetItems()))
 	for _, item := range c.GetItems() {
-		items = append(items, cartItemResponse{ProductID: item.GetProductId(), Quantity: item.GetQuantity()})
+		items = append(items, views.CartItemView{ProductID: item.GetProductId(), Quantity: item.GetQuantity()})
 	}
-	return cartResponse{CartID: c.GetCartId(), Items: items, CreatedAt: formatTimestamp(c.GetCreatedAt()), UpdatedAt: formatTimestamp(c.GetUpdatedAt())}
+	return views.CartView{CartID: c.GetCartId(), Items: items, CreatedAt: formatTimestamp(c.GetCreatedAt()), UpdatedAt: formatTimestamp(c.GetUpdatedAt())}
 }
 
 func cartIDFromRequest(r *http.Request) string {
@@ -43,6 +27,17 @@ func cartIDFromRequest(r *http.Request) string {
 		return strings.TrimSpace(c.Value)
 	}
 	return ""
+}
+
+func cartItemFromForm(r *http.Request) (string, int32, error) {
+	if !parseForm(r) {
+		return "", 0, errInvalidRequestBody
+	}
+	quantity, err := parseInt32FormValue(r, "quantity")
+	if err != nil {
+		return "", 0, err
+	}
+	return r.FormValue("product_id"), quantity, nil
 }
 
 func (h *Handler) getOrCreateCartID(w http.ResponseWriter, r *http.Request) string {
@@ -58,14 +53,6 @@ func (h *Handler) clearCartCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{Name: cartCookieName, Value: "", Path: "/", HttpOnly: true, MaxAge: -1, SameSite: http.SameSiteLaxMode})
 }
 
-func decodeCartItemRequest(r *http.Request) (cartItemRequest, error) {
-	var req cartItemRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return cartItemRequest{}, err
-	}
-	return req, nil
-}
-
 func (h *Handler) handleGetCart(w http.ResponseWriter, r *http.Request) {
 	cartID := h.getOrCreateCartID(w, r)
 	cart, err := h.cart.GetCart(r.Context(), cartID)
@@ -73,22 +60,22 @@ func (h *Handler) handleGetCart(w http.ResponseWriter, r *http.Request) {
 		writeGRPCError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, mapCart(cart))
+	writeHTML(w, r, http.StatusOK, views.CartPage(mapCartView(cart)))
 }
 
 func (h *Handler) handleAddCartItem(w http.ResponseWriter, r *http.Request) {
 	cartID := h.getOrCreateCartID(w, r)
-	req, err := decodeCartItemRequest(r)
-	if err != nil || strings.TrimSpace(req.ProductID) == "" || req.Quantity <= 0 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+	productID, quantity, err := cartItemFromForm(r)
+	if err != nil || strings.TrimSpace(productID) == "" || quantity <= 0 {
+		writeBadRequest(w, r, "invalid request body")
 		return
 	}
-	cart, err := h.cart.AddCartItem(r.Context(), cartID, strings.TrimSpace(req.ProductID), req.Quantity)
+	cart, err := h.cart.AddCartItem(r.Context(), cartID, strings.TrimSpace(productID), quantity)
 	if err != nil {
 		writeGRPCError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, mapCart(cart))
+	writeFragment(w, r, http.StatusOK, "#cart", views.CartSection(mapCartView(cart)))
 }
 
 func (h *Handler) handleSetCartItemQuantity(w http.ResponseWriter, r *http.Request) {
@@ -97,17 +84,17 @@ func (h *Handler) handleSetCartItemQuantity(w http.ResponseWriter, r *http.Reque
 	if !ok {
 		return
 	}
-	req, err := decodeCartItemRequest(r)
+	_, quantity, err := cartItemFromForm(r)
 	if err != nil {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
+		writeBadRequest(w, r, "invalid request body")
 		return
 	}
-	cart, err := h.cart.SetCartItemQuantity(r.Context(), cartID, productID, req.Quantity)
+	cart, err := h.cart.SetCartItemQuantity(r.Context(), cartID, productID, quantity)
 	if err != nil {
 		writeGRPCError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, mapCart(cart))
+	writeFragment(w, r, http.StatusOK, "#cart", views.CartSection(mapCartView(cart)))
 }
 
 func (h *Handler) handleRemoveCartItem(w http.ResponseWriter, r *http.Request) {
@@ -121,7 +108,7 @@ func (h *Handler) handleRemoveCartItem(w http.ResponseWriter, r *http.Request) {
 		writeGRPCError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, mapCart(cart))
+	writeFragment(w, r, http.StatusOK, "#cart", views.CartSection(mapCartView(cart)))
 }
 
 func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
@@ -131,7 +118,7 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 	}
 	cartID := cartIDFromRequest(r)
 	if cartID == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "empty cart"})
+		writeBadRequest(w, r, "empty cart")
 		return
 	}
 	cart, err := h.cart.GetCart(r.Context(), cartID)
@@ -140,7 +127,7 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(cart.GetItems()) == 0 {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "empty cart"})
+		writeBadRequest(w, r, "empty cart")
 		return
 	}
 	items := make([]*ordersv1.CreateOrderItem, 0, len(cart.GetItems()))
@@ -162,5 +149,5 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = h.cart.ClearCart(r.Context(), cartID)
 	h.clearCartCookie(w)
-	writeJSON(w, http.StatusCreated, mapProtoOrder(order))
+	writeHTML(w, r, http.StatusCreated, views.OrderDetailPage(mapOrderView(order)))
 }

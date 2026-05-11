@@ -1,0 +1,45 @@
+package views
+
+templ CartPage(cart CartView) {
+	@AppShell("Cart", DefaultNav, CartSection(cart))
+}
+
+templ CartSection(cart CartView) {
+	<section id="cart" class="card">
+		<h1>Cart</h1>
+		<p><strong>Cart ID:</strong> <code>{ cart.CartID }</code></p>
+		if len(cart.Items) == 0 {
+			<p class="muted">Your cart is empty.</p>
+		} else {
+			<table>
+				<thead>
+					<tr>
+						<th>Product</th>
+						<th>Quantity</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, item := range cart.Items {
+						<tr id={ "cart-item-" + item.ProductID }>
+							<td>{ item.ProductID }</td>
+							<td>
+								<form method="post" action={ "/cart/items/" + item.ProductID } data-on-submit__prevent="@patch(this.action)">
+									<input type="hidden" name="product_id" value={ item.ProductID }/>
+									<input name="quantity" type="number" min="0" value={ formatInt32(item.Quantity) } required/>
+									<button type="submit">Update</button>
+								</form>
+								<form method="post" action={ "/cart/items/" + item.ProductID } data-on-submit__prevent="@delete(this.action)">
+									<button type="submit">Remove</button>
+								</form>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		}
+		<form method="post" action="/cart/checkout" data-on-submit__prevent="@post('/cart/checkout')">
+			<button type="submit">Checkout</button>
+		</form>
+		<p><small>{ cart.CreatedAt } | { cart.UpdatedAt }</small></p>
+	</section>
+}

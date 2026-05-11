@@ -1,18 +1,26 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"refurbished-marketplace/services/web/internal/views"
+
+	webAuth "refurbished-marketplace/services/web/internal/auth"
+
+	"github.com/a-h/templ"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	webAuth "refurbished-marketplace/services/web/internal/auth"
 )
 
 const timestampFormat = "2006-01-02T15:04:05Z07:00"
+
+var errInvalidRequestBody = errors.New("invalid request body")
 
 func formatTimestamp(ts *timestamppb.Timestamp) string {
 	if ts == nil {
@@ -24,23 +32,23 @@ func formatTimestamp(ts *timestamppb.Timestamp) string {
 func writeGRPCError(w http.ResponseWriter, err error) {
 	st, ok := status.FromError(err)
 	if !ok {
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+		writeHTML(w, nil, http.StatusInternalServerError, views.MessagePage("Error", "internal server error"))
 		return
 	}
 
 	switch st.Code() {
 	case codes.InvalidArgument:
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": st.Message()})
+		writeHTML(w, nil, http.StatusBadRequest, views.MessagePage("Bad request", st.Message()))
 	case codes.NotFound:
-		writeJSON(w, http.StatusNotFound, map[string]string{"error": st.Message()})
+		writeHTML(w, nil, http.StatusNotFound, views.MessagePage("Not found", st.Message()))
 	case codes.PermissionDenied:
-		writeJSON(w, http.StatusForbidden, map[string]string{"error": st.Message()})
+		writeHTML(w, nil, http.StatusForbidden, views.MessagePage("Forbidden", st.Message()))
 	case codes.AlreadyExists:
-		writeJSON(w, http.StatusConflict, map[string]string{"error": st.Message()})
+		writeHTML(w, nil, http.StatusConflict, views.MessagePage("Conflict", st.Message()))
 	case codes.Unauthenticated:
-		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": st.Message()})
+		writeHTML(w, nil, http.StatusUnauthorized, views.MessagePage("Unauthorized", st.Message()))
 	default:
-		writeJSON(w, http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+		writeHTML(w, nil, http.StatusInternalServerError, views.MessagePage("Error", "internal server error"))
 	}
 }
 
@@ -50,7 +58,7 @@ func writeJSON(w http.ResponseWriter, status int, payload any) {
 	_ = json.NewEncoder(w).Encode(payload)
 }
 
-func decodeJSON(w http.ResponseWriter, r *http.Request, dst any) bool {
+func decodeJSONResponse(w http.ResponseWriter, r *http.Request, dst any) bool {
 	if err := json.NewDecoder(r.Body).Decode(dst); err != nil {
 		writeJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid request body"})
 		return false
@@ -58,10 +66,54 @@ func decodeJSON(w http.ResponseWriter, r *http.Request, dst any) bool {
 	return true
 }
 
+func writeHTML(w http.ResponseWriter, r *http.Request, status int, component templ.Component) {
+	renderComponent(w, r, status, nil, component)
+}
+
+func writeFragment(w http.ResponseWriter, r *http.Request, status int, selector string, component templ.Component) {
+	headers := http.Header{}
+	if selector != "" {
+		headers.Set("datastar-selector", selector)
+		headers.Set("datastar-mode", "outer")
+	}
+	renderComponent(w, r, status, headers, component)
+}
+
+func renderComponent(w http.ResponseWriter, r *http.Request, status int, headers http.Header, component templ.Component) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	for key, values := range headers {
+		for _, value := range values {
+			w.Header().Add(key, value)
+		}
+	}
+	w.WriteHeader(status)
+	ctx := context.Background()
+	if r != nil {
+		ctx = r.Context()
+	}
+	_ = component.Render(ctx, w)
+}
+
+func parseForm(r *http.Request) bool {
+	return r.ParseForm() == nil
+}
+
+func parseInt32FormValue(r *http.Request, key string) (int32, error) {
+	value, err := strconv.ParseInt(r.FormValue(key), 10, 32)
+	if err != nil {
+		return 0, errInvalidRequestBody
+	}
+	return int32(value), nil
+}
+
+func writeBadRequest(w http.ResponseWriter, r *http.Request, message string) {
+	writeHTML(w, r, http.StatusBadRequest, views.MessagePage("Bad request", message))
+}
+
 func requireUserID(w http.ResponseWriter, r *http.Request) (string, bool) {
 	userID, ok := webAuth.UserIDFromContext(r.Context())
 	if !ok || userID == "" {
-		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
+		writeHTML(w, r, http.StatusUnauthorized, views.MessagePage("Unauthorized", "unauthorized"))
 		return "", false
 	}
 	return userID, true
@@ -70,7 +122,7 @@ func requireUserID(w http.ResponseWriter, r *http.Request) (string, bool) {
 func requirePathValue(w http.ResponseWriter, r *http.Request, key, errorMessage string) (string, bool) {
 	value := strings.TrimSpace(r.PathValue(key))
 	if value == "" {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": errorMessage})
+		writeHTML(w, r, http.StatusBadRequest, views.MessagePage("Bad request", errorMessage))
 		return "", false
 	}
 	return value, true
@@ -84,7 +136,7 @@ func queryInt32Param(w http.ResponseWriter, r *http.Request, key string, default
 
 	v, err := strconv.ParseInt(raw, 10, 32)
 	if err != nil || int32(v) < minValue {
-		writeJSON(w, http.StatusBadRequest, map[string]string{"error": errorMessage})
+		writeHTML(w, r, http.StatusBadRequest, views.MessagePage("Bad request", errorMessage))
 		return 0, false
 	}
 
