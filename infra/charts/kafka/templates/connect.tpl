@@ -1,5 +1,5 @@
 ---
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaConnect
 metadata:
   name: {{ .Values.connect.clusterName }}
@@ -11,7 +11,7 @@ spec:
   image: {{ .Values.connect.image }}
   replicas: 1
   bootstrapServers: {{ printf "%s-kafka-bootstrap:9092" .Values.kafka.clusterName }}
-  groupID: {{ .Values.connect.clusterName }}
+  groupId: {{ .Values.connect.clusterName }}
   offsetStorageTopic: {{ printf "%s-offsets" .Values.connect.clusterName }}
   configStorageTopic: {{ printf "%s-configs" .Values.connect.clusterName }}
   statusStorageTopic: {{ printf "%s-status" .Values.connect.clusterName }}

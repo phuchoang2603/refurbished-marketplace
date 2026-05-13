@@ -26,7 +26,7 @@ roleRef:
   apiGroup: rbac.authorization.k8s.io
 {{- range $entity.topics }}
 ---
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaTopic
 metadata:
   name: {{ .name }}
@@ -40,7 +40,7 @@ spec:
     retention.ms: {{ .retention }}
 {{- end }}
 ---
-apiVersion: kafka.strimzi.io/v1beta2
+apiVersion: kafka.strimzi.io/v1
 kind: KafkaConnector
 metadata:
   name: {{ $entity.connector.name }}

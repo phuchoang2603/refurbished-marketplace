@@ -1,18 +1,20 @@
 # Create namespace if not exist
 load('ext://namespace', 'namespace_create')
 namespace_create('ecommerce')
-namespace_create('cnpg-system')
-namespace_create('kafka-system')
+namespace_create('operators')
 
 ### Operators ###
 k8s_kind('Cluster', pod_readiness='wait')
 local_resource(
   'cnpg-operator-install',
-  'helm repo add cnpg https://cloudnative-pg.github.io/charts && helm repo update && helm upgrade --install cnpg --namespace cnpg-system --create-namespace cnpg/cloudnative-pg',
+  'helm repo add cnpg https://cloudnative-pg.github.io/charts && helm repo update && helm upgrade --install cnpg --namespace operators cnpg/cloudnative-pg',
   )
 local_resource(
   'kafka-cluster-install',
-  'helm upgrade --install strimzi-cluster-operator oci://quay.io/strimzi-helm/strimzi-kafka-operator --namespace kafka-system --create-namespace --set watchAnyNamespace=true',
+  'helm upgrade --install strimzi-cluster-operator oci://quay.io/strimzi-helm/strimzi-kafka-operator \
+  --namespace operators \
+  --set watchAnyNamespace=true \
+  --version 0.41.0',
 )
 
 ### Kafka Cluster and Topics ###
