@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"refurbished-marketplace/services/cart/internal/grpcserver"
@@ -41,6 +44,14 @@ func main() {
 	server := grpc.NewServer()
 	cartv1.RegisterCartServiceServer(server, grpcSvc)
 	reflection.Register(server)
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	go func() {
+		<-ctx.Done()
+		server.GracefulStop()
+	}()
 
 	log.Printf("starting cart grpc service on %s", addr)
 	log.Fatal(server.Serve(lis))

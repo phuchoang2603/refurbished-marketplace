@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"refurbished-marketplace/services/products/internal/grpcserver"
 	"refurbished-marketplace/services/products/internal/service"
@@ -48,6 +51,14 @@ func main() {
 	server := grpc.NewServer()
 	productsv1.RegisterProductsServiceServer(server, grpcSvc)
 	reflection.Register(server)
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	go func() {
+		<-ctx.Done()
+		server.GracefulStop()
+	}()
 
 	log.Printf("starting products grpc service on %s", addr)
 	log.Fatal(server.Serve(lis))

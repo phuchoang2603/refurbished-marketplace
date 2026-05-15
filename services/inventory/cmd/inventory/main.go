@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"net"
 	"os"
+	"os/signal"
+	"syscall"
 
 	"refurbished-marketplace/services/inventory/internal/grpcserver"
 	"refurbished-marketplace/services/inventory/internal/service"
@@ -48,6 +51,14 @@ func main() {
 	server := grpc.NewServer()
 	inventoryv1.RegisterInventoryServiceServer(server, grpcSvc)
 	reflection.Register(server)
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	go func() {
+		<-ctx.Done()
+		server.GracefulStop()
+	}()
 
 	log.Printf("starting inventory grpc service on %s", addr)
 	log.Fatal(server.Serve(lis))
