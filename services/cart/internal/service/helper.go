@@ -1,34 +1,67 @@
 package service
 
 import (
-	"sort"
+	"context"
+	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/redis/go-redis/v9"
 )
 
-func toCart(state cartState) Cart {
-	items := make([]CartItem, 0, len(state.Items))
-	productIDs := make([]string, 0, len(state.Items))
-	for productID := range state.Items {
-		productIDs = append(productIDs, productID)
-	}
-	sort.Strings(productIDs)
-	for _, productID := range productIDs {
-		quantity := state.Items[productID]
-		items = append(items, CartItem{ProductID: productID, Quantity: quantity})
-	}
-	return Cart{CartID: state.CartID, Items: items, CreatedAt: state.CreatedAt, UpdatedAt: state.UpdatedAt}
+func cartKey(cartID string) string {
+	return "cart:" + cartID
 }
 
-func newCartState(cartID string) cartState {
+func newCart(cartID string) Cart {
 	now := time.Now().UTC()
-	return cartState{
+	return Cart{
 		CartID:    cartID,
-		Items:     map[string]int32{},
+		Items:     []CartItem{},
 		CreatedAt: now,
 		UpdatedAt: now,
 	}
+}
+
+func (s *Service) loadCart(ctx context.Context, cartID string) (Cart, bool, error) {
+	val, err := s.client.Get(ctx, cartKey(cartID)).Bytes()
+	if err != nil {
+		if errors.Is(err, redis.Nil) {
+			return Cart{}, false, nil
+		}
+		return Cart{}, false, err
+	}
+
+	var cart Cart
+	if err := json.Unmarshal(val, &cart); err != nil {
+		return Cart{}, false, err
+	}
+	if cart.Items == nil {
+		cart.Items = []CartItem{}
+	}
+	return cart, true, nil
+}
+
+func (s *Service) saveCart(ctx context.Context, cart Cart) error {
+	buf, err := json.Marshal(cart)
+	if err != nil {
+		return err
+	}
+	return s.client.Set(ctx, cartKey(cart.CartID), buf, s.ttl).Err()
+}
+
+func (s *Service) deleteCart(ctx context.Context, cartID string) error {
+	return s.client.Del(ctx, cartKey(cartID)).Err()
+}
+
+func findCartItem(items []CartItem, productID string) int {
+	for i, item := range items {
+		if item.ProductID == productID {
+			return i
+		}
+	}
+	return -1
 }
 
 func validate(id string, errType error) error {

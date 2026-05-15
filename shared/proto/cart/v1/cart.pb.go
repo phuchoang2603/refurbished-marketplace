@@ -63,6 +63,7 @@ type CartItem struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ProductId     string                 `protobuf:"bytes,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
 	Quantity      int32                  `protobuf:"varint,2,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	MerchantId    string                 `protobuf:"bytes,3,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -109,6 +110,13 @@ func (x *CartItem) GetQuantity() int32 {
 		return x.Quantity
 	}
 	return 0
+}
+
+func (x *CartItem) GetMerchantId() string {
+	if x != nil {
+		return x.MerchantId
+	}
+	return ""
 }
 
 type Cart struct {
@@ -228,6 +236,7 @@ type AddCartItemRequest struct {
 	CartId        string                 `protobuf:"bytes,1,opt,name=cart_id,json=cartId,proto3" json:"cart_id,omitempty"`
 	ProductId     string                 `protobuf:"bytes,2,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
 	Quantity      int32                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	MerchantId    string                 `protobuf:"bytes,4,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -283,11 +292,19 @@ func (x *AddCartItemRequest) GetQuantity() int32 {
 	return 0
 }
 
+func (x *AddCartItemRequest) GetMerchantId() string {
+	if x != nil {
+		return x.MerchantId
+	}
+	return ""
+}
+
 type SetCartItemQuantityRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CartId        string                 `protobuf:"bytes,1,opt,name=cart_id,json=cartId,proto3" json:"cart_id,omitempty"`
 	ProductId     string                 `protobuf:"bytes,2,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
 	Quantity      int32                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	MerchantId    string                 `protobuf:"bytes,4,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -341,6 +358,13 @@ func (x *SetCartItemQuantityRequest) GetQuantity() int32 {
 		return x.Quantity
 	}
 	return 0
+}
+
+func (x *SetCartItemQuantityRequest) GetMerchantId() string {
+	if x != nil {
+		return x.MerchantId
+	}
+	return ""
 }
 
 type RemoveCartItemRequest struct {
@@ -444,11 +468,13 @@ var File_shared_proto_cart_v1_cart_proto protoreflect.FileDescriptor
 const file_shared_proto_cart_v1_cart_proto_rawDesc = "" +
 	"\n" +
 	"\x1fshared/proto/cart/v1/cart.proto\x12\acart.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\a\n" +
-	"\x05Empty\"E\n" +
+	"\x05Empty\"f\n" +
 	"\bCartItem\x12\x1d\n" +
 	"\n" +
 	"product_id\x18\x01 \x01(\tR\tproductId\x12\x1a\n" +
-	"\bquantity\x18\x02 \x01(\x05R\bquantity\"\xbe\x01\n" +
+	"\bquantity\x18\x02 \x01(\x05R\bquantity\x12\x1f\n" +
+	"\vmerchant_id\x18\x03 \x01(\tR\n" +
+	"merchantId\"\xbe\x01\n" +
 	"\x04Cart\x12\x17\n" +
 	"\acart_id\x18\x01 \x01(\tR\x06cartId\x12'\n" +
 	"\x05items\x18\x02 \x03(\v2\x11.cart.v1.CartItemR\x05items\x129\n" +
@@ -457,17 +483,21 @@ const file_shared_proto_cart_v1_cart_proto_rawDesc = "" +
 	"\n" +
 	"updated_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\")\n" +
 	"\x0eGetCartRequest\x12\x17\n" +
-	"\acart_id\x18\x01 \x01(\tR\x06cartId\"h\n" +
+	"\acart_id\x18\x01 \x01(\tR\x06cartId\"\x89\x01\n" +
 	"\x12AddCartItemRequest\x12\x17\n" +
 	"\acart_id\x18\x01 \x01(\tR\x06cartId\x12\x1d\n" +
 	"\n" +
 	"product_id\x18\x02 \x01(\tR\tproductId\x12\x1a\n" +
-	"\bquantity\x18\x03 \x01(\x05R\bquantity\"p\n" +
+	"\bquantity\x18\x03 \x01(\x05R\bquantity\x12\x1f\n" +
+	"\vmerchant_id\x18\x04 \x01(\tR\n" +
+	"merchantId\"\x91\x01\n" +
 	"\x1aSetCartItemQuantityRequest\x12\x17\n" +
 	"\acart_id\x18\x01 \x01(\tR\x06cartId\x12\x1d\n" +
 	"\n" +
 	"product_id\x18\x02 \x01(\tR\tproductId\x12\x1a\n" +
-	"\bquantity\x18\x03 \x01(\x05R\bquantity\"O\n" +
+	"\bquantity\x18\x03 \x01(\x05R\bquantity\x12\x1f\n" +
+	"\vmerchant_id\x18\x04 \x01(\tR\n" +
+	"merchantId\"O\n" +
 	"\x15RemoveCartItemRequest\x12\x17\n" +
 	"\acart_id\x18\x01 \x01(\tR\x06cartId\x12\x1d\n" +
 	"\n" +

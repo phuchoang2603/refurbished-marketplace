@@ -9,9 +9,9 @@ import (
 	"refurbished-marketplace/services/cart/internal/grpcserver"
 	"refurbished-marketplace/services/cart/internal/service"
 
+	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
-	"refurbished-marketplace/shared/cache"
 	cartv1 "refurbished-marketplace/shared/proto/cart/v1"
 )
 
@@ -26,7 +26,7 @@ func main() {
 		log.Fatal("REDIS_ADDR is required")
 	}
 
-	rdb := cache.NewClient(redisAddr)
+	rdb := redis.NewClient(&redis.Options{Addr: redisAddr})
 	defer rdb.Close()
 
 	svc := service.New(rdb, 24*time.Hour)

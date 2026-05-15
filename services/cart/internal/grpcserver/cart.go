@@ -16,7 +16,7 @@ import (
 func mapCart(c service.Cart) *cartv1.Cart {
 	items := make([]*cartv1.CartItem, 0, len(c.Items))
 	for _, item := range c.Items {
-		items = append(items, &cartv1.CartItem{ProductId: item.ProductID, Quantity: item.Quantity})
+		items = append(items, &cartv1.CartItem{ProductId: item.ProductID, Quantity: item.Quantity, MerchantId: item.MerchantID})
 	}
 	return &cartv1.Cart{CartId: c.CartID, Items: items, CreatedAt: timestamppb.New(c.CreatedAt), UpdatedAt: timestamppb.New(c.UpdatedAt)}
 }
@@ -42,10 +42,13 @@ func (s *Server) AddCartItem(ctx context.Context, req *cartv1.AddCartItemRequest
 	if _, err := uuid.Parse(req.GetProductId()); err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid product id")
 	}
-	c, err := s.cart.AddCartItem(ctx, req.GetCartId(), req.GetProductId(), req.GetQuantity())
+	if _, err := uuid.Parse(req.GetMerchantId()); err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid merchant id")
+	}
+	c, err := s.cart.AddCartItem(ctx, req.GetCartId(), req.GetProductId(), req.GetMerchantId(), req.GetQuantity())
 	if err != nil {
 		switch {
-		case errors.Is(err, service.ErrInvalidProductID), errors.Is(err, service.ErrInvalidQuantity), errors.Is(err, service.ErrInvalidCartID):
+		case errors.Is(err, service.ErrInvalidProductID), errors.Is(err, service.ErrInvalidMerchantID), errors.Is(err, service.ErrInvalidQuantity), errors.Is(err, service.ErrInvalidCartID):
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		default:
 			return nil, status.Error(codes.Internal, "internal error")
@@ -61,10 +64,13 @@ func (s *Server) SetCartItemQuantity(ctx context.Context, req *cartv1.SetCartIte
 	if _, err := uuid.Parse(req.GetProductId()); err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid product id")
 	}
-	c, err := s.cart.SetCartItemQuantity(ctx, req.GetCartId(), req.GetProductId(), req.GetQuantity())
+	if _, err := uuid.Parse(req.GetMerchantId()); err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid merchant id")
+	}
+	c, err := s.cart.SetCartItemQuantity(ctx, req.GetCartId(), req.GetProductId(), req.GetMerchantId(), req.GetQuantity())
 	if err != nil {
 		switch {
-		case errors.Is(err, service.ErrInvalidProductID), errors.Is(err, service.ErrInvalidQuantity), errors.Is(err, service.ErrInvalidCartID), errors.Is(err, service.ErrItemNotFound):
+		case errors.Is(err, service.ErrInvalidProductID), errors.Is(err, service.ErrInvalidMerchantID), errors.Is(err, service.ErrInvalidQuantity), errors.Is(err, service.ErrInvalidCartID), errors.Is(err, service.ErrItemNotFound):
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		default:
 			return nil, status.Error(codes.Internal, "internal error")
