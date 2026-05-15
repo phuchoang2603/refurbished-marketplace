@@ -38,6 +38,13 @@ graph LR
 
 Each domain service owns its local database schema. Cross-service references are logical IDs, not shared foreign-key ownership. Redis/Valkey is used for ephemeral cart state.
 
+The current core order and payment model is merchant-scoped:
+
+- cart items carry caller-supplied `merchant_id`
+- each order belongs to exactly one merchant
+- payment creates one transaction per order
+- Kafka contracts use `orders.created`, `payment.succeeded`, and `payment.failed`
+
 ```mermaid
 erDiagram
   USERS {
@@ -71,6 +78,7 @@ erDiagram
   ORDERS {
     UUID id PK
     UUID buyer_user_id
+    UUID merchant_id
     TEXT status
     BIGINT total_cents
     TIMESTAMPTZ created_at
@@ -81,7 +89,6 @@ erDiagram
     UUID id PK
     UUID order_id FK
     UUID product_id
-    UUID merchant_id
     INTEGER quantity
     BIGINT unit_price_cents
     BIGINT line_total_cents
@@ -103,7 +110,6 @@ erDiagram
   PAYMENT_TRANSACTIONS {
     UUID id PK
     UUID order_id FK
-    UUID order_item_id
     UUID merchant_id
     BIGINT amount_cents
     TEXT currency
