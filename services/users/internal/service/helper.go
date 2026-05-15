@@ -36,7 +36,7 @@ func mapDBUser(u database.User) User {
 	}
 }
 
-func mapNotFound(err error, notFoundErr error) error {
+func mapNotFound(err, notFoundErr error) error {
 	if err == nil {
 		return nil
 	}
@@ -61,7 +61,7 @@ func (s *Service) signToken(tokenType, jti string, userID uuid.UUID, email strin
 	return token.SignedString([]byte(s.cfg.JWTSecret))
 }
 
-func (s *Service) parseToken(raw string, expectedType string) (jwt.RegisteredClaims, error) {
+func (s *Service) parseToken(raw, expectedType string) (jwt.RegisteredClaims, error) {
 	claims, err := sharedjwt.ParseAndValidate(raw, s.cfg.JWTSecret, expectedType, s.cfg.JWTIssuer, s.cfg.JWTAudience)
 	if err != nil {
 		if errors.Is(err, sharedjwt.ErrExpiredToken) {

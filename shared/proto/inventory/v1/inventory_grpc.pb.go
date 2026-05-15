@@ -8,7 +8,6 @@ package inventoryv1
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -118,19 +117,15 @@ type UnimplementedInventoryServiceServer struct{}
 func (UnimplementedInventoryServiceServer) CreateInventory(context.Context, *CreateInventoryRequest) (*Inventory, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateInventory not implemented")
 }
-
 func (UnimplementedInventoryServiceServer) GetInventoryByProductID(context.Context, *GetInventoryByProductIDRequest) (*Inventory, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetInventoryByProductID not implemented")
 }
-
 func (UnimplementedInventoryServiceServer) ReserveStock(context.Context, *ReserveStockRequest) (*Inventory, error) {
 	return nil, status.Error(codes.Unimplemented, "method ReserveStock not implemented")
 }
-
 func (UnimplementedInventoryServiceServer) CommitReservation(context.Context, *CommitReservationRequest) (*Inventory, error) {
 	return nil, status.Error(codes.Unimplemented, "method CommitReservation not implemented")
 }
-
 func (UnimplementedInventoryServiceServer) ReleaseReservation(context.Context, *ReleaseReservationRequest) (*Inventory, error) {
 	return nil, status.Error(codes.Unimplemented, "method ReleaseReservation not implemented")
 }

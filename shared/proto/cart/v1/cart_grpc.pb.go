@@ -8,7 +8,6 @@ package cartv1
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -118,19 +117,15 @@ type UnimplementedCartServiceServer struct{}
 func (UnimplementedCartServiceServer) GetCart(context.Context, *GetCartRequest) (*Cart, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetCart not implemented")
 }
-
 func (UnimplementedCartServiceServer) AddCartItem(context.Context, *AddCartItemRequest) (*Cart, error) {
 	return nil, status.Error(codes.Unimplemented, "method AddCartItem not implemented")
 }
-
 func (UnimplementedCartServiceServer) SetCartItemQuantity(context.Context, *SetCartItemQuantityRequest) (*Cart, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetCartItemQuantity not implemented")
 }
-
 func (UnimplementedCartServiceServer) RemoveCartItem(context.Context, *RemoveCartItemRequest) (*Cart, error) {
 	return nil, status.Error(codes.Unimplemented, "method RemoveCartItem not implemented")
 }
-
 func (UnimplementedCartServiceServer) ClearCart(context.Context, *ClearCartRequest) (*Empty, error) {
 	return nil, status.Error(codes.Unimplemented, "method ClearCart not implemented")
 }

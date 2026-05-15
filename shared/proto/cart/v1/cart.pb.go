@@ -7,13 +7,12 @@
 package cartv1
 
 import (
-	reflect "reflect"
-	sync "sync"
-	unsafe "unsafe"
-
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
+	reflect "reflect"
+	sync "sync"
+	unsafe "unsafe"
 )
 
 const (
@@ -523,21 +522,18 @@ func file_shared_proto_cart_v1_cart_proto_rawDescGZIP() []byte {
 	return file_shared_proto_cart_v1_cart_proto_rawDescData
 }
 
-var (
-	file_shared_proto_cart_v1_cart_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
-	file_shared_proto_cart_v1_cart_proto_goTypes  = []any{
-		(*Empty)(nil),                      // 0: cart.v1.Empty
-		(*CartItem)(nil),                   // 1: cart.v1.CartItem
-		(*Cart)(nil),                       // 2: cart.v1.Cart
-		(*GetCartRequest)(nil),             // 3: cart.v1.GetCartRequest
-		(*AddCartItemRequest)(nil),         // 4: cart.v1.AddCartItemRequest
-		(*SetCartItemQuantityRequest)(nil), // 5: cart.v1.SetCartItemQuantityRequest
-		(*RemoveCartItemRequest)(nil),      // 6: cart.v1.RemoveCartItemRequest
-		(*ClearCartRequest)(nil),           // 7: cart.v1.ClearCartRequest
-		(*timestamppb.Timestamp)(nil),      // 8: google.protobuf.Timestamp
-	}
-)
-
+var file_shared_proto_cart_v1_cart_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_shared_proto_cart_v1_cart_proto_goTypes = []any{
+	(*Empty)(nil),                      // 0: cart.v1.Empty
+	(*CartItem)(nil),                   // 1: cart.v1.CartItem
+	(*Cart)(nil),                       // 2: cart.v1.Cart
+	(*GetCartRequest)(nil),             // 3: cart.v1.GetCartRequest
+	(*AddCartItemRequest)(nil),         // 4: cart.v1.AddCartItemRequest
+	(*SetCartItemQuantityRequest)(nil), // 5: cart.v1.SetCartItemQuantityRequest
+	(*RemoveCartItemRequest)(nil),      // 6: cart.v1.RemoveCartItemRequest
+	(*ClearCartRequest)(nil),           // 7: cart.v1.ClearCartRequest
+	(*timestamppb.Timestamp)(nil),      // 8: google.protobuf.Timestamp
+}
 var file_shared_proto_cart_v1_cart_proto_depIdxs = []int32{
 	1, // 0: cart.v1.Cart.items:type_name -> cart.v1.CartItem
 	8, // 1: cart.v1.Cart.created_at:type_name -> google.protobuf.Timestamp

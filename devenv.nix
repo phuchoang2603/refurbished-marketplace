@@ -123,7 +123,14 @@ in
     enable = true;
     config.programs = {
       nixfmt.enable = true;
-      gofumpt.enable = true;
+      gofumpt = {
+        enable = true;
+        extra = true;
+        excludes = [
+          "vendor/*"
+          "**/proto/*.go"
+        ];
+      };
       sqruff.enable = true;
       oxfmt.enable = true;
     };

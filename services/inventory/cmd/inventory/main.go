@@ -9,10 +9,11 @@ import (
 	"refurbished-marketplace/services/inventory/internal/grpcserver"
 	"refurbished-marketplace/services/inventory/internal/service"
 
+	inventoryv1 "refurbished-marketplace/shared/proto/inventory/v1"
+
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
-	inventoryv1 "refurbished-marketplace/shared/proto/inventory/v1"
 )
 
 func main() {

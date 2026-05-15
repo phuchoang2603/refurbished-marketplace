@@ -8,7 +8,6 @@ package productsv1
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -92,11 +91,9 @@ type UnimplementedProductsServiceServer struct{}
 func (UnimplementedProductsServiceServer) CreateProduct(context.Context, *CreateProductRequest) (*Product, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateProduct not implemented")
 }
-
 func (UnimplementedProductsServiceServer) GetProductByID(context.Context, *GetProductByIDRequest) (*Product, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetProductByID not implemented")
 }
-
 func (UnimplementedProductsServiceServer) ListProducts(context.Context, *ListProductsRequest) (*ListProductsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListProducts not implemented")
 }

@@ -8,8 +8,9 @@ import (
 
 	"refurbished-marketplace/services/cart/internal/service"
 
-	"github.com/google/uuid"
 	"refurbished-marketplace/shared/testutil"
+
+	"github.com/google/uuid"
 )
 
 func TestCartLifecycle(t *testing.T) {

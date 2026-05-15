@@ -7,13 +7,12 @@
 package inventoryv1
 
 import (
-	reflect "reflect"
-	sync "sync"
-	unsafe "unsafe"
-
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
+	reflect "reflect"
+	sync "sync"
+	unsafe "unsafe"
 )
 
 const (
@@ -403,19 +402,16 @@ func file_shared_proto_inventory_v1_inventory_proto_rawDescGZIP() []byte {
 	return file_shared_proto_inventory_v1_inventory_proto_rawDescData
 }
 
-var (
-	file_shared_proto_inventory_v1_inventory_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
-	file_shared_proto_inventory_v1_inventory_proto_goTypes  = []any{
-		(*Inventory)(nil),                      // 0: inventory.v1.Inventory
-		(*CreateInventoryRequest)(nil),         // 1: inventory.v1.CreateInventoryRequest
-		(*GetInventoryByProductIDRequest)(nil), // 2: inventory.v1.GetInventoryByProductIDRequest
-		(*ReserveStockRequest)(nil),            // 3: inventory.v1.ReserveStockRequest
-		(*CommitReservationRequest)(nil),       // 4: inventory.v1.CommitReservationRequest
-		(*ReleaseReservationRequest)(nil),      // 5: inventory.v1.ReleaseReservationRequest
-		(*timestamppb.Timestamp)(nil),          // 6: google.protobuf.Timestamp
-	}
-)
-
+var file_shared_proto_inventory_v1_inventory_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_shared_proto_inventory_v1_inventory_proto_goTypes = []any{
+	(*Inventory)(nil),                      // 0: inventory.v1.Inventory
+	(*CreateInventoryRequest)(nil),         // 1: inventory.v1.CreateInventoryRequest
+	(*GetInventoryByProductIDRequest)(nil), // 2: inventory.v1.GetInventoryByProductIDRequest
+	(*ReserveStockRequest)(nil),            // 3: inventory.v1.ReserveStockRequest
+	(*CommitReservationRequest)(nil),       // 4: inventory.v1.CommitReservationRequest
+	(*ReleaseReservationRequest)(nil),      // 5: inventory.v1.ReleaseReservationRequest
+	(*timestamppb.Timestamp)(nil),          // 6: google.protobuf.Timestamp
+}
 var file_shared_proto_inventory_v1_inventory_proto_depIdxs = []int32{
 	6, // 0: inventory.v1.Inventory.created_at:type_name -> google.protobuf.Timestamp
 	6, // 1: inventory.v1.Inventory.updated_at:type_name -> google.protobuf.Timestamp

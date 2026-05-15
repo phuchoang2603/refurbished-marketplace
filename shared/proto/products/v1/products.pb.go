@@ -7,13 +7,12 @@
 package productsv1
 
 import (
-	reflect "reflect"
-	sync "sync"
-	unsafe "unsafe"
-
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
+	reflect "reflect"
+	sync "sync"
+	unsafe "unsafe"
 )
 
 const (
@@ -371,18 +370,15 @@ func file_shared_proto_products_v1_products_proto_rawDescGZIP() []byte {
 	return file_shared_proto_products_v1_products_proto_rawDescData
 }
 
-var (
-	file_shared_proto_products_v1_products_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
-	file_shared_proto_products_v1_products_proto_goTypes  = []any{
-		(*Product)(nil),               // 0: products.v1.Product
-		(*CreateProductRequest)(nil),  // 1: products.v1.CreateProductRequest
-		(*GetProductByIDRequest)(nil), // 2: products.v1.GetProductByIDRequest
-		(*ListProductsRequest)(nil),   // 3: products.v1.ListProductsRequest
-		(*ListProductsResponse)(nil),  // 4: products.v1.ListProductsResponse
-		(*timestamppb.Timestamp)(nil), // 5: google.protobuf.Timestamp
-	}
-)
-
+var file_shared_proto_products_v1_products_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_shared_proto_products_v1_products_proto_goTypes = []any{
+	(*Product)(nil),               // 0: products.v1.Product
+	(*CreateProductRequest)(nil),  // 1: products.v1.CreateProductRequest
+	(*GetProductByIDRequest)(nil), // 2: products.v1.GetProductByIDRequest
+	(*ListProductsRequest)(nil),   // 3: products.v1.ListProductsRequest
+	(*ListProductsResponse)(nil),  // 4: products.v1.ListProductsResponse
+	(*timestamppb.Timestamp)(nil), // 5: google.protobuf.Timestamp
+}
 var file_shared_proto_products_v1_products_proto_depIdxs = []int32{
 	5, // 0: products.v1.Product.created_at:type_name -> google.protobuf.Timestamp
 	5, // 1: products.v1.Product.updated_at:type_name -> google.protobuf.Timestamp

@@ -2,13 +2,12 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.1
 // - protoc             v7.34.1
-// source: users/v1/users.proto
+// source: shared/proto/users/v1/users.proto
 
 package usersv1
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -118,19 +117,15 @@ type UnimplementedUsersServiceServer struct{}
 func (UnimplementedUsersServiceServer) CreateUser(context.Context, *CreateUserRequest) (*User, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateUser not implemented")
 }
-
 func (UnimplementedUsersServiceServer) GetUserByID(context.Context, *GetUserByIDRequest) (*User, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetUserByID not implemented")
 }
-
 func (UnimplementedUsersServiceServer) Login(context.Context, *LoginRequest) (*TokenResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Login not implemented")
 }
-
 func (UnimplementedUsersServiceServer) Refresh(context.Context, *RefreshRequest) (*TokenResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Refresh not implemented")
 }
-
 func (UnimplementedUsersServiceServer) Logout(context.Context, *LogoutRequest) (*LogoutResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Logout not implemented")
 }
@@ -274,5 +269,5 @@ var UsersService_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "users/v1/users.proto",
+	Metadata: "shared/proto/users/v1/users.proto",
 }

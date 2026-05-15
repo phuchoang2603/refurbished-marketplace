@@ -18,7 +18,7 @@ type Tokens struct {
 	RefreshExpiresIn int64
 }
 
-func (s *Service) Login(ctx context.Context, email string, password string) (Tokens, error) {
+func (s *Service) Login(ctx context.Context, email, password string) (Tokens, error) {
 	cleanEmail := normalizeEmail(email)
 	if !isValidEmailShape(cleanEmail) {
 		return Tokens{}, ErrInvalidCredentials

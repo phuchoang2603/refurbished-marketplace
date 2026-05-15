@@ -9,10 +9,11 @@ import (
 	"refurbished-marketplace/services/cart/internal/grpcserver"
 	"refurbished-marketplace/services/cart/internal/service"
 
+	cartv1 "refurbished-marketplace/shared/proto/cart/v1"
+
 	"github.com/redis/go-redis/v9"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
-	cartv1 "refurbished-marketplace/shared/proto/cart/v1"
 )
 
 func main() {

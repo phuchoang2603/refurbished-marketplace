@@ -18,7 +18,7 @@ type User struct {
 	UpdatedAt    time.Time
 }
 
-func (s *Service) CreateUser(ctx context.Context, email string, password string) (User, error) {
+func (s *Service) CreateUser(ctx context.Context, email, password string) (User, error) {
 	cleanEmail := normalizeEmail(email)
 	if !isValidEmailShape(cleanEmail) {
 		return User{}, ErrInvalidEmail
