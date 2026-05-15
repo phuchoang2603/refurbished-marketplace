@@ -1,10 +1,10 @@
 -- name: CreateInventory :one
 INSERT INTO inventory (product_id, available_qty, reserved_qty)
 VALUES ($1, $2, 0)
-RETURNING product_id, available_qty, reserved_qty, created_at, updated_at;
+RETURNING inventory.*;
 
 -- name: GetInventoryByProductID :one
-SELECT product_id, available_qty, reserved_qty, created_at, updated_at
+SELECT *
 FROM inventory
 WHERE product_id = $1;
 
@@ -17,7 +17,7 @@ SET
 WHERE
     product_id = sqlc.arg(product_id)
     AND available_qty >= sqlc.arg(quantity)
-RETURNING product_id, available_qty, reserved_qty, created_at, updated_at;
+RETURNING inventory.*;
 
 -- name: CommitReservation :one
 UPDATE inventory
@@ -27,7 +27,7 @@ SET
 WHERE
     product_id = sqlc.arg(product_id)
     AND reserved_qty >= sqlc.arg(quantity)
-RETURNING product_id, available_qty, reserved_qty, created_at, updated_at;
+RETURNING inventory.*;
 
 -- name: ReleaseReservation :one
 UPDATE inventory
@@ -38,4 +38,4 @@ SET
 WHERE
     product_id = sqlc.arg(product_id)
     AND reserved_qty >= sqlc.arg(quantity)
-RETURNING product_id, available_qty, reserved_qty, created_at, updated_at;
+RETURNING inventory.*;

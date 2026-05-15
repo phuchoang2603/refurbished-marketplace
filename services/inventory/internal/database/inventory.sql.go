@@ -19,7 +19,7 @@ SET
 WHERE
     product_id = $2
     AND reserved_qty >= $1
-RETURNING product_id, available_qty, reserved_qty, created_at, updated_at
+RETURNING inventory.product_id, inventory.available_qty, inventory.reserved_qty, inventory.created_at, inventory.updated_at
 `
 
 type CommitReservationParams struct {
@@ -43,7 +43,7 @@ func (q *Queries) CommitReservation(ctx context.Context, arg CommitReservationPa
 const createInventory = `-- name: CreateInventory :one
 INSERT INTO inventory (product_id, available_qty, reserved_qty)
 VALUES ($1, $2, 0)
-RETURNING product_id, available_qty, reserved_qty, created_at, updated_at
+RETURNING inventory.product_id, inventory.available_qty, inventory.reserved_qty, inventory.created_at, inventory.updated_at
 `
 
 type CreateInventoryParams struct {
@@ -92,7 +92,7 @@ SET
 WHERE
     product_id = $2
     AND reserved_qty >= $1
-RETURNING product_id, available_qty, reserved_qty, created_at, updated_at
+RETURNING inventory.product_id, inventory.available_qty, inventory.reserved_qty, inventory.created_at, inventory.updated_at
 `
 
 type ReleaseReservationParams struct {
@@ -122,7 +122,7 @@ SET
 WHERE
     product_id = $2
     AND available_qty >= $1
-RETURNING product_id, available_qty, reserved_qty, created_at, updated_at
+RETURNING inventory.product_id, inventory.available_qty, inventory.reserved_qty, inventory.created_at, inventory.updated_at
 `
 
 type ReserveStockParams struct {

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"testing"
 
-	"refurbished-marketplace/services/inventory/internal/database"
 	"refurbished-marketplace/services/inventory/internal/service"
 	"refurbished-marketplace/shared/testutil"
 
@@ -23,7 +22,7 @@ func newInventoryService(t *testing.T) *service.Service {
 		"../db/migrations",
 	)
 
-	return service.New(database.New(db))
+	return service.New(db)
 }
 
 func TestInventoryLifecycle(t *testing.T) {
