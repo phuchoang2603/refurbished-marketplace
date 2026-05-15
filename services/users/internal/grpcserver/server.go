@@ -1,4 +1,3 @@
-// Package grpcserver provides the gRPC server implementation for the users service. It translates gRPC requests into calls to the underlying service layer and maps service responses back to gRPC responses.
 package grpcserver
 
 import (

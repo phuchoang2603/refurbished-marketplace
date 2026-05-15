@@ -128,7 +128,7 @@ func mapInvalidToken(err error) error {
 	return err
 }
 
-func loadRefreshSession(ctx context.Context, queries queryStore, refreshID uuid.UUID) (database.RefreshToken, error) {
+func loadRefreshSession(ctx context.Context, queries *database.Queries, refreshID uuid.UUID) (database.RefreshToken, error) {
 	session, err := queries.GetRefreshTokenByID(ctx, refreshID)
 	if err != nil {
 		if mapped := mapInvalidToken(err); mapped != nil {

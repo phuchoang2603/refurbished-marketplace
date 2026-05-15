@@ -76,15 +76,3 @@ func (s *Service) ListProducts(ctx context.Context, limit, offset int32) ([]Prod
 	}
 	return result, nil
 }
-
-func mapDBProduct(p database.Product) Product {
-	return Product{
-		ID:          p.ID,
-		Name:        p.Name,
-		Description: p.Description,
-		PriceCents:  p.PriceCents,
-		MerchantID:  p.MerchantID,
-		CreatedAt:   p.CreatedAt,
-		UpdatedAt:   p.UpdatedAt,
-	}
-}

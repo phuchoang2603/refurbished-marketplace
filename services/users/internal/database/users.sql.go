@@ -14,7 +14,7 @@ import (
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (id, email, password_hash)
 VALUES ($1, $2, $3)
-RETURNING id, email, password_hash, created_at, updated_at
+RETURNING users.id, users.email, users.password_hash, users.created_at, users.updated_at
 `
 
 type CreateUserParams struct {

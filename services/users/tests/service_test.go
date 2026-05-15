@@ -4,7 +4,6 @@ import (
 	"errors"
 	"testing"
 
-	"refurbished-marketplace/services/users/internal/database"
 	"refurbished-marketplace/services/users/internal/service"
 	"refurbished-marketplace/shared/testutil"
 
@@ -23,7 +22,7 @@ func newUserService(t *testing.T) *service.Service {
 		"../db/migrations",
 	)
 
-	return service.New(database.New(db), service.DefaultConfig("test-secret"))
+	return service.New(db, service.DefaultConfig("test-secret"))
 }
 
 func TestAuthLoginAndRefresh(t *testing.T) {

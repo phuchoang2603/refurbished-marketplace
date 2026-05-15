@@ -1,19 +1,11 @@
 package service
 
 import (
-	"context"
+	"database/sql"
 	"errors"
 
 	"refurbished-marketplace/services/products/internal/database"
-
-	"github.com/google/uuid"
 )
-
-type queryStore interface {
-	CreateProduct(ctx context.Context, arg database.CreateProductParams) (database.Product, error)
-	GetProductByID(ctx context.Context, id uuid.UUID) (database.Product, error)
-	ListProducts(ctx context.Context, arg database.ListProductsParams) ([]database.Product, error)
-}
 
 var (
 	ErrInvalidProductName = errors.New("invalid product name")
@@ -25,9 +17,9 @@ var (
 )
 
 type Service struct {
-	queries queryStore
+	queries *database.Queries
 }
 
-func New(queries queryStore) *Service {
-	return &Service{queries: queries}
+func New(db *sql.DB) *Service {
+	return &Service{queries: database.New(db)}
 }

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"testing"
 
-	"refurbished-marketplace/services/products/internal/database"
 	"refurbished-marketplace/services/products/internal/service"
 	"refurbished-marketplace/shared/testutil"
 
@@ -23,7 +22,7 @@ func newProductsService(t *testing.T) *service.Service {
 		"../db/migrations",
 	)
 
-	return service.New(database.New(db))
+	return service.New(db)
 }
 
 func TestCreateAndReadProducts(t *testing.T) {

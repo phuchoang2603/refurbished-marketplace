@@ -1,23 +1,11 @@
-// Package service provides the core business logic for the users service. It defines the Service struct, which has methods for creating users, authenticating them, and managing refresh tokens. The service interacts with the database through a queryStore interface, which abstracts away the database operations. This allows for easier testing and separation of concerns.
 package service
 
 import (
-	"context"
+	"database/sql"
 	"errors"
 
 	"refurbished-marketplace/services/users/internal/database"
-
-	"github.com/google/uuid"
 )
-
-type queryStore interface {
-	CreateUser(ctx context.Context, arg database.CreateUserParams) (database.User, error)
-	GetUserByEmail(ctx context.Context, email string) (database.User, error)
-	GetUserByID(ctx context.Context, id uuid.UUID) (database.User, error)
-	CreateRefreshToken(ctx context.Context, arg database.CreateRefreshTokenParams) (database.RefreshToken, error)
-	GetRefreshTokenByID(ctx context.Context, id uuid.UUID) (database.RefreshToken, error)
-	RevokeRefreshToken(ctx context.Context, id uuid.UUID) (database.RefreshToken, error)
-}
 
 var (
 	ErrInvalidEmail       = errors.New("invalid email")
@@ -31,10 +19,10 @@ var (
 )
 
 type Service struct {
-	queries queryStore
+	queries *database.Queries
 	cfg     Config
 }
 
-func New(queries queryStore, cfg Config) *Service {
-	return &Service{queries: queries, cfg: cfg}
+func New(db *sql.DB, cfg Config) *Service {
+	return &Service{queries: database.New(db), cfg: cfg}
 }

@@ -6,7 +6,6 @@ import (
 	"net"
 	"os"
 
-	"refurbished-marketplace/services/users/internal/database"
 	"refurbished-marketplace/services/users/internal/grpcserver"
 	"refurbished-marketplace/services/users/internal/service"
 
@@ -37,14 +36,13 @@ func main() {
 		log.Fatalf("ping db: %v", err)
 	}
 
-	queries := database.New(db)
 	jwtSecret := os.Getenv("JWT_SECRET")
 	cfg := service.DefaultConfig(jwtSecret)
 	if err := service.ValidateConfig(cfg); err != nil {
 		log.Fatalf("auth config: %v", err)
 	}
 
-	svc := service.New(queries, cfg)
+	svc := service.New(db, cfg)
 	grpcSvc := grpcserver.New(svc)
 
 	lis, err := net.Listen("tcp", addr)
