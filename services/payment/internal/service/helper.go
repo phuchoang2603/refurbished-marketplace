@@ -13,8 +13,25 @@ import (
 	"github.com/lib/pq"
 )
 
-// loadPaymentTransaction loads a row or returns ErrTransactionNotFound.
-func loadPaymentTransaction(ctx context.Context, q queryStore, id uuid.UUID) (database.PaymentTransaction, error) {
+func mapDBPaymentTransactionView(tx database.PaymentTransaction) PaymentTransactionView {
+	v := PaymentTransactionView{
+		ID:             tx.ID.String(),
+		OrderID:        tx.OrderID.String(),
+		MerchantID:     tx.MerchantID.String(),
+		AmountCents:    tx.AmountCents,
+		Currency:       tx.Currency,
+		Status:         tx.Status,
+		IdempotencyKey: tx.IdempotencyKey,
+		CreatedAt:      tx.CreatedAt,
+		UpdatedAt:      tx.UpdatedAt,
+	}
+	if tx.GatewayTransactionID.Valid {
+		v.GatewayTransactionID = tx.GatewayTransactionID.String
+	}
+	return v
+}
+
+func loadPaymentTransaction(ctx context.Context, q *database.Queries, id uuid.UUID) (database.PaymentTransaction, error) {
 	row, err := q.GetPaymentTransactionByID(ctx, id)
 	if err != nil {
 		if dberrors.IsNoRows(err) {
@@ -25,8 +42,7 @@ func loadPaymentTransaction(ctx context.Context, q queryStore, id uuid.UUID) (da
 	return row, nil
 }
 
-// loadPaymentIntentByOrderID loads a row or returns ErrIntentNotFound.
-func loadPaymentIntentByOrderID(ctx context.Context, q queryStore, orderID uuid.UUID) (database.PaymentIntent, error) {
+func loadPaymentIntentByOrderID(ctx context.Context, q *database.Queries, orderID uuid.UUID) (database.PaymentIntent, error) {
 	row, err := q.GetPaymentIntentByOrderID(ctx, orderID)
 	if err != nil {
 		if dberrors.IsNoRows(err) {
@@ -37,25 +53,20 @@ func loadPaymentIntentByOrderID(ctx context.Context, q queryStore, orderID uuid.
 	return row, nil
 }
 
-func parseOrderItemCreatedUUIDs(msg interface {
+func parseOrderCreatedUUIDs(msg interface {
 	GetOrderId() string
-	GetOrderItemId() string
 	GetMerchantId() string
 },
-) (orderID, orderItemID, merchantID uuid.UUID, err error) {
+) (orderID, merchantID uuid.UUID, err error) {
 	orderID, err = uuid.Parse(msg.GetOrderId())
 	if err != nil {
-		return uuid.Nil, uuid.Nil, uuid.Nil, fmt.Errorf("order_id: %w", err)
-	}
-	orderItemID, err = uuid.Parse(msg.GetOrderItemId())
-	if err != nil {
-		return uuid.Nil, uuid.Nil, uuid.Nil, fmt.Errorf("order_item_id: %w", err)
+		return uuid.Nil, uuid.Nil, fmt.Errorf("order_id: %w", err)
 	}
 	merchantID, err = uuid.Parse(msg.GetMerchantId())
 	if err != nil {
-		return uuid.Nil, uuid.Nil, uuid.Nil, fmt.Errorf("merchant_id: %w", err)
+		return uuid.Nil, uuid.Nil, fmt.Errorf("merchant_id: %w", err)
 	}
-	return orderID, orderItemID, merchantID, nil
+	return orderID, merchantID, nil
 }
 
 func optionalNullString(s string) sql.NullString {

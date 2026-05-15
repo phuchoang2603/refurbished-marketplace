@@ -1,0 +1,17 @@
+-- +goose Up
+ALTER TABLE orders
+ADD COLUMN IF NOT EXISTS merchant_id UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
+
+ALTER TABLE order_items
+DROP COLUMN IF EXISTS merchant_id;
+
+CREATE INDEX IF NOT EXISTS orders_merchant_id_idx ON orders (merchant_id);
+
+-- +goose Down
+ALTER TABLE order_items
+ADD COLUMN IF NOT EXISTS merchant_id UUID NOT NULL DEFAULT '00000000-0000-0000-0000-000000000000';
+
+DROP INDEX IF EXISTS orders_merchant_id_idx;
+
+ALTER TABLE orders
+DROP COLUMN IF EXISTS merchant_id;

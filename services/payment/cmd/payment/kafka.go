@@ -9,7 +9,7 @@ import (
 	"refurbished-marketplace/shared/messaging"
 )
 
-func runOrdersItemCreatedConsumer(ctx context.Context, svc *service.Service, bootstrap []string) error {
+func runOrdersCreatedConsumer(ctx context.Context, svc *service.Service, bootstrap []string) error {
 	groupID := os.Getenv("KAFKA_GROUP_ID")
 	if groupID == "" {
 		groupID = "payment-service"
@@ -18,8 +18,8 @@ func runOrdersItemCreatedConsumer(ctx context.Context, svc *service.Service, boo
 	consumer, err := messaging.NewKafkaConsumer(messaging.KafkaConsumerConfig{
 		BootstrapServers: bootstrap,
 		GroupID:          groupID,
-		Topics:           []string{messaging.EventTypeOrderItemCreated},
-	}, svc.KafkaOrdersItemCreatedHandler())
+		Topics:           []string{messaging.EventTypeOrderCreated},
+	}, svc.KafkaOrdersCreatedHandler())
 	if err != nil {
 		return err
 	}
@@ -29,6 +29,6 @@ func runOrdersItemCreatedConsumer(ctx context.Context, svc *service.Service, boo
 		}
 	}()
 
-	log.Printf("kafka consumer started (topic=%s group=%s)", messaging.EventTypeOrderItemCreated, groupID)
+	log.Printf("kafka consumer started (topic=%s group=%s)", messaging.EventTypeOrderCreated, groupID)
 	return consumer.Run(ctx)
 }

@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+package orders.v1;
+
+option go_package = "refurbished-marketplace/shared/proto/orders/v1;ordersv1";
+
+// Emitted on orders.created (outbox -> Kafka).
+message OrderCreated {
+  string order_id = 1;
+  string buyer_user_id = 2;
+  string merchant_id = 3;
+  int64 total_cents = 4;
+}

@@ -2,51 +2,26 @@
 INSERT INTO payment_transactions (
     id,
     order_id,
-    order_item_id,
     merchant_id,
     amount_cents,
     currency,
     status,
     idempotency_key
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-ON CONFLICT (order_item_id) DO NOTHING
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+ON CONFLICT (order_id) DO NOTHING
 RETURNING
-    id, order_id, order_item_id, merchant_id, amount_cents, currency, status, idempotency_key, gateway_transaction_id, failure_reason, created_at, updated_at;
+    payment_transactions.*;
 
 -- name: GetPaymentTransactionByID :one
-SELECT
-    id,
-    order_id,
-    order_item_id,
-    merchant_id,
-    amount_cents,
-    currency,
-    status,
-    idempotency_key,
-    gateway_transaction_id,
-    failure_reason,
-    created_at,
-    updated_at
+SELECT *
 FROM payment_transactions
 WHERE id = $1;
 
--- name: GetPaymentTransactionByOrderItemID :one
-SELECT
-    id,
-    order_id,
-    order_item_id,
-    merchant_id,
-    amount_cents,
-    currency,
-    status,
-    idempotency_key,
-    gateway_transaction_id,
-    failure_reason,
-    created_at,
-    updated_at
+-- name: GetPaymentTransactionByOrderID :one
+SELECT *
 FROM payment_transactions
-WHERE order_item_id = $1;
+WHERE order_id = $1;
 
 -- name: UpdatePaymentTransactionGatewayResult :one
 UPDATE payment_transactions
@@ -57,4 +32,4 @@ SET
     updated_at = NOW()
 WHERE id = $1 AND status NOT IN ('SUCCEEDED', 'FAILED')
 RETURNING
-    id, order_id, order_item_id, merchant_id, amount_cents, currency, status, idempotency_key, gateway_transaction_id, failure_reason, created_at, updated_at;
+    payment_transactions.*;

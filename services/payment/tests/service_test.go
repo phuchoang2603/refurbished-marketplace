@@ -27,19 +27,15 @@ func newPaymentFixture(t *testing.T) (*service.Service, *database.Queries) {
 		"../db/migrations",
 	)
 	queries := database.New(db)
-	return service.New(queries, db), queries
+	return service.New(db), queries
 }
 
-func orderItemCreatedPayload(orderID, orderItemID, merchantID uuid.UUID, lineTotal int64) []byte {
-	msg := &ordersv1.OrderItemCreated{
-		OrderId:        orderID.String(),
-		OrderItemId:    orderItemID.String(),
-		BuyerUserId:    uuid.New().String(),
-		ProductId:      uuid.New().String(),
-		MerchantId:     merchantID.String(),
-		Quantity:       1,
-		UnitPriceCents: lineTotal,
-		LineTotalCents: lineTotal,
+func orderCreatedPayload(orderID, merchantID uuid.UUID, totalCents int64) []byte {
+	msg := &ordersv1.OrderCreated{
+		OrderId:     orderID.String(),
+		BuyerUserId: uuid.New().String(),
+		MerchantId:  merchantID.String(),
+		TotalCents:  totalCents,
 	}
 	b, err := proto.Marshal(msg)
 	if err != nil {
@@ -48,8 +44,8 @@ func orderItemCreatedPayload(orderID, orderItemID, merchantID uuid.UUID, lineTot
 	return b
 }
 
-func TestPaymentService_InitiatePaymentAndOrdersItemCreated(t *testing.T) {
-	t.Run("creates per-item transaction and get returns view", func(t *testing.T) {
+func TestPaymentService_InitiatePaymentAndOrdersCreated(t *testing.T) {
+	t.Run("creates per-order transaction and get returns view", func(t *testing.T) {
 		svc, queries := newPaymentFixture(t)
 		ctx := t.Context()
 
@@ -66,16 +62,15 @@ func TestPaymentService_InitiatePaymentAndOrdersItemCreated(t *testing.T) {
 			t.Fatalf("InitiatePayment: %v", err)
 		}
 
-		orderItemID := uuid.New()
 		merchantID := uuid.New()
-		msgID := "orders.item.created/test/0/42"
-		if err := svc.HandleOrdersItemCreated(ctx, msgID, orderItemCreatedPayload(orderID, orderItemID, merchantID, 9900)); err != nil {
-			t.Fatalf("HandleOrdersItemCreated: %v", err)
+		msgID := "orders.created/test/0/42"
+		if err := svc.HandleOrdersCreated(ctx, msgID, orderCreatedPayload(orderID, merchantID, 9900)); err != nil {
+			t.Fatalf("HandleOrdersCreated: %v", err)
 		}
 
-		row, err := queries.GetPaymentTransactionByOrderItemID(ctx, orderItemID)
+		row, err := queries.GetPaymentTransactionByOrderID(ctx, orderID)
 		if err != nil {
-			t.Fatalf("GetPaymentTransactionByOrderItemID: %v", err)
+			t.Fatalf("GetPaymentTransactionByOrderID: %v", err)
 		}
 		if row.OrderID != orderID {
 			t.Fatalf("order_id mismatch")
@@ -88,21 +83,20 @@ func TestPaymentService_InitiatePaymentAndOrdersItemCreated(t *testing.T) {
 		if err != nil {
 			t.Fatalf("GetPaymentTransaction: %v", err)
 		}
-		if view.OrderItemID != orderItemID.String() {
-			t.Fatalf("view order_item_id")
+		if view.OrderID != orderID.String() {
+			t.Fatalf("view order_id mismatch")
 		}
 	})
 }
 
-func TestPaymentService_HandleOrdersItemCreated(t *testing.T) {
+func TestPaymentService_HandleOrdersCreated(t *testing.T) {
 	t.Run("missing intent", func(t *testing.T) {
 		svc, _ := newPaymentFixture(t)
 		ctx := t.Context()
 
 		orderID := uuid.New()
-		orderItemID := uuid.New()
 		merchantID := uuid.New()
-		err := svc.HandleOrdersItemCreated(ctx, "kafka/t/0/1", orderItemCreatedPayload(orderID, orderItemID, merchantID, 100))
+		err := svc.HandleOrdersCreated(ctx, "kafka/t/0/1", orderCreatedPayload(orderID, merchantID, 100))
 		if !errors.Is(err, service.ErrIntentNotFound) {
 			t.Fatalf("expected ErrIntentNotFound, got %v", err)
 		}
@@ -125,15 +119,14 @@ func TestPaymentService_HandleOrdersItemCreated(t *testing.T) {
 			t.Fatalf("InitiatePayment: %v", err)
 		}
 
-		orderItemID := uuid.New()
 		merchantID := uuid.New()
-		payload := orderItemCreatedPayload(orderID, orderItemID, merchantID, 5000)
+		payload := orderCreatedPayload(orderID, merchantID, 5000)
 		msgID := "kafka/t/0/100"
 
-		if err := svc.HandleOrdersItemCreated(ctx, msgID, payload); err != nil {
+		if err := svc.HandleOrdersCreated(ctx, msgID, payload); err != nil {
 			t.Fatalf("first: %v", err)
 		}
-		if err := svc.HandleOrdersItemCreated(ctx, msgID, payload); err != nil {
+		if err := svc.HandleOrdersCreated(ctx, msgID, payload); err != nil {
 			t.Fatalf("second (replay): %v", err)
 		}
 	})
@@ -142,7 +135,7 @@ func TestPaymentService_HandleOrdersItemCreated(t *testing.T) {
 		svc, _ := newPaymentFixture(t)
 		ctx := t.Context()
 
-		err := svc.HandleOrdersItemCreated(ctx, "", []byte(`{}`))
+		err := svc.HandleOrdersCreated(ctx, "", []byte(`{}`))
 		if err == nil {
 			t.Fatal("expected error")
 		}
@@ -167,15 +160,14 @@ func TestPaymentService_ApplyGatewayWebhook(t *testing.T) {
 			t.Fatalf("InitiatePayment: %v", err)
 		}
 
-		orderItemID := uuid.New()
 		merchantID := uuid.New()
-		if err := svc.HandleOrdersItemCreated(ctx, "kafka/t/0/200", orderItemCreatedPayload(orderID, orderItemID, merchantID, 3000)); err != nil {
-			t.Fatalf("HandleOrdersItemCreated: %v", err)
+		if err := svc.HandleOrdersCreated(ctx, "kafka/t/0/200", orderCreatedPayload(orderID, merchantID, 3000)); err != nil {
+			t.Fatalf("HandleOrdersCreated: %v", err)
 		}
 
-		txRow, err := queries.GetPaymentTransactionByOrderItemID(ctx, orderItemID)
+		txRow, err := queries.GetPaymentTransactionByOrderID(ctx, orderID)
 		if err != nil {
-			t.Fatalf("GetPaymentTransactionByOrderItemID: %v", err)
+			t.Fatalf("GetPaymentTransactionByOrderID: %v", err)
 		}
 
 		if err := svc.ApplyGatewayWebhook(ctx, txRow.ID, "gw_abc", true, ""); err != nil {
@@ -191,13 +183,13 @@ func TestPaymentService_ApplyGatewayWebhook(t *testing.T) {
 		}
 
 		outboxRow, err := queries.GetPaymentOutboxByAggregateIDAndEventType(ctx, database.GetPaymentOutboxByAggregateIDAndEventTypeParams{
-			AggregateID: orderItemID,
-			EventType:   messaging.EventTypePaymentItemSucceeded,
+			AggregateID: orderID,
+			EventType:   messaging.EventTypePaymentSucceeded,
 		})
 		if err != nil {
 			t.Fatalf("GetPaymentOutboxByAggregateIDAndEventType: %v", err)
 		}
-		if outboxRow.AggregateID != orderItemID {
+		if outboxRow.AggregateID != orderID {
 			t.Fatalf("outbox aggregate_id")
 		}
 

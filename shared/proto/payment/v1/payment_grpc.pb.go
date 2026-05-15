@@ -8,7 +8,6 @@ package paymentv1
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -31,7 +30,7 @@ const (
 type PaymentServiceClient interface {
 	// Called by the web edge when the user submits payment details on the order
 	// confirmation screen. Payment stores the intent and will correlate it with
-	// `orders.item.created` events by `order_id`.
+	// `orders.created` events by `order_id`.
 	InitiatePayment(ctx context.Context, in *InitiatePaymentRequest, opts ...grpc.CallOption) (*InitiatePaymentResponse, error)
 	// Called by the web edge webhook handler when the external gateway/simulator
 	// posts an asynchronous result.
@@ -84,7 +83,7 @@ func (c *paymentServiceClient) GetTransaction(ctx context.Context, in *GetTransa
 type PaymentServiceServer interface {
 	// Called by the web edge when the user submits payment details on the order
 	// confirmation screen. Payment stores the intent and will correlate it with
-	// `orders.item.created` events by `order_id`.
+	// `orders.created` events by `order_id`.
 	InitiatePayment(context.Context, *InitiatePaymentRequest) (*InitiatePaymentResponse, error)
 	// Called by the web edge webhook handler when the external gateway/simulator
 	// posts an asynchronous result.
@@ -104,11 +103,9 @@ type UnimplementedPaymentServiceServer struct{}
 func (UnimplementedPaymentServiceServer) InitiatePayment(context.Context, *InitiatePaymentRequest) (*InitiatePaymentResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method InitiatePayment not implemented")
 }
-
 func (UnimplementedPaymentServiceServer) HandleGatewayWebhook(context.Context, *HandleGatewayWebhookRequest) (*HandleGatewayWebhookResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method HandleGatewayWebhook not implemented")
 }
-
 func (UnimplementedPaymentServiceServer) GetTransaction(context.Context, *GetTransactionRequest) (*PaymentTransaction, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetTransaction not implemented")
 }

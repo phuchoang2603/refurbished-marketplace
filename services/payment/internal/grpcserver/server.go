@@ -1,4 +1,3 @@
-// Package grpcserver exposes the payment gRPC API.
 package grpcserver
 
 import (

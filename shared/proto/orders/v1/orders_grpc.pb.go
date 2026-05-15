@@ -8,7 +8,6 @@ package ordersv1
 
 import (
 	context "context"
-
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
@@ -105,15 +104,12 @@ type UnimplementedOrdersServiceServer struct{}
 func (UnimplementedOrdersServiceServer) CreateOrder(context.Context, *CreateOrderRequest) (*Order, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateOrder not implemented")
 }
-
 func (UnimplementedOrdersServiceServer) GetOrderByID(context.Context, *GetOrderByIDRequest) (*Order, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetOrderByID not implemented")
 }
-
 func (UnimplementedOrdersServiceServer) ListOrdersByBuyer(context.Context, *ListOrdersByBuyerRequest) (*ListOrdersByBuyerResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListOrdersByBuyer not implemented")
 }
-
 func (UnimplementedOrdersServiceServer) UpdateOrderStatus(context.Context, *UpdateOrderStatusRequest) (*Order, error) {
 	return nil, status.Error(codes.Unimplemented, "method UpdateOrderStatus not implemented")
 }

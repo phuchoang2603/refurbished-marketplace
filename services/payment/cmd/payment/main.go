@@ -11,7 +11,6 @@ import (
 	"sync"
 	"syscall"
 
-	"refurbished-marketplace/services/payment/internal/database"
 	"refurbished-marketplace/services/payment/internal/grpcserver"
 	"refurbished-marketplace/services/payment/internal/service"
 	"refurbished-marketplace/shared/messaging"
@@ -44,8 +43,7 @@ func main() {
 		log.Fatalf("ping db: %v", err)
 	}
 
-	queries := database.New(db)
-	svc := service.New(queries, db)
+	svc := service.New(db)
 	grpcSvc := grpcserver.New(svc)
 
 	lis, err := net.Listen("tcp", addr)
@@ -67,7 +65,7 @@ func main() {
 			log.Print("KAFKA_BOOTSTRAP_SERVERS has no brokers after parsing; skipping Kafka consumer")
 		} else {
 			wg.Go(func() {
-				if err := runOrdersItemCreatedConsumer(ctx, svc, brokers); err != nil && !errors.Is(err, context.Canceled) {
+				if err := runOrdersCreatedConsumer(ctx, svc, brokers); err != nil && !errors.Is(err, context.Canceled) {
 					log.Printf("kafka consumer: %v", err)
 				}
 			})

@@ -20,6 +20,6 @@ updated_at = NOW()
 RETURNING payment_intents.*;
 
 -- name: GetPaymentIntentByOrderID :one
-SELECT payment_intents.*
+SELECT *
 FROM payment_intents
 WHERE order_id = $1;

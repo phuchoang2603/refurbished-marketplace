@@ -9,7 +9,7 @@ import "google/protobuf/timestamp.proto";
 service PaymentService {
   // Called by the web edge when the user submits payment details on the order
   // confirmation screen. Payment stores the intent and will correlate it with
-  // `orders.item.created` events by `order_id`.
+  // `orders.created` events by `order_id`.
   rpc InitiatePayment(InitiatePaymentRequest) returns (InitiatePaymentResponse);
 
   // Called by the web edge webhook handler when the external gateway/simulator
@@ -71,7 +71,6 @@ message GetTransactionRequest {
 message PaymentTransaction {
   string id = 1;
   string order_id = 2;
-  string order_item_id = 3;
   string merchant_id = 4;
   int64 amount_cents = 5;
   string currency = 6;
@@ -81,4 +80,3 @@ message PaymentTransaction {
   google.protobuf.Timestamp created_at = 10;
   google.protobuf.Timestamp updated_at = 11;
 }
-

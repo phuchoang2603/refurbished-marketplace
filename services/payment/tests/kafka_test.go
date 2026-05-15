@@ -16,7 +16,7 @@ import (
 	"github.com/twmb/franz-go/pkg/kgo"
 )
 
-func TestKafkaOrdersItemCreatedHandler_EndToEnd(t *testing.T) {
+func TestKafkaOrdersCreatedHandler_EndToEnd(t *testing.T) {
 	svc, queries := newPaymentFixture(t)
 	ctx := t.Context()
 
@@ -33,16 +33,15 @@ func TestKafkaOrdersItemCreatedHandler_EndToEnd(t *testing.T) {
 		t.Fatalf("InitiatePayment: %v", err)
 	}
 
-	orderItemID := uuid.New()
 	merchantID := uuid.New()
-	payload := orderItemCreatedPayload(orderID, orderItemID, merchantID, 7500)
+	payload := orderCreatedPayload(orderID, merchantID, 7500)
 
 	k := testutil.SetupKafka(t)
 	brokers, err := k.Brokers(ctx)
 	if err != nil {
 		t.Fatalf("Brokers: %v", err)
 	}
-	topic := messaging.EventTypeOrderItemCreated
+	topic := messaging.EventTypeOrderCreated
 
 	prod, err := kgo.NewClient(
 		kgo.SeedBrokers(brokers...),
@@ -62,7 +61,7 @@ func TestKafkaOrdersItemCreatedHandler_EndToEnd(t *testing.T) {
 		BootstrapServers: brokers,
 		GroupID:          fmt.Sprintf("payment-kafka-e2e-%s", uuid.New().String()),
 		Topics:           []string{topic},
-	}, svc.KafkaOrdersItemCreatedHandler())
+	}, svc.KafkaOrdersCreatedHandler())
 	if err != nil {
 		t.Fatalf("NewKafkaConsumer: %v", err)
 	}
@@ -89,7 +88,7 @@ func TestKafkaOrdersItemCreatedHandler_EndToEnd(t *testing.T) {
 		case <-timeout:
 			t.Fatal("timeout waiting for payment transaction")
 		case <-ticker.C:
-			row, err := queries.GetPaymentTransactionByOrderItemID(ctx, orderItemID)
+			row, err := queries.GetPaymentTransactionByOrderID(ctx, orderID)
 			if err == nil && row.OrderID == orderID && row.Status == service.PaymentTxStatusInitialized {
 				cancel()
 				return

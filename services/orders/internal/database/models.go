@@ -18,6 +18,7 @@ type Order struct {
 	TotalCents  int64
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+	MerchantID  uuid.UUID
 }
 
 type OrderItem struct {
@@ -28,7 +29,6 @@ type OrderItem struct {
 	UnitPriceCents int64
 	LineTotalCents int64
 	CreatedAt      time.Time
-	MerchantID     uuid.UUID
 }
 
 type OrdersOutbox struct {

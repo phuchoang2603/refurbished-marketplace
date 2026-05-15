@@ -10,20 +10,20 @@ import (
 	"github.com/google/uuid"
 )
 
-// KafkaPaymentResultHandler consumes payment.item.succeeded / payment.item.failed and updates order status.
+// KafkaPaymentResultHandler consumes payment.succeeded / payment.failed and updates order status.
 func (s *Service) KafkaPaymentResultHandler() messaging.KafkaHandler {
 	return func(ctx context.Context, msg messaging.KafkaMessage) error {
 		var status string
 		switch msg.Topic {
-		case messaging.EventTypePaymentItemSucceeded:
+		case messaging.EventTypePaymentSucceeded:
 			status = OrderStatusPaid
-		case messaging.EventTypePaymentItemFailed:
+		case messaging.EventTypePaymentFailed:
 			status = OrderStatusFailed
 		default:
 			return nil
 		}
 
-		var payload paymentv1.PaymentItemOutbox
+		var payload paymentv1.PaymentOutcome
 		if err := messaging.UnmarshalKafkaProtobuf(msg.Value, &payload); err != nil {
 			return fmt.Errorf("payment result decode: %w", err)
 		}

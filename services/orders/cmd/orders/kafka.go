@@ -19,8 +19,8 @@ func runPaymentResultConsumer(ctx context.Context, svc *service.Service, bootstr
 		BootstrapServers: bootstrap,
 		GroupID:          groupID,
 		Topics: []string{
-			messaging.EventTypePaymentItemSucceeded,
-			messaging.EventTypePaymentItemFailed,
+			messaging.EventTypePaymentSucceeded,
+			messaging.EventTypePaymentFailed,
 		},
 	}, svc.KafkaPaymentResultHandler())
 	if err != nil {
@@ -32,6 +32,6 @@ func runPaymentResultConsumer(ctx context.Context, svc *service.Service, bootstr
 		}
 	}()
 
-	log.Printf("kafka consumer started (topics payment.item.* group=%s)", groupID)
+	log.Printf("kafka consumer started (topics payment.* group=%s)", groupID)
 	return consumer.Run(ctx)
 }

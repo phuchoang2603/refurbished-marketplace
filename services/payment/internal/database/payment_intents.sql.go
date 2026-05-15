@@ -13,7 +13,7 @@ import (
 )
 
 const getPaymentIntentByOrderID = `-- name: GetPaymentIntentByOrderID :one
-SELECT payment_intents.order_id, payment_intents.buyer_user_id, payment_intents.payment_token, payment_intents.currency, payment_intents.billing_address, payment_intents.shipping_address, payment_intents.status, payment_intents.created_at, payment_intents.updated_at
+SELECT order_id, buyer_user_id, payment_token, currency, billing_address, shipping_address, status, created_at, updated_at
 FROM payment_intents
 WHERE order_id = $1
 `

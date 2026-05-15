@@ -14,11 +14,15 @@ context: |
   - devenv.nix manages local development tooling; if there are tools not found, write to devenv.nix and do `direnv reload`
 
   Repo conventions:
-  - Keep service code under services/<name>/ and private code in internal/. Separate files to logic-related, dont keep in one big file.
+  - Keep service code under services/<name>/ and private code in internal/.
   - Keep SQL and migrations service-local under services/<service>/db/
   - Keep tests under services/<service>/tests/
   - Keep protobuf contracts under shared/proto/<domain>/v1/
   - Keep docs/ for stable architecture notes, Mermaid diagrams, ADR-style decisions, and service ownership notes
+
+  Code style:
+  - Don't format the code because I already have a git-hook to autoformat for me.
+  - Separate files to logic-related, dont keep in one big file.
 
 rules:
   proposal:

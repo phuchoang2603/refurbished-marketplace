@@ -20,7 +20,6 @@ func mapPaymentTransaction(tx service.PaymentTransactionView) *paymentv1.Payment
 	out := &paymentv1.PaymentTransaction{
 		Id:             tx.ID,
 		OrderId:        tx.OrderID,
-		OrderItemId:    tx.OrderItemID,
 		MerchantId:     tx.MerchantID,
 		AmountCents:    tx.AmountCents,
 		Currency:       tx.Currency,

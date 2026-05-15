@@ -7,13 +7,12 @@
 package paymentv1
 
 import (
-	reflect "reflect"
-	sync "sync"
-	unsafe "unsafe"
-
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
+	reflect "reflect"
+	sync "sync"
+	unsafe "unsafe"
 )
 
 const (
@@ -452,7 +451,6 @@ type PaymentTransaction struct {
 	state                protoimpl.MessageState   `protogen:"open.v1"`
 	Id                   string                   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
 	OrderId              string                   `protobuf:"bytes,2,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
-	OrderItemId          string                   `protobuf:"bytes,3,opt,name=order_item_id,json=orderItemId,proto3" json:"order_item_id,omitempty"`
 	MerchantId           string                   `protobuf:"bytes,4,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
 	AmountCents          int64                    `protobuf:"varint,5,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
 	Currency             string                   `protobuf:"bytes,6,opt,name=currency,proto3" json:"currency,omitempty"`
@@ -505,13 +503,6 @@ func (x *PaymentTransaction) GetId() string {
 func (x *PaymentTransaction) GetOrderId() string {
 	if x != nil {
 		return x.OrderId
-	}
-	return ""
-}
-
-func (x *PaymentTransaction) GetOrderItemId() string {
-	if x != nil {
-		return x.OrderItemId
 	}
 	return ""
 }
@@ -603,11 +594,10 @@ const file_shared_proto_payment_v1_payment_proto_rawDesc = "" +
 	"\x0efailure_reason\x18\x04 \x01(\tR\rfailureReason\"\x1e\n" +
 	"\x1cHandleGatewayWebhookResponse\"M\n" +
 	"\x15GetTransactionRequest\x124\n" +
-	"\x16payment_transaction_id\x18\x01 \x01(\tR\x14paymentTransactionId\"\xd6\x03\n" +
+	"\x16payment_transaction_id\x18\x01 \x01(\tR\x14paymentTransactionId\"\xb2\x03\n" +
 	"\x12PaymentTransaction\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
-	"\border_id\x18\x02 \x01(\tR\aorderId\x12\"\n" +
-	"\rorder_item_id\x18\x03 \x01(\tR\vorderItemId\x12\x1f\n" +
+	"\border_id\x18\x02 \x01(\tR\aorderId\x12\x1f\n" +
 	"\vmerchant_id\x18\x04 \x01(\tR\n" +
 	"merchantId\x12!\n" +
 	"\famount_cents\x18\x05 \x01(\x03R\vamountCents\x12\x1a\n" +
@@ -643,22 +633,19 @@ func file_shared_proto_payment_v1_payment_proto_rawDescGZIP() []byte {
 	return file_shared_proto_payment_v1_payment_proto_rawDescData
 }
 
-var (
-	file_shared_proto_payment_v1_payment_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-	file_shared_proto_payment_v1_payment_proto_msgTypes  = make([]protoimpl.MessageInfo, 7)
-	file_shared_proto_payment_v1_payment_proto_goTypes   = []any{
-		(PaymentTransactionStatus)(0),        // 0: payment.v1.PaymentTransactionStatus
-		(*Address)(nil),                      // 1: payment.v1.Address
-		(*InitiatePaymentRequest)(nil),       // 2: payment.v1.InitiatePaymentRequest
-		(*InitiatePaymentResponse)(nil),      // 3: payment.v1.InitiatePaymentResponse
-		(*HandleGatewayWebhookRequest)(nil),  // 4: payment.v1.HandleGatewayWebhookRequest
-		(*HandleGatewayWebhookResponse)(nil), // 5: payment.v1.HandleGatewayWebhookResponse
-		(*GetTransactionRequest)(nil),        // 6: payment.v1.GetTransactionRequest
-		(*PaymentTransaction)(nil),           // 7: payment.v1.PaymentTransaction
-		(*timestamppb.Timestamp)(nil),        // 8: google.protobuf.Timestamp
-	}
-)
-
+var file_shared_proto_payment_v1_payment_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
+var file_shared_proto_payment_v1_payment_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_shared_proto_payment_v1_payment_proto_goTypes = []any{
+	(PaymentTransactionStatus)(0),        // 0: payment.v1.PaymentTransactionStatus
+	(*Address)(nil),                      // 1: payment.v1.Address
+	(*InitiatePaymentRequest)(nil),       // 2: payment.v1.InitiatePaymentRequest
+	(*InitiatePaymentResponse)(nil),      // 3: payment.v1.InitiatePaymentResponse
+	(*HandleGatewayWebhookRequest)(nil),  // 4: payment.v1.HandleGatewayWebhookRequest
+	(*HandleGatewayWebhookResponse)(nil), // 5: payment.v1.HandleGatewayWebhookResponse
+	(*GetTransactionRequest)(nil),        // 6: payment.v1.GetTransactionRequest
+	(*PaymentTransaction)(nil),           // 7: payment.v1.PaymentTransaction
+	(*timestamppb.Timestamp)(nil),        // 8: google.protobuf.Timestamp
+}
 var file_shared_proto_payment_v1_payment_proto_depIdxs = []int32{
 	1, // 0: payment.v1.InitiatePaymentRequest.billing_address:type_name -> payment.v1.Address
 	1, // 1: payment.v1.InitiatePaymentRequest.shipping_address:type_name -> payment.v1.Address

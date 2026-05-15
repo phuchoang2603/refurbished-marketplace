@@ -16,23 +16,21 @@ const createPaymentTransaction = `-- name: CreatePaymentTransaction :one
 INSERT INTO payment_transactions (
     id,
     order_id,
-    order_item_id,
     merchant_id,
     amount_cents,
     currency,
     status,
     idempotency_key
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-ON CONFLICT (order_item_id) DO NOTHING
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+ON CONFLICT (order_id) DO NOTHING
 RETURNING
-    id, order_id, order_item_id, merchant_id, amount_cents, currency, status, idempotency_key, gateway_transaction_id, failure_reason, created_at, updated_at
+    payment_transactions.id, payment_transactions.order_id, payment_transactions.merchant_id, payment_transactions.amount_cents, payment_transactions.currency, payment_transactions.status, payment_transactions.idempotency_key, payment_transactions.gateway_transaction_id, payment_transactions.failure_reason, payment_transactions.created_at, payment_transactions.updated_at
 `
 
 type CreatePaymentTransactionParams struct {
 	ID             uuid.UUID
 	OrderID        uuid.UUID
-	OrderItemID    uuid.UUID
 	MerchantID     uuid.UUID
 	AmountCents    int64
 	Currency       string
@@ -44,7 +42,6 @@ func (q *Queries) CreatePaymentTransaction(ctx context.Context, arg CreatePaymen
 	row := q.db.QueryRowContext(ctx, createPaymentTransaction,
 		arg.ID,
 		arg.OrderID,
-		arg.OrderItemID,
 		arg.MerchantID,
 		arg.AmountCents,
 		arg.Currency,
@@ -55,7 +52,6 @@ func (q *Queries) CreatePaymentTransaction(ctx context.Context, arg CreatePaymen
 	err := row.Scan(
 		&i.ID,
 		&i.OrderID,
-		&i.OrderItemID,
 		&i.MerchantID,
 		&i.AmountCents,
 		&i.Currency,
@@ -70,19 +66,7 @@ func (q *Queries) CreatePaymentTransaction(ctx context.Context, arg CreatePaymen
 }
 
 const getPaymentTransactionByID = `-- name: GetPaymentTransactionByID :one
-SELECT
-    id,
-    order_id,
-    order_item_id,
-    merchant_id,
-    amount_cents,
-    currency,
-    status,
-    idempotency_key,
-    gateway_transaction_id,
-    failure_reason,
-    created_at,
-    updated_at
+SELECT id, order_id, merchant_id, amount_cents, currency, status, idempotency_key, gateway_transaction_id, failure_reason, created_at, updated_at
 FROM payment_transactions
 WHERE id = $1
 `
@@ -93,7 +77,6 @@ func (q *Queries) GetPaymentTransactionByID(ctx context.Context, id uuid.UUID) (
 	err := row.Scan(
 		&i.ID,
 		&i.OrderID,
-		&i.OrderItemID,
 		&i.MerchantID,
 		&i.AmountCents,
 		&i.Currency,
@@ -107,31 +90,18 @@ func (q *Queries) GetPaymentTransactionByID(ctx context.Context, id uuid.UUID) (
 	return i, err
 }
 
-const getPaymentTransactionByOrderItemID = `-- name: GetPaymentTransactionByOrderItemID :one
-SELECT
-    id,
-    order_id,
-    order_item_id,
-    merchant_id,
-    amount_cents,
-    currency,
-    status,
-    idempotency_key,
-    gateway_transaction_id,
-    failure_reason,
-    created_at,
-    updated_at
+const getPaymentTransactionByOrderID = `-- name: GetPaymentTransactionByOrderID :one
+SELECT id, order_id, merchant_id, amount_cents, currency, status, idempotency_key, gateway_transaction_id, failure_reason, created_at, updated_at
 FROM payment_transactions
-WHERE order_item_id = $1
+WHERE order_id = $1
 `
 
-func (q *Queries) GetPaymentTransactionByOrderItemID(ctx context.Context, orderItemID uuid.UUID) (PaymentTransaction, error) {
-	row := q.db.QueryRowContext(ctx, getPaymentTransactionByOrderItemID, orderItemID)
+func (q *Queries) GetPaymentTransactionByOrderID(ctx context.Context, orderID uuid.UUID) (PaymentTransaction, error) {
+	row := q.db.QueryRowContext(ctx, getPaymentTransactionByOrderID, orderID)
 	var i PaymentTransaction
 	err := row.Scan(
 		&i.ID,
 		&i.OrderID,
-		&i.OrderItemID,
 		&i.MerchantID,
 		&i.AmountCents,
 		&i.Currency,
@@ -154,7 +124,7 @@ SET
     updated_at = NOW()
 WHERE id = $1 AND status NOT IN ('SUCCEEDED', 'FAILED')
 RETURNING
-    id, order_id, order_item_id, merchant_id, amount_cents, currency, status, idempotency_key, gateway_transaction_id, failure_reason, created_at, updated_at
+    payment_transactions.id, payment_transactions.order_id, payment_transactions.merchant_id, payment_transactions.amount_cents, payment_transactions.currency, payment_transactions.status, payment_transactions.idempotency_key, payment_transactions.gateway_transaction_id, payment_transactions.failure_reason, payment_transactions.created_at, payment_transactions.updated_at
 `
 
 type UpdatePaymentTransactionGatewayResultParams struct {
@@ -175,7 +145,6 @@ func (q *Queries) UpdatePaymentTransactionGatewayResult(ctx context.Context, arg
 	err := row.Scan(
 		&i.ID,
 		&i.OrderID,
-		&i.OrderItemID,
 		&i.MerchantID,
 		&i.AmountCents,
 		&i.Currency,

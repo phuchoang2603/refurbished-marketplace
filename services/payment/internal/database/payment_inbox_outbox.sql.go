@@ -46,14 +46,7 @@ func (q *Queries) CreatePaymentOutbox(ctx context.Context, arg CreatePaymentOutb
 }
 
 const getPaymentOutboxByAggregateIDAndEventType = `-- name: GetPaymentOutboxByAggregateIDAndEventType :one
-SELECT
-    id,
-    aggregate_id,
-    event_type,
-    payload,
-    publish_attempts,
-    created_at,
-    published_at
+SELECT id, aggregate_id, event_type, payload, publish_attempts, created_at, published_at
 FROM payment_outbox
 WHERE aggregate_id = $1 AND event_type = $2
 LIMIT 1

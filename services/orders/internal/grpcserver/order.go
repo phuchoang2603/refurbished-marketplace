@@ -41,6 +41,7 @@ func mapOrder(o service.Order) *ordersv1.Order {
 	return &ordersv1.Order{
 		Id:          o.ID.String(),
 		BuyerUserId: o.BuyerUserID.String(),
+		MerchantId:  o.MerchantID.String(),
 		Status:      ordersv1.OrderStatus(status),
 		TotalCents:  o.TotalCents,
 		CreatedAt:   timestamppb.New(o.CreatedAt),
@@ -54,23 +55,23 @@ func (s *Server) CreateOrder(ctx context.Context, req *ordersv1.CreateOrderReque
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid buyer user id")
 	}
+	merchantID, err := uuid.Parse(req.GetMerchantId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid merchant id")
+	}
 	items := make([]service.OrderItemInput, 0, len(req.GetItems()))
 	for _, item := range req.GetItems() {
 		productID, err := uuid.Parse(item.GetProductId())
 		if err != nil {
 			return nil, status.Error(codes.InvalidArgument, "invalid product id")
 		}
-		merchantID, err := uuid.Parse(item.GetMerchantId())
-		if err != nil {
-			return nil, status.Error(codes.InvalidArgument, "invalid merchant id")
-		}
-		items = append(items, service.OrderItemInput{ProductID: productID, MerchantID: merchantID, Quantity: item.GetQuantity(), UnitPriceCents: item.GetUnitPriceCents()})
+		items = append(items, service.OrderItemInput{ProductID: productID, Quantity: item.GetQuantity(), UnitPriceCents: item.GetUnitPriceCents()})
 	}
 
-	order, err := s.svc.CreateOrder(ctx, buyerID, items, req.TotalCents)
+	order, err := s.svc.CreateOrder(ctx, buyerID, merchantID, items, req.TotalCents)
 	if err != nil {
 		switch {
-		case errors.Is(err, service.ErrInvalidBuyerID), errors.Is(err, service.ErrInvalidProductID), errors.Is(err, service.ErrInvalidQuantity):
+		case errors.Is(err, service.ErrInvalidBuyerID), errors.Is(err, service.ErrInvalidMerchantID), errors.Is(err, service.ErrInvalidProductID), errors.Is(err, service.ErrInvalidQuantity), errors.Is(err, service.ErrInvalidUnitPriceCents), errors.Is(err, service.ErrInvalidTotalCents):
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		default:
 			return nil, status.Error(codes.Internal, "internal error")

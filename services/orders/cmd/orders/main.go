@@ -15,10 +15,11 @@ import (
 	"refurbished-marketplace/services/orders/internal/service"
 	"refurbished-marketplace/shared/messaging"
 
+	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
+
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
-	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
 )
 
 func main() {

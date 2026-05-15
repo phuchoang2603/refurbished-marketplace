@@ -24,7 +24,6 @@ message OrderItem {
   string id = 1;
   string order_id = 2;
   string product_id = 3;
-  string merchant_id = 4;
   int32 quantity = 5;
   int64 unit_price_cents = 6;
   int64 line_total_cents = 7;
@@ -39,11 +38,11 @@ message Order {
   repeated OrderItem items = 5;
   google.protobuf.Timestamp created_at = 6;
   google.protobuf.Timestamp updated_at = 7;
+  string merchant_id = 8;
 }
 
 message CreateOrderItem {
   string product_id = 1;
-  string merchant_id = 2;
   int32 quantity = 3;
   int64 unit_price_cents = 4;
 }
@@ -52,6 +51,7 @@ message CreateOrderRequest {
   string buyer_user_id = 1;
   repeated CreateOrderItem items = 2;
   int64 total_cents = 3;
+  string merchant_id = 4;
 }
 
 message GetOrderByIDRequest {

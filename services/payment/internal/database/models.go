@@ -42,7 +42,6 @@ type PaymentOutbox struct {
 type PaymentTransaction struct {
 	ID                   uuid.UUID
 	OrderID              uuid.UUID
-	OrderItemID          uuid.UUID
 	MerchantID           uuid.UUID
 	AmountCents          int64
 	Currency             string

@@ -6,20 +6,22 @@ import (
 
 	"refurbished-marketplace/services/orders/internal/database"
 	"refurbished-marketplace/shared/messaging"
+
 	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 )
 
-func mapDBOrder(o database.Order) Order {
+func mapDBOrder(i database.Order) Order {
 	return Order{
-		ID:          o.ID,
-		BuyerUserID: o.BuyerUserID,
-		Status:      o.Status,
-		TotalCents:  o.TotalCents,
-		CreatedAt:   o.CreatedAt,
-		UpdatedAt:   o.UpdatedAt,
+		ID:          i.ID,
+		BuyerUserID: i.BuyerUserID,
+		MerchantID:  i.MerchantID,
+		Status:      i.Status,
+		TotalCents:  i.TotalCents,
+		CreatedAt:   i.CreatedAt,
+		UpdatedAt:   i.UpdatedAt,
 	}
 }
 
@@ -28,7 +30,6 @@ func mapDBOrderItem(i database.OrderItem) OrderItem {
 		ID:             i.ID,
 		OrderID:        i.OrderID,
 		ProductID:      i.ProductID,
-		MerchantID:     i.MerchantID,
 		Quantity:       i.Quantity,
 		UnitPriceCents: i.UnitPriceCents,
 		LineTotalCents: i.LineTotalCents,
@@ -36,9 +37,12 @@ func mapDBOrderItem(i database.OrderItem) OrderItem {
 	}
 }
 
-func validateCreateOrderInput(buyerUserID uuid.UUID, items []OrderItemInput, totalCents int64) error {
+func validateCreateOrderInput(buyerUserID, merchantID uuid.UUID, items []OrderItemInput, totalCents int64) error {
 	if buyerUserID == uuid.Nil {
 		return ErrInvalidBuyerID
+	}
+	if merchantID == uuid.Nil {
+		return ErrInvalidMerchantID
 	}
 	if len(items) == 0 {
 		return ErrInvalidProductID
@@ -71,7 +75,7 @@ func validateOrderStatus(status string) (string, error) {
 	return status, nil
 }
 
-func createOrderItems(ctx context.Context, queries *database.Queries, orderID, buyerUserID uuid.UUID, items []OrderItemInput) ([]OrderItem, error) {
+func createOrderItems(ctx context.Context, queries *database.Queries, orderID uuid.UUID, items []OrderItemInput) ([]OrderItem, error) {
 	orderItems := make([]OrderItem, 0, len(items))
 
 	for _, item := range items {
@@ -81,36 +85,11 @@ func createOrderItems(ctx context.Context, queries *database.Queries, orderID, b
 			ID:             itemID,
 			OrderID:        orderID,
 			ProductID:      item.ProductID,
-			MerchantID:     item.MerchantID,
 			Quantity:       item.Quantity,
 			UnitPriceCents: item.UnitPriceCents,
 			LineTotalCents: lineTotal,
 		})
 		if err != nil {
-			return nil, err
-		}
-
-		msg := &ordersv1.OrderItemCreated{
-			OrderId:        orderID.String(),
-			OrderItemId:    itemID.String(),
-			BuyerUserId:    buyerUserID.String(),
-			ProductId:      item.ProductID.String(),
-			MerchantId:     item.MerchantID.String(),
-			Quantity:       item.Quantity,
-			UnitPriceCents: item.UnitPriceCents,
-			LineTotalCents: lineTotal,
-		}
-		payloadBytes, err := proto.Marshal(msg)
-		if err != nil {
-			return nil, err
-		}
-
-		if _, err := queries.CreateOrderOutbox(ctx, database.CreateOrderOutboxParams{
-			ID:          uuid.New(),
-			AggregateID: item.ProductID,
-			EventType:   messaging.EventTypeOrderItemCreated,
-			Payload:     payloadBytes,
-		}); err != nil {
 			return nil, err
 		}
 
@@ -120,30 +99,39 @@ func createOrderItems(ctx context.Context, queries *database.Queries, orderID, b
 	return orderItems, nil
 }
 
-func loadOrderWithItems(ctx context.Context, queries *database.Queries, dbOrder database.Order) (Order, error) {
-	orders, err := loadOrdersWithItems(ctx, queries, []database.Order{dbOrder})
+func createOrderOutbox(ctx context.Context, queries *database.Queries, order Order) error {
+	payloadBytes, err := proto.Marshal(&ordersv1.OrderCreated{
+		OrderId:     order.ID.String(),
+		BuyerUserId: order.BuyerUserID.String(),
+		MerchantId:  order.MerchantID.String(),
+		TotalCents:  order.TotalCents,
+	})
 	if err != nil {
-		return Order{}, err
+		return err
 	}
-	if len(orders) == 0 {
-		return Order{}, ErrOrderNotFound
-	}
-	return orders[0], nil
+
+	_, err = queries.CreateOrderOutbox(ctx, database.CreateOrderOutboxParams{
+		ID:          uuid.New(),
+		AggregateID: order.ID,
+		EventType:   messaging.EventTypeOrderCreated,
+		Payload:     payloadBytes,
+	})
+	return err
 }
 
-func loadOrdersWithItems(ctx context.Context, queries *database.Queries, rows []database.Order) ([]Order, error) {
-	if len(rows) == 0 {
+func loadOrdersWithItems(ctx context.Context, queries *database.Queries, orders []Order) ([]Order, error) {
+	if len(orders) == 0 {
 		return []Order{}, nil
 	}
 
-	ids := make([]uuid.UUID, len(rows))
-	results := make([]Order, len(rows))
-	orderIndex := make(map[uuid.UUID]int, len(rows))
+	ids := make([]uuid.UUID, len(orders))
+	results := make([]Order, len(orders))
+	orderIndex := make(map[uuid.UUID]int, len(orders))
 
-	for i, row := range rows {
-		ids[i] = row.ID
-		orderIndex[row.ID] = i
-		results[i] = mapDBOrder(row)
+	for i, order := range orders {
+		ids[i] = order.ID
+		orderIndex[order.ID] = i
+		results[i] = order
 		results[i].Items = []OrderItem{}
 	}
 

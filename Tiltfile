@@ -14,7 +14,7 @@ local_resource(
   'helm upgrade --install strimzi-cluster-operator oci://quay.io/strimzi-helm/strimzi-kafka-operator \
   --namespace operators \
   --set watchAnyNamespace=true \
-  --version 0.41.0',
+  --version 1.0.0',
 )
 
 ### Kafka Cluster and Topics ###

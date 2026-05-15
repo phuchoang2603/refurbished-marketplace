@@ -24,6 +24,11 @@ sequenceDiagram
     C->>CRT: AddCartItem(merchant_id, qty)
     CRT-->>C: 200 OK
 
+    Note over C, PAY: Payment Setup
+    C->>PAY: InitiatePayment(order_id, buyer, token, addresses)
+    PAY->>PAY: Persist payment_intent(order_id)
+    PAY-->>C: 200 OK
+
     Note over C, ORD: Order Creation
     C->>ORD: CreateOrder(merchant_id, total)
     ORD->>ORD: Persist Order (Status: Pending)
@@ -32,7 +37,9 @@ sequenceDiagram
 
     Note over K, PAY: Asynchronous Payment Loop
     K->>PAY: Consume "orders.created"
-    PAY->>PAY: Process Transaction
+    PAY->>PAY: Record payment_inbox message
+    PAY->>PAY: Load payment_intent(order_id)
+    PAY->>PAY: Create payment_transaction(order_id)
     PAY->>K: Emit "payment.succeeded"
     K->>ORD: Consume "payment.succeeded"
     ORD->>ORD: Update Status: Paid

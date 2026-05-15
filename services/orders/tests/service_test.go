@@ -36,13 +36,14 @@ func TestCreateGetListOrder(t *testing.T) {
 		created, err := svc.CreateOrder(
 			ctx,
 			buyerID,
-			[]service.OrderItemInput{{ProductID: productID, MerchantID: merchantID, Quantity: 2, UnitPriceCents: 9950}},
+			merchantID,
+			[]service.OrderItemInput{{ProductID: productID, Quantity: 2, UnitPriceCents: 9950}},
 			19900,
 		)
 		if err != nil {
 			t.Fatalf("create order: %v", err)
 		}
-		if created.BuyerUserID != buyerID || len(created.Items) != 1 || created.Items[0].ProductID != productID || created.Items[0].MerchantID != merchantID {
+		if created.BuyerUserID != buyerID || created.MerchantID != merchantID || len(created.Items) != 1 || created.Items[0].ProductID != productID {
 			t.Fatalf("unexpected order items")
 		}
 	})
@@ -54,7 +55,8 @@ func TestCreateGetListOrder(t *testing.T) {
 		created, err := svc.CreateOrder(
 			ctx,
 			createdBuyerID,
-			[]service.OrderItemInput{{ProductID: createdProductID, MerchantID: createdMerchantID, Quantity: 2, UnitPriceCents: 9950}},
+			createdMerchantID,
+			[]service.OrderItemInput{{ProductID: createdProductID, Quantity: 2, UnitPriceCents: 9950}},
 			19900,
 		)
 		if err != nil {
@@ -77,7 +79,8 @@ func TestCreateGetListOrder(t *testing.T) {
 		created, err := svc.CreateOrder(
 			ctx,
 			buyerID,
-			[]service.OrderItemInput{{ProductID: productID, MerchantID: merchantID, Quantity: 2, UnitPriceCents: 9950}},
+			merchantID,
+			[]service.OrderItemInput{{ProductID: productID, Quantity: 2, UnitPriceCents: 9950}},
 			19900,
 		)
 		if err != nil {
@@ -103,7 +106,8 @@ func TestCreateGetListOrder(t *testing.T) {
 		created, err := svc.CreateOrder(
 			ctx,
 			buyerID,
-			[]service.OrderItemInput{{ProductID: productID, MerchantID: merchantID, Quantity: 2, UnitPriceCents: 9950}},
+			merchantID,
+			[]service.OrderItemInput{{ProductID: productID, Quantity: 2, UnitPriceCents: 9950}},
 			19900,
 		)
 		if err != nil {
@@ -125,7 +129,7 @@ func TestOrderValidation(t *testing.T) {
 		svc := newOrdersService(t)
 		ctx := t.Context()
 
-		_, err := svc.CreateOrder(ctx, uuid.Nil, []service.OrderItemInput{{ProductID: uuid.New(), MerchantID: uuid.New(), Quantity: 1, UnitPriceCents: 100}}, 100)
+		_, err := svc.CreateOrder(ctx, uuid.Nil, uuid.New(), []service.OrderItemInput{{ProductID: uuid.New(), Quantity: 1, UnitPriceCents: 100}}, 100)
 		if !errors.Is(err, service.ErrInvalidBuyerID) {
 			t.Fatalf("expected ErrInvalidBuyerID, got %v", err)
 		}
@@ -135,7 +139,7 @@ func TestOrderValidation(t *testing.T) {
 		svc := newOrdersService(t)
 		ctx := t.Context()
 
-		_, err := svc.CreateOrder(ctx, uuid.New(), []service.OrderItemInput{{ProductID: uuid.Nil, MerchantID: uuid.New(), Quantity: 1, UnitPriceCents: 100}}, 100)
+		_, err := svc.CreateOrder(ctx, uuid.New(), uuid.New(), []service.OrderItemInput{{ProductID: uuid.Nil, Quantity: 1, UnitPriceCents: 100}}, 100)
 		if !errors.Is(err, service.ErrInvalidProductID) {
 			t.Fatalf("expected ErrInvalidProductID, got %v", err)
 		}
@@ -145,9 +149,19 @@ func TestOrderValidation(t *testing.T) {
 		svc := newOrdersService(t)
 		ctx := t.Context()
 
-		_, err := svc.CreateOrder(ctx, uuid.New(), []service.OrderItemInput{{ProductID: uuid.New(), MerchantID: uuid.New(), Quantity: 0, UnitPriceCents: 100}}, 100)
+		_, err := svc.CreateOrder(ctx, uuid.New(), uuid.New(), []service.OrderItemInput{{ProductID: uuid.New(), Quantity: 0, UnitPriceCents: 100}}, 100)
 		if !errors.Is(err, service.ErrInvalidQuantity) {
 			t.Fatalf("expected ErrInvalidQuantity, got %v", err)
+		}
+	})
+
+	t.Run("invalid merchant id", func(t *testing.T) {
+		svc := newOrdersService(t)
+		ctx := t.Context()
+
+		_, err := svc.CreateOrder(ctx, uuid.New(), uuid.Nil, []service.OrderItemInput{{ProductID: uuid.New(), Quantity: 1, UnitPriceCents: 100}}, 100)
+		if !errors.Is(err, service.ErrInvalidMerchantID) {
+			t.Fatalf("expected ErrInvalidMerchantID, got %v", err)
 		}
 	})
 

@@ -13,7 +13,7 @@ connect:
 entities:
   orders:
     topics:
-      - name: orders.item.created
+      - name: orders.created
         partitions: 10
         retention: 604800000 # 7 days
     connector:
@@ -25,10 +25,10 @@ entities:
       outboxTable: public.orders_outbox
   payment:
     topics:
-      - name: payment.item.succeeded
+      - name: payment.succeeded
         partitions: 6
         retention: 604800000
-      - name: payment.item.failed
+      - name: payment.failed
         partitions: 6
         retention: 604800000
     connector:

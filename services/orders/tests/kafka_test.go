@@ -24,9 +24,7 @@ func TestKafkaPaymentResultHandler_EndToEnd(t *testing.T) {
 	buyerID := uuid.New()
 	productID := uuid.New()
 	merchantID := uuid.New()
-	created, err := svc.CreateOrder(ctx, buyerID, []service.OrderItemInput{
-		{ProductID: productID, MerchantID: merchantID, Quantity: 1, UnitPriceCents: 1000},
-	}, 1000)
+	created, err := svc.CreateOrder(ctx, buyerID, merchantID, []service.OrderItemInput{{ProductID: productID, Quantity: 1, UnitPriceCents: 1000}}, 1000)
 	if err != nil {
 		t.Fatalf("CreateOrder: %v", err)
 	}
@@ -39,10 +37,9 @@ func TestKafkaPaymentResultHandler_EndToEnd(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Brokers: %v", err)
 	}
-	topic := messaging.EventTypePaymentItemSucceeded
-	payload, err := proto.Marshal(&paymentv1.PaymentItemOutbox{
-		OrderId:     created.ID.String(),
-		OrderItemId: created.Items[0].ID.String(),
+	topic := messaging.EventTypePaymentSucceeded
+	payload, err := proto.Marshal(&paymentv1.PaymentOutcome{
+		OrderId: created.ID.String(),
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -65,7 +62,7 @@ func TestKafkaPaymentResultHandler_EndToEnd(t *testing.T) {
 	consumer, err := messaging.NewKafkaConsumer(messaging.KafkaConsumerConfig{
 		BootstrapServers: brokers,
 		GroupID:          fmt.Sprintf("orders-kafka-e2e-%s", uuid.New().String()),
-		Topics:           []string{messaging.EventTypePaymentItemSucceeded},
+		Topics:           []string{messaging.EventTypePaymentSucceeded},
 	}, svc.KafkaPaymentResultHandler())
 	if err != nil {
 		t.Fatalf("NewKafkaConsumer: %v", err)
