@@ -3,8 +3,9 @@ package handlers
 import (
 	"net/http"
 
-	"google.golang.org/protobuf/types/known/timestamppb"
 	"refurbished-marketplace/services/web/internal/views"
+
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func mapUserView(id, email string, createdAt, updatedAt *timestamppb.Timestamp) views.UserView {

@@ -1,4 +1,4 @@
-package usersclient
+package users
 
 import (
 	"context"

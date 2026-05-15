@@ -7,11 +7,11 @@ import (
 
 	"refurbished-marketplace/services/web/internal/handlers"
 	authconfig "refurbished-marketplace/shared/auth/config"
-	"refurbished-marketplace/shared/proto/cartclient"
-	"refurbished-marketplace/shared/proto/ordersclient"
-	"refurbished-marketplace/shared/proto/paymentclient"
-	"refurbished-marketplace/shared/proto/productsclient"
-	"refurbished-marketplace/shared/proto/usersclient"
+	cartproto "refurbished-marketplace/shared/proto/cart"
+	ordersproto "refurbished-marketplace/shared/proto/orders"
+	paymentproto "refurbished-marketplace/shared/proto/payment"
+	productsproto "refurbished-marketplace/shared/proto/products"
+	usersproto "refurbished-marketplace/shared/proto/users"
 )
 
 func requiredEnv(name string) string {
@@ -28,31 +28,31 @@ func main() {
 		addr = ":8080"
 	}
 
-	usersClient, err := usersclient.New(requiredEnv("USERS_SVC_ADDR"))
+	usersClient, err := usersproto.New(requiredEnv("USERS_SVC_ADDR"))
 	if err != nil {
 		log.Fatalf("users grpc client: %v", err)
 	}
 	defer usersClient.Close()
 
-	productsClient, err := productsclient.New(requiredEnv("PRODUCTS_SVC_ADDR"))
+	productsClient, err := productsproto.New(requiredEnv("PRODUCTS_SVC_ADDR"))
 	if err != nil {
 		log.Fatalf("products grpc client: %v", err)
 	}
 	defer productsClient.Close()
 
-	ordersClient, err := ordersclient.New(requiredEnv("ORDERS_SVC_ADDR"))
+	ordersClient, err := ordersproto.New(requiredEnv("ORDERS_SVC_ADDR"))
 	if err != nil {
 		log.Fatalf("orders grpc client: %v", err)
 	}
 	defer ordersClient.Close()
 
-	cartClient, err := cartclient.New(requiredEnv("CART_SVC_ADDR"))
+	cartClient, err := cartproto.New(requiredEnv("CART_SVC_ADDR"))
 	if err != nil {
 		log.Fatalf("cart grpc client: %v", err)
 	}
 	defer cartClient.Close()
 
-	paymentClient, err := paymentclient.New(requiredEnv("PAYMENT_SVC_ADDR"))
+	paymentClient, err := paymentproto.New(requiredEnv("PAYMENT_SVC_ADDR"))
 	if err != nil {
 		log.Fatalf("payment grpc client: %v", err)
 	}

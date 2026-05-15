@@ -11,7 +11,7 @@ const (
 	RefreshCookieName = "web_refresh_token"
 )
 
-func SetTokenCookies(w http.ResponseWriter, r *http.Request, accessToken string, refreshToken string, expiresIn int64, refreshExpiresIn int64) {
+func SetTokenCookies(w http.ResponseWriter, r *http.Request, accessToken, refreshToken string, expiresIn, refreshExpiresIn int64) {
 	setAuthCookie(w, r, AccessCookieName, accessToken, int(expiresIn))
 	setAuthCookie(w, r, RefreshCookieName, refreshToken, int(refreshExpiresIn))
 }
@@ -32,7 +32,7 @@ func cookieValue(r *http.Request, name string) string {
 	return ""
 }
 
-func setAuthCookie(w http.ResponseWriter, r *http.Request, name string, value string, maxAge int) {
+func setAuthCookie(w http.ResponseWriter, r *http.Request, name, value string, maxAge int) {
 	cookie := &http.Cookie{
 		Name:     name,
 		Value:    value,

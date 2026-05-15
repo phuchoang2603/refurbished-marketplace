@@ -3,8 +3,9 @@ package handlers
 import (
 	"net/http"
 
-	"google.golang.org/protobuf/types/known/timestamppb"
 	"refurbished-marketplace/services/web/internal/views"
+
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 func mapProductView(id, name, description string, priceCents int64, stock int32, createdAt, updatedAt *timestamppb.Timestamp) views.ProductView {

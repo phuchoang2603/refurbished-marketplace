@@ -1,4 +1,4 @@
-package ordersclient
+package orders
 
 import (
 	"context"

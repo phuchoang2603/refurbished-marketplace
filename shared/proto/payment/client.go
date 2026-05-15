@@ -1,4 +1,4 @@
-package paymentclient
+package payment
 
 import (
 	"context"

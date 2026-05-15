@@ -147,7 +147,7 @@ func requirePathValue(w http.ResponseWriter, r *http.Request, key, errorMessage 
 	return value, true
 }
 
-func queryInt32Param(w http.ResponseWriter, r *http.Request, key string, defaultValue int32, minValue int32, errorMessage string) (int32, bool) {
+func queryInt32Param(w http.ResponseWriter, r *http.Request, key string, defaultValue, minValue int32, errorMessage string) (int32, bool) {
 	raw := strings.TrimSpace(r.URL.Query().Get(key))
 	if raw == "" {
 		return defaultValue, true

@@ -8,9 +8,9 @@ package views
 import (
 	"github.com/a-h/templ"
 	templruntime "github.com/a-h/templ/runtime"
-)
 
-import templpkg "github.com/a-h/templ"
+	templpkg "github.com/a-h/templ"
+)
 
 func AppShell(title string, nav []NavLink, body templpkg.Component) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {

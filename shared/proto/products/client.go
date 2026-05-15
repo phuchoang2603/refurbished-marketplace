@@ -1,4 +1,4 @@
-package productsclient
+package products
 
 import (
 	"context"

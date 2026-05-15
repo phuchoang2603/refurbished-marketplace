@@ -6,9 +6,10 @@ import (
 	"testing"
 	"time"
 
+	authconfig "refurbished-marketplace/shared/auth/config"
+
 	"github.com/a-h/templ"
 	jwtlib "github.com/golang-jwt/jwt/v5"
-	authconfig "refurbished-marketplace/shared/auth/config"
 )
 
 func renderToString(t *testing.T, c templ.Component) string {
@@ -25,7 +26,7 @@ func renderWithContext(t *testing.T, ctx context.Context, c templ.Component) str
 	return buf.String()
 }
 
-func signedAccessToken(t *testing.T, secret string, subject string) string {
+func signedAccessToken(t *testing.T, secret, subject string) string {
 	t.Helper()
 	claims := jwtlib.MapClaims{
 		"typ": "access",

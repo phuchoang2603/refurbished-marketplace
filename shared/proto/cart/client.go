@@ -1,4 +1,4 @@
-package cartclient
+package cart
 
 import (
 	"context"

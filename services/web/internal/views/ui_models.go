@@ -67,7 +67,7 @@ func classNames(values ...string) string {
 	return strings.Join(parts, " ")
 }
 
-func componentAttrs(attrs templ.Attributes, slot string, class string, id string) templ.Attributes {
+func componentAttrs(attrs templ.Attributes, slot, class, id string) templ.Attributes {
 	merged := templ.Attributes{}
 	maps.Copy(merged, attrs)
 	if id != "" {
@@ -100,6 +100,6 @@ func formAttrs(args FormArgs) templ.Attributes {
 	return attrs
 }
 
-func datastarFormAction(method string, action string) string {
+func datastarFormAction(method, action string) string {
 	return "@" + method + "('" + action + "', {contentType: 'form'})"
 }

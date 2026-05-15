@@ -1,15 +1,14 @@
-// Package handlers provides HTTP handlers for the web service. It defines the Handler struct that contains a users client for communicating with the users gRPC service.
 package handlers
 
 import (
 	"net/http"
 
 	"refurbished-marketplace/services/web/internal/views"
-	"refurbished-marketplace/shared/proto/cartclient"
-	"refurbished-marketplace/shared/proto/ordersclient"
-	"refurbished-marketplace/shared/proto/paymentclient"
-	"refurbished-marketplace/shared/proto/productsclient"
-	"refurbished-marketplace/shared/proto/usersclient"
+	cartproto "refurbished-marketplace/shared/proto/cart"
+	ordersproto "refurbished-marketplace/shared/proto/orders"
+	paymentproto "refurbished-marketplace/shared/proto/payment"
+	productsproto "refurbished-marketplace/shared/proto/products"
+	usersproto "refurbished-marketplace/shared/proto/users"
 
 	webAuth "refurbished-marketplace/services/web/internal/auth"
 
@@ -19,15 +18,15 @@ import (
 const staticDir = "/static"
 
 type Handler struct {
-	users    *usersclient.Client
-	products *productsclient.Client
-	orders   *ordersclient.Client
-	cart     *cartclient.Client
-	payment  *paymentclient.Client
+	users    *usersproto.Client
+	products *productsproto.Client
+	orders   *ordersproto.Client
+	cart     *cartproto.Client
+	payment  *paymentproto.Client
 	auth     authconfig.Config
 }
 
-func New(users *usersclient.Client, products *productsclient.Client, orders *ordersclient.Client, cart *cartclient.Client, payment *paymentclient.Client, authCfg authconfig.Config) *Handler {
+func New(users *usersproto.Client, products *productsproto.Client, orders *ordersproto.Client, cart *cartproto.Client, payment *paymentproto.Client, authCfg authconfig.Config) *Handler {
 	return &Handler{
 		users:    users,
 		products: products,
