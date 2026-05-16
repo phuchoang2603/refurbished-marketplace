@@ -9,9 +9,10 @@ import (
 	"context"
 
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 )
 
-const commitReservation = `-- name: CommitReservation :one
+const commitInventoryReservedStock = `-- name: CommitInventoryReservedStock :one
 UPDATE inventory
 SET
     reserved_qty = reserved_qty - $1,
@@ -22,13 +23,13 @@ WHERE
 RETURNING inventory.product_id, inventory.available_qty, inventory.reserved_qty, inventory.created_at, inventory.updated_at
 `
 
-type CommitReservationParams struct {
+type CommitInventoryReservedStockParams struct {
 	Quantity  int32
 	ProductID uuid.UUID
 }
 
-func (q *Queries) CommitReservation(ctx context.Context, arg CommitReservationParams) (Inventory, error) {
-	row := q.db.QueryRowContext(ctx, commitReservation, arg.Quantity, arg.ProductID)
+func (q *Queries) CommitInventoryReservedStock(ctx context.Context, arg CommitInventoryReservedStockParams) (Inventory, error) {
+	row := q.db.QueryRowContext(ctx, commitInventoryReservedStock, arg.Quantity, arg.ProductID)
 	var i Inventory
 	err := row.Scan(
 		&i.ProductID,
@@ -64,6 +65,42 @@ func (q *Queries) CreateInventory(ctx context.Context, arg CreateInventoryParams
 	return i, err
 }
 
+const getInventoriesByProductIDsForUpdate = `-- name: GetInventoriesByProductIDsForUpdate :many
+SELECT product_id, available_qty, reserved_qty, created_at, updated_at
+FROM inventory
+WHERE product_id = ANY($1::uuid [])
+FOR UPDATE
+`
+
+func (q *Queries) GetInventoriesByProductIDsForUpdate(ctx context.Context, dollar_1 []uuid.UUID) ([]Inventory, error) {
+	rows, err := q.db.QueryContext(ctx, getInventoriesByProductIDsForUpdate, pq.Array(dollar_1))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Inventory
+	for rows.Next() {
+		var i Inventory
+		if err := rows.Scan(
+			&i.ProductID,
+			&i.AvailableQty,
+			&i.ReservedQty,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getInventoryByProductID = `-- name: GetInventoryByProductID :one
 SELECT product_id, available_qty, reserved_qty, created_at, updated_at
 FROM inventory
@@ -83,7 +120,7 @@ func (q *Queries) GetInventoryByProductID(ctx context.Context, productID uuid.UU
 	return i, err
 }
 
-const releaseReservation = `-- name: ReleaseReservation :one
+const releaseInventoryReservedStock = `-- name: ReleaseInventoryReservedStock :one
 UPDATE inventory
 SET
     available_qty = available_qty + $1,
@@ -95,13 +132,13 @@ WHERE
 RETURNING inventory.product_id, inventory.available_qty, inventory.reserved_qty, inventory.created_at, inventory.updated_at
 `
 
-type ReleaseReservationParams struct {
+type ReleaseInventoryReservedStockParams struct {
 	Quantity  int32
 	ProductID uuid.UUID
 }
 
-func (q *Queries) ReleaseReservation(ctx context.Context, arg ReleaseReservationParams) (Inventory, error) {
-	row := q.db.QueryRowContext(ctx, releaseReservation, arg.Quantity, arg.ProductID)
+func (q *Queries) ReleaseInventoryReservedStock(ctx context.Context, arg ReleaseInventoryReservedStockParams) (Inventory, error) {
+	row := q.db.QueryRowContext(ctx, releaseInventoryReservedStock, arg.Quantity, arg.ProductID)
 	var i Inventory
 	err := row.Scan(
 		&i.ProductID,
@@ -113,25 +150,23 @@ func (q *Queries) ReleaseReservation(ctx context.Context, arg ReleaseReservation
 	return i, err
 }
 
-const reserveStock = `-- name: ReserveStock :one
+const reserveInventoryStock = `-- name: ReserveInventoryStock :one
 UPDATE inventory
 SET
     available_qty = available_qty - $1,
     reserved_qty = reserved_qty + $1,
     updated_at = NOW()
-WHERE
-    product_id = $2
-    AND available_qty >= $1
+WHERE product_id = $2
 RETURNING inventory.product_id, inventory.available_qty, inventory.reserved_qty, inventory.created_at, inventory.updated_at
 `
 
-type ReserveStockParams struct {
+type ReserveInventoryStockParams struct {
 	Quantity  int32
 	ProductID uuid.UUID
 }
 
-func (q *Queries) ReserveStock(ctx context.Context, arg ReserveStockParams) (Inventory, error) {
-	row := q.db.QueryRowContext(ctx, reserveStock, arg.Quantity, arg.ProductID)
+func (q *Queries) ReserveInventoryStock(ctx context.Context, arg ReserveInventoryStockParams) (Inventory, error) {
+	row := q.db.QueryRowContext(ctx, reserveInventoryStock, arg.Quantity, arg.ProductID)
 	var i Inventory
 	err := row.Scan(
 		&i.ProductID,

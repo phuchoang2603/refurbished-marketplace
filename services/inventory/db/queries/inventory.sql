@@ -8,18 +8,22 @@ SELECT *
 FROM inventory
 WHERE product_id = $1;
 
--- name: ReserveStock :one
+-- name: GetInventoriesByProductIDsForUpdate :many
+SELECT *
+FROM inventory
+WHERE product_id = ANY($1::uuid [])
+FOR UPDATE;
+
+-- name: ReserveInventoryStock :one
 UPDATE inventory
 SET
     available_qty = available_qty - sqlc.arg(quantity),
     reserved_qty = reserved_qty + sqlc.arg(quantity),
     updated_at = NOW()
-WHERE
-    product_id = sqlc.arg(product_id)
-    AND available_qty >= sqlc.arg(quantity)
+WHERE product_id = sqlc.arg(product_id)
 RETURNING inventory.*;
 
--- name: CommitReservation :one
+-- name: CommitInventoryReservedStock :one
 UPDATE inventory
 SET
     reserved_qty = reserved_qty - sqlc.arg(quantity),
@@ -29,7 +33,7 @@ WHERE
     AND reserved_qty >= sqlc.arg(quantity)
 RETURNING inventory.*;
 
--- name: ReleaseReservation :one
+-- name: ReleaseInventoryReservedStock :one
 UPDATE inventory
 SET
     available_qty = available_qty + sqlc.arg(quantity),

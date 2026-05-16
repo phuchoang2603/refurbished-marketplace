@@ -194,162 +194,6 @@ func (x *GetInventoryByProductIDRequest) GetProductId() string {
 	return ""
 }
 
-type ReserveStockRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ProductId     string                 `protobuf:"bytes,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
-	Quantity      int32                  `protobuf:"varint,2,opt,name=quantity,proto3" json:"quantity,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ReserveStockRequest) Reset() {
-	*x = ReserveStockRequest{}
-	mi := &file_shared_proto_inventory_v1_inventory_proto_msgTypes[3]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ReserveStockRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ReserveStockRequest) ProtoMessage() {}
-
-func (x *ReserveStockRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_inventory_v1_inventory_proto_msgTypes[3]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ReserveStockRequest.ProtoReflect.Descriptor instead.
-func (*ReserveStockRequest) Descriptor() ([]byte, []int) {
-	return file_shared_proto_inventory_v1_inventory_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *ReserveStockRequest) GetProductId() string {
-	if x != nil {
-		return x.ProductId
-	}
-	return ""
-}
-
-func (x *ReserveStockRequest) GetQuantity() int32 {
-	if x != nil {
-		return x.Quantity
-	}
-	return 0
-}
-
-type CommitReservationRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ProductId     string                 `protobuf:"bytes,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
-	Quantity      int32                  `protobuf:"varint,2,opt,name=quantity,proto3" json:"quantity,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *CommitReservationRequest) Reset() {
-	*x = CommitReservationRequest{}
-	mi := &file_shared_proto_inventory_v1_inventory_proto_msgTypes[4]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CommitReservationRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CommitReservationRequest) ProtoMessage() {}
-
-func (x *CommitReservationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_inventory_v1_inventory_proto_msgTypes[4]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CommitReservationRequest.ProtoReflect.Descriptor instead.
-func (*CommitReservationRequest) Descriptor() ([]byte, []int) {
-	return file_shared_proto_inventory_v1_inventory_proto_rawDescGZIP(), []int{4}
-}
-
-func (x *CommitReservationRequest) GetProductId() string {
-	if x != nil {
-		return x.ProductId
-	}
-	return ""
-}
-
-func (x *CommitReservationRequest) GetQuantity() int32 {
-	if x != nil {
-		return x.Quantity
-	}
-	return 0
-}
-
-type ReleaseReservationRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ProductId     string                 `protobuf:"bytes,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
-	Quantity      int32                  `protobuf:"varint,2,opt,name=quantity,proto3" json:"quantity,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ReleaseReservationRequest) Reset() {
-	*x = ReleaseReservationRequest{}
-	mi := &file_shared_proto_inventory_v1_inventory_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ReleaseReservationRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ReleaseReservationRequest) ProtoMessage() {}
-
-func (x *ReleaseReservationRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_inventory_v1_inventory_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ReleaseReservationRequest.ProtoReflect.Descriptor instead.
-func (*ReleaseReservationRequest) Descriptor() ([]byte, []int) {
-	return file_shared_proto_inventory_v1_inventory_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *ReleaseReservationRequest) GetProductId() string {
-	if x != nil {
-		return x.ProductId
-	}
-	return ""
-}
-
-func (x *ReleaseReservationRequest) GetQuantity() int32 {
-	if x != nil {
-		return x.Quantity
-	}
-	return 0
-}
-
 var File_shared_proto_inventory_v1_inventory_proto protoreflect.FileDescriptor
 
 const file_shared_proto_inventory_v1_inventory_proto_rawDesc = "" +
@@ -370,25 +214,10 @@ const file_shared_proto_inventory_v1_inventory_proto_rawDesc = "" +
 	"\ravailable_qty\x18\x02 \x01(\x05R\favailableQty\"?\n" +
 	"\x1eGetInventoryByProductIDRequest\x12\x1d\n" +
 	"\n" +
-	"product_id\x18\x01 \x01(\tR\tproductId\"P\n" +
-	"\x13ReserveStockRequest\x12\x1d\n" +
-	"\n" +
-	"product_id\x18\x01 \x01(\tR\tproductId\x12\x1a\n" +
-	"\bquantity\x18\x02 \x01(\x05R\bquantity\"U\n" +
-	"\x18CommitReservationRequest\x12\x1d\n" +
-	"\n" +
-	"product_id\x18\x01 \x01(\tR\tproductId\x12\x1a\n" +
-	"\bquantity\x18\x02 \x01(\x05R\bquantity\"V\n" +
-	"\x19ReleaseReservationRequest\x12\x1d\n" +
-	"\n" +
-	"product_id\x18\x01 \x01(\tR\tproductId\x12\x1a\n" +
-	"\bquantity\x18\x02 \x01(\x05R\bquantity2\xc0\x03\n" +
+	"product_id\x18\x01 \x01(\tR\tproductId2\xc6\x01\n" +
 	"\x10InventoryService\x12P\n" +
 	"\x0fCreateInventory\x12$.inventory.v1.CreateInventoryRequest\x1a\x17.inventory.v1.Inventory\x12`\n" +
-	"\x17GetInventoryByProductID\x12,.inventory.v1.GetInventoryByProductIDRequest\x1a\x17.inventory.v1.Inventory\x12J\n" +
-	"\fReserveStock\x12!.inventory.v1.ReserveStockRequest\x1a\x17.inventory.v1.Inventory\x12T\n" +
-	"\x11CommitReservation\x12&.inventory.v1.CommitReservationRequest\x1a\x17.inventory.v1.Inventory\x12V\n" +
-	"\x12ReleaseReservation\x12'.inventory.v1.ReleaseReservationRequest\x1a\x17.inventory.v1.InventoryB?Z=refurbished-marketplace/shared/proto/inventory/v1;inventoryv1b\x06proto3"
+	"\x17GetInventoryByProductID\x12,.inventory.v1.GetInventoryByProductIDRequest\x1a\x17.inventory.v1.InventoryB?Z=refurbished-marketplace/shared/proto/inventory/v1;inventoryv1b\x06proto3"
 
 var (
 	file_shared_proto_inventory_v1_inventory_proto_rawDescOnce sync.Once
@@ -402,31 +231,22 @@ func file_shared_proto_inventory_v1_inventory_proto_rawDescGZIP() []byte {
 	return file_shared_proto_inventory_v1_inventory_proto_rawDescData
 }
 
-var file_shared_proto_inventory_v1_inventory_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_shared_proto_inventory_v1_inventory_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_shared_proto_inventory_v1_inventory_proto_goTypes = []any{
 	(*Inventory)(nil),                      // 0: inventory.v1.Inventory
 	(*CreateInventoryRequest)(nil),         // 1: inventory.v1.CreateInventoryRequest
 	(*GetInventoryByProductIDRequest)(nil), // 2: inventory.v1.GetInventoryByProductIDRequest
-	(*ReserveStockRequest)(nil),            // 3: inventory.v1.ReserveStockRequest
-	(*CommitReservationRequest)(nil),       // 4: inventory.v1.CommitReservationRequest
-	(*ReleaseReservationRequest)(nil),      // 5: inventory.v1.ReleaseReservationRequest
-	(*timestamppb.Timestamp)(nil),          // 6: google.protobuf.Timestamp
+	(*timestamppb.Timestamp)(nil),          // 3: google.protobuf.Timestamp
 }
 var file_shared_proto_inventory_v1_inventory_proto_depIdxs = []int32{
-	6, // 0: inventory.v1.Inventory.created_at:type_name -> google.protobuf.Timestamp
-	6, // 1: inventory.v1.Inventory.updated_at:type_name -> google.protobuf.Timestamp
+	3, // 0: inventory.v1.Inventory.created_at:type_name -> google.protobuf.Timestamp
+	3, // 1: inventory.v1.Inventory.updated_at:type_name -> google.protobuf.Timestamp
 	1, // 2: inventory.v1.InventoryService.CreateInventory:input_type -> inventory.v1.CreateInventoryRequest
 	2, // 3: inventory.v1.InventoryService.GetInventoryByProductID:input_type -> inventory.v1.GetInventoryByProductIDRequest
-	3, // 4: inventory.v1.InventoryService.ReserveStock:input_type -> inventory.v1.ReserveStockRequest
-	4, // 5: inventory.v1.InventoryService.CommitReservation:input_type -> inventory.v1.CommitReservationRequest
-	5, // 6: inventory.v1.InventoryService.ReleaseReservation:input_type -> inventory.v1.ReleaseReservationRequest
-	0, // 7: inventory.v1.InventoryService.CreateInventory:output_type -> inventory.v1.Inventory
-	0, // 8: inventory.v1.InventoryService.GetInventoryByProductID:output_type -> inventory.v1.Inventory
-	0, // 9: inventory.v1.InventoryService.ReserveStock:output_type -> inventory.v1.Inventory
-	0, // 10: inventory.v1.InventoryService.CommitReservation:output_type -> inventory.v1.Inventory
-	0, // 11: inventory.v1.InventoryService.ReleaseReservation:output_type -> inventory.v1.Inventory
-	7, // [7:12] is the sub-list for method output_type
-	2, // [2:7] is the sub-list for method input_type
+	0, // 4: inventory.v1.InventoryService.CreateInventory:output_type -> inventory.v1.Inventory
+	0, // 5: inventory.v1.InventoryService.GetInventoryByProductID:output_type -> inventory.v1.Inventory
+	4, // [4:6] is the sub-list for method output_type
+	2, // [2:4] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
 	2, // [2:2] is the sub-list for extension extendee
 	0, // [0:2] is the sub-list for field type_name
@@ -443,7 +263,7 @@ func file_shared_proto_inventory_v1_inventory_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_shared_proto_inventory_v1_inventory_proto_rawDesc), len(file_shared_proto_inventory_v1_inventory_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

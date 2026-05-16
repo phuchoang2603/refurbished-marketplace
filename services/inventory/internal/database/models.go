@@ -5,6 +5,7 @@
 package database
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -16,4 +17,28 @@ type Inventory struct {
 	ReservedQty  int32
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
+}
+
+type InventoryInbox struct {
+	MessageID  string
+	ReceivedAt time.Time
+}
+
+type InventoryOutbox struct {
+	ID              uuid.UUID
+	AggregateID     uuid.UUID
+	EventType       string
+	Payload         []byte
+	PublishAttempts int32
+	CreatedAt       time.Time
+	PublishedAt     sql.NullTime
+}
+
+type InventoryReservation struct {
+	OrderID   uuid.UUID
+	ProductID uuid.UUID
+	Quantity  int32
+	Status    string
+	CreatedAt time.Time
+	UpdatedAt time.Time
 }

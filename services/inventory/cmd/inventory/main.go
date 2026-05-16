@@ -3,14 +3,17 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"log"
 	"net"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 
 	"refurbished-marketplace/services/inventory/internal/grpcserver"
 	"refurbished-marketplace/services/inventory/internal/service"
+	"refurbished-marketplace/shared/messaging"
 
 	inventoryv1 "refurbished-marketplace/shared/proto/inventory/v1"
 
@@ -55,11 +58,30 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	var wg sync.WaitGroup
+	if raw := os.Getenv("KAFKA_BOOTSTRAP_SERVERS"); raw != "" {
+		brokers := messaging.ParseBootstrapServers(raw)
+		if len(brokers) == 0 {
+			log.Print("KAFKA_BOOTSTRAP_SERVERS has no brokers after parsing; skipping Kafka consumer")
+		} else {
+			wg.Go(func() {
+				if err := runReservationConsumer(ctx, svc, brokers); err != nil && !errors.Is(err, context.Canceled) {
+					log.Printf("kafka consumer: %v", err)
+				}
+			})
+		}
+	} else {
+		log.Print("KAFKA_BOOTSTRAP_SERVERS not set; skipping Kafka consumer")
+	}
+
 	go func() {
 		<-ctx.Done()
 		server.GracefulStop()
 	}()
 
 	log.Printf("starting inventory grpc service on %s", addr)
-	log.Fatal(server.Serve(lis))
+	if err := server.Serve(lis); err != nil {
+		log.Fatalf("grpc: %v", err)
+	}
+	wg.Wait()
 }

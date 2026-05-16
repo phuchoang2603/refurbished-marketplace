@@ -14,10 +14,17 @@ var (
 	ErrInsufficientStock = errors.New("insufficient stock")
 )
 
+const (
+	ReservationStatusReserved  = "RESERVED"
+	ReservationStatusCommitted = "COMMITTED"
+	ReservationStatusReleased  = "RELEASED"
+)
+
 type Service struct {
+	db      *sql.DB
 	queries *database.Queries
 }
 
 func New(db *sql.DB) *Service {
-	return &Service{queries: database.New(db)}
+	return &Service{db: db, queries: database.New(db)}
 }

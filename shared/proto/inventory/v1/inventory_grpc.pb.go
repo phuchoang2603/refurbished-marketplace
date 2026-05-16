@@ -21,9 +21,6 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	InventoryService_CreateInventory_FullMethodName         = "/inventory.v1.InventoryService/CreateInventory"
 	InventoryService_GetInventoryByProductID_FullMethodName = "/inventory.v1.InventoryService/GetInventoryByProductID"
-	InventoryService_ReserveStock_FullMethodName            = "/inventory.v1.InventoryService/ReserveStock"
-	InventoryService_CommitReservation_FullMethodName       = "/inventory.v1.InventoryService/CommitReservation"
-	InventoryService_ReleaseReservation_FullMethodName      = "/inventory.v1.InventoryService/ReleaseReservation"
 )
 
 // InventoryServiceClient is the client API for InventoryService service.
@@ -32,9 +29,6 @@ const (
 type InventoryServiceClient interface {
 	CreateInventory(ctx context.Context, in *CreateInventoryRequest, opts ...grpc.CallOption) (*Inventory, error)
 	GetInventoryByProductID(ctx context.Context, in *GetInventoryByProductIDRequest, opts ...grpc.CallOption) (*Inventory, error)
-	ReserveStock(ctx context.Context, in *ReserveStockRequest, opts ...grpc.CallOption) (*Inventory, error)
-	CommitReservation(ctx context.Context, in *CommitReservationRequest, opts ...grpc.CallOption) (*Inventory, error)
-	ReleaseReservation(ctx context.Context, in *ReleaseReservationRequest, opts ...grpc.CallOption) (*Inventory, error)
 }
 
 type inventoryServiceClient struct {
@@ -65,45 +59,12 @@ func (c *inventoryServiceClient) GetInventoryByProductID(ctx context.Context, in
 	return out, nil
 }
 
-func (c *inventoryServiceClient) ReserveStock(ctx context.Context, in *ReserveStockRequest, opts ...grpc.CallOption) (*Inventory, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Inventory)
-	err := c.cc.Invoke(ctx, InventoryService_ReserveStock_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *inventoryServiceClient) CommitReservation(ctx context.Context, in *CommitReservationRequest, opts ...grpc.CallOption) (*Inventory, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Inventory)
-	err := c.cc.Invoke(ctx, InventoryService_CommitReservation_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *inventoryServiceClient) ReleaseReservation(ctx context.Context, in *ReleaseReservationRequest, opts ...grpc.CallOption) (*Inventory, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Inventory)
-	err := c.cc.Invoke(ctx, InventoryService_ReleaseReservation_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // InventoryServiceServer is the server API for InventoryService service.
 // All implementations must embed UnimplementedInventoryServiceServer
 // for forward compatibility.
 type InventoryServiceServer interface {
 	CreateInventory(context.Context, *CreateInventoryRequest) (*Inventory, error)
 	GetInventoryByProductID(context.Context, *GetInventoryByProductIDRequest) (*Inventory, error)
-	ReserveStock(context.Context, *ReserveStockRequest) (*Inventory, error)
-	CommitReservation(context.Context, *CommitReservationRequest) (*Inventory, error)
-	ReleaseReservation(context.Context, *ReleaseReservationRequest) (*Inventory, error)
 	mustEmbedUnimplementedInventoryServiceServer()
 }
 
@@ -119,15 +80,6 @@ func (UnimplementedInventoryServiceServer) CreateInventory(context.Context, *Cre
 }
 func (UnimplementedInventoryServiceServer) GetInventoryByProductID(context.Context, *GetInventoryByProductIDRequest) (*Inventory, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetInventoryByProductID not implemented")
-}
-func (UnimplementedInventoryServiceServer) ReserveStock(context.Context, *ReserveStockRequest) (*Inventory, error) {
-	return nil, status.Error(codes.Unimplemented, "method ReserveStock not implemented")
-}
-func (UnimplementedInventoryServiceServer) CommitReservation(context.Context, *CommitReservationRequest) (*Inventory, error) {
-	return nil, status.Error(codes.Unimplemented, "method CommitReservation not implemented")
-}
-func (UnimplementedInventoryServiceServer) ReleaseReservation(context.Context, *ReleaseReservationRequest) (*Inventory, error) {
-	return nil, status.Error(codes.Unimplemented, "method ReleaseReservation not implemented")
 }
 func (UnimplementedInventoryServiceServer) mustEmbedUnimplementedInventoryServiceServer() {}
 func (UnimplementedInventoryServiceServer) testEmbeddedByValue()                          {}
@@ -186,60 +138,6 @@ func _InventoryService_GetInventoryByProductID_Handler(srv interface{}, ctx cont
 	return interceptor(ctx, in, info, handler)
 }
 
-func _InventoryService_ReserveStock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReserveStockRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(InventoryServiceServer).ReserveStock(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: InventoryService_ReserveStock_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(InventoryServiceServer).ReserveStock(ctx, req.(*ReserveStockRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _InventoryService_CommitReservation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CommitReservationRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(InventoryServiceServer).CommitReservation(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: InventoryService_CommitReservation_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(InventoryServiceServer).CommitReservation(ctx, req.(*CommitReservationRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _InventoryService_ReleaseReservation_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReleaseReservationRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(InventoryServiceServer).ReleaseReservation(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: InventoryService_ReleaseReservation_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(InventoryServiceServer).ReleaseReservation(ctx, req.(*ReleaseReservationRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // InventoryService_ServiceDesc is the grpc.ServiceDesc for InventoryService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -254,18 +152,6 @@ var InventoryService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetInventoryByProductID",
 			Handler:    _InventoryService_GetInventoryByProductID_Handler,
-		},
-		{
-			MethodName: "ReserveStock",
-			Handler:    _InventoryService_ReserveStock_Handler,
-		},
-		{
-			MethodName: "CommitReservation",
-			Handler:    _InventoryService_CommitReservation_Handler,
-		},
-		{
-			MethodName: "ReleaseReservation",
-			Handler:    _InventoryService_ReleaseReservation_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
