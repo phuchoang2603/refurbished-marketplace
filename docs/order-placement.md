@@ -1,13 +1,13 @@
-# Merchant-Scoped Order And Payment Flow
+# Merchant-Scoped Order, Inventory, And Payment Flow
 
-This document describes the current core contract between `cart`, `orders`, and `payment`.
+This document describes the current core contract between `cart`, `orders`, `inventory`, and `payment`.
 
 ## Core Model
 
 - `cart` stores ephemeral cart state and requires caller-supplied `merchant_id` on item writes.
 - `orders` accepts only merchant-scoped order creation requests.
+- `inventory` reserves stock per order before payment proceeds.
 - `payment` creates one payment transaction per order.
-- Kafka events are order-level, not item-level.
 
 ## Flow
 
@@ -18,6 +18,7 @@ sequenceDiagram
     participant CRT as Cart
     participant ORD as Orders
     participant K as Kafka
+    participant INV as Inventory
     participant PAY as Payment
 
     Note over C, CRT: Ephemeral Phase
@@ -35,14 +36,27 @@ sequenceDiagram
     ORD->>K: Emit "orders.created"
     ORD-->>C: 201 Created
 
-    Note over K, PAY: Asynchronous Payment Loop
-    K->>PAY: Consume "orders.created"
+    Note over K, INV: Reservation Loop
+    K->>INV: Consume "orders.created"
+    INV->>INV: Record inventory_inbox message
+    INV->>INV: Reserve order item stock
+    INV->>K: Emit "inventory.reserved"
+
+    Note over K, PAY: Payment Loop
+    K->>PAY: Consume "inventory.reserved"
     PAY->>PAY: Record payment_inbox message
     PAY->>PAY: Load payment_intent(order_id)
     PAY->>PAY: Create payment_transaction(order_id)
     PAY->>K: Emit "payment.succeeded"
+    K->>INV: Consume "payment.succeeded"
+    INV->>INV: Commit reservation
     K->>ORD: Consume "payment.succeeded"
     ORD->>ORD: Update Status: Paid
+
+    Note over K, ORD: Reservation Failure Loop
+    INV->>K: Emit "inventory.reservation_failed"
+    K->>ORD: Consume "inventory.reservation_failed"
+    ORD->>ORD: Update Status: Failed
 ```
 
 ## Responsibilities
@@ -58,13 +72,21 @@ sequenceDiagram
 - Persists one order per merchant.
 - Stores `merchant_id` on the order record.
 - Stores order items with `product_id`, `quantity`, `unit_price_cents`, and `line_total_cents`.
-- Emits one `orders.created` outbox event per created order.
-- Consumes `payment.succeeded` and `payment.failed` to update order status.
+- Emits one `orders.created` outbox event per created order, including item lines.
+- Consumes `inventory.reservation_failed`, `payment.succeeded`, and `payment.failed` to update order status.
+
+### Inventory
+
+- Stores aggregate stock in `inventory` and reservation ownership in inventory-local reservation records.
+- Consumes `orders.created` and reserves all order item lines idempotently per `order_id`.
+- Emits `inventory.reserved` when the order is fully reserved.
+- Emits `inventory.reservation_failed` when the order cannot be fully reserved.
+- Consumes `payment.succeeded` and `payment.failed` to commit or release reserved stock.
 
 ### Payment
 
 - Stores payment intent by `order_id`.
-- Consumes `orders.created`.
+- Consumes `inventory.reserved`.
 - Creates one payment transaction per `order_id`.
 - Emits `payment.succeeded` or `payment.failed` through the payment outbox.
 
@@ -80,6 +102,25 @@ Carries:
 - `buyer_user_id`
 - `merchant_id`
 - `total_cents`
+- `items[]` with `product_id` and `quantity`
+
+### `inventory.reserved`
+
+Produced by `inventory` once per fully reserved order.
+
+Carries:
+
+- `order_id`
+- `merchant_id`
+- `total_cents`
+
+### `inventory.reservation_failed`
+
+Produced by `inventory` once per order that cannot be fully reserved.
+
+Carries:
+
+- `order_id`
 
 ### `payment.succeeded` / `payment.failed`
 
