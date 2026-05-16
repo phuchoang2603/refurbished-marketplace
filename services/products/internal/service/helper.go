@@ -1,10 +1,11 @@
 package service
 
 import (
+	"database/sql"
+	"errors"
 	"strings"
 
 	"refurbished-marketplace/services/products/internal/database"
-	"refurbished-marketplace/shared/dberrors"
 )
 
 func mapDBProduct(p database.Product) Product {
@@ -23,7 +24,7 @@ func mapProductNotFound(err error) error {
 	if err == nil {
 		return nil
 	}
-	if dberrors.IsNoRows(err) {
+	if errors.Is(err, sql.ErrNoRows) {
 		return ErrProductNotFound
 	}
 	return err

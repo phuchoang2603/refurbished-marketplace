@@ -2,11 +2,12 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"refurbished-marketplace/services/payment/internal/database"
-	"refurbished-marketplace/shared/dberrors"
 	"refurbished-marketplace/shared/messaging"
 
 	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
@@ -74,7 +75,7 @@ func (s *Service) ApplyGatewayWebhook(ctx context.Context, transactionID uuid.UU
 		FailureReason:        optionalNullString(failureReason),
 	})
 	if err != nil {
-		if dberrors.IsNoRows(err) {
+		if errors.Is(err, sql.ErrNoRows) {
 			row, loadErr := loadPaymentTransaction(ctx, q, transactionID)
 			if loadErr != nil {
 				return loadErr

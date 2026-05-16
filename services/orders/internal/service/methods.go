@@ -2,10 +2,11 @@ package service
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"time"
 
 	"refurbished-marketplace/services/orders/internal/database"
-	"refurbished-marketplace/shared/dberrors"
 
 	"github.com/google/uuid"
 )
@@ -87,7 +88,7 @@ func (s *Service) GetOrderByID(ctx context.Context, id uuid.UUID) (Order, error)
 
 	got, err := s.queries.GetOrderByID(ctx, id)
 	if err != nil {
-		if dberrors.IsNoRows(err) {
+		if errors.Is(err, sql.ErrNoRows) {
 			return Order{}, ErrOrderNotFound
 		}
 		return Order{}, err
@@ -137,7 +138,7 @@ func (s *Service) UpdateOrderStatus(ctx context.Context, id uuid.UUID, status st
 
 	updated, err := s.queries.UpdateOrderStatus(ctx, database.UpdateOrderStatusParams{ID: id, Status: normalizedStatus})
 	if err != nil {
-		if dberrors.IsNoRows(err) {
+		if errors.Is(err, sql.ErrNoRows) {
 			return Order{}, ErrOrderNotFound
 		}
 		return Order{}, err

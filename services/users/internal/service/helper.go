@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"crypto/sha256"
+	"database/sql"
 	"encoding/hex"
 	"errors"
 	"strings"
@@ -11,7 +12,6 @@ import (
 	"refurbished-marketplace/services/users/internal/database"
 
 	sharedjwt "refurbished-marketplace/shared/auth/jwt"
-	"refurbished-marketplace/shared/dberrors"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -40,7 +40,7 @@ func mapNotFound(err, notFoundErr error) error {
 	if err == nil {
 		return nil
 	}
-	if dberrors.IsNoRows(err) {
+	if errors.Is(err, sql.ErrNoRows) {
 		return notFoundErr
 	}
 	return err
@@ -122,7 +122,7 @@ func mapInvalidToken(err error) error {
 	if err == nil {
 		return nil
 	}
-	if dberrors.IsNoRows(err) {
+	if errors.Is(err, sql.ErrNoRows) {
 		return ErrInvalidToken
 	}
 	return err
@@ -144,7 +144,7 @@ func mapInvalidCredentials(err error) error {
 	if err == nil {
 		return nil
 	}
-	if dberrors.IsNoRows(err) {
+	if errors.Is(err, sql.ErrNoRows) {
 		return ErrInvalidCredentials
 	}
 	return err
