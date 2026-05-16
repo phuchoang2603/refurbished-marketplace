@@ -128,15 +128,11 @@ func (s *Service) ListOrdersByBuyer(ctx context.Context, buyerUserID uuid.UUID, 
 }
 
 func (s *Service) UpdateOrderStatus(ctx context.Context, id uuid.UUID, status string) (Order, error) {
-	if id == uuid.Nil {
-		return Order{}, ErrOrderNotFound
-	}
-	normalizedStatus, err := validateOrderStatus(status)
-	if err != nil {
-		return Order{}, ErrInvalidStatus
+	if err := s.updateOrderStatusOnly(ctx, id, status); err != nil {
+		return Order{}, err
 	}
 
-	updated, err := s.queries.UpdateOrderStatus(ctx, database.UpdateOrderStatusParams{ID: id, Status: normalizedStatus})
+	got, err := s.queries.GetOrderByID(ctx, id)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return Order{}, ErrOrderNotFound
@@ -144,7 +140,7 @@ func (s *Service) UpdateOrderStatus(ctx context.Context, id uuid.UUID, status st
 		return Order{}, err
 	}
 
-	orders, err := loadOrdersWithItems(ctx, s.queries, []Order{mapDBOrder(updated)})
+	orders, err := loadOrdersWithItems(ctx, s.queries, []Order{mapDBOrder(got)})
 	if err != nil {
 		return Order{}, err
 	}
@@ -152,4 +148,23 @@ func (s *Service) UpdateOrderStatus(ctx context.Context, id uuid.UUID, status st
 		return Order{}, ErrOrderNotFound
 	}
 	return orders[0], nil
+}
+
+func (s *Service) updateOrderStatusOnly(ctx context.Context, id uuid.UUID, status string) error {
+	if id == uuid.Nil {
+		return ErrOrderNotFound
+	}
+	normalizedStatus, err := validateOrderStatus(status)
+	if err != nil {
+		return ErrInvalidStatus
+	}
+
+	_, err = s.queries.UpdateOrderStatus(ctx, database.UpdateOrderStatusParams{ID: id, Status: normalizedStatus})
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrOrderNotFound
+		}
+		return err
+	}
+	return nil
 }

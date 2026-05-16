@@ -28,6 +28,7 @@ type OrderCreated struct {
 	BuyerUserId   string                 `protobuf:"bytes,2,opt,name=buyer_user_id,json=buyerUserId,proto3" json:"buyer_user_id,omitempty"`
 	MerchantId    string                 `protobuf:"bytes,3,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
 	TotalCents    int64                  `protobuf:"varint,4,opt,name=total_cents,json=totalCents,proto3" json:"total_cents,omitempty"`
+	Items         []*OrderCreatedItem    `protobuf:"bytes,5,rep,name=items,proto3" json:"items,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -90,18 +91,82 @@ func (x *OrderCreated) GetTotalCents() int64 {
 	return 0
 }
 
+func (x *OrderCreated) GetItems() []*OrderCreatedItem {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
+type OrderCreatedItem struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ProductId     string                 `protobuf:"bytes,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	Quantity      int32                  `protobuf:"varint,2,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *OrderCreatedItem) Reset() {
+	*x = OrderCreatedItem{}
+	mi := &file_shared_proto_orders_v1_order_created_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *OrderCreatedItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*OrderCreatedItem) ProtoMessage() {}
+
+func (x *OrderCreatedItem) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_orders_v1_order_created_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use OrderCreatedItem.ProtoReflect.Descriptor instead.
+func (*OrderCreatedItem) Descriptor() ([]byte, []int) {
+	return file_shared_proto_orders_v1_order_created_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *OrderCreatedItem) GetProductId() string {
+	if x != nil {
+		return x.ProductId
+	}
+	return ""
+}
+
+func (x *OrderCreatedItem) GetQuantity() int32 {
+	if x != nil {
+		return x.Quantity
+	}
+	return 0
+}
+
 var File_shared_proto_orders_v1_order_created_proto protoreflect.FileDescriptor
 
 const file_shared_proto_orders_v1_order_created_proto_rawDesc = "" +
 	"\n" +
-	"*shared/proto/orders/v1/order_created.proto\x12\torders.v1\"\x8f\x01\n" +
+	"*shared/proto/orders/v1/order_created.proto\x12\torders.v1\"\xc2\x01\n" +
 	"\fOrderCreated\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12\"\n" +
 	"\rbuyer_user_id\x18\x02 \x01(\tR\vbuyerUserId\x12\x1f\n" +
 	"\vmerchant_id\x18\x03 \x01(\tR\n" +
 	"merchantId\x12\x1f\n" +
 	"\vtotal_cents\x18\x04 \x01(\x03R\n" +
-	"totalCentsB9Z7refurbished-marketplace/shared/proto/orders/v1;ordersv1b\x06proto3"
+	"totalCents\x121\n" +
+	"\x05items\x18\x05 \x03(\v2\x1b.orders.v1.OrderCreatedItemR\x05items\"M\n" +
+	"\x10OrderCreatedItem\x12\x1d\n" +
+	"\n" +
+	"product_id\x18\x01 \x01(\tR\tproductId\x12\x1a\n" +
+	"\bquantity\x18\x02 \x01(\x05R\bquantityB9Z7refurbished-marketplace/shared/proto/orders/v1;ordersv1b\x06proto3"
 
 var (
 	file_shared_proto_orders_v1_order_created_proto_rawDescOnce sync.Once
@@ -115,16 +180,18 @@ func file_shared_proto_orders_v1_order_created_proto_rawDescGZIP() []byte {
 	return file_shared_proto_orders_v1_order_created_proto_rawDescData
 }
 
-var file_shared_proto_orders_v1_order_created_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_shared_proto_orders_v1_order_created_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
 var file_shared_proto_orders_v1_order_created_proto_goTypes = []any{
-	(*OrderCreated)(nil), // 0: orders.v1.OrderCreated
+	(*OrderCreated)(nil),     // 0: orders.v1.OrderCreated
+	(*OrderCreatedItem)(nil), // 1: orders.v1.OrderCreatedItem
 }
 var file_shared_proto_orders_v1_order_created_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	1, // 0: orders.v1.OrderCreated.items:type_name -> orders.v1.OrderCreatedItem
+	1, // [1:1] is the sub-list for method output_type
+	1, // [1:1] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_shared_proto_orders_v1_order_created_proto_init() }
@@ -138,7 +205,7 @@ func file_shared_proto_orders_v1_order_created_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_shared_proto_orders_v1_order_created_proto_rawDesc), len(file_shared_proto_orders_v1_order_created_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   1,
+			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

@@ -10,4 +10,10 @@ message OrderCreated {
   string buyer_user_id = 2;
   string merchant_id = 3;
   int64 total_cents = 4;
+  repeated OrderCreatedItem items = 5;
+}
+
+message OrderCreatedItem {
+  string product_id = 1;
+  int32 quantity = 2;
 }

@@ -125,10 +125,10 @@ func TestCreateGetListOrder(t *testing.T) {
 }
 
 func TestOrderValidation(t *testing.T) {
-	t.Run("invalid buyer id", func(t *testing.T) {
-		svc := newOrdersService(t)
-		ctx := t.Context()
+	svc := newOrdersService(t)
+	ctx := t.Context()
 
+	t.Run("invalid buyer id", func(t *testing.T) {
 		_, err := svc.CreateOrder(ctx, uuid.Nil, uuid.New(), []service.OrderItemInput{{ProductID: uuid.New(), Quantity: 1, UnitPriceCents: 100}}, 100)
 		if !errors.Is(err, service.ErrInvalidBuyerID) {
 			t.Fatalf("expected ErrInvalidBuyerID, got %v", err)
@@ -136,9 +136,6 @@ func TestOrderValidation(t *testing.T) {
 	})
 
 	t.Run("invalid product id", func(t *testing.T) {
-		svc := newOrdersService(t)
-		ctx := t.Context()
-
 		_, err := svc.CreateOrder(ctx, uuid.New(), uuid.New(), []service.OrderItemInput{{ProductID: uuid.Nil, Quantity: 1, UnitPriceCents: 100}}, 100)
 		if !errors.Is(err, service.ErrInvalidProductID) {
 			t.Fatalf("expected ErrInvalidProductID, got %v", err)
@@ -146,9 +143,6 @@ func TestOrderValidation(t *testing.T) {
 	})
 
 	t.Run("invalid quantity", func(t *testing.T) {
-		svc := newOrdersService(t)
-		ctx := t.Context()
-
 		_, err := svc.CreateOrder(ctx, uuid.New(), uuid.New(), []service.OrderItemInput{{ProductID: uuid.New(), Quantity: 0, UnitPriceCents: 100}}, 100)
 		if !errors.Is(err, service.ErrInvalidQuantity) {
 			t.Fatalf("expected ErrInvalidQuantity, got %v", err)
@@ -156,9 +150,6 @@ func TestOrderValidation(t *testing.T) {
 	})
 
 	t.Run("invalid merchant id", func(t *testing.T) {
-		svc := newOrdersService(t)
-		ctx := t.Context()
-
 		_, err := svc.CreateOrder(ctx, uuid.New(), uuid.Nil, []service.OrderItemInput{{ProductID: uuid.New(), Quantity: 1, UnitPriceCents: 100}}, 100)
 		if !errors.Is(err, service.ErrInvalidMerchantID) {
 			t.Fatalf("expected ErrInvalidMerchantID, got %v", err)
@@ -166,9 +157,6 @@ func TestOrderValidation(t *testing.T) {
 	})
 
 	t.Run("missing order", func(t *testing.T) {
-		svc := newOrdersService(t)
-		ctx := t.Context()
-
 		_, err := svc.GetOrderByID(ctx, uuid.Nil)
 		if !errors.Is(err, service.ErrOrderNotFound) {
 			t.Fatalf("expected ErrOrderNotFound, got %v", err)
@@ -176,9 +164,6 @@ func TestOrderValidation(t *testing.T) {
 	})
 
 	t.Run("invalid buyer id for list", func(t *testing.T) {
-		svc := newOrdersService(t)
-		ctx := t.Context()
-
 		_, err := svc.ListOrdersByBuyer(ctx, uuid.Nil, 10, 0)
 		if !errors.Is(err, service.ErrInvalidBuyerID) {
 			t.Fatalf("expected ErrInvalidBuyerID, got %v", err)
@@ -186,9 +171,6 @@ func TestOrderValidation(t *testing.T) {
 	})
 
 	t.Run("missing order on update", func(t *testing.T) {
-		svc := newOrdersService(t)
-		ctx := t.Context()
-
 		_, err := svc.UpdateOrderStatus(ctx, uuid.Nil, "")
 		if !errors.Is(err, service.ErrOrderNotFound) {
 			t.Fatalf("expected ErrOrderNotFound, got %v", err)
@@ -196,9 +178,6 @@ func TestOrderValidation(t *testing.T) {
 	})
 
 	t.Run("invalid status", func(t *testing.T) {
-		svc := newOrdersService(t)
-		ctx := t.Context()
-
 		_, err := svc.UpdateOrderStatus(ctx, uuid.New(), "CONFIRMED")
 		if !errors.Is(err, service.ErrInvalidStatus) {
 			t.Fatalf("expected ErrInvalidStatus, got %v", err)

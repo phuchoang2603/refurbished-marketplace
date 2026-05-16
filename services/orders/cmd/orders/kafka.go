@@ -9,7 +9,7 @@ import (
 	"refurbished-marketplace/shared/messaging"
 )
 
-func runPaymentResultConsumer(ctx context.Context, svc *service.Service, bootstrap []string) error {
+func runOrderResultConsumer(ctx context.Context, svc *service.Service, bootstrap []string) error {
 	groupID := os.Getenv("KAFKA_GROUP_ID")
 	if groupID == "" {
 		groupID = "orders-service"
@@ -19,10 +19,11 @@ func runPaymentResultConsumer(ctx context.Context, svc *service.Service, bootstr
 		BootstrapServers: bootstrap,
 		GroupID:          groupID,
 		Topics: []string{
+			messaging.EventTypeInventoryReservationFailed,
 			messaging.EventTypePaymentSucceeded,
 			messaging.EventTypePaymentFailed,
 		},
-	}, svc.KafkaPaymentResultHandler())
+	}, svc.KafkaOrderResultHandler())
 	if err != nil {
 		return err
 	}
@@ -32,6 +33,6 @@ func runPaymentResultConsumer(ctx context.Context, svc *service.Service, bootstr
 		}
 	}()
 
-	log.Printf("kafka consumer started (topics payment.* group=%s)", groupID)
+	log.Printf("kafka consumer started (topics inventory/payment results group=%s)", groupID)
 	return consumer.Run(ctx)
 }

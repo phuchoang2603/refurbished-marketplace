@@ -1,19 +1,17 @@
 package tests
 
 import (
-	"context"
-	"errors"
 	"fmt"
 	"testing"
 	"time"
 
 	"refurbished-marketplace/services/orders/internal/service"
 	"refurbished-marketplace/shared/messaging"
+	inventoryv1 "refurbished-marketplace/shared/proto/inventory/v1"
 	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
 	"refurbished-marketplace/shared/testutil"
 
 	"github.com/google/uuid"
-	"github.com/twmb/franz-go/pkg/kgo"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -45,59 +43,49 @@ func TestKafkaPaymentResultHandler_EndToEnd(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	prod, err := kgo.NewClient(
-		kgo.SeedBrokers(brokers...),
-		kgo.AllowAutoTopicCreation(),
-	)
-	if err != nil {
-		t.Fatalf("NewClient: %v", err)
-	}
-	defer prod.Close()
-
-	res := prod.ProduceSync(ctx, &kgo.Record{Topic: topic, Value: payload})
-	if err := res.FirstErr(); err != nil {
-		t.Fatalf("ProduceSync: %v", err)
-	}
-
-	consumer, err := messaging.NewKafkaConsumer(messaging.KafkaConsumerConfig{
-		BootstrapServers: brokers,
-		GroupID:          fmt.Sprintf("orders-kafka-e2e-%s", uuid.New().String()),
-		Topics:           []string{messaging.EventTypePaymentSucceeded},
-	}, svc.KafkaPaymentResultHandler())
-	if err != nil {
-		t.Fatalf("NewKafkaConsumer: %v", err)
-	}
-	defer func() { _ = consumer.Close() }()
-
-	runCtx, cancel := context.WithCancel(ctx)
+	testutil.ProduceKafkaRecord(t, ctx, brokers, topic, payload)
+	cancel, errRun := testutil.StartKafkaConsumer(t, ctx, brokers, fmt.Sprintf("orders-kafka-e2e-%s", uuid.New().String()), []string{messaging.EventTypePaymentSucceeded}, svc.KafkaOrderResultHandler())
 	defer cancel()
-	errRun := make(chan error, 1)
-	go func() {
-		errRun <- consumer.Run(runCtx)
-	}()
-
-	ticker := time.NewTicker(200 * time.Millisecond)
-	defer ticker.Stop()
-	timeout := time.After(30 * time.Second)
-
-	for {
-		select {
-		case err := <-errRun:
-			if err != nil && !errors.Is(err, context.Canceled) {
-				t.Fatalf("Consumer exited unexpectedly: %v", err)
-			}
-			return
-		case <-timeout:
-			t.Fatal("timeout waiting for order status PAID")
-		case <-ticker.C:
-			got, err := svc.GetOrderByID(ctx, created.ID)
-			if err != nil {
-				t.Fatalf("GetOrderByID: %v", err)
-			}
-			if got.Status == service.OrderStatusPaid {
-				cancel()
-				return
-			}
+	testutil.WaitForKafkaCondition(t, errRun, cancel, 30*time.Second, 200*time.Millisecond, "timeout waiting for order status PAID", func() (bool, error) {
+		got, err := svc.GetOrderByID(ctx, created.ID)
+		if err != nil {
+			return false, fmt.Errorf("GetOrderByID: %w", err)
 		}
+		return got.Status == service.OrderStatusPaid, nil
+	})
+}
+
+func TestKafkaInventoryReservationFailedHandler_EndToEnd(t *testing.T) {
+	svc := newOrdersService(t)
+	ctx := t.Context()
+
+	buyerID := uuid.New()
+	productID := uuid.New()
+	merchantID := uuid.New()
+	created, err := svc.CreateOrder(ctx, buyerID, merchantID, []service.OrderItemInput{{ProductID: productID, Quantity: 1, UnitPriceCents: 1000}}, 1000)
+	if err != nil {
+		t.Fatalf("CreateOrder: %v", err)
 	}
+
+	k := testutil.SetupKafka(t)
+	brokers, err := k.Brokers(ctx)
+	if err != nil {
+		t.Fatalf("Brokers: %v", err)
+	}
+	topic := messaging.EventTypeInventoryReservationFailed
+	payload, err := proto.Marshal(&inventoryv1.InventoryReservationFailed{OrderId: created.ID.String()})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testutil.ProduceKafkaRecord(t, ctx, brokers, topic, payload)
+	cancel, errRun := testutil.StartKafkaConsumer(t, ctx, brokers, fmt.Sprintf("orders-kafka-inventory-failed-%s", uuid.New().String()), []string{topic}, svc.KafkaOrderResultHandler())
+	defer cancel()
+	testutil.WaitForKafkaCondition(t, errRun, cancel, 30*time.Second, 200*time.Millisecond, "timeout waiting for order status FAILED", func() (bool, error) {
+		got, err := svc.GetOrderByID(ctx, created.ID)
+		if err != nil {
+			return false, fmt.Errorf("GetOrderByID: %w", err)
+		}
+		return got.Status == service.OrderStatusFailed, nil
+	})
 }
