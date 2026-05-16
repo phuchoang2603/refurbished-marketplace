@@ -7,12 +7,27 @@
 let
   homeDir = builtins.getEnv "HOME";
   colimaSocket = "${homeDir}/.config/colima/default/docker.sock";
+  colimaKube = "${homeDir}/.kube/colima.yaml";
 in
 {
   env = {
     DOCKER_HOST = "unix://${colimaSocket}";
     TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE = "/var/run/docker.sock";
+    KUBECONFIG = colimaKube;
   };
+
+  enterShell = ''
+    if ! colima status >/dev/null 2>&1; then
+      echo "🚀 Colima is stopped. Starting it now with network support..."
+      colima start --network-address
+    else
+      echo "✅ Colima is already running."
+    fi
+
+    if [ -f "${colimaKube}" ]; then
+      kubectl config use-context colima --kubeconfig="${colimaKube}" >/dev/null 2>&1
+    fi
+  '';
 
   packages = with pkgs; [
     # sql
@@ -86,10 +101,8 @@ in
 
     tidy = {
       exec = ''
-        echo "Tidying shared module..."
-        (cd shared && go mod tidy)
-        echo "Tidying service modules..."
-        for dir in $(find services -maxdepth 2 -name go.mod -exec dirname {} \;); do
+        echo "Tidying Go modules..."
+        for dir in $(find shared services -name go.mod -exec dirname {} \; | sort); do
           echo "Tidying $dir..."
           (cd "$dir" && go mod tidy)
         done
@@ -129,6 +142,7 @@ in
         excludes = [
           "vendor/*"
           "**/proto/*.go"
+          "**/database/*.go"
         ];
       };
       sqruff.enable = true;

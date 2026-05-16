@@ -6,5 +6,5 @@ const (
 	EventTypePaymentFailed              = "payment.failed"
 	EventTypeOrderCreated               = "orders.created"
 	EventTypeInventoryReserved          = "inventory.reserved"
-	EventTypeInventoryReservationFailed = "inventory.reservation_failed"
+	EventTypeInventoryReservationFailed = "inventory.reservation-failed"
 )

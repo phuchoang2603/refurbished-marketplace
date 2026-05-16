@@ -38,6 +38,21 @@ entities:
       databaseHost: payment-db-rw
       databasePort: 5432
       outboxTable: public.payment_outbox
+  inventory:
+    topics:
+      - name: inventory.reserved
+        partitions: 6
+        retention: 604800000
+      - name: inventory.reservation-failed
+        partitions: 6
+        retention: 604800000
+    connector:
+      name: inventory-outbox
+      sourceSecretName: inventory-app
+      databaseName: inventory_db
+      databaseHost: inventory-db-rw
+      databasePort: 5432
+      outboxTable: public.inventory_outbox
 provectus:
   enabled: true
   name: kafka-ui

@@ -54,8 +54,8 @@ sequenceDiagram
     ORD->>ORD: Update Status: Paid
 
     Note over K, ORD: Reservation Failure Loop
-    INV->>K: Emit "inventory.reservation_failed"
-    K->>ORD: Consume "inventory.reservation_failed"
+    INV->>K: Emit "inventory.reservation-failed"
+    K->>ORD: Consume "inventory.reservation-failed"
     ORD->>ORD: Update Status: Failed
 ```
 
@@ -73,14 +73,14 @@ sequenceDiagram
 - Stores `merchant_id` on the order record.
 - Stores order items with `product_id`, `quantity`, `unit_price_cents`, and `line_total_cents`.
 - Emits one `orders.created` outbox event per created order, including item lines.
-- Consumes `inventory.reservation_failed`, `payment.succeeded`, and `payment.failed` to update order status.
+- Consumes `inventory.reservation-failed`, `payment.succeeded`, and `payment.failed` to update order status.
 
 ### Inventory
 
 - Stores aggregate stock in `inventory` and reservation ownership in inventory-local reservation records.
 - Consumes `orders.created` and reserves all order item lines idempotently per `order_id`.
 - Emits `inventory.reserved` when the order is fully reserved.
-- Emits `inventory.reservation_failed` when the order cannot be fully reserved.
+- Emits `inventory.reservation-failed` when the order cannot be fully reserved.
 - Consumes `payment.succeeded` and `payment.failed` to commit or release reserved stock.
 
 ### Payment
@@ -114,7 +114,7 @@ Carries:
 - `merchant_id`
 - `total_cents`
 
-### `inventory.reservation_failed`
+### `inventory.reservation-failed`
 
 Produced by `inventory` once per order that cannot be fully reserved.
 

@@ -11,7 +11,7 @@ message InventoryReserved {
   int64 total_cents = 3;
 }
 
-// Emitted on inventory.reservation_failed when the order cannot be fully reserved.
+// Emitted on inventory.reservation-failed when the order cannot be fully reserved.
 message InventoryReservationFailed {
   string order_id = 1;
 }

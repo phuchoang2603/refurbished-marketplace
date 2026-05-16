@@ -86,6 +86,8 @@ services:
     enabled: true
     image: refurbished-marketplace/inventory
     port: 9095
+    env:
+      KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap:9092
     migration:
       enabled: true
       image: refurbished-marketplace/inventory-migrator
