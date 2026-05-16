@@ -2,9 +2,21 @@ package messaging
 
 import (
 	"fmt"
+	"strings"
 
 	"google.golang.org/protobuf/proto"
 )
+
+func ParseBootstrapServers(s string) []string {
+	var out []string
+	for p := range strings.SplitSeq(s, ",") {
+		p = strings.TrimSpace(p)
+		if p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
+}
 
 const confluentWireMagic byte = 0
 

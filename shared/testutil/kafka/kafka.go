@@ -1,4 +1,4 @@
-package testutil
+package kafka
 
 import (
 	"context"
@@ -8,19 +8,19 @@ import (
 
 	"refurbished-marketplace/shared/messaging"
 
-	"github.com/testcontainers/testcontainers-go/modules/kafka"
+	kafkamodule "github.com/testcontainers/testcontainers-go/modules/kafka"
 	"github.com/twmb/franz-go/pkg/kgo"
 )
 
 type KafkaContainer struct {
-	*kafka.KafkaContainer
+	*kafkamodule.KafkaContainer
 }
 
 func SetupKafka(t *testing.T) *KafkaContainer {
 	t.Helper()
 
 	ctx := context.Background()
-	c, err := kafka.Run(ctx, "confluentinc/confluent-local:8.2.0")
+	c, err := kafkamodule.Run(ctx, "confluentinc/confluent-local:8.2.0")
 	if err != nil {
 		t.Fatalf("start kafka container: %v", err)
 	}
@@ -74,14 +74,7 @@ func StartKafkaConsumer(t *testing.T, ctx context.Context, brokers []string, gro
 	return cancel, errCh
 }
 
-func WaitForKafkaCondition(
-	t *testing.T,
-	errCh <-chan error,
-	cancel context.CancelFunc,
-	timeout, interval time.Duration,
-	timeoutMsg string,
-	condition func() (bool, error),
-) {
+func WaitForKafkaCondition(t *testing.T, errCh <-chan error, cancel context.CancelFunc, timeout, interval time.Duration, timeoutMsg string, condition func() (bool, error)) {
 	t.Helper()
 
 	ticker := time.NewTicker(interval)

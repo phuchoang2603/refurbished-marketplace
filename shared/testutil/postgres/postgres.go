@@ -1,5 +1,4 @@
-// Package testutil provides utilities for integration testing with PostgreSQL, Redis, Kafka, and other dependencies.
-package testutil
+package postgres
 
 import (
 	"context"
@@ -10,27 +9,27 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/pressly/goose/v3"
 	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/modules/postgres"
+	pgmodule "github.com/testcontainers/testcontainers-go/modules/postgres"
 	"github.com/testcontainers/testcontainers-go/wait"
 )
 
-type PostgresConfig struct {
+type Config struct {
 	Database string
 	Username string
 	Password string
 }
 
-func SetupPostgresWithMigrations(t *testing.T, cfg PostgresConfig, migrationsDir string) *sql.DB {
+func SetupPostgresWithMigrations(t *testing.T, cfg Config, migrationsDir string) *sql.DB {
 	t.Helper()
 
 	ctx := context.Background()
 
-	pgContainer, err := postgres.Run(
+	pgContainer, err := pgmodule.Run(
 		ctx,
 		"postgres:16",
-		postgres.WithDatabase(cfg.Database),
-		postgres.WithUsername(cfg.Username),
-		postgres.WithPassword(cfg.Password),
+		pgmodule.WithDatabase(cfg.Database),
+		pgmodule.WithUsername(cfg.Username),
+		pgmodule.WithPassword(cfg.Password),
 		testcontainers.WithWaitStrategy(
 			wait.ForLog("database system is ready to accept connections").
 				WithOccurrence(2).

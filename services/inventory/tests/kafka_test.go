@@ -8,7 +8,7 @@ import (
 	"refurbished-marketplace/shared/messaging"
 	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
 	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
-	"refurbished-marketplace/shared/testutil"
+	testkafka "refurbished-marketplace/shared/testutil/kafka"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
@@ -62,15 +62,15 @@ func TestKafkaOrdersCreatedHandler_EndToEnd(t *testing.T) {
 		&ordersv1.OrderCreatedItem{ProductId: secondProductID.String(), Quantity: 1},
 	)
 
-	k := testutil.SetupKafka(t)
+	k := testkafka.SetupKafka(t)
 	brokers, err := k.Brokers(ctx)
 	if err != nil {
 		t.Fatalf("Brokers: %v", err)
 	}
 	topic := messaging.EventTypeOrderCreated
 
-	testutil.ProduceKafkaRecord(t, ctx, brokers, topic, payload)
-	cancel, errRun := testutil.StartKafkaConsumer(
+	testkafka.ProduceKafkaRecord(t, ctx, brokers, topic, payload)
+	cancel, errRun := testkafka.StartKafkaConsumer(
 		t,
 		ctx,
 		brokers,
@@ -79,7 +79,7 @@ func TestKafkaOrdersCreatedHandler_EndToEnd(t *testing.T) {
 		svc.KafkaReservationHandler(),
 	)
 	defer cancel()
-	testutil.WaitForKafkaCondition(
+	testkafka.WaitForKafkaCondition(
 		t,
 		errRun,
 		cancel,
@@ -120,7 +120,7 @@ func TestKafkaPaymentOutcomeHandler_EndToEnd(t *testing.T) {
 		t.Fatalf("HandleOrdersCreated seed: %v", err)
 	}
 
-	k := testutil.SetupKafka(t)
+	k := testkafka.SetupKafka(t)
 	brokers, err := k.Brokers(ctx)
 	if err != nil {
 		t.Fatalf("Brokers: %v", err)
@@ -128,8 +128,8 @@ func TestKafkaPaymentOutcomeHandler_EndToEnd(t *testing.T) {
 	topic := messaging.EventTypePaymentSucceeded
 	payload := paymentOutcomePayload(orderID)
 
-	testutil.ProduceKafkaRecord(t, ctx, brokers, topic, payload)
-	cancel, errRun := testutil.StartKafkaConsumer(
+	testkafka.ProduceKafkaRecord(t, ctx, brokers, topic, payload)
+	cancel, errRun := testkafka.StartKafkaConsumer(
 		t,
 		ctx,
 		brokers,
@@ -138,7 +138,7 @@ func TestKafkaPaymentOutcomeHandler_EndToEnd(t *testing.T) {
 		svc.KafkaReservationHandler(),
 	)
 	defer cancel()
-	testutil.WaitForKafkaCondition(
+	testkafka.WaitForKafkaCondition(
 		t,
 		errRun,
 		cancel,
@@ -178,15 +178,15 @@ func TestKafkaOrdersCreatedFailure_EndToEnd(t *testing.T) {
 		&ordersv1.OrderCreatedItem{ProductId: secondProductID.String(), Quantity: 2},
 	)
 
-	k := testutil.SetupKafka(t)
+	k := testkafka.SetupKafka(t)
 	brokers, err := k.Brokers(ctx)
 	if err != nil {
 		t.Fatalf("Brokers: %v", err)
 	}
 	topic := messaging.EventTypeOrderCreated
 
-	testutil.ProduceKafkaRecord(t, ctx, brokers, topic, payload)
-	cancel, errRun := testutil.StartKafkaConsumer(
+	testkafka.ProduceKafkaRecord(t, ctx, brokers, topic, payload)
+	cancel, errRun := testkafka.StartKafkaConsumer(
 		t,
 		ctx,
 		brokers,
@@ -195,7 +195,7 @@ func TestKafkaOrdersCreatedFailure_EndToEnd(t *testing.T) {
 		svc.KafkaReservationHandler(),
 	)
 	defer cancel()
-	testutil.WaitForKafkaCondition(
+	testkafka.WaitForKafkaCondition(
 		t,
 		errRun,
 		cancel,

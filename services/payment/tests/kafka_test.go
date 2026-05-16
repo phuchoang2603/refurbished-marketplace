@@ -9,7 +9,7 @@ import (
 	"refurbished-marketplace/services/payment/internal/service"
 	"refurbished-marketplace/shared/messaging"
 	inventoryv1 "refurbished-marketplace/shared/proto/inventory/v1"
-	"refurbished-marketplace/shared/testutil"
+	testkafka "refurbished-marketplace/shared/testutil/kafka"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
@@ -48,17 +48,17 @@ func TestKafkaInventoryReservedHandler_EndToEnd(t *testing.T) {
 	merchantID := uuid.New()
 	payload := inventoryReservedPayload(orderID, merchantID, 7500)
 
-	k := testutil.SetupKafka(t)
+	k := testkafka.SetupKafka(t)
 	brokers, err := k.Brokers(ctx)
 	if err != nil {
 		t.Fatalf("Brokers: %v", err)
 	}
 	topic := messaging.EventTypeInventoryReserved
 
-	testutil.ProduceKafkaRecord(t, ctx, brokers, topic, payload)
-	cancel, errRun := testutil.StartKafkaConsumer(t, ctx, brokers, fmt.Sprintf("payment-kafka-e2e-%s", uuid.New().String()), []string{topic}, svc.KafkaInventoryReservedHandler())
+	testkafka.ProduceKafkaRecord(t, ctx, brokers, topic, payload)
+	cancel, errRun := testkafka.StartKafkaConsumer(t, ctx, brokers, fmt.Sprintf("payment-kafka-e2e-%s", uuid.New().String()), []string{topic}, svc.KafkaInventoryReservedHandler())
 	defer cancel()
-	testutil.WaitForKafkaCondition(t, errRun, cancel, 30*time.Second, 500*time.Millisecond, "timeout waiting for payment transaction", func() (bool, error) {
+	testkafka.WaitForKafkaCondition(t, errRun, cancel, 30*time.Second, 500*time.Millisecond, "timeout waiting for payment transaction", func() (bool, error) {
 		row, err := queries.GetPaymentTransactionByOrderID(ctx, orderID)
 		if err != nil {
 			return false, nil

@@ -5,16 +5,16 @@ import (
 	"testing"
 
 	"refurbished-marketplace/services/inventory/internal/service"
-	"refurbished-marketplace/shared/testutil"
+	testpostgres "refurbished-marketplace/shared/testutil/postgres"
 
 	"github.com/google/uuid"
 )
 
 func newInventoryService(t *testing.T) *service.Service {
 	t.Helper()
-	db := testutil.SetupPostgresWithMigrations(
+	db := testpostgres.SetupPostgresWithMigrations(
 		t,
-		testutil.PostgresConfig{
+		testpostgres.Config{
 			Database: "inventory_db",
 			Username: "inventory_app",
 			Password: "inventory_app_dev_password",

@@ -5,16 +5,16 @@ import (
 	"testing"
 
 	"refurbished-marketplace/services/users/internal/service"
-	"refurbished-marketplace/shared/testutil"
+	testpostgres "refurbished-marketplace/shared/testutil/postgres"
 
 	"github.com/google/uuid"
 )
 
 func newUserService(t *testing.T) *service.Service {
 	t.Helper()
-	db := testutil.SetupPostgresWithMigrations(
+	db := testpostgres.SetupPostgresWithMigrations(
 		t,
-		testutil.PostgresConfig{
+		testpostgres.Config{
 			Database: "users_db",
 			Username: "users_app",
 			Password: "users_app_dev_password",

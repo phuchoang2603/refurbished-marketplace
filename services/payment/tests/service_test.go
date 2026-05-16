@@ -7,16 +7,16 @@ import (
 
 	"refurbished-marketplace/services/payment/internal/database"
 	"refurbished-marketplace/services/payment/internal/service"
-	"refurbished-marketplace/shared/testutil"
+	testpostgres "refurbished-marketplace/shared/testutil/postgres"
 
 	"github.com/google/uuid"
 )
 
 func newPaymentFixture(t *testing.T) (*service.Service, *database.Queries) {
 	t.Helper()
-	db := testutil.SetupPostgresWithMigrations(
+	db := testpostgres.SetupPostgresWithMigrations(
 		t,
-		testutil.PostgresConfig{
+		testpostgres.Config{
 			Database: "payment_db",
 			Username: "payment_app",
 			Password: "payment_app_dev_password",

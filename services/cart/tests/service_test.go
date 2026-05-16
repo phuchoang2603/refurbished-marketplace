@@ -8,13 +8,13 @@ import (
 
 	"refurbished-marketplace/services/cart/internal/service"
 
-	"refurbished-marketplace/shared/testutil"
+	testredis "refurbished-marketplace/shared/testutil/redis"
 
 	"github.com/google/uuid"
 )
 
 func TestCartLifecycle(t *testing.T) {
-	svc := service.New(testutil.SetupRedisContainer(t), 24*time.Hour)
+	svc := service.New(testredis.SetupRedisContainer(t), 24*time.Hour)
 	ctx := context.Background()
 
 	t.Run("add cart item", func(t *testing.T) {
@@ -104,7 +104,7 @@ func TestCartLifecycle(t *testing.T) {
 
 func TestCartValidation(t *testing.T) {
 	t.Run("invalid cart id", func(t *testing.T) {
-		svc := service.New(testutil.SetupRedisContainer(t), 24*time.Hour)
+		svc := service.New(testredis.SetupRedisContainer(t), 24*time.Hour)
 		ctx := context.Background()
 
 		if _, err := svc.AddCartItem(ctx, "", uuid.NewString(), uuid.NewString(), 1); !errors.Is(err, service.ErrInvalidCartID) {
@@ -113,7 +113,7 @@ func TestCartValidation(t *testing.T) {
 	})
 
 	t.Run("invalid product id", func(t *testing.T) {
-		svc := service.New(testutil.SetupRedisContainer(t), 24*time.Hour)
+		svc := service.New(testredis.SetupRedisContainer(t), 24*time.Hour)
 		ctx := context.Background()
 
 		if _, err := svc.AddCartItem(ctx, uuid.NewString(), "", uuid.NewString(), 1); !errors.Is(err, service.ErrInvalidProductID) {
@@ -122,7 +122,7 @@ func TestCartValidation(t *testing.T) {
 	})
 
 	t.Run("invalid merchant id", func(t *testing.T) {
-		svc := service.New(testutil.SetupRedisContainer(t), 24*time.Hour)
+		svc := service.New(testredis.SetupRedisContainer(t), 24*time.Hour)
 		ctx := context.Background()
 
 		if _, err := svc.AddCartItem(ctx, uuid.NewString(), uuid.NewString(), "", 1); !errors.Is(err, service.ErrInvalidMerchantID) {
@@ -131,7 +131,7 @@ func TestCartValidation(t *testing.T) {
 	})
 
 	t.Run("invalid quantity", func(t *testing.T) {
-		svc := service.New(testutil.SetupRedisContainer(t), 24*time.Hour)
+		svc := service.New(testredis.SetupRedisContainer(t), 24*time.Hour)
 		ctx := context.Background()
 
 		if _, err := svc.AddCartItem(ctx, uuid.NewString(), uuid.NewString(), uuid.NewString(), 0); !errors.Is(err, service.ErrInvalidQuantity) {
@@ -140,7 +140,7 @@ func TestCartValidation(t *testing.T) {
 	})
 
 	t.Run("missing item", func(t *testing.T) {
-		svc := service.New(testutil.SetupRedisContainer(t), 24*time.Hour)
+		svc := service.New(testredis.SetupRedisContainer(t), 24*time.Hour)
 		ctx := context.Background()
 
 		if _, err := svc.RemoveCartItem(ctx, uuid.NewString(), uuid.NewString()); !errors.Is(err, service.ErrItemNotFound) {
