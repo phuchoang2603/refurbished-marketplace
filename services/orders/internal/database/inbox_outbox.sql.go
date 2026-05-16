@@ -26,8 +26,7 @@ type CreateOrderOutboxParams struct {
 }
 
 func (q *Queries) CreateOrderOutbox(ctx context.Context, arg CreateOrderOutboxParams) (OrdersOutbox, error) {
-	row := q.db.QueryRowContext(
-		ctx, createOrderOutbox,
+	row := q.db.QueryRowContext(ctx, createOrderOutbox,
 		arg.ID,
 		arg.AggregateID,
 		arg.EventType,

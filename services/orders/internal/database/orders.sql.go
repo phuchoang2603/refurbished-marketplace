@@ -33,8 +33,7 @@ type CreateOrderParams struct {
 }
 
 func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (Order, error) {
-	row := q.db.QueryRowContext(
-		ctx, createOrder,
+	row := q.db.QueryRowContext(ctx, createOrder,
 		arg.ID,
 		arg.BuyerUserID,
 		arg.MerchantID,

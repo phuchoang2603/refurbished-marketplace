@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"refurbished-marketplace/services/payment/internal/database"
-	"refurbished-marketplace/shared/dberrors"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -34,7 +33,7 @@ func mapDBPaymentTransactionView(tx database.PaymentTransaction) PaymentTransact
 func loadPaymentTransaction(ctx context.Context, q *database.Queries, id uuid.UUID) (database.PaymentTransaction, error) {
 	row, err := q.GetPaymentTransactionByID(ctx, id)
 	if err != nil {
-		if dberrors.IsNoRows(err) {
+		if errors.Is(err, sql.ErrNoRows) {
 			return database.PaymentTransaction{}, ErrTransactionNotFound
 		}
 		return database.PaymentTransaction{}, err
@@ -45,7 +44,7 @@ func loadPaymentTransaction(ctx context.Context, q *database.Queries, id uuid.UU
 func loadPaymentIntentByOrderID(ctx context.Context, q *database.Queries, orderID uuid.UUID) (database.PaymentIntent, error) {
 	row, err := q.GetPaymentIntentByOrderID(ctx, orderID)
 	if err != nil {
-		if dberrors.IsNoRows(err) {
+		if errors.Is(err, sql.ErrNoRows) {
 			return database.PaymentIntent{}, ErrIntentNotFound
 		}
 		return database.PaymentIntent{}, err
@@ -53,7 +52,7 @@ func loadPaymentIntentByOrderID(ctx context.Context, q *database.Queries, orderI
 	return row, nil
 }
 
-func parseOrderCreatedUUIDs(msg interface {
+func parseOrderUUIDs(msg interface {
 	GetOrderId() string
 	GetMerchantId() string
 },

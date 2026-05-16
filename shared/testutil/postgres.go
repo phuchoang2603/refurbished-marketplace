@@ -25,7 +25,8 @@ func SetupPostgresWithMigrations(t *testing.T, cfg PostgresConfig, migrationsDir
 
 	ctx := context.Background()
 
-	pgContainer, err := postgres.Run(ctx,
+	pgContainer, err := postgres.Run(
+		ctx,
 		"postgres:16",
 		postgres.WithDatabase(cfg.Database),
 		postgres.WithUsername(cfg.Username),

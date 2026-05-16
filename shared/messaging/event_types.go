@@ -2,7 +2,9 @@
 package messaging
 
 const (
-	EventTypePaymentSucceeded = "payment.succeeded"
-	EventTypePaymentFailed    = "payment.failed"
-	EventTypeOrderCreated     = "orders.created"
+	EventTypePaymentSucceeded           = "payment.succeeded"
+	EventTypePaymentFailed              = "payment.failed"
+	EventTypeOrderCreated               = "orders.created"
+	EventTypeInventoryReserved          = "inventory.reserved"
+	EventTypeInventoryReservationFailed = "inventory.reservation_failed"
 )

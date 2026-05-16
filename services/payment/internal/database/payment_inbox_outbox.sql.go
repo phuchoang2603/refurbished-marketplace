@@ -45,33 +45,6 @@ func (q *Queries) CreatePaymentOutbox(ctx context.Context, arg CreatePaymentOutb
 	return i, err
 }
 
-const getPaymentOutboxByAggregateIDAndEventType = `-- name: GetPaymentOutboxByAggregateIDAndEventType :one
-SELECT id, aggregate_id, event_type, payload, publish_attempts, created_at, published_at
-FROM payment_outbox
-WHERE aggregate_id = $1 AND event_type = $2
-LIMIT 1
-`
-
-type GetPaymentOutboxByAggregateIDAndEventTypeParams struct {
-	AggregateID uuid.UUID
-	EventType   string
-}
-
-func (q *Queries) GetPaymentOutboxByAggregateIDAndEventType(ctx context.Context, arg GetPaymentOutboxByAggregateIDAndEventTypeParams) (PaymentOutbox, error) {
-	row := q.db.QueryRowContext(ctx, getPaymentOutboxByAggregateIDAndEventType, arg.AggregateID, arg.EventType)
-	var i PaymentOutbox
-	err := row.Scan(
-		&i.ID,
-		&i.AggregateID,
-		&i.EventType,
-		&i.Payload,
-		&i.PublishAttempts,
-		&i.CreatedAt,
-		&i.PublishedAt,
-	)
-	return i, err
-}
-
 const insertPaymentInboxMessage = `-- name: InsertPaymentInboxMessage :one
 INSERT INTO payment_inbox (message_id)
 VALUES ($1)

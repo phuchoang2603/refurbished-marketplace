@@ -65,7 +65,7 @@ func main() {
 			log.Print("KAFKA_BOOTSTRAP_SERVERS has no brokers after parsing; skipping Kafka consumer")
 		} else {
 			wg.Go(func() {
-				if err := runOrdersCreatedConsumer(ctx, svc, brokers); err != nil && !errors.Is(err, context.Canceled) {
+				if err := runInventoryReservedConsumer(ctx, svc, brokers); err != nil && !errors.Is(err, context.Canceled) {
 					log.Printf("kafka consumer: %v", err)
 				}
 			})

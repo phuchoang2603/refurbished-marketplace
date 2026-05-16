@@ -9,9 +9,3 @@ INSERT INTO payment_outbox (id, aggregate_id, event_type, payload)
 VALUES ($1, $2, $3, $4)
 RETURNING
     payment_outbox.*;
-
--- name: GetPaymentOutboxByAggregateIDAndEventType :one
-SELECT *
-FROM payment_outbox
-WHERE aggregate_id = $1 AND event_type = $2
-LIMIT 1;

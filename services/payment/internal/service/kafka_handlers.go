@@ -2,68 +2,65 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 
 	"refurbished-marketplace/services/payment/internal/database"
-	"refurbished-marketplace/shared/dberrors"
 	"refurbished-marketplace/shared/messaging"
 
-	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
+	inventoryv1 "refurbished-marketplace/shared/proto/inventory/v1"
 
 	"github.com/google/uuid"
 )
 
-func (s *Service) KafkaOrdersCreatedHandler() messaging.KafkaHandler {
+func (s *Service) KafkaInventoryReservedHandler() messaging.KafkaHandler {
 	return func(ctx context.Context, msg messaging.KafkaMessage) error {
-		return s.HandleOrdersCreated(ctx, messaging.KafkaMessageID(msg), msg.Value)
-	}
-}
-
-func (s *Service) HandleOrdersCreated(ctx context.Context, messageID string, value []byte) error {
-	if messageID == "" {
-		return errors.New("messageID is required")
-	}
-
-	var msg ordersv1.OrderCreated
-	if err := messaging.UnmarshalKafkaProtobuf(value, &msg); err != nil {
-		return fmt.Errorf("decode orders.created payload: %w", err)
-	}
-	if msg.GetOrderId() == "" {
-		return errors.New("invalid orders.created payload: missing order_id")
-	}
-
-	if _, err := s.queries.InsertPaymentInboxMessage(ctx, messageID); err != nil {
-		if dberrors.IsNoRows(err) {
-			return nil
+		messageID := messaging.KafkaMessageID(msg)
+		if messageID == "" {
+			return errors.New("messageID is required")
 		}
-		return err
-	}
 
-	orderID, merchantID, err := parseOrderCreatedUUIDs(&msg)
-	if err != nil {
-		return err
-	}
-
-	intent, err := loadPaymentIntentByOrderID(ctx, s.queries, orderID)
-	if err != nil {
-		return err
-	}
-
-	_, err = s.queries.CreatePaymentTransaction(ctx, database.CreatePaymentTransactionParams{
-		ID:             uuid.New(),
-		OrderID:        orderID,
-		MerchantID:     merchantID,
-		AmountCents:    msg.GetTotalCents(),
-		Currency:       intent.Currency,
-		Status:         PaymentTxStatusInitialized,
-		IdempotencyKey: "order:" + orderID.String(),
-	})
-	if err != nil {
-		if dberrors.IsNoRows(err) || isPostgresUniqueViolation(err) {
-			return nil
+		var payload inventoryv1.InventoryReserved
+		if err := messaging.UnmarshalKafkaProtobuf(msg.Value, &payload); err != nil {
+			return fmt.Errorf("decode inventory.reserved payload: %w", err)
 		}
-		return err
+		if payload.GetOrderId() == "" {
+			return errors.New("invalid inventory.reserved payload: missing order_id")
+		}
+
+		if _, err := s.queries.InsertPaymentInboxMessage(ctx, messageID); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil
+			}
+			return err
+		}
+
+		orderID, merchantID, err := parseOrderUUIDs(&payload)
+		if err != nil {
+			return err
+		}
+
+		intent, err := loadPaymentIntentByOrderID(ctx, s.queries, orderID)
+		if err != nil {
+			return err
+		}
+
+		_, err = s.queries.CreatePaymentTransaction(ctx, database.CreatePaymentTransactionParams{
+			ID:             uuid.New(),
+			OrderID:        orderID,
+			MerchantID:     merchantID,
+			AmountCents:    payload.GetTotalCents(),
+			Currency:       intent.Currency,
+			Status:         PaymentTxStatusInitialized,
+			IdempotencyKey: "order:" + orderID.String(),
+		})
+		if err != nil {
+			if errors.Is(err, sql.ErrNoRows) || isPostgresUniqueViolation(err) {
+				return nil
+			}
+			return err
+		}
+		return nil
 	}
-	return nil
 }
