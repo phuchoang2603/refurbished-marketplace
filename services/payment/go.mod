@@ -5,10 +5,11 @@ go 1.26.1
 require (
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.12.3
-	github.com/twmb/franz-go v1.20.7
 	google.golang.org/grpc v1.80.0
 	google.golang.org/protobuf v1.36.11
-	refurbished-marketplace/shared v0.0.0
+	refurbished-marketplace/shared/messaging v0.0.0
+	refurbished-marketplace/shared/proto v0.0.0
+	refurbished-marketplace/shared/testutil v0.0.0
 )
 
 require (
@@ -63,6 +64,7 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/redis v0.41.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.16 // indirect
 	github.com/tklauser/numcpus v0.11.0 // indirect
+	github.com/twmb/franz-go v1.20.7 // indirect
 	github.com/twmb/franz-go/pkg/kmsg v1.12.0 // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
@@ -82,4 +84,8 @@ require (
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
-replace refurbished-marketplace/shared => ../../shared
+replace refurbished-marketplace/shared/messaging => ../../shared/messaging
+
+replace refurbished-marketplace/shared/proto => ../../shared/proto
+
+replace refurbished-marketplace/shared/testutil => ../../shared/testutil

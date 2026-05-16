@@ -1,9 +1,8 @@
-module refurbished-marketplace/shared
+module refurbished-marketplace/shared/testutil
 
 go 1.26.1
 
 require (
-	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/lib/pq v1.12.3
 	github.com/pressly/goose/v3 v3.27.0
 	github.com/redis/go-redis/v9 v9.18.0
@@ -12,9 +11,7 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.41.0
 	github.com/testcontainers/testcontainers-go/modules/redis v0.41.0
 	github.com/twmb/franz-go v1.20.7
-	golang.org/x/sync v0.19.0
-	google.golang.org/grpc v1.80.0
-	google.golang.org/protobuf v1.36.11
+	refurbished-marketplace/shared/messaging v0.0.0
 )
 
 require (
@@ -75,9 +72,10 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.48.0 // indirect
 	golang.org/x/mod v0.33.0 // indirect
-	golang.org/x/net v0.50.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
-	golang.org/x/text v0.34.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260217215200-42d3e9bedb6d // indirect
+	google.golang.org/protobuf v1.36.11 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
+
+replace refurbished-marketplace/shared/messaging => ../messaging

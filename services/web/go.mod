@@ -9,10 +9,13 @@ require (
 	github.com/starfederation/datastar-go v1.2.1
 	google.golang.org/grpc v1.80.0
 	google.golang.org/protobuf v1.36.11
-	refurbished-marketplace/shared v0.0.0
+	refurbished-marketplace/shared/auth v0.0.0
+	refurbished-marketplace/shared/proto v0.0.0
 )
 
-replace refurbished-marketplace/shared => ../../shared
+replace refurbished-marketplace/shared/auth => ../../shared/auth
+
+replace refurbished-marketplace/shared/proto => ../../shared/proto
 
 require (
 	github.com/CAFxX/httpcompression v0.0.9 // indirect
