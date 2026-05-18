@@ -1,10 +1,4 @@
-# Server Rendered Web
-
-## Purpose
-
-The server-rendered web capability defines how marketplace browser pages and interactive fragments are rendered by the web service.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Web renders server-side pages
 
@@ -48,12 +42,3 @@ The web service MUST return HTML fragments or Datastar SSE patch responses that 
 
 - **WHEN** the router implementation changes underneath the browser edge
 - **THEN** Datastar-enabled routes SHALL preserve their HTML-first interaction model without introducing browser-facing JSON APIs
-
-### Requirement: Web keeps internal composition over gRPC
-
-The web service MUST continue to compose data from internal services over gRPC while rendering browser responses.
-
-#### Scenario: A rendered page needs marketplace data
-
-- **WHEN** a page requires data from internal domain services
-- **THEN** the web service SHALL fetch that data through the existing gRPC clients before rendering HTML

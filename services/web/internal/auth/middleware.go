@@ -12,11 +12,13 @@ type UnauthorizedHandler func(http.ResponseWriter, *http.Request)
 
 func RequireAccessToken(cfg authconfig.Config, next http.Handler, unauthorized UnauthorizedHandler) http.Handler {
 	if unauthorized == nil {
-		unauthorized = defaultUnauthorized
+		unauthorized = func(w http.ResponseWriter, r *http.Request) {
+			http.Error(w, "unauthorized", http.StatusUnauthorized)
+		}
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		raw := accessTokenFromRequest(r)
+		raw := AccessTokenFromRequest(r)
 		if raw == "" {
 			unauthorized(w, r)
 			return
@@ -32,20 +34,7 @@ func RequireAccessToken(cfg authconfig.Config, next http.Handler, unauthorized U
 			return
 		}
 
-		ctx := contextWithUserID(r.Context(), claims.Subject)
+		ctx := ContextWithUserID(r.Context(), claims.Subject)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
-}
-
-func HasValidAccessToken(cfg authconfig.Config, r *http.Request) bool {
-	raw := accessTokenFromRequest(r)
-	if raw == "" {
-		return false
-	}
-	_, err := sharedjwt.ParseAndValidate(raw, cfg.JWTSecret, "access", cfg.JWTIssuer, cfg.JWTAudience)
-	return err == nil
-}
-
-func defaultUnauthorized(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "unauthorized", http.StatusUnauthorized)
 }

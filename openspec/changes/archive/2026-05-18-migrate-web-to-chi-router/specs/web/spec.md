@@ -1,10 +1,4 @@
-# Web
-
-## Purpose
-
-The web capability defines the public browser edge, including browser routes, auth cookie handling, and delegation to internal services.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Web owns the public browser edge
 

@@ -43,6 +43,7 @@ in
 
     # templ
     templ
+    tailwindcss
 
     # kubernetes
     kubectl
@@ -117,6 +118,15 @@ in
         done
       '';
     };
+
+    tailwind-build = {
+      exec = ''
+        (
+          cd services/web
+          tailwindcss -c tailwind.config.js -i tailwind.css -o static/app.css
+        )
+      '';
+    };
   };
 
   tasks = {
@@ -143,10 +153,17 @@ in
           "vendor/*"
           "**/proto/*.go"
           "**/database/*.go"
+          "*_templ.go"
         ];
       };
       sqruff.enable = true;
-      oxfmt.enable = true;
+      oxfmt = {
+        enable = true;
+        excludes = [
+          "*.css"
+        ];
+      };
+
     };
   };
 }

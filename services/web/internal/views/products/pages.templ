@@ -1,0 +1,57 @@
+package products
+
+import sharedviews "refurbished-marketplace/services/web/internal/views/shared"
+
+templ ProductsPage(products []sharedviews.ProductView) {
+	@sharedviews.AppShell("Products", sharedviews.DefaultNav, ProductListSection(products))
+}
+
+templ ProductDetailPage(product sharedviews.ProductView) {
+	@sharedviews.AppShell(product.Name, sharedviews.DefaultNav, ProductDetailSection(product))
+}
+
+templ ProductListSection(products []sharedviews.ProductView) {
+	@sharedviews.Card(sharedviews.CardArgs{ID: "products"}) {
+		@sharedviews.PageHeader("Products", "Server-rendered catalog built with templ and Datastar-compatible fragments.")
+		if len(products) == 0 {
+			@sharedviews.EmptyState("No products are available yet.")
+		} else {
+			<div class="product-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+				for _, product := range products {
+					<article id={ "product-" + product.ID } class="product-card grid min-h-56 content-between gap-6 rounded-[24px] border border-slate-800 bg-slate-900/80 p-5">
+						<div>
+							<h2><a href={ "/products/" + product.ID }>{ product.Name }</a></h2>
+							<p class="muted mt-2 text-sm text-slate-400">{ product.Description }</p>
+						</div>
+						<div class="product-card__footer flex flex-wrap items-center justify-between gap-3">
+							<strong class="text-2xl font-black tracking-tight text-teal-200">{ sharedviews.FormatCents(product.PriceCents) }</strong>
+							@sharedviews.Badge("Stock " + sharedviews.FormatInt32(product.Stock))
+						</div>
+					</article>
+				}
+			</div>
+		}
+	}
+}
+
+templ ProductDetailSection(product sharedviews.ProductView) {
+	@sharedviews.Card(sharedviews.CardArgs{ID: "product-" + product.ID}) {
+		@sharedviews.PageHeader(product.Name, product.Description)
+		<p class="price text-4xl font-black tracking-tight text-teal-200 sm:text-5xl">{ sharedviews.FormatCents(product.PriceCents) }</p>
+		@sharedviews.Badge("Stock " + sharedviews.FormatInt32(product.Stock))
+		<div class="divider my-6 h-px bg-slate-800"></div>
+		<h2 class="mb-3 text-xl font-bold text-slate-50">Add to cart</h2>
+		@sharedviews.Form(sharedviews.FormArgs{Action: "/cart/items", Datastar: sharedviews.DatastarFormAction("post", "/cart/items")}) {
+			<input type="hidden" name="product_id" value={ product.ID }/>
+			@sharedviews.FormItem(sharedviews.SlotArgs{}) {
+				@sharedviews.FormLabel(sharedviews.LabelArgs{For: "product-quantity"}) { Quantity }
+				@sharedviews.Input(sharedviews.InputArgs{ID: "product-quantity", Name: "quantity", Type: "number", Min: "1", Value: "1", Required: true})
+			}
+			@sharedviews.Button(sharedviews.ButtonArgs{Type: "submit"}) { Add to cart }
+		}
+		@sharedviews.Card(sharedviews.CardArgs{ID: "cart", Class: "nested-card mt-6 border-slate-800 bg-slate-900/60 shadow-none"}) {
+			<p class="muted text-sm text-slate-400">Add this product to update the cart summary here.</p>
+		}
+		@sharedviews.MetaLine(product.CreatedAt, product.UpdatedAt)
+	}
+}

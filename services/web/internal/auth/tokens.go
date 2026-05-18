@@ -5,7 +5,7 @@ import (
 	"strings"
 )
 
-func accessTokenFromRequest(r *http.Request) string {
+func AccessTokenFromRequest(r *http.Request) string {
 	if raw := bearerToken(r.Header.Get("Authorization")); raw != "" {
 		return raw
 	}

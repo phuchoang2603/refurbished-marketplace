@@ -3,88 +3,95 @@ package handlers
 import (
 	"net/http"
 
-	"refurbished-marketplace/services/web/internal/views"
-	cartproto "refurbished-marketplace/shared/proto/cart"
-	ordersproto "refurbished-marketplace/shared/proto/orders"
-	paymentproto "refurbished-marketplace/shared/proto/payment"
-	productsproto "refurbished-marketplace/shared/proto/products"
-	usersproto "refurbished-marketplace/shared/proto/users"
+	authhandlers "refurbished-marketplace/services/web/internal/handlers/auth"
+	carthandlers "refurbished-marketplace/services/web/internal/handlers/cart"
+	orderhandlers "refurbished-marketplace/services/web/internal/handlers/orders"
+	paymenthandlers "refurbished-marketplace/services/web/internal/handlers/payment"
+	producthandlers "refurbished-marketplace/services/web/internal/handlers/products"
+	shared "refurbished-marketplace/services/web/internal/handlers/shared"
 
 	webAuth "refurbished-marketplace/services/web/internal/auth"
-
+	sharedviews "refurbished-marketplace/services/web/internal/views/shared"
 	authconfig "refurbished-marketplace/shared/auth/config"
+
+	"github.com/go-chi/chi/v5"
 )
 
-const staticDir = "/static"
-
 type Handler struct {
-	users    *usersproto.Client
-	products *productsproto.Client
-	orders   *ordersproto.Client
-	cart     *cartproto.Client
-	payment  *paymentproto.Client
-	auth     authconfig.Config
+	auth     *authhandlers.Handler
+	products *producthandlers.Handler
+	cart     *carthandlers.Handler
+	orders   *orderhandlers.Handler
+	payment  *paymenthandlers.Handler
+	authCfg  authconfig.Config
 }
 
-func New(users *usersproto.Client, products *productsproto.Client, orders *ordersproto.Client, cart *cartproto.Client, payment *paymentproto.Client, authCfg authconfig.Config) *Handler {
+func New(
+	users shared.UsersService,
+	products shared.ProductsService,
+	orders shared.OrdersService,
+	cart shared.CartService,
+	payment shared.PaymentService,
+	authCfg authconfig.Config,
+) *Handler {
+	deps := &shared.Dependencies{
+		Users:    users,
+		Products: products,
+		Orders:   orders,
+		Cart:     cart,
+		Payment:  payment,
+	}
 	return &Handler{
-		users:    users,
-		products: products,
-		orders:   orders,
-		cart:     cart,
-		payment:  payment,
-		auth:     authCfg,
+		auth:     authhandlers.New(deps),
+		products: producthandlers.New(deps),
+		cart:     carthandlers.New(deps),
+		orders:   orderhandlers.New(deps),
+		payment:  paymenthandlers.New(deps),
+		authCfg:  authCfg,
 	}
 }
 
-func (h *Handler) requireAccessToken(next http.Handler) http.Handler {
-	return webAuth.RequireAccessToken(h.auth, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		state := views.AuthState{Authenticated: true}
-		next.ServeHTTP(w, r.WithContext(views.WithAuthState(r.Context(), state)))
-	}), writeUnauthorized)
-}
+func (h *Handler) requireAccessToken(resumePath string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		unauthorized := func(w http.ResponseWriter, r *http.Request) {
+			shared.RedirectBrowserToLogin(w, r, resumePath)
+		}
 
-func (h *Handler) withViewAuth(next http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		state := views.AuthState{Authenticated: webAuth.HasValidAccessToken(h.auth, r)}
-		next(w, r.WithContext(views.WithAuthState(r.Context(), state)))
+		return webAuth.RequireAccessToken(
+			h.authCfg,
+			http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				state := sharedviews.AuthState{Authenticated: true}
+				next.ServeHTTP(w, r.WithContext(sharedviews.WithAuthState(r.Context(), state)))
+			}),
+			unauthorized,
+		)
 	}
 }
 
-func (h *Handler) Register(mux *http.ServeMux) {
-	view := h.withViewAuth
-	mux.HandleFunc("GET /healthz", h.handleHealthz)
-	mux.HandleFunc("GET /", view(h.handleHome))
-	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.Dir(staticDir))))
-
-	mux.HandleFunc("POST /users", view(h.handleCreateUser))
-	mux.HandleFunc("GET /users/{id}", view(h.handleGetUserByID))
-
-	mux.HandleFunc("GET /auth/login", view(h.handleLoginPage))
-	mux.HandleFunc("POST /auth/login", view(h.handleLogin))
-	mux.HandleFunc("GET /auth/register", view(h.handleRegisterPage))
-	mux.HandleFunc("POST /auth/logout", view(h.handleLogout))
-
-	mux.HandleFunc("GET /products", view(h.handleListProducts))
-	mux.HandleFunc("GET /products/{id}", view(h.handleGetProductByID))
-
-	mux.HandleFunc("POST /cart/items", view(h.handleAddCartItem))
-	mux.HandleFunc("PATCH /cart/items/{product_id}", view(h.handleSetCartItemQuantity))
-	mux.HandleFunc("DELETE /cart/items/{product_id}", view(h.handleRemoveCartItem))
-	mux.Handle("POST /cart/checkout", h.requireAccessToken(http.HandlerFunc(h.handleCheckoutCart)))
-	mux.HandleFunc("GET /cart", view(h.handleGetCart))
-
-	mux.Handle("POST /orders", h.requireAccessToken(http.HandlerFunc(h.handleCreateOrder)))
-	mux.Handle("GET /orders", h.requireAccessToken(http.HandlerFunc(h.handleListOrdersByBuyer)))
-	mux.Handle("GET /orders/{id}", h.requireAccessToken(http.HandlerFunc(h.handleGetOrderByID)))
-
-	mux.HandleFunc("POST /webhooks/stripe-simulator", h.handleStripeSimWebhook)
+func (h *Handler) viewAuth(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		state := sharedviews.AuthState{Authenticated: webAuth.HasValidAccessToken(h.authCfg, r)}
+		next.ServeHTTP(w, r.WithContext(sharedviews.WithAuthState(r.Context(), state)))
+	})
 }
 
-func (h *Handler) handleHealthz(w http.ResponseWriter, r *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
-}
+func (h *Handler) Register(router chi.Router) {
+	router.Group(func(r chi.Router) {
+		r.Use(h.viewAuth)
+		h.auth.RegisterPages(r)
+		h.auth.RegisterActions(r)
+		h.products.RegisterPages(r)
+		h.cart.RegisterPages(r)
+		h.cart.RegisterActions(r)
+	})
 
-func (h *Handler) handleHome(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/products", http.StatusSeeOther)
+	router.With(h.requireAccessToken("/cart")).Group(h.cart.RegisterProtectedActions)
+	router.With(h.requireAccessToken("/products")).Group(func(r chi.Router) {
+		h.orders.RegisterPages(r)
+		h.orders.RegisterActions(r)
+	})
+	router.Group(func(r chi.Router) {
+		h.registerStatusRoutes(r)
+		h.payment.RegisterActions(r)
+	})
 }
