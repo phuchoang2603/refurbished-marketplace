@@ -24,7 +24,9 @@ templ AppShell(title string, nav []NavLink, body templpkg.Component) {
 						}
 					}
 					<form class="nav-form m-0 inline-flex" method="post" action="/auth/logout" data-show="$session.authenticated">
-						@Button(ButtonArgs{Type: "submit", Variant: "secondary", Class: "nav-button px-4 py-2 text-sm"}) { Logout }
+						@Button(ButtonArgs{Type: "submit", Variant: "secondary", Class: "nav-button px-4 py-2 text-sm"}) {
+							Logout 
+						}
 					</form>
 				</nav>
 			</header>

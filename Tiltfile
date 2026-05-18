@@ -1,4 +1,3 @@
-# Create namespace if not exist
 load('ext://namespace', 'namespace_create')
 namespace_create('ecommerce')
 namespace_create('operators')
@@ -41,7 +40,7 @@ k8s_resource(
 )
 k8s_resource('kafka-ui', port_forwards=['8081:8080'], resource_deps=['kafka-cluster'], labels='kafka')
 
-### Our Application ###
+### Our helm charts
 k8s_yaml('./infra/k8s/secrets.yaml')
 app_yaml = helm(
     './infra/charts/refurbished-marketplace',
@@ -50,6 +49,19 @@ app_yaml = helm(
     values=['./infra/charts/refurbished-marketplace/values.yaml']
 )
 k8s_yaml(app_yaml)
+
+### Web Service ###
+local_resource(
+    "templ-watch",
+    serve_cmd='cd services/web && templ generate --watch  --proxy="http://localhost:8080"  --open-browser=false',
+    labels=["web"]
+)
+
+local_resource(
+    "tailwind-watch",
+    serve_cmd='cd services/web && tailwindcss -c tailwind.config.js -i tailwind.css -o static/app.css --watch=always',
+    labels=["web"]
+)
 
 docker_build(
   'refurbished-marketplace/web',
@@ -60,8 +72,7 @@ docker_build(
     './services/web',
   ],
 )
-
-k8s_resource('web', port_forwards=['8080:8080'])
+k8s_resource('web', port_forwards=['8080:8080'], labels=["web"])
 
 ### Users Service ###
 docker_build(

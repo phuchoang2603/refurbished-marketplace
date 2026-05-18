@@ -101,7 +101,7 @@ func ProductListSection(products []sharedviews.ProductView) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = sharedviews.PageHeader("Products", "Server-rendered catalog built with templ and Datastar-compatible fragments.").Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = sharedviews.PageHeader("Products", "Browse quality refurbished tech, verified devices, and sustainable deals from trusted sellers.").Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

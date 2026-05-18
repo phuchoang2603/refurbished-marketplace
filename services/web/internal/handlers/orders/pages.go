@@ -44,7 +44,7 @@ func (h *Handler) handleGetOrderByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if order.GetBuyerUserId() != buyerUserID {
-		shared.WriteHTML(w, r, http.StatusForbidden, sharedviews.MessagePage("Forbidden", "order does not belong to the current user"))
+		shared.WritePopup(w, r, http.StatusForbidden, "Forbidden", "order does not belong to the current user")
 		return
 	}
 

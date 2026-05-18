@@ -7,27 +7,12 @@
 let
   homeDir = builtins.getEnv "HOME";
   colimaSocket = "${homeDir}/.config/colima/default/docker.sock";
-  colimaKube = "${homeDir}/.kube/colima.yaml";
 in
 {
   env = {
     DOCKER_HOST = "unix://${colimaSocket}";
     TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE = "/var/run/docker.sock";
-    KUBECONFIG = colimaKube;
   };
-
-  enterShell = ''
-    if ! colima status >/dev/null 2>&1; then
-      echo "🚀 Colima is stopped. Starting it now with network support..."
-      colima start --network-address
-    else
-      echo "✅ Colima is already running."
-    fi
-
-    if [ -f "${colimaKube}" ]; then
-      kubectl config use-context colima --kubeconfig="${colimaKube}" >/dev/null 2>&1
-    fi
-  '';
 
   packages = with pkgs; [
     # sql
@@ -116,15 +101,6 @@ in
         for dir in $(find services -maxdepth 2 -name sqlc.yaml -exec dirname {} \;); do
           (cd "$dir" && sqlc generate)
         done
-      '';
-    };
-
-    tailwind-build = {
-      exec = ''
-        (
-          cd services/web
-          tailwindcss -c tailwind.config.js -i tailwind.css -o static/app.css
-        )
       '';
     };
   };

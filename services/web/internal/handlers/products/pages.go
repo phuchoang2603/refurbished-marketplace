@@ -16,6 +16,7 @@ type Handler struct{ deps *shared.Dependencies }
 func New(deps *shared.Dependencies) *Handler { return &Handler{deps: deps} }
 
 func (h *Handler) RegisterPages(r chi.Router) {
+	r.Get("/", h.handleListProducts)
 	r.Get("/products", h.handleListProducts)
 	r.Get("/products/{id}", h.handleGetProductByID)
 }

@@ -22,9 +22,6 @@ templ Button(args ButtonArgs) {
 	}}
 	<button type={ buttonType } { attrs... }>
 		{ children... }
-		if buttonType == "submit" {
-			<span class="button-loading text-xs opacity-80" data-show="$fetching">Loading...</span>
-		}
 	</button>
 }
 
