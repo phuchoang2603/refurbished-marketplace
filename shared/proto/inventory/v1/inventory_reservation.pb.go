@@ -82,7 +82,7 @@ func (x *InventoryReserved) GetTotalCents() int64 {
 	return 0
 }
 
-// Emitted on inventory.reservation_failed when the order cannot be fully reserved.
+// Emitted on inventory.reservation-failed when the order cannot be fully reserved.
 type InventoryReservationFailed struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	OrderId       string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
