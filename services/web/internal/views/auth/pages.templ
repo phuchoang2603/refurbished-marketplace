@@ -15,14 +15,20 @@ templ LoginSection(next string) {
 		@sharedviews.PageHeader("Login", "Sign in to create orders and check out your cart.")
 		@sharedviews.Form(sharedviews.FormArgs{Action: sharedviews.LoginURL(next)}) {
 			@sharedviews.FormItem(sharedviews.SlotArgs{}) {
-				@sharedviews.FormLabel(sharedviews.LabelArgs{For: "login-email"}) { Email }
+				@sharedviews.FormLabel(sharedviews.LabelArgs{For: "login-email"}) {
+					Email 
+				}
 				@sharedviews.Input(sharedviews.InputArgs{ID: "login-email", Name: "email", Type: "email", Autocomplete: "email", Required: true})
 			}
 			@sharedviews.FormItem(sharedviews.SlotArgs{}) {
-				@sharedviews.FormLabel(sharedviews.LabelArgs{For: "login-password"}) { Password }
+				@sharedviews.FormLabel(sharedviews.LabelArgs{For: "login-password"}) {
+					Password 
+				}
 				@sharedviews.Input(sharedviews.InputArgs{ID: "login-password", Name: "password", Type: "password", Autocomplete: "current-password", Required: true})
 			}
-			@sharedviews.Button(sharedviews.ButtonArgs{Type: "submit"}) { Login }
+			@sharedviews.Button(sharedviews.ButtonArgs{Type: "submit"}) {
+				Login 
+			}
 		}
 		@sharedviews.FormDescription(sharedviews.SlotArgs{}) {
 			Don&apos;t have an account? <a href={ sharedviews.RegisterURL(next) }>Create one here</a>.
@@ -32,17 +38,23 @@ templ LoginSection(next string) {
 
 templ RegisterSection(next string) {
 	@sharedviews.Card(sharedviews.CardArgs{ID: "register"}) {
-		@sharedviews.PageHeader("Create account", "Create a buyer account for browser checkout flows.")
+		@sharedviews.PageHeader("Create account", "Get the best for less. Sign up to unlock 70% off premium refurbished electronics.")
 		@sharedviews.Form(sharedviews.FormArgs{Action: sharedviews.RegisterURL(next)}) {
 			@sharedviews.FormItem(sharedviews.SlotArgs{}) {
-				@sharedviews.FormLabel(sharedviews.LabelArgs{For: "register-email"}) { Email }
+				@sharedviews.FormLabel(sharedviews.LabelArgs{For: "register-email"}) {
+					Email 
+				}
 				@sharedviews.Input(sharedviews.InputArgs{ID: "register-email", Name: "email", Type: "email", Autocomplete: "email", Required: true})
 			}
 			@sharedviews.FormItem(sharedviews.SlotArgs{}) {
-				@sharedviews.FormLabel(sharedviews.LabelArgs{For: "register-password"}) { Password }
+				@sharedviews.FormLabel(sharedviews.LabelArgs{For: "register-password"}) {
+					Password 
+				}
 				@sharedviews.Input(sharedviews.InputArgs{ID: "register-password", Name: "password", Type: "password", Autocomplete: "new-password", Required: true})
 			}
-			@sharedviews.Button(sharedviews.ButtonArgs{Type: "submit"}) { Create account }
+			@sharedviews.Button(sharedviews.ButtonArgs{Type: "submit"}) {
+				Create account 
+			}
 		}
 		@sharedviews.FormDescription(sharedviews.SlotArgs{}) {
 			Already have an account? <a href={ sharedviews.LoginURL(next) }>Sign in</a>.

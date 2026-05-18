@@ -90,6 +90,7 @@ func (h *Handler) Register(router chi.Router) {
 		h.orders.RegisterPages(r)
 		h.orders.RegisterActions(r)
 	})
+
 	router.Group(func(r chi.Router) {
 		h.registerStatusRoutes(r)
 		h.payment.RegisterActions(r)

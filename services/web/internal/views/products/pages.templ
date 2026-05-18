@@ -12,7 +12,7 @@ templ ProductDetailPage(product sharedviews.ProductView) {
 
 templ ProductListSection(products []sharedviews.ProductView) {
 	@sharedviews.Card(sharedviews.CardArgs{ID: "products"}) {
-		@sharedviews.PageHeader("Products", "Server-rendered catalog built with templ and Datastar-compatible fragments.")
+		@sharedviews.PageHeader("Products", "Browse quality refurbished tech, verified devices, and sustainable deals from trusted sellers.")
 		if len(products) == 0 {
 			@sharedviews.EmptyState("No products are available yet.")
 		} else {
@@ -44,10 +44,14 @@ templ ProductDetailSection(product sharedviews.ProductView) {
 		@sharedviews.Form(sharedviews.FormArgs{Action: "/cart/items", Datastar: sharedviews.DatastarFormAction("post", "/cart/items")}) {
 			<input type="hidden" name="product_id" value={ product.ID }/>
 			@sharedviews.FormItem(sharedviews.SlotArgs{}) {
-				@sharedviews.FormLabel(sharedviews.LabelArgs{For: "product-quantity"}) { Quantity }
+				@sharedviews.FormLabel(sharedviews.LabelArgs{For: "product-quantity"}) {
+					Quantity 
+				}
 				@sharedviews.Input(sharedviews.InputArgs{ID: "product-quantity", Name: "quantity", Type: "number", Min: "1", Value: "1", Required: true})
 			}
-			@sharedviews.Button(sharedviews.ButtonArgs{Type: "submit"}) { Add to cart }
+			@sharedviews.Button(sharedviews.ButtonArgs{Type: "submit"}) {
+				Add to cart 
+			}
 		}
 		@sharedviews.Card(sharedviews.CardArgs{ID: "cart", Class: "nested-card mt-6 border-slate-800 bg-slate-900/60 shadow-none"}) {
 			<p class="muted text-sm text-slate-400">Add this product to update the cart summary here.</p>

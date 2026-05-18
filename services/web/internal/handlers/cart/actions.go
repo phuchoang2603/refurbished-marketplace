@@ -8,7 +8,6 @@ import (
 	shared "refurbished-marketplace/services/web/internal/handlers/shared"
 	cartviews "refurbished-marketplace/services/web/internal/views/cart"
 	orderviews "refurbished-marketplace/services/web/internal/views/orders"
-	sharedviews "refurbished-marketplace/services/web/internal/views/shared"
 	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
 
 	"github.com/go-chi/chi/v5"
@@ -120,7 +119,7 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 		if merchantID == "" {
 			merchantID = product.GetMerchantId()
 		} else if merchantID != product.GetMerchantId() {
-			shared.WriteHTML(w, r, http.StatusConflict, sharedviews.MessagePage("Cart requires split checkout", "This cart contains items from multiple merchants. Please keep checkout to a single merchant for now."))
+			shared.WritePopup(w, r, http.StatusConflict, "Cart requires split checkout", "This cart contains items from multiple merchants. Please keep checkout to a single merchant for now.")
 			return
 		}
 		items = append(items, &ordersv1.CreateOrderItem{ProductId: item.GetProductId(), Quantity: item.GetQuantity(), UnitPriceCents: product.PriceCents})

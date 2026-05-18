@@ -276,7 +276,7 @@ func LoginSection(next string) templ.Component {
 				var templ_7745c5c3_Var12 templ.SafeURL
 				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinURLErrs(sharedviews.RegisterURL(next))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/auth/pages.templ`, Line: 28, Col: 70}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/auth/pages.templ`, Line: 34, Col: 70}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 				if templ_7745c5c3_Err != nil {
@@ -335,7 +335,7 @@ func RegisterSection(next string) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = sharedviews.PageHeader("Create account", "Create a buyer account for browser checkout flows.").Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = sharedviews.PageHeader("Create account", "Get the best for less. Sign up to unlock 70% off premium refurbished electronics.").Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -510,7 +510,7 @@ func RegisterSection(next string) templ.Component {
 				var templ_7745c5c3_Var22 templ.SafeURL
 				templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinURLErrs(sharedviews.LoginURL(next))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/auth/pages.templ`, Line: 48, Col: 64}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/auth/pages.templ`, Line: 60, Col: 64}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 				if templ_7745c5c3_Err != nil {
