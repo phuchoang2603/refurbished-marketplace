@@ -1,6 +1,7 @@
 package shared
 
 import templpkg "github.com/a-h/templ"
+import button "refurbished-marketplace/services/web/internal/components/button"
 
 templ AppShell(title string, nav []NavLink, body templpkg.Component) {
 	<!DOCTYPE html>
@@ -12,25 +13,27 @@ templ AppShell(title string, nav []NavLink, body templpkg.Component) {
 			<link rel="stylesheet" href="/static/app.css"/>
 			<script type="module" src="https://cdn.jsdelivr.net/npm/@starfederation/datastar@latest/dist/datastar.js"></script>
 		</head>
-		<body class="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.16),transparent_24rem),linear-gradient(180deg,#020617_0%,#0f172a_100%)] text-slate-100 antialiased" data-signals={ SessionSignals(ctx) }>
-			<header class="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-5 sm:px-6 lg:px-8">
-				<a class="brand text-lg font-black tracking-tight text-slate-50" href="/products">Refurbished Marketplace</a>
-				<nav class="flex flex-wrap items-center gap-2 rounded-full border border-slate-800 bg-slate-950/70 p-2 shadow-2xl shadow-black/20 backdrop-blur">
-					for _, link := range nav {
-						if link.GuestOnly {
-							<a class="rounded-full px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-900 hover:text-teal-200" href={ link.Href } data-show="!$session.authenticated">{ link.Label }</a>
-						} else {
-							<a class="rounded-full px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-900 hover:text-teal-200" href={ link.Href }>{ link.Label }</a>
+		<body class="dark min-h-screen bg-background text-foreground antialiased" data-signals={ SessionSignals(ctx) }>
+			<header class="border-b">
+				<div class="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-5 sm:px-6 lg:px-8">
+					<a class="text-lg font-semibold tracking-tight" href="/">Refurbished Marketplace</a>
+					<nav class="flex flex-wrap items-center gap-2">
+						for _, link := range nav {
+							if link.GuestOnly {
+								<a class="inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground" href={ link.Href } data-show="!$session.authenticated">{ link.Label }</a>
+							} else {
+								<a class="inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground" href={ link.Href }>{ link.Label }</a>
+							}
 						}
-					}
-					<form class="nav-form m-0 inline-flex" method="post" action="/auth/logout" data-show="$session.authenticated">
-						@Button(ButtonArgs{Type: "submit", Variant: "secondary", Class: "nav-button px-4 py-2 text-sm"}) {
-							Logout 
-						}
-					</form>
-				</nav>
+						<form class="nav-form m-0 inline-flex" method="post" action="/auth/logout" data-show="$session.authenticated">
+							@button.Button(button.ButtonArgs{Type: "submit", Variant: "secondary", Size: "sm"}) {
+								Logout 
+							}
+						</form>
+					</nav>
+				</div>
 			</header>
-			<main id="app" class="mx-auto w-full max-w-6xl px-4 pb-12 sm:px-6 lg:px-8">
+			<main id="app" class="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
 				@body
 			</main>
 		</body>

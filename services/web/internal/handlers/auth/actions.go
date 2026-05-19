@@ -28,7 +28,7 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	webAuth.SetTokenCookies(w, r, tokens.AccessToken, tokens.RefreshToken, tokens.ExpiresIn, tokens.RefreshExpiresIn)
-	http.Redirect(w, r, shared.NextTargetFromRequest(r, "/products"), http.StatusSeeOther)
+	shared.Redirect(w, r, shared.NextTargetFromRequest(r, "/products"), http.StatusSeeOther)
 }
 
 func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
@@ -49,7 +49,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	webAuth.SetTokenCookies(w, r, tokens.AccessToken, tokens.RefreshToken, tokens.ExpiresIn, tokens.RefreshExpiresIn)
-	http.Redirect(w, r, shared.NextTargetFromRequest(r, "/products"), http.StatusSeeOther)
+	shared.Redirect(w, r, shared.NextTargetFromRequest(r, "/products"), http.StatusSeeOther)
 }
 
 func (h *Handler) handleLogout(w http.ResponseWriter, r *http.Request) {
@@ -59,7 +59,7 @@ func (h *Handler) handleLogout(w http.ResponseWriter, r *http.Request) {
 	}
 	if refreshToken == "" {
 		webAuth.ClearTokenCookies(w, r)
-		http.Redirect(w, r, "/products", http.StatusSeeOther)
+		shared.Redirect(w, r, "/products", http.StatusSeeOther)
 		return
 	}
 
@@ -70,5 +70,5 @@ func (h *Handler) handleLogout(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.Redirect(w, r, "/products", http.StatusSeeOther)
+	shared.Redirect(w, r, "/products", http.StatusSeeOther)
 }

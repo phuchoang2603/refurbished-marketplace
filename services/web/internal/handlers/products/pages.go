@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	shared "refurbished-marketplace/services/web/internal/handlers/shared"
+	utils "refurbished-marketplace/services/web/internal/utils"
 	productviews "refurbished-marketplace/services/web/internal/views/products"
 	sharedviews "refurbished-marketplace/services/web/internal/views/shared"
 
@@ -22,7 +23,7 @@ func (h *Handler) RegisterPages(r chi.Router) {
 }
 
 func mapProductView(id, name, description string, priceCents int64, stock int32, createdAt, updatedAt *timestamppb.Timestamp) sharedviews.ProductView {
-	return sharedviews.ProductView{ID: id, Name: name, Description: description, PriceCents: priceCents, Stock: stock, CreatedAt: shared.FormatTimestamp(createdAt), UpdatedAt: shared.FormatTimestamp(updatedAt)}
+	return sharedviews.ProductView{ID: id, Name: name, Description: description, PriceCents: priceCents, Stock: stock, CreatedAt: utils.FormatTimestamp(createdAt), UpdatedAt: utils.FormatTimestamp(updatedAt)}
 }
 
 func (h *Handler) handleGetProductByID(w http.ResponseWriter, r *http.Request) {

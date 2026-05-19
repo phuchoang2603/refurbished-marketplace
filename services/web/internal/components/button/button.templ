@@ -1,0 +1,32 @@
+package button
+
+templ Button(args ButtonArgs) {
+	{{
+		buttonType := args.Type
+		if buttonType == "" {
+			buttonType = "button"
+		}
+
+		classes := buttonVariants(args.Variant, args.Size, args.Class)
+	}}
+	if args.AsChild {
+		<span
+			class={ classes }
+			if args.Disabled {
+				aria-disabled="true"
+			}
+			{ args.Attributes... }
+		>
+			{ children... }
+		</span>
+	} else {
+		<button
+			type={ buttonType }
+			class={ classes }
+			disabled?={ args.Disabled }
+			{ args.Attributes... }
+		>
+			{ children... }
+		</button>
+	}
+}

@@ -50,9 +50,14 @@ func WritePopup(w http.ResponseWriter, r *http.Request, status int, title, messa
 		encodedAlert = []byte(`"internal server error"`)
 	}
 	alertJS := strings.ReplaceAll(string(encodedAlert), "</", "<\\/")
+	if r != nil && acceptsDatastar(r) {
+		sse := datastar.NewSSE(w, r)
+		_ = sse.ExecuteScript("window.alert(" + alertJS + ")")
+		return
+	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
-	_, _ = fmt.Fprintf(w, "<!doctype html><html><head><meta charset=\"utf-8\"><title>%s</title></head><body><script>alert(%s);history.back();</script></body></html>", html.EscapeString(title), alertJS)
+	_, _ = fmt.Fprintf(w, "<!doctype html><html><head><meta charset=\"utf-8\"><title>%s</title><style>html,body{margin:0;background:transparent;opacity:0}</style></head><body><script>window.alert(%s);window.history.back();</script></body></html>", html.EscapeString(title), alertJS)
 }
 
 func renderComponent(w http.ResponseWriter, r *http.Request, status int, headers http.Header, component templ.Component) {

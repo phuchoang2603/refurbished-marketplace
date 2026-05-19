@@ -1,5 +1,11 @@
 package products
 
+import templpkg "github.com/a-h/templ"
+import button "refurbished-marketplace/services/web/internal/components/button"
+import card "refurbished-marketplace/services/web/internal/components/card"
+import form "refurbished-marketplace/services/web/internal/components/form"
+import input "refurbished-marketplace/services/web/internal/components/input"
+import utils "refurbished-marketplace/services/web/internal/utils"
 import sharedviews "refurbished-marketplace/services/web/internal/views/shared"
 
 templ ProductsPage(products []sharedviews.ProductView) {
@@ -11,50 +17,60 @@ templ ProductDetailPage(product sharedviews.ProductView) {
 }
 
 templ ProductListSection(products []sharedviews.ProductView) {
-	@sharedviews.Card(sharedviews.CardArgs{ID: "products"}) {
+	@card.Card(card.CardArgs{Attributes: templpkg.Attributes{"id": "products"}}) {
 		@sharedviews.PageHeader("Products", "Browse quality refurbished tech, verified devices, and sustainable deals from trusted sellers.")
-		if len(products) == 0 {
-			@sharedviews.EmptyState("No products are available yet.")
-		} else {
-			<div class="product-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-				for _, product := range products {
-					<article id={ "product-" + product.ID } class="product-card grid min-h-56 content-between gap-6 rounded-[24px] border border-slate-800 bg-slate-900/80 p-5">
-						<div>
-							<h2><a href={ "/products/" + product.ID }>{ product.Name }</a></h2>
-							<p class="muted mt-2 text-sm text-slate-400">{ product.Description }</p>
-						</div>
-						<div class="product-card__footer flex flex-wrap items-center justify-between gap-3">
-							<strong class="text-2xl font-black tracking-tight text-teal-200">{ sharedviews.FormatCents(product.PriceCents) }</strong>
-							@sharedviews.Badge("Stock " + sharedviews.FormatInt32(product.Stock))
-						</div>
-					</article>
-				}
-			</div>
+		@card.CardContent(card.CardContentArgs{Class: "grid gap-4"}) {
+			if len(products) == 0 {
+				@sharedviews.EmptyState("No products are available yet.")
+			} else {
+				<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+					for _, product := range products {
+						@card.Card(card.CardArgs{Class: "h-full justify-between py-5", Attributes: templpkg.Attributes{"id": "product-" + product.ID}}) {
+							@card.CardContent(card.CardContentArgs{Class: "grid gap-6 px-5"}) {
+								<div class="grid gap-2">
+									<h2 class="text-xl font-semibold tracking-tight"><a class="hover:underline" href={ "/products/" + product.ID }>{ product.Name }</a></h2>
+									<p class="text-sm text-muted-foreground">{ product.Description }</p>
+								</div>
+								<div class="flex flex-wrap items-center justify-between gap-3">
+									<strong class="text-2xl font-semibold tracking-tight">{ utils.FormatCents(product.PriceCents) }</strong>
+									@sharedviews.Badge("Stock " + utils.FormatInt32(product.Stock))
+								</div>
+							}
+						}
+					}
+				</div>
+			}
 		}
 	}
 }
 
 templ ProductDetailSection(product sharedviews.ProductView) {
-	@sharedviews.Card(sharedviews.CardArgs{ID: "product-" + product.ID}) {
+	@card.Card(card.CardArgs{Attributes: templpkg.Attributes{"id": "product-" + product.ID}}) {
 		@sharedviews.PageHeader(product.Name, product.Description)
-		<p class="price text-4xl font-black tracking-tight text-teal-200 sm:text-5xl">{ sharedviews.FormatCents(product.PriceCents) }</p>
-		@sharedviews.Badge("Stock " + sharedviews.FormatInt32(product.Stock))
-		<div class="divider my-6 h-px bg-slate-800"></div>
-		<h2 class="mb-3 text-xl font-bold text-slate-50">Add to cart</h2>
-		@sharedviews.Form(sharedviews.FormArgs{Action: "/cart/items", Datastar: sharedviews.DatastarFormAction("post", "/cart/items")}) {
-			<input type="hidden" name="product_id" value={ product.ID }/>
-			@sharedviews.FormItem(sharedviews.SlotArgs{}) {
-				@sharedviews.FormLabel(sharedviews.LabelArgs{For: "product-quantity"}) {
-					Quantity 
+		@card.CardContent(card.CardContentArgs{Class: "grid gap-6"}) {
+			<p class="text-4xl font-semibold tracking-tight sm:text-5xl">{ utils.FormatCents(product.PriceCents) }</p>
+			@sharedviews.Badge("Stock " + utils.FormatInt32(product.Stock))
+			<div class="h-px bg-border"></div>
+			<div class="grid gap-3">
+				<h2 class="text-xl font-semibold">Add to cart</h2>
+				@form.Form(form.FormArgs{Action: "/cart/items", Class: "grid gap-4"}) {
+					<input type="hidden" name="product_id" value={ product.ID }/>
+					@form.FormItem(form.FormItemArgs{}) {
+						@form.FormLabel(form.FormLabelArgs{For: "product-quantity"}) {
+							Quantity 
+						}
+						@input.Input(input.InputArgs{ID: "product-quantity", Name: "quantity", Type: "number", Min: "1", Value: "1", Required: true})
+					}
+					@button.Button(button.ButtonArgs{Type: "submit", Class: "w-full sm:w-fit"}) {
+						Add to cart 
+					}
 				}
-				@sharedviews.Input(sharedviews.InputArgs{ID: "product-quantity", Name: "quantity", Type: "number", Min: "1", Value: "1", Required: true})
+			</div>
+			@card.Card(card.CardArgs{Class: "bg-muted/30 shadow-none", Attributes: templpkg.Attributes{"id": "cart"}}) {
+				@card.CardContent(card.CardContentArgs{}) {
+					<p class="text-sm text-muted-foreground">Add this product to update the cart summary here.</p>
+				}
 			}
-			@sharedviews.Button(sharedviews.ButtonArgs{Type: "submit"}) {
-				Add to cart 
-			}
-		}
-		@sharedviews.Card(sharedviews.CardArgs{ID: "cart", Class: "nested-card mt-6 border-slate-800 bg-slate-900/60 shadow-none"}) {
-			<p class="muted text-sm text-slate-400">Add this product to update the cart summary here.</p>
 		}
 		@sharedviews.MetaLine(product.CreatedAt, product.UpdatedAt)
 	}

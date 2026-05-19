@@ -46,4 +46,4 @@ devenv.local.yaml
 
 # AI
 .opencode/
-
+.playwright-cli

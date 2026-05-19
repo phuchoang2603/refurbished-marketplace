@@ -15,8 +15,8 @@ import (
 
 func (h *Handler) RegisterActions(r chi.Router) {
 	r.Post("/cart/items", h.handleAddCartItem)
-	r.Patch("/cart/items/{product_id}", h.handleSetCartItemQuantity)
-	r.Delete("/cart/items/{product_id}", h.handleRemoveCartItem)
+	r.Post("/cart/items/{product_id}/quantity", h.handleSetCartItemQuantity)
+	r.Post("/cart/items/{product_id}/remove", h.handleRemoveCartItem)
 }
 
 func (h *Handler) RegisterProtectedActions(r chi.Router) {

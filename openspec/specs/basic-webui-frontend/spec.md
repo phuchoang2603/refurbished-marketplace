@@ -8,7 +8,7 @@ The basic WebUI frontend capability defines the cohesive marketplace browser exp
 
 ### Requirement: Web UI provides a cohesive marketplace shell
 
-The web service MUST provide a cohesive browser UI shell for marketplace pages, including shared navigation, typography, spacing, and responsive layout suitable for desktop and mobile browsers.
+The web service MUST provide a cohesive browser UI shell for marketplace pages, including shared navigation, typography, spacing, and responsive layout suitable for desktop and mobile browsers, and it MUST build repeated UI primitives from the vendored DatastarUI-based component foundation using direct component usage style.
 
 #### Scenario: A marketplace page is rendered
 
@@ -22,8 +22,8 @@ The web service MUST provide a cohesive browser UI shell for marketplace pages, 
 
 #### Scenario: Shared primitives are rendered
 
-- **WHEN** a page renders repeated UI primitives such as buttons, fields, cards, or empty states
-- **THEN** the page SHALL use consistent copied DatastarUI-inspired server-rendered components wherever suitable
+- **WHEN** a page renders repeated UI primitives such as buttons, fields, cards, selects, dialogs, or empty states
+- **THEN** the page SHALL use the vendored DatastarUI-based server-rendered components directly instead of the legacy local shared primitive layer
 
 ### Requirement: Web UI exposes catalog and product browsing
 

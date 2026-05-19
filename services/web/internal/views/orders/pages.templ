@@ -1,5 +1,8 @@
 package orders
 
+import templpkg "github.com/a-h/templ"
+import card "refurbished-marketplace/services/web/internal/components/card"
+import utils "refurbished-marketplace/services/web/internal/utils"
 import sharedviews "refurbished-marketplace/services/web/internal/views/shared"
 
 templ OrdersPage(orders []sharedviews.OrderView) {
@@ -11,66 +14,70 @@ templ OrderDetailPage(order sharedviews.OrderView) {
 }
 
 templ OrderListSection(orders []sharedviews.OrderView) {
-	@sharedviews.Card(sharedviews.CardArgs{ID: "orders"}) {
+	@card.Card(card.CardArgs{Attributes: templpkg.Attributes{"id": "orders"}}) {
 		@sharedviews.PageHeader("Orders", "Your recent marketplace orders.")
-		if len(orders) == 0 {
-			@sharedviews.EmptyState("No orders yet.")
-		} else {
-			<div class="overflow-x-auto rounded-[24px] border border-slate-800 bg-slate-950/50">
-				<table class="responsive-table min-w-full border-collapse text-sm">
-					<thead>
-						<tr class="bg-slate-900/80 text-slate-300">
-							<th class="px-4 py-3 text-left font-semibold">ID</th>
-							<th class="px-4 py-3 text-left font-semibold">Status</th>
-							<th class="px-4 py-3 text-left font-semibold">Total</th>
-							<th class="px-4 py-3 text-left font-semibold">Updated</th>
-						</tr>
-					</thead>
-					<tbody>
-						for _, order := range orders {
-							<tr id={ "order-" + order.ID } class="border-t border-slate-800">
-								<td class="px-4 py-4" data-label="ID"><a href={ "/orders/" + order.ID }>{ order.ID }</a></td>
-								<td class="px-4 py-4" data-label="Status">@sharedviews.Badge(order.Status)</td>
-								<td class="px-4 py-4 text-slate-100" data-label="Total">{ sharedviews.FormatCents(order.TotalCents) }</td>
-								<td class="px-4 py-4 text-slate-400" data-label="Updated">{ order.UpdatedAt }</td>
+		@card.CardContent(card.CardContentArgs{}) {
+			if len(orders) == 0 {
+				@sharedviews.EmptyState("No orders yet.")
+			} else {
+				<div class="overflow-x-auto rounded-lg border bg-card/40">
+					<table class="responsive-table min-w-full border-collapse text-sm">
+						<thead>
+							<tr class="bg-muted/40 text-muted-foreground">
+								<th class="px-4 py-3 text-left font-semibold">ID</th>
+								<th class="px-4 py-3 text-left font-semibold">Status</th>
+								<th class="px-4 py-3 text-left font-semibold">Total</th>
+								<th class="px-4 py-3 text-left font-semibold">Updated</th>
 							</tr>
-						}
-					</tbody>
-				</table>
-			</div>
+						</thead>
+						<tbody>
+							for _, order := range orders {
+								<tr id={ "order-" + order.ID } class="border-t">
+									<td class="px-4 py-4" data-label="ID"><a class="font-medium hover:underline" href={ "/orders/" + order.ID }>{ order.ID }</a></td>
+									<td class="px-4 py-4" data-label="Status">@sharedviews.Badge(order.Status)</td>
+									<td class="px-4 py-4" data-label="Total">{ utils.FormatCents(order.TotalCents) }</td>
+									<td class="px-4 py-4 text-muted-foreground" data-label="Updated">{ order.UpdatedAt }</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			}
 		}
 	}
 }
 
 templ OrderDetailSection(order sharedviews.OrderView) {
-	@sharedviews.Card(sharedviews.CardArgs{ID: "order-" + order.ID}) {
+	@card.Card(card.CardArgs{Attributes: templpkg.Attributes{"id": "order-" + order.ID}}) {
 		@sharedviews.PageHeader("Order " + order.ID, "Buyer " + order.BuyerUserID)
-		<p><strong>Status:</strong> @sharedviews.Badge(order.Status)</p>
-		<p class="price text-4xl font-black tracking-tight text-teal-200 sm:text-5xl">{ sharedviews.FormatCents(order.TotalCents) }</p>
-		<p><small>Buyer { order.BuyerUserID }</small></p>
-		if len(order.Items) > 0 {
-			<div class="overflow-x-auto rounded-[24px] border border-slate-800 bg-slate-950/50">
-				<table class="responsive-table min-w-full border-collapse text-sm">
-					<thead>
-						<tr class="bg-slate-900/80 text-slate-300">
-							<th class="px-4 py-3 text-left font-semibold">Product</th>
-							<th class="px-4 py-3 text-left font-semibold">Qty</th>
-							<th class="px-4 py-3 text-left font-semibold">Unit</th>
-							<th class="px-4 py-3 text-left font-semibold">Line</th>
-						</tr>
-					</thead>
-					<tbody>
-						for _, item := range order.Items {
-							<tr class="border-t border-slate-800">
-								<td class="px-4 py-4" data-label="Product">{ item.ProductID }</td>
-								<td class="px-4 py-4" data-label="Qty">{ sharedviews.FormatInt32(item.Quantity) }</td>
-								<td class="px-4 py-4" data-label="Unit">{ sharedviews.FormatCents(item.UnitPriceCents) }</td>
-								<td class="px-4 py-4" data-label="Line">{ sharedviews.FormatCents(item.LineTotalCents) }</td>
+		@card.CardContent(card.CardContentArgs{Class: "grid gap-6"}) {
+			<p><strong>Status:</strong> @sharedviews.Badge(order.Status)</p>
+			<p class="text-4xl font-semibold tracking-tight sm:text-5xl">{ utils.FormatCents(order.TotalCents) }</p>
+			<p><small>Buyer { order.BuyerUserID }</small></p>
+			if len(order.Items) > 0 {
+				<div class="overflow-x-auto rounded-lg border bg-card/40">
+					<table class="responsive-table min-w-full border-collapse text-sm">
+						<thead>
+							<tr class="bg-muted/40 text-muted-foreground">
+								<th class="px-4 py-3 text-left font-semibold">Product</th>
+								<th class="px-4 py-3 text-left font-semibold">Qty</th>
+								<th class="px-4 py-3 text-left font-semibold">Unit</th>
+								<th class="px-4 py-3 text-left font-semibold">Line</th>
 							</tr>
-						}
-					</tbody>
-				</table>
-			</div>
+						</thead>
+						<tbody>
+							for _, item := range order.Items {
+								<tr class="border-t">
+									<td class="px-4 py-4" data-label="Product">{ item.ProductID }</td>
+									<td class="px-4 py-4" data-label="Qty">{ utils.FormatInt32(item.Quantity) }</td>
+									<td class="px-4 py-4" data-label="Unit">{ utils.FormatCents(item.UnitPriceCents) }</td>
+									<td class="px-4 py-4" data-label="Line">{ utils.FormatCents(item.LineTotalCents) }</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			}
 		}
 		@sharedviews.MetaLine(order.CreatedAt, order.UpdatedAt)
 	}

@@ -3,6 +3,9 @@ inputs:
     url: github:cachix/devenv-nixpkgs/rolling
   treefmt-nix:
     url: github:numtide/treefmt-nix
+  playwright:
+    url: github:halfwhey/nix-playwright-nightly
+    flake: true
   git-hooks:
     url: github:cachix/git-hooks.nix
     inputs:

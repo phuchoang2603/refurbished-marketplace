@@ -10,6 +10,7 @@ import (
 	webAuth "refurbished-marketplace/services/web/internal/auth"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/starfederation/datastar-go/datastar"
 )
 
 var ErrInvalidRequestBody = errors.New("invalid request body")
@@ -86,7 +87,16 @@ func RedirectBrowserToLogin(w http.ResponseWriter, r *http.Request, fallback str
 	} else {
 		next = safeResumeTarget(r, fallback)
 	}
-	http.Redirect(w, r, loginURL(sanitizeRedirectTarget(next, fallback)), http.StatusSeeOther)
+	Redirect(w, r, loginURL(sanitizeRedirectTarget(next, fallback)), http.StatusSeeOther)
+}
+
+func Redirect(w http.ResponseWriter, r *http.Request, location string, status int) {
+	if r != nil && acceptsDatastar(r) {
+		sse := datastar.NewSSE(w, r)
+		_ = sse.Redirect(location)
+		return
+	}
+	http.Redirect(w, r, location, status)
 }
 
 func parseForm(r *http.Request) bool {

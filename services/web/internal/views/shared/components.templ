@@ -1,0 +1,35 @@
+package shared
+
+import card "refurbished-marketplace/services/web/internal/components/card"
+
+templ PageHeader(title string, subtitle string) {
+	@card.CardHeader(card.CardHeaderArgs{}) {
+		@card.CardTitle(card.CardTitleArgs{Class: "text-3xl tracking-tight sm:text-4xl"}) {
+			{ title }
+		}
+		if subtitle != "" {
+			@card.CardDescription(card.CardDescriptionArgs{Class: "max-w-3xl text-base"}) {
+				{ subtitle }
+			}
+		}
+	}
+}
+
+templ EmptyState(message string) {
+	<div class="rounded-xl border border-dashed bg-muted/30 px-5 py-6 text-sm text-muted-foreground" data-slot="empty-state">
+		<p>{ message }</p>
+	</div>
+}
+
+templ Badge(text string) {
+	<span class="inline-flex w-fit items-center rounded-md border px-2 py-0.5 text-xs font-medium text-muted-foreground" data-slot="badge">{ text }</span>
+}
+
+templ MetaLine(left string, right string) {
+	<div class="mt-6 flex flex-wrap items-center justify-between gap-3 border-t px-6 pt-4 text-sm text-muted-foreground" data-slot="card-footer">
+		<small>{ left }</small>
+		if right != "" {
+			<small>{ right }</small>
+		}
+	</div>
+}

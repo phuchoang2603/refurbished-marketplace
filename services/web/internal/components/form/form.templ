@@ -1,0 +1,75 @@
+package form
+
+import (
+	"fmt"
+	labelcomponent "refurbished-marketplace/services/web/internal/components/label"
+)
+
+templ Form(args FormArgs) {
+	{{
+		formAttrs := make(templ.Attributes)
+		for k, v := range args.Attributes {
+			formAttrs[k] = v
+		}
+		if args.Action != "" {
+			formAttrs["action"] = args.Action
+			formAttrs["method"] = "post"
+			formAttrs["data-on-submit"] = fmt.Sprintf("@post('%s', {contentType: 'form'})", templ.SafeURL(args.Action))
+			formAttrs["data-indicator-fetching"] = ""
+		}
+		if args.Class != "" {
+			formAttrs["class"] = args.Class
+		}
+	}}
+	<form { formAttrs... }>
+		{ children... }
+	</form>
+}
+
+templ FormItem(args FormItemArgs) {
+	{{ classes := formItemVariants(args.Class) }}
+	<div data-slot="form-item" class={ classes } { args.Attributes... }>
+		{ children... }
+	</div>
+}
+
+templ FormLabel(args FormLabelArgs) {
+	{{ classes := formLabelVariants(args.Class, args.HasError) }}
+	@labelcomponent.Label(labelcomponent.LabelArgs{Class: classes, For: args.For, Attributes: templ.Attributes{"data-slot": "form-label", "data-error": templ.Bool(args.HasError)}}) {
+		{ children... }
+	}
+}
+
+templ FormDescription(args FormDescriptionArgs) {
+	{{ classes := formDescriptionVariants(args.Class) }}
+	<p
+		data-slot="form-description"
+		if args.ID != "" {
+			id={ args.ID }
+		}
+		class={ classes }
+		{ args.Attributes... }
+	>
+		{ children... }
+	</p>
+}
+
+templ FormMessage(args FormMessageArgs) {
+	if args.Message != "" {
+		{{ classes := formMessageVariants(args.Class) }}
+		<p
+			data-slot="form-message"
+			if args.ID != "" {
+				id={ args.ID }
+			}
+			class={ classes }
+			{ args.Attributes... }
+		>
+			if args.Message != "" {
+				{ args.Message }
+			} else {
+				{ children... }
+			}
+		</p>
+	}
+}

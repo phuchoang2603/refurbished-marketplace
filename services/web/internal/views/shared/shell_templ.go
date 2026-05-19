@@ -9,6 +9,7 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import templpkg "github.com/a-h/templ"
+import button "refurbished-marketplace/services/web/internal/components/button"
 
 func AppShell(title string, nav []NavLink, body templpkg.Component) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
@@ -38,39 +39,39 @@ func AppShell(title string, nav []NavLink, body templpkg.Component) templ.Compon
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/shared/shell.templ`, Line: 11, Col: 17}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/shared/shell.templ`, Line: 12, Col: 17}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><link rel=\"stylesheet\" href=\"/static/app.css\"><script type=\"module\" src=\"https://cdn.jsdelivr.net/npm/@starfederation/datastar@latest/dist/datastar.js\"></script></head><body class=\"min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(45,212,191,0.16),transparent_24rem),linear-gradient(180deg,#020617_0%,#0f172a_100%)] text-slate-100 antialiased\" data-signals=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</title><link rel=\"stylesheet\" href=\"/static/app.css\"><script type=\"module\" src=\"https://cdn.jsdelivr.net/npm/@starfederation/datastar@latest/dist/datastar.js\"></script></head><body class=\"dark min-h-screen bg-background text-foreground antialiased\" data-signals=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(SessionSignals(ctx))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/shared/shell.templ`, Line: 15, Col: 219}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/shared/shell.templ`, Line: 16, Col: 110}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\"><header class=\"mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-5 sm:px-6 lg:px-8\"><a class=\"brand text-lg font-black tracking-tight text-slate-50\" href=\"/products\">Refurbished Marketplace</a><nav class=\"flex flex-wrap items-center gap-2 rounded-full border border-slate-800 bg-slate-950/70 p-2 shadow-2xl shadow-black/20 backdrop-blur\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\"><header class=\"border-b\"><div class=\"mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-5 sm:px-6 lg:px-8\"><a class=\"text-lg font-semibold tracking-tight\" href=\"/\">Refurbished Marketplace</a><nav class=\"flex flex-wrap items-center gap-2\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, link := range nav {
 			if link.GuestOnly {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<a class=\"rounded-full px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-900 hover:text-teal-200\" href=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<a class=\"inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground\" href=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var4 templ.SafeURL
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinURLErrs(link.Href)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/shared/shell.templ`, Line: 21, Col: 142}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/shared/shell.templ`, Line: 23, Col: 200}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -83,7 +84,7 @@ func AppShell(title string, nav []NavLink, body templpkg.Component) templ.Compon
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(link.Label)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/shared/shell.templ`, Line: 21, Col: 193}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/shared/shell.templ`, Line: 23, Col: 251}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -94,14 +95,14 @@ func AppShell(title string, nav []NavLink, body templpkg.Component) templ.Compon
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<a class=\"rounded-full px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-slate-900 hover:text-teal-200\" href=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<a class=\"inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground\" href=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var6 templ.SafeURL
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinURLErrs(link.Href)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/shared/shell.templ`, Line: 23, Col: 142}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/shared/shell.templ`, Line: 25, Col: 200}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -114,7 +115,7 @@ func AppShell(title string, nav []NavLink, body templpkg.Component) templ.Compon
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(link.Label)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/shared/shell.templ`, Line: 23, Col: 157}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/shared/shell.templ`, Line: 25, Col: 215}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -148,11 +149,11 @@ func AppShell(title string, nav []NavLink, body templpkg.Component) templ.Compon
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = Button(ButtonArgs{Type: "submit", Variant: "secondary", Class: "nav-button px-4 py-2 text-sm"}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var8), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = button.Button(button.ButtonArgs{Type: "submit", Variant: "secondary", Size: "sm"}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var8), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</form></nav></header><main id=\"app\" class=\"mx-auto w-full max-w-6xl px-4 pb-12 sm:px-6 lg:px-8\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</form></nav></div></header><main id=\"app\" class=\"mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

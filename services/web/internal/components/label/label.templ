@@ -1,0 +1,15 @@
+package label
+
+templ Label(args LabelArgs) {
+	{{ classes := labelVariants(args.Class) }}
+	<label
+		data-slot="label"
+		class={ classes }
+		if args.For != "" {
+			for={ args.For }
+		}
+		{ args.Attributes... }
+	>
+		{ children... }
+	</label>
+}

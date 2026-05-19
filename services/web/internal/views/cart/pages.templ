@@ -1,5 +1,11 @@
 package cart
 
+import templpkg "github.com/a-h/templ"
+import button "refurbished-marketplace/services/web/internal/components/button"
+import card "refurbished-marketplace/services/web/internal/components/card"
+import form "refurbished-marketplace/services/web/internal/components/form"
+import input "refurbished-marketplace/services/web/internal/components/input"
+import utils "refurbished-marketplace/services/web/internal/utils"
 import sharedviews "refurbished-marketplace/services/web/internal/views/shared"
 
 templ CartPage(cart sharedviews.CartView) {
@@ -7,57 +13,59 @@ templ CartPage(cart sharedviews.CartView) {
 }
 
 templ CartSection(cart sharedviews.CartView) {
-	@sharedviews.Card(sharedviews.CardArgs{ID: "cart"}) {
+	@card.Card(card.CardArgs{Attributes: templpkg.Attributes{"id": "cart"}}) {
 		@sharedviews.PageHeader("Cart", "Review quantities and check out when you are ready.")
-		<p><strong>Cart ID:</strong> <code>{ cart.CartID }</code></p>
-		if len(cart.Items) == 0 {
-			@sharedviews.EmptyState("Your cart is empty.")
-		} else {
-			<div class="overflow-x-auto rounded-[24px] border border-slate-800 bg-slate-950/50">
-				<table class="responsive-table min-w-full border-collapse text-sm">
-					<thead>
-						<tr class="bg-slate-900/80 text-slate-300">
-							<th class="px-4 py-3 text-left font-semibold">Product</th>
-							<th class="px-4 py-3 text-left font-semibold">Quantity</th>
-							<th class="px-4 py-3 text-left font-semibold">Current price</th>
-							<th class="px-4 py-3 text-left font-semibold">Estimated line</th>
-						</tr>
-					</thead>
-					<tbody>
-						for _, item := range cart.Items {
-							<tr id={ "cart-item-" + item.ProductID } class="border-t border-slate-800 align-top">
-								<td class="px-4 py-4" data-label="Product">
-									if item.Available {
-										<a href={ "/products/" + item.ProductID }>{ item.ProductName }</a>
-										<br/>
-										<small>{ item.ProductID }</small>
-									} else {
-										<span>{ item.ProductID }</span>
-										<br/>
-										@sharedviews.Badge("Unavailable")
-									}
-								</td>
-								<td class="px-4 py-4" data-label="Quantity">
-									@sharedviews.Form(sharedviews.FormArgs{Action: "/cart/items/" + item.ProductID, Datastar: sharedviews.DatastarFormAction("patch", "/cart/items/" + item.ProductID), Class: "inline-form mb-2 mr-2 grid max-w-xs grid-cols-[minmax(5rem,7rem)_auto] items-end gap-2"}) {
-										<input type="hidden" name="product_id" value={ item.ProductID }/>
-										@sharedviews.Input(sharedviews.InputArgs{Name: "quantity", Type: "number", Min: "0", Value: sharedviews.FormatInt32(item.Quantity), Required: true})
-										@sharedviews.Button(sharedviews.ButtonArgs{Type: "submit"}) { Update }
-									}
-									@sharedviews.Form(sharedviews.FormArgs{Action: "/cart/items/" + item.ProductID, Datastar: sharedviews.DatastarFormAction("delete", "/cart/items/" + item.ProductID), Class: "inline-form remove-form inline-flex"}) {
-										@sharedviews.Button(sharedviews.ButtonArgs{Type: "submit", Variant: "danger"}) { Remove }
-									}
-								</td>
-								<td class="px-4 py-4 text-slate-300" data-label="Current price">{ sharedviews.FormatCents(item.ProductPrice) }</td>
-								<td class="px-4 py-4 text-slate-100" data-label="Estimated line">{ sharedviews.FormatCents(item.LineTotalCents) }</td>
+		@card.CardContent(card.CardContentArgs{Class: "grid gap-6"}) {
+			<p><strong>Cart ID:</strong> <code>{ cart.CartID }</code></p>
+			if len(cart.Items) == 0 {
+				@sharedviews.EmptyState("Your cart is empty.")
+			} else {
+				<div class="overflow-x-auto rounded-lg border bg-card/40">
+					<table class="responsive-table min-w-full border-collapse text-sm">
+						<thead>
+							<tr class="bg-muted/40 text-muted-foreground">
+								<th class="px-4 py-3 text-left font-semibold">Product</th>
+								<th class="px-4 py-3 text-left font-semibold">Quantity</th>
+								<th class="px-4 py-3 text-left font-semibold">Current price</th>
+								<th class="px-4 py-3 text-left font-semibold">Estimated line</th>
 							</tr>
-						}
-					</tbody>
-				</table>
-			</div>
-			<p class="cart-total mt-4 flex flex-wrap justify-end gap-4 text-lg"><span class="text-slate-400">Estimated total</span><strong class="font-black text-teal-200">{ sharedviews.FormatCents(cart.EstimatedTotalCents) }</strong></p>
-		}
-		@sharedviews.Form(sharedviews.FormArgs{Action: "/cart/checkout", Datastar: sharedviews.DatastarFormAction("post", "/cart/checkout"), Class: "checkout-form mt-4"}) {
-			@sharedviews.Button(sharedviews.ButtonArgs{Type: "submit"}) { Checkout }
+						</thead>
+						<tbody>
+							for _, item := range cart.Items {
+								<tr id={ "cart-item-" + item.ProductID } class="border-t align-top">
+									<td class="px-4 py-4" data-label="Product">
+										if item.Available {
+											<a class="font-medium hover:underline" href={ "/products/" + item.ProductID }>{ item.ProductName }</a>
+											<br/>
+											<small class="text-muted-foreground">{ item.ProductID }</small>
+										} else {
+											<span>{ item.ProductID }</span>
+											<br/>
+											@sharedviews.Badge("Unavailable")
+										}
+									</td>
+									<td class="px-4 py-4" data-label="Quantity">
+										@form.Form(form.FormArgs{Action: "/cart/items/" + item.ProductID + "/quantity", Class: "mb-2 mr-2 grid max-w-xs grid-cols-[minmax(5rem,7rem)_auto] items-end gap-2"}) {
+											<input type="hidden" name="product_id" value={ item.ProductID }/>
+											@input.Input(input.InputArgs{Name: "quantity", Type: "number", Min: "0", Value: utils.FormatInt32(item.Quantity), Required: true})
+											@button.Button(button.ButtonArgs{Type: "submit"}) { Update }
+										}
+										@form.Form(form.FormArgs{Action: "/cart/items/" + item.ProductID + "/remove", Class: "inline-flex"}) {
+											@button.Button(button.ButtonArgs{Type: "submit", Variant: "destructive"}) { Remove }
+										}
+									</td>
+									<td class="px-4 py-4 text-muted-foreground" data-label="Current price">{ utils.FormatCents(item.ProductPrice) }</td>
+									<td class="px-4 py-4" data-label="Estimated line">{ utils.FormatCents(item.LineTotalCents) }</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+				<p class="mt-4 flex flex-wrap justify-end gap-4 text-lg"><span class="text-muted-foreground">Estimated total</span><strong class="font-semibold">{ utils.FormatCents(cart.EstimatedTotalCents) }</strong></p>
+			}
+			@form.Form(form.FormArgs{Action: "/cart/checkout", Class: "mt-2"}) {
+				@button.Button(button.ButtonArgs{Type: "submit", Class: "w-full sm:w-fit"}) { Checkout }
+			}
 		}
 		@sharedviews.MetaLine(cart.CreatedAt, cart.UpdatedAt)
 	}

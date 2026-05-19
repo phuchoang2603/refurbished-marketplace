@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	shared "refurbished-marketplace/services/web/internal/handlers/shared"
+	utils "refurbished-marketplace/services/web/internal/utils"
 	cartviews "refurbished-marketplace/services/web/internal/views/cart"
 	sharedviews "refurbished-marketplace/services/web/internal/views/shared"
 	cartv1 "refurbished-marketplace/shared/proto/cart/v1"
@@ -47,7 +48,7 @@ func (h *Handler) mapCartView(ctx context.Context, c *cartv1.Cart) (sharedviews.
 		}
 		items = append(items, view)
 	}
-	return sharedviews.CartView{CartID: c.GetCartId(), Items: items, EstimatedTotalCents: estimatedTotalCents, CreatedAt: shared.FormatTimestamp(c.GetCreatedAt()), UpdatedAt: shared.FormatTimestamp(c.GetUpdatedAt())}, nil
+	return sharedviews.CartView{CartID: c.GetCartId(), Items: items, EstimatedTotalCents: estimatedTotalCents, CreatedAt: utils.FormatTimestamp(c.GetCreatedAt()), UpdatedAt: utils.FormatTimestamp(c.GetUpdatedAt())}, nil
 }
 
 func cartIDFromRequest(r *http.Request) string {

@@ -1,0 +1,50 @@
+package card
+
+templ Card(args CardArgs) {
+	{{ classes := cardVariants(args.Class) }}
+	<div data-slot="card" class={ classes } { args.Attributes... }>
+		{ children... }
+	</div>
+}
+
+templ CardHeader(args CardHeaderArgs) {
+	{{ classes := cardHeaderVariants(args.Class) }}
+	<div data-slot="card-header" class={ classes } { args.Attributes... }>
+		{ children... }
+	</div>
+}
+
+templ CardTitle(args CardTitleArgs) {
+	{{ classes := cardTitleVariants(args.Class) }}
+	<div data-slot="card-title" class={ classes } { args.Attributes... }>
+		{ children... }
+	</div>
+}
+
+templ CardDescription(args CardDescriptionArgs) {
+	{{ classes := cardDescriptionVariants(args.Class) }}
+	<div data-slot="card-description" class={ classes } { args.Attributes... }>
+		{ children... }
+	</div>
+}
+
+templ CardAction(args CardActionArgs) {
+	{{ classes := cardActionVariants(args.Class) }}
+	<div data-slot="card-action" class={ classes } { args.Attributes... }>
+		{ children... }
+	</div>
+}
+
+templ CardContent(args CardContentArgs) {
+	{{ classes := cardContentVariants(args.Class) }}
+	<div data-slot="card-content" class={ classes } { args.Attributes... }>
+		{ children... }
+	</div>
+}
+
+templ CardFooter(args CardFooterArgs) {
+	{{ classes := cardFooterVariants(args.Class) }}
+	<div data-slot="card-footer" class={ classes } { args.Attributes... }>
+		{ children... }
+	</div>
+}

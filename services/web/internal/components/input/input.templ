@@ -1,0 +1,52 @@
+package input
+
+import "strings"
+import templpkg "github.com/a-h/templ"
+
+templ Input(args InputArgs) {
+	{{
+		classes := inputVariants(args.Class)
+		inputAttrs := make(templpkg.Attributes)
+
+		for k, v := range args.Attributes {
+			inputAttrs[k] = v
+		}
+
+		inputAttrs["data-slot"] = "input"
+		inputAttrs["class"] = classes
+
+		if args.Type != "" {
+			inputAttrs["type"] = args.Type
+		}
+		if args.Placeholder != "" {
+			inputAttrs["placeholder"] = args.Placeholder
+		}
+		if args.Value != "" {
+			inputAttrs["value"] = args.Value
+		}
+		if args.Name != "" {
+			inputAttrs["name"] = args.Name
+		}
+		if args.ID != "" {
+			inputAttrs["id"] = args.ID
+		}
+		if args.Autocomplete != "" {
+			inputAttrs["autocomplete"] = args.Autocomplete
+		}
+		if args.Min != "" {
+			inputAttrs["min"] = args.Min
+		}
+		if args.Disabled {
+			inputAttrs["disabled"] = true
+		}
+		if args.Required {
+			inputAttrs["required"] = true
+		}
+
+		if args.FormID != "" && args.Name != "" {
+			signalName := strings.ReplaceAll(args.FormID, "-", "_")
+			inputAttrs["data-bind"] = signalName + "." + args.Name
+		}
+	}}
+	<input { inputAttrs... }/>
+}

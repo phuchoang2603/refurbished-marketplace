@@ -18,7 +18,7 @@ The web service MUST render marketplace pages on the server as usable browser UI
 #### Scenario: A page uses shared UI assets
 
 - **WHEN** a browser requests a server-rendered page
-- **THEN** the page SHALL include the shared web UI styling and shell needed for a cohesive marketplace experience
+- **THEN** the page SHALL include the shared marketplace shell plus the vendored DatastarUI-compatible styling, theme foundation, and component assets needed for a cohesive marketplace experience
 
 #### Scenario: Auth flow completes
 

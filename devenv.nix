@@ -1,12 +1,14 @@
 {
   pkgs,
   config,
+  inputs,
   ...
 }:
 
 let
   homeDir = builtins.getEnv "HOME";
   colimaSocket = "${homeDir}/.config/colima/default/docker.sock";
+  playwright = inputs.playwright.packages.aarch64-darwin;
 in
 {
   env = {
@@ -38,6 +40,7 @@ in
     # ai stuff
     nodejs
     openspec
+    playwright.playwright-cli
 
     # formatter
     gofumpt
@@ -102,15 +105,6 @@ in
           (cd "$dir" && sqlc generate)
         done
       '';
-    };
-  };
-
-  tasks = {
-    "go:tidy" = {
-      cwd = config.git.root;
-      exec = "tidy";
-      execIfModified = [ "**/go.mod" ];
-      before = [ "devenv:enterShell" ];
     };
   };
 

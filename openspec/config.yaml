@@ -6,7 +6,8 @@ context: |
 
   Stack:
   - Go multi-module workspace (one go.mod per service plus shared/)
-  - REST at the web edge, gRPC for internal service-to-service traffic
+  - HTML-first web edge using chi, templ, Tailwind CSS, Datastar, and vendored DatastarUI-style components
+  - gRPC for internal service-to-service traffic
   - PostgreSQL with goose migrations and sqlc queries
   - Kafka for async eventing, using franz-go in Go services
   - Redis/Valkey for ephemeral cart state
