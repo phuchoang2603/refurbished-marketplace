@@ -25,6 +25,10 @@ func RefreshTokenFromRequest(r *http.Request) string {
 	return cookieValue(r, RefreshCookieName)
 }
 
+func AccessTokenFromRequest(r *http.Request) string {
+	return cookieValue(r, AccessCookieName)
+}
+
 func cookieValue(r *http.Request, name string) string {
 	if c, err := r.Cookie(name); err == nil {
 		return strings.TrimSpace(c.Value)

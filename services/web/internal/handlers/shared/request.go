@@ -80,16 +80,6 @@ func NextTargetFromRequest(r *http.Request, fallback string) string {
 	return sanitizeRedirectTarget(r.URL.Query().Get("next"), fallback)
 }
 
-func RedirectBrowserToLogin(w http.ResponseWriter, r *http.Request, fallback string) {
-	next := fallback
-	if r != nil && r.Method == http.MethodGet {
-		next = requestDestination(r)
-	} else {
-		next = safeResumeTarget(r, fallback)
-	}
-	Redirect(w, r, loginURL(sanitizeRedirectTarget(next, fallback)), http.StatusSeeOther)
-}
-
 func Redirect(w http.ResponseWriter, r *http.Request, location string, status int) {
 	if r != nil && acceptsDatastar(r) {
 		sse := datastar.NewSSE(w, r)
@@ -127,34 +117,4 @@ func sanitizeRedirectTarget(raw, fallback string) string {
 		return fallback
 	}
 	return parsed.RequestURI()
-}
-
-func loginURL(next string) string {
-	v := url.Values{}
-	if next != "" {
-		v.Set("next", next)
-	}
-	encoded := v.Encode()
-	if encoded == "" {
-		return "/auth/login"
-	}
-	return "/auth/login?" + encoded
-}
-
-func requestDestination(r *http.Request) string {
-	if r == nil || r.URL == nil {
-		return ""
-	}
-	return r.URL.RequestURI()
-}
-
-func safeResumeTarget(r *http.Request, fallback string) string {
-	if r != nil {
-		if referer := strings.TrimSpace(r.Referer()); referer != "" {
-			if parsed, err := url.Parse(referer); err == nil {
-				return sanitizeRedirectTarget(parsed.RequestURI(), fallback)
-			}
-		}
-	}
-	return fallback
 }

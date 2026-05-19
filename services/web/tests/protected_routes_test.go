@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -198,31 +199,31 @@ func signedAccessToken(t *testing.T, subject string) string {
 	return token
 }
 
-func TestProtectedGetRedirectsToLoginWithNext(t *testing.T) {
+func TestProtectedGetShowsUnauthorizedPopup(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodGet, "/orders", nil)
 
 	newTestRouter(t, routerDeps{}).ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusSeeOther {
-		t.Fatalf("status = %d, want %d", rec.Code, http.StatusSeeOther)
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusUnauthorized)
 	}
-	if got := rec.Header().Get("Location"); got != "/auth/login?next=%2Forders" {
-		t.Fatalf("location = %q, want /auth/login?next=%%2Forders", got)
+	if body := rec.Body.String(); !strings.Contains(body, "you are not authenticated") {
+		t.Fatalf("body = %q, want unauthorized popup", body)
 	}
 }
 
-func TestProtectedPostRedirectsToLoginWithSafeResume(t *testing.T) {
+func TestProtectedPostShowsUnauthorizedPopup(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/cart/checkout", nil)
 
 	newTestRouter(t, routerDeps{}).ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusSeeOther {
-		t.Fatalf("status = %d, want %d", rec.Code, http.StatusSeeOther)
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusUnauthorized)
 	}
-	if got := rec.Header().Get("Location"); got != "/auth/login?next=%2Fcart" {
-		t.Fatalf("location = %q, want /auth/login?next=%%2Fcart", got)
+	if body := rec.Body.String(); !strings.Contains(body, "you are not authenticated") {
+		t.Fatalf("body = %q, want unauthorized popup", body)
 	}
 }
 
