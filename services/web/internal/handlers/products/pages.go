@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	shared "refurbished-marketplace/services/web/internal/handlers/shared"
-	utils "refurbished-marketplace/services/web/internal/utils"
 	productviews "refurbished-marketplace/services/web/internal/views/products"
 	sharedviews "refurbished-marketplace/services/web/internal/views/shared"
 
@@ -16,6 +15,10 @@ type Handler struct{ deps *shared.Dependencies }
 
 func New(deps *shared.Dependencies) *Handler { return &Handler{deps: deps} }
 
+func productsUnavailableView() sharedviews.UnavailableView {
+	return shared.NewUnavailableView("Products", "products", "Products unavailable", "The catalog is temporarily unavailable. Please try again shortly.")
+}
+
 func (h *Handler) RegisterPages(r chi.Router) {
 	r.Get("/", h.handleListProducts)
 	r.Get("/products", h.handleListProducts)
@@ -23,7 +26,7 @@ func (h *Handler) RegisterPages(r chi.Router) {
 }
 
 func mapProductView(id, name, description string, priceCents int64, stock int32, createdAt, updatedAt *timestamppb.Timestamp) sharedviews.ProductView {
-	return sharedviews.ProductView{ID: id, Name: name, Description: description, PriceCents: priceCents, Stock: stock, CreatedAt: utils.FormatTimestamp(createdAt), UpdatedAt: utils.FormatTimestamp(updatedAt)}
+	return sharedviews.ProductView{ID: id, Name: name, Description: description, PriceCents: priceCents, Stock: stock, CreatedAt: shared.FormatTimestamp(createdAt), UpdatedAt: shared.FormatTimestamp(updatedAt)}
 }
 
 func (h *Handler) handleGetProductByID(w http.ResponseWriter, r *http.Request) {
@@ -32,8 +35,17 @@ func (h *Handler) handleGetProductByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if h.deps.Products == nil {
+		shared.WriteUnavailablePage(w, r, http.StatusServiceUnavailable, productsUnavailableView())
+		return
+	}
+
 	p, err := h.deps.Products.GetProductByID(r.Context(), id)
 	if err != nil {
+		if shared.IsUnavailableError(err) {
+			shared.WriteUnavailablePage(w, r, http.StatusServiceUnavailable, productsUnavailableView())
+			return
+		}
 		shared.WriteGRPCError(w, r, err)
 		return
 	}
@@ -51,8 +63,17 @@ func (h *Handler) handleListProducts(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if h.deps.Products == nil {
+		shared.WriteUnavailablePage(w, r, http.StatusServiceUnavailable, productsUnavailableView())
+		return
+	}
+
 	resp, err := h.deps.Products.ListProducts(r.Context(), limit, offset)
 	if err != nil {
+		if shared.IsUnavailableError(err) {
+			shared.WriteUnavailablePage(w, r, http.StatusServiceUnavailable, productsUnavailableView())
+			return
+		}
 		shared.WriteGRPCError(w, r, err)
 		return
 	}

@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	shared "refurbished-marketplace/services/web/internal/handlers/shared"
-	utils "refurbished-marketplace/services/web/internal/utils"
 	orderviews "refurbished-marketplace/services/web/internal/views/orders"
 	sharedviews "refurbished-marketplace/services/web/internal/views/shared"
 	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
@@ -16,6 +15,10 @@ type Handler struct{ deps *shared.Dependencies }
 
 func New(deps *shared.Dependencies) *Handler { return &Handler{deps: deps} }
 
+func ordersUnavailableView() sharedviews.UnavailableView {
+	return shared.NewUnavailableView("Orders", "orders", "Orders unavailable", "Order data is temporarily unavailable. Please try again shortly.")
+}
+
 func (h *Handler) RegisterPages(r chi.Router) {
 	r.Get("/orders", h.handleListOrdersByBuyer)
 	r.Get("/orders/{id}", h.handleGetOrderByID)
@@ -24,9 +27,9 @@ func (h *Handler) RegisterPages(r chi.Router) {
 func OrderToView(order *ordersv1.Order) sharedviews.OrderView {
 	items := make([]sharedviews.OrderItemView, 0, len(order.GetItems()))
 	for _, item := range order.GetItems() {
-		items = append(items, sharedviews.OrderItemView{ID: item.GetId(), OrderID: item.GetOrderId(), ProductID: item.GetProductId(), Quantity: item.GetQuantity(), UnitPriceCents: item.GetUnitPriceCents(), LineTotalCents: item.GetLineTotalCents(), CreatedAt: utils.FormatTimestamp(item.GetCreatedAt())})
+		items = append(items, sharedviews.OrderItemView{ID: item.GetId(), OrderID: item.GetOrderId(), ProductID: item.GetProductId(), Quantity: item.GetQuantity(), UnitPriceCents: item.GetUnitPriceCents(), LineTotalCents: item.GetLineTotalCents(), CreatedAt: shared.FormatTimestamp(item.GetCreatedAt())})
 	}
-	return sharedviews.OrderView{ID: order.GetId(), BuyerUserID: order.GetBuyerUserId(), Status: order.GetStatus().String(), TotalCents: order.GetTotalCents(), Items: items, CreatedAt: utils.FormatTimestamp(order.GetCreatedAt()), UpdatedAt: utils.FormatTimestamp(order.GetUpdatedAt())}
+	return sharedviews.OrderView{ID: order.GetId(), BuyerUserID: order.GetBuyerUserId(), Status: order.GetStatus().String(), TotalCents: order.GetTotalCents(), Items: items, CreatedAt: shared.FormatTimestamp(order.GetCreatedAt()), UpdatedAt: shared.FormatTimestamp(order.GetUpdatedAt())}
 }
 
 func (h *Handler) handleGetOrderByID(w http.ResponseWriter, r *http.Request) {
@@ -39,8 +42,17 @@ func (h *Handler) handleGetOrderByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if h.deps.Orders == nil {
+		shared.WriteUnavailablePage(w, r, http.StatusServiceUnavailable, ordersUnavailableView())
+		return
+	}
+
 	order, err := h.deps.Orders.GetOrderByID(r.Context(), id)
 	if err != nil {
+		if shared.IsUnavailableError(err) {
+			shared.WriteUnavailablePage(w, r, http.StatusServiceUnavailable, ordersUnavailableView())
+			return
+		}
 		shared.WriteGRPCError(w, r, err)
 		return
 	}
@@ -58,8 +70,17 @@ func (h *Handler) handleListOrdersByBuyer(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	if h.deps.Orders == nil {
+		shared.WriteUnavailablePage(w, r, http.StatusServiceUnavailable, ordersUnavailableView())
+		return
+	}
+
 	resp, err := h.deps.Orders.ListOrdersByBuyer(r.Context(), buyerUserID, 20, 0)
 	if err != nil {
+		if shared.IsUnavailableError(err) {
+			shared.WriteUnavailablePage(w, r, http.StatusServiceUnavailable, ordersUnavailableView())
+			return
+		}
 		shared.WriteGRPCError(w, r, err)
 		return
 	}

@@ -1,6 +1,6 @@
 package button
 
-import "refurbished-marketplace/services/web/internal/utils"
+import "github.com/Oudwins/tailwind-merge-go/pkg/twmerge"
 
 func buttonVariants(variant, size, className string) string {
 	baseClasses := "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors disabled:pointer-events-none disabled:opacity-50 outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -39,5 +39,5 @@ func buttonVariants(variant, size, className string) string {
 		classes = append(classes, className)
 	}
 
-	return utils.TwMerge(classes...)
+	return twmerge.Merge(classes...)
 }

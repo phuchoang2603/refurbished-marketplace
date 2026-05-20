@@ -43,6 +43,14 @@ func (h *Handler) handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 		shared.WriteBadRequest(w, r, "invalid request body")
 		return
 	}
+	if h.deps.Products == nil {
+		shared.WriteGRPCError(w, r, shared.DependencyUnavailable("products"))
+		return
+	}
+	if h.deps.Orders == nil {
+		shared.WriteGRPCError(w, r, shared.DependencyUnavailable("orders"))
+		return
+	}
 
 	item, merchantID, totalCents, ok := h.buildCreateOrderItem(w, r, productID, quantity)
 	if !ok {

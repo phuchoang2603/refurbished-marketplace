@@ -1,7 +1,8 @@
 package shared
 
-import templpkg "github.com/a-h/templ"
-import button "refurbished-marketplace/services/web/internal/components/button"
+import (
+	templpkg "github.com/a-h/templ"
+)
 
 templ AppShell(title string, nav []NavLink, body templpkg.Component) {
 	<!DOCTYPE html>
@@ -14,28 +15,8 @@ templ AppShell(title string, nav []NavLink, body templpkg.Component) {
 			<script type="module" src="https://cdn.jsdelivr.net/npm/@starfederation/datastar@latest/dist/datastar.js"></script>
 		</head>
 		<body class="dark min-h-screen bg-background text-foreground antialiased" data-signals={ SessionSignals(ctx) }>
-			<header class="border-b">
-				<div class="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-5 sm:px-6 lg:px-8">
-					<a class="text-lg font-semibold tracking-tight" href="/">Refurbished Marketplace</a>
-					<nav class="flex flex-wrap items-center gap-2">
-						for _, link := range nav {
-							if link.GuestOnly {
-								<a class="inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground" href={ link.Href } data-show="!$session.authenticated">{ link.Label }</a>
-							} else {
-								<a class="inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground" href={ link.Href }>{ link.Label }</a>
-							}
-						}
-						<form class="nav-form m-0 inline-flex" method="post" action="/auth/logout" data-show="$session.authenticated">
-							@button.Button(button.ButtonArgs{Type: "submit", Variant: "secondary", Size: "sm"}) {
-								Logout 
-							}
-						</form>
-					</nav>
-				</div>
-			</header>
-			<main id="app" class="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-				@body
-			</main>
+			@ShellHeader(nav)
+			@PageFrame(body)
 		</body>
 	</html>
 }

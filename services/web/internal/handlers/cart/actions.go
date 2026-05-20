@@ -30,6 +30,10 @@ func (h *Handler) handleAddCartItem(w http.ResponseWriter, r *http.Request) {
 		shared.WriteBadRequest(w, r, "invalid request body")
 		return
 	}
+	if h.deps.Cart == nil {
+		shared.WriteGRPCError(w, r, shared.DependencyUnavailable("cart"))
+		return
+	}
 	cart, err := h.deps.Cart.AddCartItem(r.Context(), cartID, strings.TrimSpace(productID), quantity)
 	if err != nil {
 		shared.WriteGRPCError(w, r, err)
@@ -47,6 +51,10 @@ func (h *Handler) handleSetCartItemQuantity(w http.ResponseWriter, r *http.Reque
 	cartID := h.getOrCreateCartID(w, r)
 	productID, ok := shared.RequirePathValue(w, r, "product_id", "invalid product id")
 	if !ok {
+		return
+	}
+	if h.deps.Cart == nil {
+		shared.WriteGRPCError(w, r, shared.DependencyUnavailable("cart"))
 		return
 	}
 	_, quantity, err := shared.ProductQuantityFromForm(r)
@@ -73,6 +81,10 @@ func (h *Handler) handleRemoveCartItem(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	if h.deps.Cart == nil {
+		shared.WriteGRPCError(w, r, shared.DependencyUnavailable("cart"))
+		return
+	}
 	cart, err := h.deps.Cart.RemoveCartItem(r.Context(), cartID, productID)
 	if err != nil {
 		shared.WriteGRPCError(w, r, err)
@@ -94,6 +106,18 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 	cartID := cartIDFromRequest(r)
 	if cartID == "" {
 		shared.WriteBadRequest(w, r, "empty cart")
+		return
+	}
+	if h.deps.Cart == nil {
+		shared.WriteGRPCError(w, r, shared.DependencyUnavailable("cart"))
+		return
+	}
+	if h.deps.Products == nil {
+		shared.WriteGRPCError(w, r, shared.DependencyUnavailable("products"))
+		return
+	}
+	if h.deps.Orders == nil {
+		shared.WriteGRPCError(w, r, shared.DependencyUnavailable("orders"))
 		return
 	}
 	cart, err := h.deps.Cart.GetCart(r.Context(), cartID)

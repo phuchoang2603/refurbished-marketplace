@@ -8,10 +8,15 @@ import (
 	sharedviews "refurbished-marketplace/services/web/internal/views/shared"
 )
 
+func (h *Handler) authUserFromRequest(r *http.Request) (string, sharedviews.AuthState, bool) {
+	userID, ok := webAuth.AccessUserIDFromRequest(h.authCfg, r)
+	return userID, sharedviews.AuthState{Authenticated: ok}, ok
+}
+
 func (h *Handler) requireAccessToken() func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			userID, ok := webAuth.AccessUserIDFromRequest(h.authCfg, r)
+			userID, _, ok := h.authUserFromRequest(r)
 			if !ok {
 				shared.WritePopup(w, r, http.StatusUnauthorized, "Unauthorized", "you are not authenticated")
 				return
@@ -26,8 +31,8 @@ func (h *Handler) requireAccessToken() func(http.Handler) http.Handler {
 
 func (h *Handler) viewAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, ok := webAuth.AccessUserIDFromRequest(h.authCfg, r)
-		state := sharedviews.AuthState{Authenticated: ok}
-		next.ServeHTTP(w, r.WithContext(sharedviews.WithAuthState(r.Context(), state)))
+		_, state, _ := h.authUserFromRequest(r)
+		ctx := sharedviews.WithAuthState(r.Context(), state)
+		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

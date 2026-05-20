@@ -50,6 +50,10 @@ func (h *Handler) handleStripeSimWebhook(w http.ResponseWriter, r *http.Request)
 		shared.WriteJSON(w, http.StatusBadRequest, map[string]string{"error": "invalid status"})
 		return
 	}
+	if h.deps.Payment == nil {
+		shared.WriteJSON(w, http.StatusServiceUnavailable, map[string]string{"error": "payment service unavailable"})
+		return
+	}
 
 	_, err := h.deps.Payment.HandleGatewayWebhook(r.Context(), &paymentv1.HandleGatewayWebhookRequest{PaymentTransactionId: req.PaymentTransactionID, GatewayTransactionId: req.GatewayTransactionID, Status: paymentStatus, FailureReason: req.FailureReason})
 	if err != nil {

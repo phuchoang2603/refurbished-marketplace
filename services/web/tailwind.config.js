@@ -1,10 +1,6 @@
 module.exports = {
   darkMode: "class",
-  content: [
-    "./internal/views/**/*.templ",
-    "./internal/components/**/*.templ",
-    "./internal/components/**/*.go",
-  ],
+  content: ["./internal/views/**/*.templ", "./internal/views/**/*.go"],
   theme: {
     extend: {
       colors: {

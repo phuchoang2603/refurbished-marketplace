@@ -1,11 +1,10 @@
 package products
 
 import templpkg "github.com/a-h/templ"
-import button "refurbished-marketplace/services/web/internal/components/button"
-import card "refurbished-marketplace/services/web/internal/components/card"
-import form "refurbished-marketplace/services/web/internal/components/form"
-import input "refurbished-marketplace/services/web/internal/components/input"
-import utils "refurbished-marketplace/services/web/internal/utils"
+import button "refurbished-marketplace/services/web/internal/views/components/button"
+import card "refurbished-marketplace/services/web/internal/views/components/card"
+import form "refurbished-marketplace/services/web/internal/views/components/form"
+import input "refurbished-marketplace/services/web/internal/views/components/input"
 import sharedviews "refurbished-marketplace/services/web/internal/views/shared"
 
 templ ProductsPage(products []sharedviews.ProductView) {
@@ -32,8 +31,8 @@ templ ProductListSection(products []sharedviews.ProductView) {
 									<p class="text-sm text-muted-foreground">{ product.Description }</p>
 								</div>
 								<div class="flex flex-wrap items-center justify-between gap-3">
-									<strong class="text-2xl font-semibold tracking-tight">{ utils.FormatCents(product.PriceCents) }</strong>
-									@sharedviews.Badge("Stock " + utils.FormatInt32(product.Stock))
+									<strong class="text-2xl font-semibold tracking-tight">{ sharedviews.FormatCents(product.PriceCents) }</strong>
+									@sharedviews.Badge("Stock " + sharedviews.FormatInt32(product.Stock))
 								</div>
 							}
 						}
@@ -48,8 +47,8 @@ templ ProductDetailSection(product sharedviews.ProductView) {
 	@card.Card(card.CardArgs{Attributes: templpkg.Attributes{"id": "product-" + product.ID}}) {
 		@sharedviews.PageHeader(product.Name, product.Description)
 		@card.CardContent(card.CardContentArgs{Class: "grid gap-6"}) {
-			<p class="text-4xl font-semibold tracking-tight sm:text-5xl">{ utils.FormatCents(product.PriceCents) }</p>
-			@sharedviews.Badge("Stock " + utils.FormatInt32(product.Stock))
+			<p class="text-4xl font-semibold tracking-tight sm:text-5xl">{ sharedviews.FormatCents(product.PriceCents) }</p>
+			@sharedviews.Badge("Stock " + sharedviews.FormatInt32(product.Stock))
 			<div class="h-px bg-border"></div>
 			<div class="grid gap-3">
 				<h2 class="text-xl font-semibold">Add to cart</h2>

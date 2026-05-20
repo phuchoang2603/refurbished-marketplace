@@ -9,6 +9,7 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import "strings"
+import "maps"
 import templpkg "github.com/a-h/templ"
 
 func Input(args InputArgs) templ.Component {
@@ -35,9 +36,7 @@ func Input(args InputArgs) templ.Component {
 		classes := inputVariants(args.Class)
 		inputAttrs := make(templpkg.Attributes)
 
-		for k, v := range args.Attributes {
-			inputAttrs[k] = v
-		}
+		maps.Copy(inputAttrs, args.Attributes)
 
 		inputAttrs["data-slot"] = "input"
 		inputAttrs["class"] = classes

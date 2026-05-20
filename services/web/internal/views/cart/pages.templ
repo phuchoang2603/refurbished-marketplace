@@ -1,11 +1,10 @@
 package cart
 
 import templpkg "github.com/a-h/templ"
-import button "refurbished-marketplace/services/web/internal/components/button"
-import card "refurbished-marketplace/services/web/internal/components/card"
-import form "refurbished-marketplace/services/web/internal/components/form"
-import input "refurbished-marketplace/services/web/internal/components/input"
-import utils "refurbished-marketplace/services/web/internal/utils"
+import button "refurbished-marketplace/services/web/internal/views/components/button"
+import card "refurbished-marketplace/services/web/internal/views/components/card"
+import form "refurbished-marketplace/services/web/internal/views/components/form"
+import input "refurbished-marketplace/services/web/internal/views/components/input"
 import sharedviews "refurbished-marketplace/services/web/internal/views/shared"
 
 templ CartPage(cart sharedviews.CartView) {
@@ -47,24 +46,30 @@ templ CartSection(cart sharedviews.CartView) {
 									<td class="px-4 py-4" data-label="Quantity">
 										@form.Form(form.FormArgs{Action: "/cart/items/" + item.ProductID + "/quantity", Class: "mb-2 mr-2 grid max-w-xs grid-cols-[minmax(5rem,7rem)_auto] items-end gap-2"}) {
 											<input type="hidden" name="product_id" value={ item.ProductID }/>
-											@input.Input(input.InputArgs{Name: "quantity", Type: "number", Min: "0", Value: utils.FormatInt32(item.Quantity), Required: true})
-											@button.Button(button.ButtonArgs{Type: "submit"}) { Update }
+											@input.Input(input.InputArgs{Name: "quantity", Type: "number", Min: "0", Value: sharedviews.FormatInt32(item.Quantity), Required: true})
+											@button.Button(button.ButtonArgs{Type: "submit"}) {
+												Update 
+											}
 										}
 										@form.Form(form.FormArgs{Action: "/cart/items/" + item.ProductID + "/remove", Class: "inline-flex"}) {
-											@button.Button(button.ButtonArgs{Type: "submit", Variant: "destructive"}) { Remove }
+											@button.Button(button.ButtonArgs{Type: "submit", Variant: "destructive"}) {
+												Remove 
+											}
 										}
 									</td>
-									<td class="px-4 py-4 text-muted-foreground" data-label="Current price">{ utils.FormatCents(item.ProductPrice) }</td>
-									<td class="px-4 py-4" data-label="Estimated line">{ utils.FormatCents(item.LineTotalCents) }</td>
+									<td class="px-4 py-4 text-muted-foreground" data-label="Current price">{ sharedviews.FormatCents(item.ProductPrice) }</td>
+									<td class="px-4 py-4" data-label="Estimated line">{ sharedviews.FormatCents(item.LineTotalCents) }</td>
 								</tr>
 							}
 						</tbody>
 					</table>
 				</div>
-				<p class="mt-4 flex flex-wrap justify-end gap-4 text-lg"><span class="text-muted-foreground">Estimated total</span><strong class="font-semibold">{ utils.FormatCents(cart.EstimatedTotalCents) }</strong></p>
+				<p class="mt-4 flex flex-wrap justify-end gap-4 text-lg"><span class="text-muted-foreground">Estimated total</span><strong class="font-semibold">{ sharedviews.FormatCents(cart.EstimatedTotalCents) }</strong></p>
 			}
 			@form.Form(form.FormArgs{Action: "/cart/checkout", Class: "mt-2"}) {
-				@button.Button(button.ButtonArgs{Type: "submit", Class: "w-full sm:w-fit"}) { Checkout }
+				@button.Button(button.ButtonArgs{Type: "submit", Class: "w-full sm:w-fit"}) {
+					Checkout 
+				}
 			}
 		}
 		@sharedviews.MetaLine(cart.CreatedAt, cart.UpdatedAt)

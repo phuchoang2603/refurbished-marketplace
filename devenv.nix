@@ -1,14 +1,12 @@
 {
   pkgs,
   config,
-  inputs,
   ...
 }:
 
 let
   homeDir = builtins.getEnv "HOME";
   colimaSocket = "${homeDir}/.config/colima/default/docker.sock";
-  playwright = inputs.playwright.packages.aarch64-darwin;
 in
 {
   env = {
@@ -40,7 +38,8 @@ in
     # ai stuff
     nodejs
     openspec
-    playwright.playwright-cli
+    playwright-test
+    playwright-driver
 
     # formatter
     gofumpt

@@ -10,6 +10,7 @@ import (
 
 	"github.com/a-h/templ"
 	"github.com/starfederation/datastar-go/datastar"
+	sharedviews "refurbished-marketplace/services/web/internal/views/shared"
 )
 
 func WriteHTML(w http.ResponseWriter, r *http.Request, status int, component templ.Component) {
@@ -41,6 +42,19 @@ func WriteBadRequest(w http.ResponseWriter, r *http.Request, message string) {
 
 func WriteUnauthorized(w http.ResponseWriter, r *http.Request) {
 	WritePopup(w, r, http.StatusUnauthorized, "Unauthorized", "unauthorized")
+}
+
+func NewUnavailableView(pageTitle, sectionID, title, subtitle string) sharedviews.UnavailableView {
+	return sharedviews.UnavailableView{
+		PageTitle: pageTitle,
+		SectionID: sectionID,
+		Title:     title,
+		Subtitle:  subtitle,
+	}
+}
+
+func WriteUnavailablePage(w http.ResponseWriter, r *http.Request, status int, unavailable sharedviews.UnavailableView) {
+	WriteHTML(w, r, status, sharedviews.UnavailablePage(unavailable))
 }
 
 func WritePopup(w http.ResponseWriter, r *http.Request, status int, title, message string) {

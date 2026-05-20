@@ -1,9 +1,9 @@
 package form
 
-import "refurbished-marketplace/services/web/internal/utils"
+import "github.com/Oudwins/tailwind-merge-go/pkg/twmerge"
 
 func formItemVariants(className string) string {
-	return utils.TwMerge("grid gap-2", className)
+	return twmerge.Merge("grid gap-2", className)
 }
 
 func formLabelVariants(className string, hasError bool) string {
@@ -11,13 +11,13 @@ func formLabelVariants(className string, hasError bool) string {
 	if hasError {
 		base = "text-destructive"
 	}
-	return utils.TwMerge(base, className)
+	return twmerge.Merge(base, className)
 }
 
 func formDescriptionVariants(className string) string {
-	return utils.TwMerge("text-muted-foreground text-sm", className)
+	return twmerge.Merge("text-muted-foreground text-sm", className)
 }
 
 func formMessageVariants(className string) string {
-	return utils.TwMerge("text-destructive text-sm", className)
+	return twmerge.Merge("text-destructive text-sm", className)
 }

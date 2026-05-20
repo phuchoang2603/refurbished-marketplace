@@ -7,6 +7,18 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+func DependencyUnavailable(service string) error {
+	return status.Error(codes.Unavailable, service+" service is temporarily unavailable")
+}
+
+func IsUnavailableError(err error) bool {
+	st, ok := status.FromError(err)
+	if !ok {
+		return false
+	}
+	return st.Code() == codes.Unavailable || st.Code() == codes.DeadlineExceeded
+}
+
 func WriteGRPCError(w http.ResponseWriter, r *http.Request, err error) {
 	st, ok := status.FromError(err)
 	if !ok {
@@ -25,6 +37,8 @@ func WriteGRPCError(w http.ResponseWriter, r *http.Request, err error) {
 		WritePopup(w, r, http.StatusConflict, "Conflict", st.Message())
 	case codes.Unauthenticated:
 		WritePopup(w, r, http.StatusUnauthorized, "Unauthorized", st.Message())
+	case codes.Unavailable, codes.DeadlineExceeded:
+		WritePopup(w, r, http.StatusServiceUnavailable, "Unavailable", st.Message())
 	default:
 		WritePopup(w, r, http.StatusInternalServerError, "Error", "internal server error")
 	}

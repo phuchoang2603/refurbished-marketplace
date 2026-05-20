@@ -1,6 +1,65 @@
 package shared
 
-import card "refurbished-marketplace/services/web/internal/components/card"
+import (
+	templpkg "github.com/a-h/templ"
+	button "refurbished-marketplace/services/web/internal/views/components/button"
+	"refurbished-marketplace/services/web/internal/views/components/card"
+)
+
+templ NavAnchor(link NavLink) {
+	{{ attrs := templpkg.Attributes{"href": link.Href} }}
+	if link.Visibility == NavVisibleWhenAuthenticated {
+		{{ attrs["data-show"] = "$session.authenticated" }}
+	}
+	if link.Visibility == NavVisibleWhenGuest {
+		{{ attrs["data-show"] = "!$session.authenticated" }}
+	}
+	<a class="inline-flex h-9 items-center justify-center rounded-md px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground" { attrs... }>
+		{ link.Label }
+	</a>
+}
+
+templ ShellHeader(nav []NavLink) {
+	<header class="border-b">
+		<div class="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-5 sm:px-6 lg:px-8">
+			<a class="text-lg font-semibold tracking-tight" href="/">Refurbished Marketplace</a>
+			@ShellNav(nav)
+		</div>
+	</header>
+}
+
+templ ShellNav(nav []NavLink) {
+	<nav class="flex flex-wrap items-center gap-2">
+		for _, link := range nav {
+			@NavAnchor(link)
+		}
+		@AuthNavAction()
+	</nav>
+}
+
+templ AuthNavAction() {
+	<form class="nav-form m-0 inline-flex" method="post" action="/auth/logout" data-show="$session.authenticated">
+		@button.Button(button.ButtonArgs{Type: "submit", Variant: "secondary", Size: "sm"}) {
+			Logout 
+		}
+	</form>
+}
+
+templ PageFrame(body templpkg.Component) {
+	<main id="app" class="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+		@body
+	</main>
+}
+
+templ UnavailableSection(unavailable UnavailableView) {
+	@card.Card(card.CardArgs{Attributes: templpkg.Attributes{"id": unavailable.SectionID}}) {
+		@PageHeader(unavailable.Title, unavailable.Subtitle)
+	}
+}
+
+templ UnavailablePage(unavailable UnavailableView) {
+	@AppShell(unavailable.PageTitle, DefaultNav, UnavailableSection(unavailable))
+}
 
 templ PageHeader(title string, subtitle string) {
 	@card.CardHeader(card.CardHeaderArgs{}) {

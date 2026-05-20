@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	shared "refurbished-marketplace/services/web/internal/handlers/shared"
-	utils "refurbished-marketplace/services/web/internal/utils"
 	cartviews "refurbished-marketplace/services/web/internal/views/cart"
 	sharedviews "refurbished-marketplace/services/web/internal/views/shared"
 	cartv1 "refurbished-marketplace/shared/proto/cart/v1"
@@ -18,6 +17,10 @@ import (
 )
 
 const cartCookieName = "cart_id"
+
+func cartUnavailableView() sharedviews.UnavailableView {
+	return shared.NewUnavailableView("Cart", "cart", "Cart unavailable", "Your cart is saved, but some product details could not be loaded. Please try again in a moment.")
+}
 
 type Handler struct{ deps *shared.Dependencies }
 
@@ -35,6 +38,9 @@ func (h *Handler) mapCartView(ctx context.Context, c *cartv1.Cart) (sharedviews.
 		if h.deps.Products != nil {
 			product, err := h.deps.Products.GetProductByID(ctx, item.GetProductId())
 			if err != nil {
+				if shared.IsUnavailableError(err) {
+					return sharedviews.CartView{}, err
+				}
 				if st, ok := status.FromError(err); !ok || st.Code() != codes.NotFound {
 					return sharedviews.CartView{}, err
 				}
@@ -48,7 +54,7 @@ func (h *Handler) mapCartView(ctx context.Context, c *cartv1.Cart) (sharedviews.
 		}
 		items = append(items, view)
 	}
-	return sharedviews.CartView{CartID: c.GetCartId(), Items: items, EstimatedTotalCents: estimatedTotalCents, CreatedAt: utils.FormatTimestamp(c.GetCreatedAt()), UpdatedAt: utils.FormatTimestamp(c.GetUpdatedAt())}, nil
+	return sharedviews.CartView{CartID: c.GetCartId(), Items: items, EstimatedTotalCents: estimatedTotalCents, CreatedAt: shared.FormatTimestamp(c.GetCreatedAt()), UpdatedAt: shared.FormatTimestamp(c.GetUpdatedAt())}, nil
 }
 
 func cartIDFromRequest(r *http.Request) string {
@@ -73,8 +79,16 @@ func (h *Handler) clearCartCookie(w http.ResponseWriter) {
 
 func (h *Handler) handleGetCart(w http.ResponseWriter, r *http.Request) {
 	cartID := h.getOrCreateCartID(w, r)
+	if h.deps.Cart == nil {
+		shared.WriteUnavailablePage(w, r, http.StatusServiceUnavailable, cartUnavailableView())
+		return
+	}
 	cart, err := h.deps.Cart.GetCart(r.Context(), cartID)
 	if err != nil {
+		if shared.IsUnavailableError(err) {
+			shared.WriteUnavailablePage(w, r, http.StatusServiceUnavailable, cartUnavailableView())
+			return
+		}
 		shared.WriteGRPCError(w, r, err)
 		return
 	}

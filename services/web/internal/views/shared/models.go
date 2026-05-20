@@ -6,17 +6,25 @@ import (
 )
 
 type NavLink struct {
-	Label     string
-	Href      string
-	GuestOnly bool
+	Label      string
+	Href       string
+	Visibility NavVisibility
 }
+
+type NavVisibility int
+
+const (
+	NavVisible NavVisibility = iota
+	NavVisibleWhenAuthenticated
+	NavVisibleWhenGuest
+)
 
 var DefaultNav = []NavLink{
 	{Label: "Products", Href: "/products"},
 	{Label: "Cart", Href: "/cart"},
-	{Label: "Orders", Href: "/orders"},
-	{Label: "Sign in", Href: "/auth/login", GuestOnly: true},
-	{Label: "Sign up", Href: "/auth/register", GuestOnly: true},
+	{Label: "Orders", Href: "/orders", Visibility: NavVisibleWhenAuthenticated},
+	{Label: "Sign in", Href: "/auth/login", Visibility: NavVisibleWhenGuest},
+	{Label: "Sign up", Href: "/auth/register", Visibility: NavVisibleWhenGuest},
 }
 
 type authStateKey struct{}
@@ -100,4 +108,11 @@ type OrderView struct {
 	Items       []OrderItemView
 	CreatedAt   string
 	UpdatedAt   string
+}
+
+type UnavailableView struct {
+	PageTitle string
+	SectionID string
+	Title     string
+	Subtitle  string
 }

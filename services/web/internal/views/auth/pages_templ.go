@@ -9,10 +9,10 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import templpkg "github.com/a-h/templ"
-import button "refurbished-marketplace/services/web/internal/components/button"
-import card "refurbished-marketplace/services/web/internal/components/card"
-import form "refurbished-marketplace/services/web/internal/components/form"
-import input "refurbished-marketplace/services/web/internal/components/input"
+import button "refurbished-marketplace/services/web/internal/views/components/button"
+import card "refurbished-marketplace/services/web/internal/views/components/card"
+import form "refurbished-marketplace/services/web/internal/views/components/form"
+import input "refurbished-marketplace/services/web/internal/views/components/input"
 import sharedviews "refurbished-marketplace/services/web/internal/views/shared"
 
 func LoginPage(next string) templ.Component {

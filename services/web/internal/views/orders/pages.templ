@@ -1,8 +1,7 @@
 package orders
 
 import templpkg "github.com/a-h/templ"
-import card "refurbished-marketplace/services/web/internal/components/card"
-import utils "refurbished-marketplace/services/web/internal/utils"
+import card "refurbished-marketplace/services/web/internal/views/components/card"
 import sharedviews "refurbished-marketplace/services/web/internal/views/shared"
 
 templ OrdersPage(orders []sharedviews.OrderView) {
@@ -34,8 +33,9 @@ templ OrderListSection(orders []sharedviews.OrderView) {
 							for _, order := range orders {
 								<tr id={ "order-" + order.ID } class="border-t">
 									<td class="px-4 py-4" data-label="ID"><a class="font-medium hover:underline" href={ "/orders/" + order.ID }>{ order.ID }</a></td>
-									<td class="px-4 py-4" data-label="Status">@sharedviews.Badge(order.Status)</td>
-									<td class="px-4 py-4" data-label="Total">{ utils.FormatCents(order.TotalCents) }</td>
+									<td class="px-4 py-4" data-label="Status">@sharedviews.Badge(order.Status)
+</td>
+									<td class="px-4 py-4" data-label="Total">{ sharedviews.FormatCents(order.TotalCents) }</td>
 									<td class="px-4 py-4 text-muted-foreground" data-label="Updated">{ order.UpdatedAt }</td>
 								</tr>
 							}
@@ -49,10 +49,11 @@ templ OrderListSection(orders []sharedviews.OrderView) {
 
 templ OrderDetailSection(order sharedviews.OrderView) {
 	@card.Card(card.CardArgs{Attributes: templpkg.Attributes{"id": "order-" + order.ID}}) {
-		@sharedviews.PageHeader("Order " + order.ID, "Buyer " + order.BuyerUserID)
+		@sharedviews.PageHeader("Order "+order.ID, "Buyer "+order.BuyerUserID)
 		@card.CardContent(card.CardContentArgs{Class: "grid gap-6"}) {
-			<p><strong>Status:</strong> @sharedviews.Badge(order.Status)</p>
-			<p class="text-4xl font-semibold tracking-tight sm:text-5xl">{ utils.FormatCents(order.TotalCents) }</p>
+			<p><strong>Status:</strong> @sharedviews.Badge(order.Status)
+</p>
+			<p class="text-4xl font-semibold tracking-tight sm:text-5xl">{ sharedviews.FormatCents(order.TotalCents) }</p>
 			<p><small>Buyer { order.BuyerUserID }</small></p>
 			if len(order.Items) > 0 {
 				<div class="overflow-x-auto rounded-lg border bg-card/40">
@@ -69,9 +70,9 @@ templ OrderDetailSection(order sharedviews.OrderView) {
 							for _, item := range order.Items {
 								<tr class="border-t">
 									<td class="px-4 py-4" data-label="Product">{ item.ProductID }</td>
-									<td class="px-4 py-4" data-label="Qty">{ utils.FormatInt32(item.Quantity) }</td>
-									<td class="px-4 py-4" data-label="Unit">{ utils.FormatCents(item.UnitPriceCents) }</td>
-									<td class="px-4 py-4" data-label="Line">{ utils.FormatCents(item.LineTotalCents) }</td>
+									<td class="px-4 py-4" data-label="Qty">{ sharedviews.FormatInt32(item.Quantity) }</td>
+									<td class="px-4 py-4" data-label="Unit">{ sharedviews.FormatCents(item.UnitPriceCents) }</td>
+									<td class="px-4 py-4" data-label="Line">{ sharedviews.FormatCents(item.LineTotalCents) }</td>
 								</tr>
 							}
 						</tbody>

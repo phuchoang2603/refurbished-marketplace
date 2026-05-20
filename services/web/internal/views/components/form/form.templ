@@ -2,15 +2,14 @@ package form
 
 import (
 	"fmt"
-	labelcomponent "refurbished-marketplace/services/web/internal/components/label"
+	"maps"
+	labelcomponent "refurbished-marketplace/services/web/internal/views/components/label"
 )
 
 templ Form(args FormArgs) {
 	{{
 		formAttrs := make(templ.Attributes)
-		for k, v := range args.Attributes {
-			formAttrs[k] = v
-		}
+		maps.Copy(formAttrs, args.Attributes)
 		if args.Action != "" {
 			formAttrs["action"] = args.Action
 			formAttrs["method"] = "post"
