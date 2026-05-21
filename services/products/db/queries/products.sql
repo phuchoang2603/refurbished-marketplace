@@ -17,8 +17,12 @@ RETURNING
     products.*;
 
 -- name: GetProductByID :one
-SELECT *
+SELECT
+    products.*,
+    inventory.available_qty,
+    inventory.reserved_qty
 FROM products
+LEFT JOIN inventory ON inventory.product_id = products.id
 WHERE
     id = $1;
 

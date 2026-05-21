@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"log"
 	"net"
 	"os"
@@ -11,6 +12,7 @@ import (
 
 	"refurbished-marketplace/services/products/internal/grpcserver"
 	"refurbished-marketplace/services/products/internal/service"
+	"refurbished-marketplace/shared/messaging"
 
 	productsv1 "refurbished-marketplace/shared/proto/products/v1"
 
@@ -59,6 +61,21 @@ func main() {
 		<-ctx.Done()
 		server.GracefulStop()
 	}()
+
+	if raw := os.Getenv("KAFKA_BOOTSTRAP_SERVERS"); raw != "" {
+		brokers := messaging.ParseBootstrapServers(raw)
+		if len(brokers) == 0 {
+			log.Print("KAFKA_BOOTSTRAP_SERVERS has no brokers after parsing; skipping Kafka consumer")
+		} else {
+			go func() {
+				if err := runReservationConsumer(ctx, svc, brokers); err != nil && !errors.Is(err, context.Canceled) {
+					log.Printf("kafka consumer: %v", err)
+				}
+			}()
+		}
+	} else {
+		log.Print("KAFKA_BOOTSTRAP_SERVERS not set; skipping Kafka consumer")
+	}
 
 	log.Printf("starting products grpc service on %s", addr)
 	log.Fatal(server.Serve(lis))

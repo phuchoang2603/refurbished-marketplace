@@ -159,30 +159,6 @@ docker_build(
 
 k8s_resource('cart', port_forwards=['9094:9094'],  labels='cart')
 
-### Inventory Service ###
-docker_build(
-  'refurbished-marketplace/inventory-migrator',
-  '.',
-  dockerfile='./infra/docker/inventory-migrator.Dockerfile',
-  only=[
-    './services/inventory/db/migrations',
-  ],
-)
-
-docker_build(
-  'refurbished-marketplace/inventory',
-  '.',
-  dockerfile='./infra/docker/inventory.Dockerfile',
-  only=[
-    './services/inventory',
-    './shared',
-  ],
-)
-
-k8s_resource('inventory-db', extra_pod_selectors=[{'cnpg.io/cluster': 'inventory-db'}], port_forwards=['5435:5432'], resource_deps=['cnpg-operator-install'], labels='inventory')
-k8s_resource('inventory-migrate', resource_deps=['inventory-db'], labels='inventory')
-k8s_resource('inventory', port_forwards=['9095:9095'], resource_deps=['inventory-db'], labels='inventory')
-
 ### Payment Service ###
 docker_build(
   'refurbished-marketplace/payment-migrator',

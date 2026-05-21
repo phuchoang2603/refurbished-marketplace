@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"refurbished-marketplace/shared/messaging"
-	inventoryv1 "refurbished-marketplace/shared/proto/inventory/v1"
 	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
+	productsv1 "refurbished-marketplace/shared/proto/products/v1"
 
 	"github.com/google/uuid"
 )
@@ -57,7 +57,7 @@ func parsePaymentOutcomeOrderID(value []byte) (uuid.UUID, error) {
 }
 
 func parseInventoryReservationFailedOrderID(value []byte) (uuid.UUID, error) {
-	var payload inventoryv1.InventoryReservationFailed
+	var payload productsv1.InventoryReservationFailed
 	if err := messaging.UnmarshalKafkaProtobuf(value, &payload); err != nil {
 		return uuid.Nil, fmt.Errorf("inventory reservation failed decode: %w", err)
 	}

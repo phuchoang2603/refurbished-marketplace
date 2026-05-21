@@ -8,7 +8,7 @@ import (
 
 	"refurbished-marketplace/services/payment/internal/service"
 	"refurbished-marketplace/shared/messaging"
-	inventoryv1 "refurbished-marketplace/shared/proto/inventory/v1"
+	productsv1 "refurbished-marketplace/shared/proto/products/v1"
 	testkafka "refurbished-marketplace/shared/testutil/kafka"
 
 	"github.com/google/uuid"
@@ -16,7 +16,7 @@ import (
 )
 
 func inventoryReservedPayload(orderID, merchantID uuid.UUID, totalCents int64) []byte {
-	msg := &inventoryv1.InventoryReserved{
+	msg := &productsv1.InventoryReserved{
 		OrderId:    orderID.String(),
 		MerchantId: merchantID.String(),
 		TotalCents: totalCents,

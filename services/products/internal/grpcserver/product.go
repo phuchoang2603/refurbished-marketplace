@@ -14,7 +14,7 @@ import (
 )
 
 func mapProduct(p service.Product) *productsv1.Product {
-	return &productsv1.Product{
+	out := &productsv1.Product{
 		Id:          p.ID.String(),
 		Name:        p.Name,
 		Description: p.Description,
@@ -23,6 +23,13 @@ func mapProduct(p service.Product) *productsv1.Product {
 		CreatedAt:   timestamppb.New(p.CreatedAt),
 		UpdatedAt:   timestamppb.New(p.UpdatedAt),
 	}
+	if p.AvailableQty != nil {
+		out.AvailableQty = p.AvailableQty
+	}
+	if p.ReservedQty != nil {
+		out.ReservedQty = p.ReservedQty
+	}
+	return out
 }
 
 func (s *Server) CreateProduct(ctx context.Context, req *productsv1.CreateProductRequest) (*productsv1.Product, error) {
@@ -30,11 +37,14 @@ func (s *Server) CreateProduct(ctx context.Context, req *productsv1.CreateProduc
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid merchant id")
 	}
+	if req.InitialStock == nil {
+		return nil, status.Error(codes.InvalidArgument, "initial stock is required")
+	}
 
-	p, err := s.svc.CreateProduct(ctx, req.GetName(), req.GetDescription(), req.GetPriceCents(), merchantID)
+	p, err := s.svc.CreateProduct(ctx, req.GetName(), req.GetDescription(), req.GetPriceCents(), merchantID, req.GetInitialStock())
 	if err != nil {
 		switch {
-		case errors.Is(err, service.ErrInvalidProductName), errors.Is(err, service.ErrInvalidPrice), errors.Is(err, service.ErrInvalidMerchantID):
+		case errors.Is(err, service.ErrInvalidProductName), errors.Is(err, service.ErrInvalidPrice), errors.Is(err, service.ErrInvalidMerchantID), errors.Is(err, service.ErrInvalidQuantity):
 			return nil, status.Error(codes.InvalidArgument, err.Error())
 		default:
 			return nil, status.Error(codes.Internal, "internal error")

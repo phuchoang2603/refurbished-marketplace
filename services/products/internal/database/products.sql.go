@@ -7,6 +7,8 @@ package database
 
 import (
 	"context"
+	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -27,7 +29,7 @@ VALUES (
     $5
 )
 RETURNING
-    products.id, products.name, products.description, products.price_cents, products.created_at, products.updated_at, products.merchant_id
+    products.id, products.name, products.description, products.price_cents, products.merchant_id, products.created_at, products.updated_at
 `
 
 type CreateProductParams struct {
@@ -52,37 +54,55 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (P
 		&i.Name,
 		&i.Description,
 		&i.PriceCents,
+		&i.MerchantID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.MerchantID,
 	)
 	return i, err
 }
 
 const getProductByID = `-- name: GetProductByID :one
-SELECT id, name, description, price_cents, created_at, updated_at, merchant_id
+SELECT
+    products.id, products.name, products.description, products.price_cents, products.merchant_id, products.created_at, products.updated_at,
+    inventory.available_qty,
+    inventory.reserved_qty
 FROM products
+LEFT JOIN inventory ON inventory.product_id = products.id
 WHERE
     id = $1
 `
 
-func (q *Queries) GetProductByID(ctx context.Context, id uuid.UUID) (Product, error) {
+type GetProductByIDRow struct {
+	ID           uuid.UUID
+	Name         string
+	Description  string
+	PriceCents   int64
+	MerchantID   uuid.UUID
+	CreatedAt    time.Time
+	UpdatedAt    time.Time
+	AvailableQty sql.NullInt32
+	ReservedQty  sql.NullInt32
+}
+
+func (q *Queries) GetProductByID(ctx context.Context, id uuid.UUID) (GetProductByIDRow, error) {
 	row := q.db.QueryRowContext(ctx, getProductByID, id)
-	var i Product
+	var i GetProductByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
 		&i.Description,
 		&i.PriceCents,
+		&i.MerchantID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.MerchantID,
+		&i.AvailableQty,
+		&i.ReservedQty,
 	)
 	return i, err
 }
 
 const listProducts = `-- name: ListProducts :many
-SELECT id, name, description, price_cents, created_at, updated_at, merchant_id
+SELECT id, name, description, price_cents, merchant_id, created_at, updated_at
 FROM products
 ORDER BY
     created_at DESC, id DESC
@@ -108,9 +128,9 @@ func (q *Queries) ListProducts(ctx context.Context, arg ListProductsParams) ([]P
 			&i.Name,
 			&i.Description,
 			&i.PriceCents,
+			&i.MerchantID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.MerchantID,
 		); err != nil {
 			return nil, err
 		}

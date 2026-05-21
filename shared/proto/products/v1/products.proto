@@ -20,6 +20,8 @@ message Product {
   string merchant_id = 5;
   google.protobuf.Timestamp created_at = 6;
   google.protobuf.Timestamp updated_at = 7;
+  optional int32 available_qty = 8;
+  optional int32 reserved_qty = 9;
 }
 
 message CreateProductRequest {
@@ -27,6 +29,7 @@ message CreateProductRequest {
   string description = 2;
   int64 price_cents = 3;
   string merchant_id = 4;
+  optional int32 initial_stock = 5;
 }
 
 message GetProductByIDRequest { string id = 1; }

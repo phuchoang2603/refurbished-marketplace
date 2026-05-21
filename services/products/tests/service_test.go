@@ -31,18 +31,25 @@ func TestCreateAndReadProducts(t *testing.T) {
 
 	t.Run("create product", func(t *testing.T) {
 		merchantID := uuid.New()
-		created, err := svc.CreateProduct(ctx, "iPhone 13", "Refurbished - Grade A", 49900, merchantID)
+		created, err := svc.CreateProduct(ctx, "iPhone 13", "Refurbished - Grade A", 49900, merchantID, 7)
 		if err != nil {
 			t.Fatalf("create product: %v", err)
 		}
 		if created.Name == "" {
 			t.Fatalf("expected created product")
 		}
+		inventoryRow, err := svc.GetInventoryByProductID(ctx, created.ID)
+		if err != nil {
+			t.Fatalf("get inventory: %v", err)
+		}
+		if inventoryRow.AvailableQty != 7 || inventoryRow.ReservedQty != 0 {
+			t.Fatalf("unexpected inventory state: %+v", inventoryRow)
+		}
 	})
 
 	t.Run("get product by id", func(t *testing.T) {
 		merchantID := uuid.New()
-		created, err := svc.CreateProduct(ctx, "iPhone 13", "Refurbished - Grade A", 49900, merchantID)
+		created, err := svc.CreateProduct(ctx, "iPhone 13", "Refurbished - Grade A", 49900, merchantID, 3)
 		if err != nil {
 			t.Fatalf("create product: %v", err)
 		}
@@ -58,10 +65,16 @@ func TestCreateAndReadProducts(t *testing.T) {
 		if got.MerchantID != merchantID {
 			t.Fatalf("expected merchant id %s, got %s", merchantID, got.MerchantID)
 		}
+		if got.AvailableQty == nil || *got.AvailableQty != 3 {
+			t.Fatalf("expected available qty 3, got %+v", got.AvailableQty)
+		}
+		if got.ReservedQty == nil || *got.ReservedQty != 0 {
+			t.Fatalf("expected reserved qty 0, got %+v", got.ReservedQty)
+		}
 	})
 
 	t.Run("list products", func(t *testing.T) {
-		created, err := svc.CreateProduct(ctx, "iPhone 13", "Refurbished - Grade A", 49900, uuid.New())
+		created, err := svc.CreateProduct(ctx, "iPhone 13", "Refurbished - Grade A", 49900, uuid.New(), 9)
 		if err != nil {
 			t.Fatalf("create product: %v", err)
 		}
@@ -81,6 +94,11 @@ func TestCreateAndReadProducts(t *testing.T) {
 		if !found {
 			t.Fatalf("expected created product in list")
 		}
+		for _, item := range list {
+			if item.ID == created.ID && (item.AvailableQty != nil || item.ReservedQty != nil) {
+				t.Fatalf("expected list read to stay lighter than detail read")
+			}
+		}
 	})
 }
 
@@ -99,7 +117,7 @@ func TestProductValidation(t *testing.T) {
 		svc := newProductsService(t)
 		ctx := t.Context()
 
-		_, err := svc.CreateProduct(ctx, "", "x", 100, uuid.New())
+		_, err := svc.CreateProduct(ctx, "", "x", 100, uuid.New(), 1)
 		if !errors.Is(err, service.ErrInvalidProductName) {
 			t.Fatalf("expected ErrInvalidProductName, got %v", err)
 		}
@@ -109,7 +127,7 @@ func TestProductValidation(t *testing.T) {
 		svc := newProductsService(t)
 		ctx := t.Context()
 
-		_, err := svc.CreateProduct(ctx, "Laptop", "x", 100, uuid.Nil)
+		_, err := svc.CreateProduct(ctx, "Laptop", "x", 100, uuid.Nil, 1)
 		if !errors.Is(err, service.ErrInvalidMerchantID) {
 			t.Fatalf("expected ErrInvalidMerchantID, got %v", err)
 		}
@@ -119,9 +137,19 @@ func TestProductValidation(t *testing.T) {
 		svc := newProductsService(t)
 		ctx := t.Context()
 
-		_, err := svc.CreateProduct(ctx, "Laptop", "x", 0, uuid.New())
+		_, err := svc.CreateProduct(ctx, "Laptop", "x", 0, uuid.New(), 1)
 		if !errors.Is(err, service.ErrInvalidPrice) {
 			t.Fatalf("expected ErrInvalidPrice, got %v", err)
+		}
+	})
+
+	t.Run("invalid initial stock", func(t *testing.T) {
+		svc := newProductsService(t)
+		ctx := t.Context()
+
+		_, err := svc.CreateProduct(ctx, "Laptop", "x", 100, uuid.New(), -1)
+		if !errors.Is(err, service.ErrInvalidQuantity) {
+			t.Fatalf("expected ErrInvalidQuantity, got %v", err)
 		}
 	})
 

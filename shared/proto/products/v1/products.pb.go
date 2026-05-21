@@ -31,6 +31,8 @@ type Product struct {
 	MerchantId    string                 `protobuf:"bytes,5,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
 	CreatedAt     *timestamppb.Timestamp `protobuf:"bytes,6,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
 	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
+	AvailableQty  *int32                 `protobuf:"varint,8,opt,name=available_qty,json=availableQty,proto3,oneof" json:"available_qty,omitempty"`
+	ReservedQty   *int32                 `protobuf:"varint,9,opt,name=reserved_qty,json=reservedQty,proto3,oneof" json:"reserved_qty,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -114,12 +116,27 @@ func (x *Product) GetUpdatedAt() *timestamppb.Timestamp {
 	return nil
 }
 
+func (x *Product) GetAvailableQty() int32 {
+	if x != nil && x.AvailableQty != nil {
+		return *x.AvailableQty
+	}
+	return 0
+}
+
+func (x *Product) GetReservedQty() int32 {
+	if x != nil && x.ReservedQty != nil {
+		return *x.ReservedQty
+	}
+	return 0
+}
+
 type CreateProductRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
 	Description   string                 `protobuf:"bytes,2,opt,name=description,proto3" json:"description,omitempty"`
 	PriceCents    int64                  `protobuf:"varint,3,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"`
 	MerchantId    string                 `protobuf:"bytes,4,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
+	InitialStock  *int32                 `protobuf:"varint,5,opt,name=initial_stock,json=initialStock,proto3,oneof" json:"initial_stock,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -180,6 +197,13 @@ func (x *CreateProductRequest) GetMerchantId() string {
 		return x.MerchantId
 	}
 	return ""
+}
+
+func (x *CreateProductRequest) GetInitialStock() int32 {
+	if x != nil && x.InitialStock != nil {
+		return *x.InitialStock
+	}
+	return 0
 }
 
 type GetProductByIDRequest struct {
@@ -326,7 +350,7 @@ var File_shared_proto_products_v1_products_proto protoreflect.FileDescriptor
 
 const file_shared_proto_products_v1_products_proto_rawDesc = "" +
 	"\n" +
-	"'shared/proto/products/v1/products.proto\x12\vproducts.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x87\x02\n" +
+	"'shared/proto/products/v1/products.proto\x12\vproducts.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xfc\x02\n" +
 	"\aProduct\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
@@ -338,14 +362,20 @@ const file_shared_proto_products_v1_products_proto_rawDesc = "" +
 	"\n" +
 	"created_at\x18\x06 \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
 	"\n" +
-	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\"\x8e\x01\n" +
+	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12(\n" +
+	"\ravailable_qty\x18\b \x01(\x05H\x00R\favailableQty\x88\x01\x01\x12&\n" +
+	"\freserved_qty\x18\t \x01(\x05H\x01R\vreservedQty\x88\x01\x01B\x10\n" +
+	"\x0e_available_qtyB\x0f\n" +
+	"\r_reserved_qty\"\xca\x01\n" +
 	"\x14CreateProductRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x1f\n" +
 	"\vprice_cents\x18\x03 \x01(\x03R\n" +
 	"priceCents\x12\x1f\n" +
 	"\vmerchant_id\x18\x04 \x01(\tR\n" +
-	"merchantId\"'\n" +
+	"merchantId\x12(\n" +
+	"\rinitial_stock\x18\x05 \x01(\x05H\x00R\finitialStock\x88\x01\x01B\x10\n" +
+	"\x0e_initial_stock\"'\n" +
 	"\x15GetProductByIDRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"C\n" +
 	"\x13ListProductsRequest\x12\x14\n" +
@@ -401,6 +431,8 @@ func file_shared_proto_products_v1_products_proto_init() {
 	if File_shared_proto_products_v1_products_proto != nil {
 		return
 	}
+	file_shared_proto_products_v1_products_proto_msgTypes[0].OneofWrappers = []any{}
+	file_shared_proto_products_v1_products_proto_msgTypes[1].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{

@@ -48,9 +48,9 @@ entities:
         retention: 604800000
     connector:
       name: inventory-outbox
-      sourceSecretName: inventory-app
-      databaseName: inventory_db
-      databaseHost: inventory-db-rw
+      sourceSecretName: products-app
+      databaseName: products_db
+      databaseHost: products-db-rw
       databasePort: 5432
       outboxTable: public.inventory_outbox
 provectus:

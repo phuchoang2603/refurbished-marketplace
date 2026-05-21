@@ -7,8 +7,8 @@ import (
 
 	"refurbished-marketplace/services/orders/internal/service"
 	"refurbished-marketplace/shared/messaging"
-	inventoryv1 "refurbished-marketplace/shared/proto/inventory/v1"
 	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
+	productsv1 "refurbished-marketplace/shared/proto/products/v1"
 	testkafka "refurbished-marketplace/shared/testutil/kafka"
 
 	"github.com/google/uuid"
@@ -73,7 +73,7 @@ func TestKafkaInventoryReservationFailedHandler_EndToEnd(t *testing.T) {
 		t.Fatalf("Brokers: %v", err)
 	}
 	topic := messaging.EventTypeInventoryReservationFailed
-	payload, err := proto.Marshal(&inventoryv1.InventoryReservationFailed{OrderId: created.ID.String()})
+	payload, err := proto.Marshal(&productsv1.InventoryReservationFailed{OrderId: created.ID.String()})
 	if err != nil {
 		t.Fatal(err)
 	}

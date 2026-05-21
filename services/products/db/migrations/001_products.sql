@@ -4,10 +4,15 @@ CREATE TABLE IF NOT EXISTS products (
     name TEXT NOT NULL,
     description TEXT NOT NULL,
     price_cents BIGINT NOT NULL,
-    stock INTEGER NOT NULL,
+    merchant_id UUID NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE INDEX IF NOT EXISTS products_created_at_id_idx ON products (
+    created_at DESC, id DESC
+);
+
 -- +goose Down
+DROP INDEX IF EXISTS products_created_at_id_idx;
 DROP TABLE IF EXISTS products;

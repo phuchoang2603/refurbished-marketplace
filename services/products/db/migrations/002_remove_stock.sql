@@ -1,5 +1,0 @@
--- +goose Up
-ALTER TABLE products DROP COLUMN IF EXISTS stock;
-
--- +goose Down
-ALTER TABLE products ADD COLUMN IF NOT EXISTS stock INTEGER NOT NULL DEFAULT 0;

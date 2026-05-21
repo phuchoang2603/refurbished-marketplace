@@ -9,7 +9,7 @@ import (
 	"refurbished-marketplace/services/payment/internal/database"
 	"refurbished-marketplace/shared/messaging"
 
-	inventoryv1 "refurbished-marketplace/shared/proto/inventory/v1"
+	productsv1 "refurbished-marketplace/shared/proto/products/v1"
 
 	"github.com/google/uuid"
 )
@@ -21,7 +21,7 @@ func (s *Service) KafkaInventoryReservedHandler() messaging.KafkaHandler {
 			return errors.New("messageID is required")
 		}
 
-		var payload inventoryv1.InventoryReserved
+		var payload productsv1.InventoryReserved
 		if err := messaging.UnmarshalKafkaProtobuf(msg.Value, &payload); err != nil {
 			return fmt.Errorf("decode inventory.reserved payload: %w", err)
 		}
