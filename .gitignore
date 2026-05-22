@@ -43,7 +43,3 @@ devenv.local.yaml
 
 # pre-commit
 .pre-commit-config.yaml
-
-# AI
-.opencode/
-.playwright-cli
