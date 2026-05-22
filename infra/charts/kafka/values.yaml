@@ -38,6 +38,7 @@ entities:
       databaseHost: payment-db-rw
       databasePort: 5432
       outboxTable: public.payment_outbox
+      publicationAutocreateMode: filtered
   inventory:
     topics:
       - name: inventory.reserved
@@ -53,6 +54,7 @@ entities:
       databaseHost: products-db-rw
       databasePort: 5432
       outboxTable: public.inventory_outbox
+      publicationAutocreateMode: filtered
 provectus:
   enabled: true
   name: kafka-ui

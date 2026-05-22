@@ -62,9 +62,11 @@ spec:
     topic.prefix: {{ $entityName | quote }}
     plugin.name: pgoutput
     slot.name: {{ printf "debezium_%s_slot" $entityName }}
-    publication.autocreate.mode: "filtered"
     table.include.list: {{ $entity.connector.outboxTable }}
     tombstones.on.delete: "false"
+{{- if $entity.connector.publicationAutocreateMode }}
+    publication.autocreate.mode: {{ $entity.connector.publicationAutocreateMode | quote }}
+{{- end }}
     
     # This transforms the DB row into a clean Kafka message
     transforms: outbox
