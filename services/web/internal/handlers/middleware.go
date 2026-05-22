@@ -31,8 +31,11 @@ func (h *Handler) requireAccessToken() func(http.Handler) http.Handler {
 
 func (h *Handler) viewAuth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, state, _ := h.authUserFromRequest(r)
+		userID, state, ok := h.authUserFromRequest(r)
 		ctx := sharedviews.WithAuthState(r.Context(), state)
+		if ok {
+			ctx = webAuth.ContextWithUserID(ctx, userID)
+		}
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }

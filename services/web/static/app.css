@@ -805,6 +805,10 @@ input::placeholder,
   grid-template-columns: minmax(5rem,7rem) auto;
 }
 
+.grid-cols-\[minmax\(5rem\2c 7rem\)_auto_auto\] {
+  grid-template-columns: minmax(5rem,7rem) auto auto;
+}
+
 .grid-rows-\[auto_auto\] {
   grid-template-rows: auto auto;
 }

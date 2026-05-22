@@ -67,6 +67,7 @@ func urlQueryEscape(v string) string {
 type ProductView struct {
 	ID          string
 	MerchantID  string
+	IsOwner     bool
 	Name        string
 	Description string
 	PriceCents  int64

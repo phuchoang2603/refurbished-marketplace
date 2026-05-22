@@ -35,6 +35,9 @@ templ ProductListSection(products []sharedviews.ProductView) {
 			} else {
 				<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 					for _, product := range products {
+						if product.IsOwner {
+							continue
+						}
 						@card.Card(card.CardArgs{Class: "h-full justify-between py-5", Attributes: templpkg.Attributes{"id": "product-" + product.ID}}) {
 							@card.CardContent(card.CardContentArgs{Class: "grid gap-6 px-5"}) {
 								<div class="grid gap-2">
@@ -65,22 +68,26 @@ templ ProductDetailSection(product sharedviews.ProductView) {
 				@badge.Badge("Out of stock")
 			}
 			<div class="h-px bg-border"></div>
-			<div class="grid gap-3">
-				<h2 class="text-xl font-semibold">Add to cart</h2>
-				@form.Form(form.FormArgs{Action: "/cart/items", Class: "grid gap-4"}) {
-					<input type="hidden" name="product_id" value={ product.ID }/>
-					<input type="hidden" name="merchant_id" value={ product.MerchantID }/>
-					@form.FormItem(form.FormItemArgs{}) {
-						@form.FormLabel(form.FormLabelArgs{For: "product-quantity"}) {
-							Quantity 
+			if product.IsOwner {
+				<p class="text-sm text-muted-foreground">This is your product.</p>
+			} else {
+				<div class="grid gap-3">
+					<h2 class="text-xl font-semibold">Add to cart</h2>
+					@form.Form(form.FormArgs{Action: "/cart/items", Class: "grid gap-4"}) {
+						<input type="hidden" name="product_id" value={ product.ID }/>
+						<input type="hidden" name="merchant_id" value={ product.MerchantID }/>
+						@form.FormItem(form.FormItemArgs{}) {
+							@form.FormLabel(form.FormLabelArgs{For: "product-quantity"}) {
+								Quantity 
+							}
+							@input.Input(input.InputArgs{ID: "product-quantity", Name: "quantity", Type: "number", Min: "1", Value: "1", Required: true})
 						}
-						@input.Input(input.InputArgs{ID: "product-quantity", Name: "quantity", Type: "number", Min: "1", Value: "1", Required: true})
+						@button.Button(button.ButtonArgs{Type: "submit", Class: "w-full sm:w-fit"}) {
+							Add to cart 
+						}
 					}
-					@button.Button(button.ButtonArgs{Type: "submit", Class: "w-full sm:w-fit"}) {
-						Add to cart 
-					}
-				}
-			</div>
+				</div>
+			}
 		}
 		@page.MetaLine(product.CreatedAt, product.UpdatedAt)
 	}
@@ -145,7 +152,6 @@ templ SellerProductsSection(products []sharedviews.ProductView) {
 							<tr class="bg-muted/40 text-muted-foreground">
 								<th class="px-4 py-3 text-left font-semibold">Product</th>
 								<th class="px-4 py-3 text-left font-semibold">Price</th>
-								<th class="px-4 py-3 text-left font-semibold">Stock</th>
 								<th class="px-4 py-3 text-left font-semibold">Updated</th>
 								<th class="px-4 py-3 text-left font-semibold">Actions</th>
 							</tr>
@@ -159,15 +165,8 @@ templ SellerProductsSection(products []sharedviews.ProductView) {
 											<small class="text-muted-foreground">{ product.Description }</small>
 										</div>
 									</td>
-									<td class="px-4 py-4" data-label="Price">{ sharedviews.FormatCents(product.PriceCents) }</td>
-									<td class="px-4 py-4" data-label="Stock">
-										if product.Stock > 0 {
-											@badge.Badge("In stock " + sharedviews.FormatInt32(product.Stock))
-										} else {
-											@badge.Badge("Out of stock")
-										}
-									</td>
-									<td class="px-4 py-4 text-muted-foreground" data-label="Updated">{ product.UpdatedAt }</td>
+								<td class="px-4 py-4" data-label="Price">{ sharedviews.FormatCents(product.PriceCents) }</td>
+								<td class="px-4 py-4 text-muted-foreground" data-label="Updated">{ product.UpdatedAt }</td>
 									<td class="px-4 py-4" data-label="Actions">
 										<div class="flex flex-wrap gap-2">
 											@button.Button(button.ButtonArgs{AsChild: true, Variant: "secondary", Size: "sm"}) {

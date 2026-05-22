@@ -39,6 +39,7 @@ templ CartSection(cart sharedviews.CartView) {
 									<tr class="bg-muted/40 text-muted-foreground">
 										<th class="px-4 py-3 text-left font-semibold">Product</th>
 										<th class="px-4 py-3 text-left font-semibold">Quantity</th>
+										<th class="px-4 py-3 text-left font-semibold">Actions</th>
 										<th class="px-4 py-3 text-left font-semibold">Current price</th>
 										<th class="px-4 py-3 text-left font-semibold">Estimated line</th>
 									</tr>
@@ -58,7 +59,7 @@ templ CartSection(cart sharedviews.CartView) {
 												}
 											</td>
 											<td class="px-4 py-4" data-label="Quantity">
-												@form.Form(form.FormArgs{Action: "/cart/items/" + item.ProductID + "/quantity", Class: "mb-2 mr-2 grid max-w-xs grid-cols-[minmax(5rem,7rem)_auto] items-end gap-2"}) {
+												@form.Form(form.FormArgs{Action: "/cart/items/" + item.ProductID + "/quantity", Class: "grid max-w-xs grid-cols-[minmax(5rem,7rem)_auto] items-end gap-2"}) {
 													<input type="hidden" name="product_id" value={ item.ProductID }/>
 													<input type="hidden" name="merchant_id" value={ item.MerchantID }/>
 													@input.Input(input.InputArgs{Name: "quantity", Type: "number", Min: "0", Value: sharedviews.FormatInt32(item.Quantity), Required: true})
@@ -66,6 +67,8 @@ templ CartSection(cart sharedviews.CartView) {
 														Update 
 													}
 												}
+											</td>
+											<td class="px-4 py-4" data-label="Actions">
 												@form.Form(form.FormArgs{Action: "/cart/items/" + item.ProductID + "/remove", Class: "inline-flex"}) {
 													@button.Button(button.ButtonArgs{Type: "submit", Variant: "destructive"}) {
 														Remove 

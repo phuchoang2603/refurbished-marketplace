@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	webAuth "refurbished-marketplace/services/web/internal/auth"
 	shared "refurbished-marketplace/services/web/internal/handlers/shared"
 	productviews "refurbished-marketplace/services/web/internal/views/products"
 	sharedviews "refurbished-marketplace/services/web/internal/views/shared"
@@ -39,8 +40,8 @@ func (h *Handler) RegisterProtectedPages(r chi.Router) {
 	r.Get("/seller/products/new", h.handleNewProductPage)
 }
 
-func mapProductView(id, merchantID, name, description string, priceCents int64, stock int32, createdAt, updatedAt *timestamppb.Timestamp) sharedviews.ProductView {
-	return sharedviews.ProductView{ID: id, MerchantID: merchantID, Name: name, Description: description, PriceCents: priceCents, Stock: stock, CreatedAt: shared.FormatTimestamp(createdAt), UpdatedAt: shared.FormatTimestamp(updatedAt)}
+func mapProductView(id, merchantID, name, description string, priceCents int64, stock int32, isOwner bool, createdAt, updatedAt *timestamppb.Timestamp) sharedviews.ProductView {
+	return sharedviews.ProductView{ID: id, MerchantID: merchantID, IsOwner: isOwner, Name: name, Description: description, PriceCents: priceCents, Stock: stock, CreatedAt: shared.FormatTimestamp(createdAt), UpdatedAt: shared.FormatTimestamp(updatedAt)}
 }
 
 func (h *Handler) handleGetProductByID(w http.ResponseWriter, r *http.Request) {
@@ -48,6 +49,7 @@ func (h *Handler) handleGetProductByID(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	viewerUserID, _ := webAuth.UserIDFromContext(r.Context())
 
 	p, err := h.deps.Products.GetProductByID(r.Context(), id)
 	if err != nil {
@@ -63,7 +65,7 @@ func (h *Handler) handleGetProductByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shared.WriteHTML(w, r, http.StatusOK, productviews.ProductDetailPage(mapProductView(p.Id, p.MerchantId, p.Name, p.Description, p.PriceCents, p.GetAvailableQty(), p.CreatedAt, p.UpdatedAt)))
+	shared.WriteHTML(w, r, http.StatusOK, productviews.ProductDetailPage(mapProductView(p.Id, p.MerchantId, p.Name, p.Description, p.PriceCents, p.GetAvailableQty(), viewerUserID != "" && viewerUserID == p.GetMerchantId(), p.CreatedAt, p.UpdatedAt)))
 }
 
 func (h *Handler) handleListProducts(w http.ResponseWriter, r *http.Request) {
@@ -75,6 +77,7 @@ func (h *Handler) handleListProducts(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	viewerUserID, _ := webAuth.UserIDFromContext(r.Context())
 
 	resp, err := h.deps.Products.ListProducts(r.Context(), limit, offset)
 	if err != nil {
@@ -88,7 +91,10 @@ func (h *Handler) handleListProducts(w http.ResponseWriter, r *http.Request) {
 
 	items := make([]sharedviews.ProductView, 0, len(resp.Products))
 	for _, p := range resp.Products {
-		items = append(items, mapProductView(p.Id, p.MerchantId, p.Name, p.Description, p.PriceCents, 0, p.CreatedAt, p.UpdatedAt))
+		if viewerUserID != "" && p.GetMerchantId() == viewerUserID {
+			continue
+		}
+		items = append(items, mapProductView(p.Id, p.MerchantId, p.Name, p.Description, p.PriceCents, 0, false, p.CreatedAt, p.UpdatedAt))
 	}
 
 	shared.WriteHTML(w, r, http.StatusOK, productviews.ProductsPage(items))
@@ -117,7 +123,7 @@ func (h *Handler) handleListSellerProducts(w http.ResponseWriter, r *http.Reques
 		if p.GetMerchantId() != userID {
 			continue
 		}
-		items = append(items, mapProductView(p.Id, p.MerchantId, p.Name, p.Description, p.PriceCents, p.GetAvailableQty(), p.CreatedAt, p.UpdatedAt))
+		items = append(items, mapProductView(p.Id, p.MerchantId, p.Name, p.Description, p.PriceCents, 0, true, p.CreatedAt, p.UpdatedAt))
 	}
 	shared.WriteHTML(w, r, http.StatusOK, productviews.SellerProductsPage(items))
 }

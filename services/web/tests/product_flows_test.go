@@ -108,3 +108,56 @@ func TestSellerProductsPageListsOnlyCurrentSellerProducts(t *testing.T) {
 		t.Fatalf("body should not include another seller product in %q", body)
 	}
 }
+
+func TestProductsPageHidesCurrentUsersProducts(t *testing.T) {
+	stock := int32(4)
+	productsSvc := &fakeProductsService{
+		listFn: func(ctx context.Context, limit, offset int32) (*productsv1.ListProductsResponse, error) {
+			return &productsv1.ListProductsResponse{Products: []*productsv1.Product{
+				{Id: "prod-1", MerchantId: "11111111-1111-1111-1111-111111111111", Name: "Own Phone", Description: "This should be hidden", PriceCents: 25999, AvailableQty: &stock},
+				{Id: "prod-2", MerchantId: "22222222-2222-2222-2222-222222222222", Name: "Other Laptop", Description: "Visible", PriceCents: 99999, AvailableQty: &stock},
+			}}, nil
+		},
+	}
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/products", nil)
+	req.AddCookie(&http.Cookie{Name: auth.AccessCookieName, Value: signedAccessToken(t, "11111111-1111-1111-1111-111111111111")})
+
+	newTestRouter(t, routerDeps{products: productsSvc}).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+	body := rec.Body.String()
+	if strings.Contains(body, "Own Phone") {
+		t.Fatalf("body should not include current user's product in %q", body)
+	}
+	if !strings.Contains(body, "Other Laptop") {
+		t.Fatalf("body missing visible product in %q", body)
+	}
+}
+
+func TestProductDetailHidesCartFormForOwner(t *testing.T) {
+	stock := int32(4)
+	productsSvc := &fakeProductsService{
+		getByIDFn: func(ctx context.Context, id string) (*productsv1.Product, error) {
+			return &productsv1.Product{Id: id, MerchantId: "11111111-1111-1111-1111-111111111111", Name: "Seller Phone", Description: "Owned item", PriceCents: 25999, AvailableQty: &stock}, nil
+		},
+	}
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/products/prod-1", nil)
+	req.AddCookie(&http.Cookie{Name: auth.AccessCookieName, Value: signedAccessToken(t, "11111111-1111-1111-1111-111111111111")})
+
+	newTestRouter(t, routerDeps{products: productsSvc}).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+	body := rec.Body.String()
+	if strings.Contains(body, "Add to cart") {
+		t.Fatalf("body should not include add-to-cart form for owner in %q", body)
+	}
+	if !strings.Contains(body, "This is your product.") {
+		t.Fatalf("body missing owner notice in %q", body)
+	}
+}
