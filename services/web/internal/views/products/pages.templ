@@ -1,10 +1,12 @@
 package products
 
 import templpkg "github.com/a-h/templ"
+import badge "refurbished-marketplace/services/web/internal/views/components/badge"
 import button "refurbished-marketplace/services/web/internal/views/components/button"
 import card "refurbished-marketplace/services/web/internal/views/components/card"
 import form "refurbished-marketplace/services/web/internal/views/components/form"
 import input "refurbished-marketplace/services/web/internal/views/components/input"
+import page "refurbished-marketplace/services/web/internal/views/components/page"
 import sharedviews "refurbished-marketplace/services/web/internal/views/shared"
 
 templ ProductsPage(products []sharedviews.ProductView) {
@@ -17,10 +19,10 @@ templ ProductDetailPage(product sharedviews.ProductView) {
 
 templ ProductListSection(products []sharedviews.ProductView) {
 	@card.Card(card.CardArgs{Attributes: templpkg.Attributes{"id": "products"}}) {
-		@sharedviews.PageHeader("Products", "Browse quality refurbished tech, verified devices, and sustainable deals from trusted sellers.")
+		@page.Header("Products", "Browse quality refurbished tech, verified devices, and sustainable deals from trusted sellers.")
 		@card.CardContent(card.CardContentArgs{Class: "grid gap-4"}) {
 			if len(products) == 0 {
-				@sharedviews.EmptyState("No products are available yet.")
+				@page.EmptyState("No products are available yet.")
 			} else {
 				<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 					for _, product := range products {
@@ -32,7 +34,7 @@ templ ProductListSection(products []sharedviews.ProductView) {
 								</div>
 								<div class="flex flex-wrap items-center justify-between gap-3">
 									<strong class="text-2xl font-semibold tracking-tight">{ sharedviews.FormatCents(product.PriceCents) }</strong>
-									@sharedviews.Badge("Stock " + sharedviews.FormatInt32(product.Stock))
+									@badge.Badge("Stock " + sharedviews.FormatInt32(product.Stock))
 								</div>
 							}
 						}
@@ -45,10 +47,10 @@ templ ProductListSection(products []sharedviews.ProductView) {
 
 templ ProductDetailSection(product sharedviews.ProductView) {
 	@card.Card(card.CardArgs{Attributes: templpkg.Attributes{"id": "product-" + product.ID}}) {
-		@sharedviews.PageHeader(product.Name, product.Description)
+		@page.Header(product.Name, product.Description)
 		@card.CardContent(card.CardContentArgs{Class: "grid gap-6"}) {
 			<p class="text-4xl font-semibold tracking-tight sm:text-5xl">{ sharedviews.FormatCents(product.PriceCents) }</p>
-			@sharedviews.Badge("Stock " + sharedviews.FormatInt32(product.Stock))
+			@badge.Badge("Stock " + sharedviews.FormatInt32(product.Stock))
 			<div class="h-px bg-border"></div>
 			<div class="grid gap-3">
 				<h2 class="text-xl font-semibold">Add to cart</h2>
@@ -71,6 +73,6 @@ templ ProductDetailSection(product sharedviews.ProductView) {
 				}
 			}
 		}
-		@sharedviews.MetaLine(product.CreatedAt, product.UpdatedAt)
+		@page.MetaLine(product.CreatedAt, product.UpdatedAt)
 	}
 }

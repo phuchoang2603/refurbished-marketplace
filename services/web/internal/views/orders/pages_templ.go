@@ -9,7 +9,9 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import templpkg "github.com/a-h/templ"
+import badge "refurbished-marketplace/services/web/internal/views/components/badge"
 import card "refurbished-marketplace/services/web/internal/views/components/card"
+import page "refurbished-marketplace/services/web/internal/views/components/page"
 import sharedviews "refurbished-marketplace/services/web/internal/views/shared"
 
 func OrdersPage(orders []sharedviews.OrderView) templ.Component {
@@ -103,7 +105,7 @@ func OrderListSection(orders []sharedviews.OrderView) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = sharedviews.PageHeader("Orders", "Your recent marketplace orders.").Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = page.Header("Orders", "Your recent marketplace orders.").Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -124,7 +126,7 @@ func OrderListSection(orders []sharedviews.OrderView) templ.Component {
 				}
 				ctx = templ.InitializeContext(ctx)
 				if len(orders) == 0 {
-					templ_7745c5c3_Err = sharedviews.EmptyState("No orders yet.").Render(ctx, templ_7745c5c3_Buffer)
+					templ_7745c5c3_Err = page.EmptyState("No orders yet.").Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -141,7 +143,7 @@ func OrderListSection(orders []sharedviews.OrderView) templ.Component {
 						var templ_7745c5c3_Var6 string
 						templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs("order-" + order.ID)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/orders/pages.templ`, Line: 34, Col: 36}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/orders/pages.templ`, Line: 36, Col: 36}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 						if templ_7745c5c3_Err != nil {
@@ -154,7 +156,7 @@ func OrderListSection(orders []sharedviews.OrderView) templ.Component {
 						var templ_7745c5c3_Var7 templ.SafeURL
 						templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinURLErrs("/orders/" + order.ID)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/orders/pages.templ`, Line: 35, Col: 114}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/orders/pages.templ`, Line: 37, Col: 114}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 						if templ_7745c5c3_Err != nil {
@@ -167,7 +169,7 @@ func OrderListSection(orders []sharedviews.OrderView) templ.Component {
 						var templ_7745c5c3_Var8 string
 						templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(order.ID)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/orders/pages.templ`, Line: 35, Col: 127}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/orders/pages.templ`, Line: 37, Col: 127}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 						if templ_7745c5c3_Err != nil {
@@ -177,7 +179,7 @@ func OrderListSection(orders []sharedviews.OrderView) templ.Component {
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = sharedviews.Badge(order.Status).Render(ctx, templ_7745c5c3_Buffer)
+						templ_7745c5c3_Err = badge.Badge(order.Status).Render(ctx, templ_7745c5c3_Buffer)
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
@@ -188,7 +190,7 @@ func OrderListSection(orders []sharedviews.OrderView) templ.Component {
 						var templ_7745c5c3_Var9 string
 						templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(sharedviews.FormatCents(order.TotalCents))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/orders/pages.templ`, Line: 38, Col: 93}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/orders/pages.templ`, Line: 40, Col: 93}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 						if templ_7745c5c3_Err != nil {
@@ -201,7 +203,7 @@ func OrderListSection(orders []sharedviews.OrderView) templ.Component {
 						var templ_7745c5c3_Var10 string
 						templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(order.UpdatedAt)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/orders/pages.templ`, Line: 39, Col: 91}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/orders/pages.templ`, Line: 41, Col: 91}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 						if templ_7745c5c3_Err != nil {
@@ -266,7 +268,7 @@ func OrderDetailSection(order sharedviews.OrderView) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = sharedviews.PageHeader("Order "+order.ID, "Buyer "+order.BuyerUserID).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = page.Header("Order "+order.ID, "Buyer "+order.BuyerUserID).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -290,7 +292,7 @@ func OrderDetailSection(order sharedviews.OrderView) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = sharedviews.Badge(order.Status).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = badge.Badge(order.Status).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -301,7 +303,7 @@ func OrderDetailSection(order sharedviews.OrderView) templ.Component {
 				var templ_7745c5c3_Var14 string
 				templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(sharedviews.FormatCents(order.TotalCents))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/orders/pages.templ`, Line: 56, Col: 107}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/orders/pages.templ`, Line: 58, Col: 107}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 				if templ_7745c5c3_Err != nil {
@@ -314,7 +316,7 @@ func OrderDetailSection(order sharedviews.OrderView) templ.Component {
 				var templ_7745c5c3_Var15 string
 				templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(order.BuyerUserID)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/orders/pages.templ`, Line: 57, Col: 38}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/orders/pages.templ`, Line: 59, Col: 38}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 				if templ_7745c5c3_Err != nil {
@@ -337,7 +339,7 @@ func OrderDetailSection(order sharedviews.OrderView) templ.Component {
 						var templ_7745c5c3_Var16 string
 						templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(item.ProductID)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/orders/pages.templ`, Line: 72, Col: 68}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/orders/pages.templ`, Line: 74, Col: 68}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 						if templ_7745c5c3_Err != nil {
@@ -350,7 +352,7 @@ func OrderDetailSection(order sharedviews.OrderView) templ.Component {
 						var templ_7745c5c3_Var17 string
 						templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(sharedviews.FormatInt32(item.Quantity))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/orders/pages.templ`, Line: 73, Col: 88}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/orders/pages.templ`, Line: 75, Col: 88}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 						if templ_7745c5c3_Err != nil {
@@ -363,7 +365,7 @@ func OrderDetailSection(order sharedviews.OrderView) templ.Component {
 						var templ_7745c5c3_Var18 string
 						templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(sharedviews.FormatCents(item.UnitPriceCents))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/orders/pages.templ`, Line: 74, Col: 95}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/orders/pages.templ`, Line: 76, Col: 95}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 						if templ_7745c5c3_Err != nil {
@@ -376,7 +378,7 @@ func OrderDetailSection(order sharedviews.OrderView) templ.Component {
 						var templ_7745c5c3_Var19 string
 						templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(sharedviews.FormatCents(item.LineTotalCents))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/orders/pages.templ`, Line: 75, Col: 95}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/orders/pages.templ`, Line: 77, Col: 95}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 						if templ_7745c5c3_Err != nil {
@@ -402,7 +404,7 @@ func OrderDetailSection(order sharedviews.OrderView) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = sharedviews.MetaLine(order.CreatedAt, order.UpdatedAt).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = page.MetaLine(order.CreatedAt, order.UpdatedAt).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

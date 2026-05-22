@@ -40,8 +40,8 @@ func Form(args FormArgs) templ.Component {
 		if args.Action != "" {
 			formAttrs["action"] = args.Action
 			formAttrs["method"] = "post"
-			formAttrs["data-on-submit"] = fmt.Sprintf("@post('%s', {contentType: 'form'})", templ.SafeURL(args.Action))
-			formAttrs["data-indicator-fetching"] = ""
+			formAttrs["data-on:submit__prevent"] = fmt.Sprintf("@post('%s', {contentType: 'form'})", templ.SafeURL(args.Action))
+			formAttrs["data-indicator:_submitting"] = ""
 		}
 		if args.Class != "" {
 			formAttrs["class"] = args.Class

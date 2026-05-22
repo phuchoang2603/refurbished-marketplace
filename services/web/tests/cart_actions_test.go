@@ -55,7 +55,7 @@ func TestAddCartItemReturnsHTMLFragmentContract(t *testing.T) {
 	}
 }
 
-func TestCheckoutClearsCartCookieAndRendersOrder(t *testing.T) {
+func TestCheckoutClearsCartCookieAndRedirectsToOrder(t *testing.T) {
 	cartSvc := &fakeCartService{
 		getFn: func(ctx context.Context, cartID string) (*cartv1.Cart, error) {
 			return &cartv1.Cart{
@@ -85,11 +85,33 @@ func TestCheckoutClearsCartCookieAndRendersOrder(t *testing.T) {
 
 	newTestRouter(t, routerDeps{cart: cartSvc, products: productsSvc, orders: ordersSvc}).ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusCreated {
-		t.Fatalf("status = %d, want %d", rec.Code, http.StatusCreated)
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusSeeOther)
+	}
+	if got := rec.Header().Get("Location"); got != "/orders/order-1" {
+		t.Fatalf("location = %q, want /orders/order-1", got)
 	}
 	assertCookieCleared(t, rec.Result().Cookies(), "cart_id")
-	if !strings.Contains(rec.Body.String(), "order-1") {
-		t.Fatalf("body missing order id in %q", rec.Body.String())
+}
+
+func TestAddCartItemDatastarValidationErrorOpensDialog(t *testing.T) {
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/cart/items", strings.NewReader(url.Values{"product_id": {"prod-1"}, "quantity": {"0"}}.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Accept", "text/event-stream")
+
+	newTestRouter(t, routerDeps{}).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+	if got := rec.Header().Get("Content-Type"); !strings.Contains(got, "text/event-stream") {
+		t.Fatalf("content-type = %q, want text/event-stream", got)
+	}
+	body := rec.Body.String()
+	for _, want := range []string{"id=\"dialog-root\"", "id=\"error-dialog\"", "Bad request", "invalid request body", "replaceChildren()"} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("body missing %q in %q", want, body)
+		}
 	}
 }

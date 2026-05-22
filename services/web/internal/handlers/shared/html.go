@@ -2,14 +2,12 @@ package shared
 
 import (
 	"context"
-	"encoding/json"
-	"fmt"
-	"html"
 	"net/http"
 	"strings"
 
 	"github.com/a-h/templ"
 	"github.com/starfederation/datastar-go/datastar"
+	dialog "refurbished-marketplace/services/web/internal/views/components/dialog"
 	sharedviews "refurbished-marketplace/services/web/internal/views/shared"
 )
 
@@ -20,6 +18,7 @@ func WriteHTML(w http.ResponseWriter, r *http.Request, status int, component tem
 func WriteFragment(w http.ResponseWriter, r *http.Request, status int, selector string, component templ.Component) {
 	if r != nil && acceptsDatastar(r) {
 		sse := datastar.NewSSE(w, r)
+		_ = sse.PatchElementTempl(dialog.DialogRoot("", ""), datastar.WithSelector("#dialog-root"), datastar.WithModeOuter())
 		opts := []datastar.PatchElementOption{datastar.WithModeOuter()}
 		if selector != "" {
 			opts = append(opts, datastar.WithSelector(selector))
@@ -58,20 +57,12 @@ func WriteUnavailablePage(w http.ResponseWriter, r *http.Request, status int, un
 }
 
 func WritePopup(w http.ResponseWriter, r *http.Request, status int, title, message string) {
-	alertText := title + ": " + message
-	encodedAlert, err := json.Marshal(alertText)
-	if err != nil {
-		encodedAlert = []byte(`"internal server error"`)
-	}
-	alertJS := strings.ReplaceAll(string(encodedAlert), "</", "<\\/")
 	if r != nil && acceptsDatastar(r) {
 		sse := datastar.NewSSE(w, r)
-		_ = sse.ExecuteScript("window.alert(" + alertJS + ")")
+		_ = sse.PatchElementTempl(dialog.DialogRoot(title, message), datastar.WithSelector("#dialog-root"), datastar.WithModeOuter())
 		return
 	}
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(status)
-	_, _ = fmt.Fprintf(w, "<!doctype html><html><head><meta charset=\"utf-8\"><title>%s</title><style>html,body{margin:0;background:transparent;opacity:0}</style></head><body><script>window.alert(%s);window.history.back();</script></body></html>", html.EscapeString(title), alertJS)
+	WriteHTML(w, r, status, sharedviews.AppShell(title, sharedviews.DefaultNav, dialog.DialogPageBody(title, message)))
 }
 
 func renderComponent(w http.ResponseWriter, r *http.Request, status int, headers http.Header, component templ.Component) {

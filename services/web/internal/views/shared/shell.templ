@@ -2,6 +2,7 @@ package shared
 
 import (
 	templpkg "github.com/a-h/templ"
+	dialog "refurbished-marketplace/services/web/internal/views/components/dialog"
 )
 
 templ AppShell(title string, nav []NavLink, body templpkg.Component) {
@@ -12,9 +13,10 @@ templ AppShell(title string, nav []NavLink, body templpkg.Component) {
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
 			<title>{ title }</title>
 			<link rel="stylesheet" href="/static/app.css"/>
-			<script type="module" src="https://cdn.jsdelivr.net/npm/@starfederation/datastar@latest/dist/datastar.js"></script>
+			<script type="module" src="/static/vendor/datastar.js"></script>
 		</head>
 		<body class="dark min-h-screen bg-background text-foreground antialiased" data-signals={ SessionSignals(ctx) }>
+			@dialog.DialogRoot("", "")
 			@ShellHeader(nav)
 			@PageFrame(body)
 		</body>

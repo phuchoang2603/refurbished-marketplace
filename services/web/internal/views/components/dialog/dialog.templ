@@ -1,0 +1,36 @@
+package dialog
+
+import templpkg "github.com/a-h/templ"
+import button "refurbished-marketplace/services/web/internal/views/components/button"
+
+templ ErrorDialog(title string, message string, closeAction string) {
+	<div class="fixed inset-0 z-50 flex items-center justify-center bg-background/80 p-4 backdrop-blur-sm sm:p-6" role="presentation">
+		<div id="error-dialog" class="bg-card text-card-foreground w-full max-w-lg overflow-hidden rounded-xl border shadow-sm" role="dialog" aria-modal="true" aria-labelledby="error-dialog-title" aria-describedby="error-dialog-description">
+			<div class="grid gap-1.5 border-b px-6 py-5">
+				<h2 id="error-dialog-title" class="leading-none font-semibold text-xl tracking-tight">{ title }</h2>
+				if message != "" {
+					<p id="error-dialog-description" class="text-sm leading-6 text-muted-foreground">{ message }</p>
+				}
+			</div>
+			<div class="flex items-center justify-end px-6 py-4">
+				@button.Button(button.ButtonArgs{Type: "button", Variant: "secondary", Attributes: templpkg.Attributes{"onclick": closeAction}}) {
+					Close
+				}
+			</div>
+		</div>
+	</div>
+}
+
+templ DialogRoot(title string, message string) {
+	<div id="dialog-root">
+		if title != "" || message != "" {
+			@ErrorDialog(title, message, "document.getElementById('dialog-root')?.replaceChildren()")
+		}
+	</div>
+}
+
+templ DialogPageBody(title string, message string) {
+	<div class="min-h-[60vh]">
+		@ErrorDialog(title, message, "if (window.history.length > 1) { window.history.back() } else { window.location.href = '/products' }")
+	</div>
+}

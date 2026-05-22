@@ -4,10 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	orderhandlers "refurbished-marketplace/services/web/internal/handlers/orders"
 	shared "refurbished-marketplace/services/web/internal/handlers/shared"
 	cartviews "refurbished-marketplace/services/web/internal/views/cart"
-	orderviews "refurbished-marketplace/services/web/internal/views/orders"
 	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
 
 	"github.com/go-chi/chi/v5"
@@ -155,5 +153,5 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 	}
 	_ = h.deps.Cart.ClearCart(r.Context(), cartID)
 	h.clearCartCookie(w)
-	shared.WriteHTML(w, r, http.StatusCreated, orderviews.OrderDetailPage(orderhandlers.OrderToView(order)))
+	shared.Redirect(w, r, "/orders/"+order.GetId(), http.StatusSeeOther)
 }

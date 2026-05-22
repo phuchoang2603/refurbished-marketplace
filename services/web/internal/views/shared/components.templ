@@ -4,6 +4,8 @@ import (
 	templpkg "github.com/a-h/templ"
 	button "refurbished-marketplace/services/web/internal/views/components/button"
 	"refurbished-marketplace/services/web/internal/views/components/card"
+	form "refurbished-marketplace/services/web/internal/views/components/form"
+	page "refurbished-marketplace/services/web/internal/views/components/page"
 )
 
 templ NavAnchor(link NavLink) {
@@ -38,11 +40,11 @@ templ ShellNav(nav []NavLink) {
 }
 
 templ AuthNavAction() {
-	<form class="nav-form m-0 inline-flex" method="post" action="/auth/logout" data-show="$session.authenticated">
+	@form.Form(form.FormArgs{Action: "/auth/logout", Class: "nav-form m-0 inline-flex", Attributes: templpkg.Attributes{"data-show": "$session.authenticated"}}) {
 		@button.Button(button.ButtonArgs{Type: "submit", Variant: "secondary", Size: "sm"}) {
 			Logout 
 		}
-	</form>
+	}
 }
 
 templ PageFrame(body templpkg.Component) {
@@ -53,42 +55,10 @@ templ PageFrame(body templpkg.Component) {
 
 templ UnavailableSection(unavailable UnavailableView) {
 	@card.Card(card.CardArgs{Attributes: templpkg.Attributes{"id": unavailable.SectionID}}) {
-		@PageHeader(unavailable.Title, unavailable.Subtitle)
+		@page.Header(unavailable.Title, unavailable.Subtitle)
 	}
 }
 
 templ UnavailablePage(unavailable UnavailableView) {
 	@AppShell(unavailable.PageTitle, DefaultNav, UnavailableSection(unavailable))
-}
-
-templ PageHeader(title string, subtitle string) {
-	@card.CardHeader(card.CardHeaderArgs{}) {
-		@card.CardTitle(card.CardTitleArgs{Class: "text-3xl tracking-tight sm:text-4xl"}) {
-			{ title }
-		}
-		if subtitle != "" {
-			@card.CardDescription(card.CardDescriptionArgs{Class: "max-w-3xl text-base"}) {
-				{ subtitle }
-			}
-		}
-	}
-}
-
-templ EmptyState(message string) {
-	<div class="rounded-xl border border-dashed bg-muted/30 px-5 py-6 text-sm text-muted-foreground" data-slot="empty-state">
-		<p>{ message }</p>
-	</div>
-}
-
-templ Badge(text string) {
-	<span class="inline-flex w-fit items-center rounded-md border px-2 py-0.5 text-xs font-medium text-muted-foreground" data-slot="badge">{ text }</span>
-}
-
-templ MetaLine(left string, right string) {
-	<div class="mt-6 flex flex-wrap items-center justify-between gap-3 border-t px-6 pt-4 text-sm text-muted-foreground" data-slot="card-footer">
-		<small>{ left }</small>
-		if right != "" {
-			<small>{ right }</small>
-		}
-	</div>
 }

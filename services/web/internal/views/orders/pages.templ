@@ -1,7 +1,9 @@
 package orders
 
 import templpkg "github.com/a-h/templ"
+import badge "refurbished-marketplace/services/web/internal/views/components/badge"
 import card "refurbished-marketplace/services/web/internal/views/components/card"
+import page "refurbished-marketplace/services/web/internal/views/components/page"
 import sharedviews "refurbished-marketplace/services/web/internal/views/shared"
 
 templ OrdersPage(orders []sharedviews.OrderView) {
@@ -14,10 +16,10 @@ templ OrderDetailPage(order sharedviews.OrderView) {
 
 templ OrderListSection(orders []sharedviews.OrderView) {
 	@card.Card(card.CardArgs{Attributes: templpkg.Attributes{"id": "orders"}}) {
-		@sharedviews.PageHeader("Orders", "Your recent marketplace orders.")
+		@page.Header("Orders", "Your recent marketplace orders.")
 		@card.CardContent(card.CardContentArgs{}) {
 			if len(orders) == 0 {
-				@sharedviews.EmptyState("No orders yet.")
+				@page.EmptyState("No orders yet.")
 			} else {
 				<div class="overflow-x-auto rounded-lg border bg-card/40">
 					<table class="responsive-table min-w-full border-collapse text-sm">
@@ -33,7 +35,7 @@ templ OrderListSection(orders []sharedviews.OrderView) {
 							for _, order := range orders {
 								<tr id={ "order-" + order.ID } class="border-t">
 									<td class="px-4 py-4" data-label="ID"><a class="font-medium hover:underline" href={ "/orders/" + order.ID }>{ order.ID }</a></td>
-									<td class="px-4 py-4" data-label="Status">@sharedviews.Badge(order.Status)
+									<td class="px-4 py-4" data-label="Status">@badge.Badge(order.Status)
 </td>
 									<td class="px-4 py-4" data-label="Total">{ sharedviews.FormatCents(order.TotalCents) }</td>
 									<td class="px-4 py-4 text-muted-foreground" data-label="Updated">{ order.UpdatedAt }</td>
@@ -49,9 +51,9 @@ templ OrderListSection(orders []sharedviews.OrderView) {
 
 templ OrderDetailSection(order sharedviews.OrderView) {
 	@card.Card(card.CardArgs{Attributes: templpkg.Attributes{"id": "order-" + order.ID}}) {
-		@sharedviews.PageHeader("Order "+order.ID, "Buyer "+order.BuyerUserID)
+		@page.Header("Order "+order.ID, "Buyer "+order.BuyerUserID)
 		@card.CardContent(card.CardContentArgs{Class: "grid gap-6"}) {
-			<p><strong>Status:</strong> @sharedviews.Badge(order.Status)
+			<p><strong>Status:</strong> @badge.Badge(order.Status)
 </p>
 			<p class="text-4xl font-semibold tracking-tight sm:text-5xl">{ sharedviews.FormatCents(order.TotalCents) }</p>
 			<p><small>Buyer { order.BuyerUserID }</small></p>
@@ -80,6 +82,6 @@ templ OrderDetailSection(order sharedviews.OrderView) {
 				</div>
 			}
 		}
-		@sharedviews.MetaLine(order.CreatedAt, order.UpdatedAt)
+		@page.MetaLine(order.CreatedAt, order.UpdatedAt)
 	}
 }

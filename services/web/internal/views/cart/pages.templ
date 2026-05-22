@@ -2,9 +2,11 @@ package cart
 
 import templpkg "github.com/a-h/templ"
 import button "refurbished-marketplace/services/web/internal/views/components/button"
+import badge "refurbished-marketplace/services/web/internal/views/components/badge"
 import card "refurbished-marketplace/services/web/internal/views/components/card"
 import form "refurbished-marketplace/services/web/internal/views/components/form"
 import input "refurbished-marketplace/services/web/internal/views/components/input"
+import page "refurbished-marketplace/services/web/internal/views/components/page"
 import sharedviews "refurbished-marketplace/services/web/internal/views/shared"
 
 templ CartPage(cart sharedviews.CartView) {
@@ -13,11 +15,11 @@ templ CartPage(cart sharedviews.CartView) {
 
 templ CartSection(cart sharedviews.CartView) {
 	@card.Card(card.CardArgs{Attributes: templpkg.Attributes{"id": "cart"}}) {
-		@sharedviews.PageHeader("Cart", "Review quantities and check out when you are ready.")
+		@page.Header("Cart", "Review quantities and check out when you are ready.")
 		@card.CardContent(card.CardContentArgs{Class: "grid gap-6"}) {
 			<p><strong>Cart ID:</strong> <code>{ cart.CartID }</code></p>
 			if len(cart.Items) == 0 {
-				@sharedviews.EmptyState("Your cart is empty.")
+				@page.EmptyState("Your cart is empty.")
 			} else {
 				<div class="overflow-x-auto rounded-lg border bg-card/40">
 					<table class="responsive-table min-w-full border-collapse text-sm">
@@ -40,7 +42,7 @@ templ CartSection(cart sharedviews.CartView) {
 										} else {
 											<span>{ item.ProductID }</span>
 											<br/>
-											@sharedviews.Badge("Unavailable")
+											@badge.Badge("Unavailable")
 										}
 									</td>
 									<td class="px-4 py-4" data-label="Quantity">
@@ -72,6 +74,6 @@ templ CartSection(cart sharedviews.CartView) {
 				}
 			}
 		}
-		@sharedviews.MetaLine(cart.CreatedAt, cart.UpdatedAt)
+		@page.MetaLine(cart.CreatedAt, cart.UpdatedAt)
 	}
 }

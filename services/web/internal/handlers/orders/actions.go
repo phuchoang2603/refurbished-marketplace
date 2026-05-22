@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	shared "refurbished-marketplace/services/web/internal/handlers/shared"
-	orderviews "refurbished-marketplace/services/web/internal/views/orders"
 	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
 
 	"github.com/go-chi/chi/v5"
@@ -63,5 +62,5 @@ func (h *Handler) handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	shared.WriteHTML(w, r, http.StatusCreated, orderviews.OrderDetailPage(OrderToView(order)))
+	shared.Redirect(w, r, "/orders/"+order.GetId(), http.StatusSeeOther)
 }

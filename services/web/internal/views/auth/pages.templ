@@ -5,6 +5,7 @@ import button "refurbished-marketplace/services/web/internal/views/components/bu
 import card "refurbished-marketplace/services/web/internal/views/components/card"
 import form "refurbished-marketplace/services/web/internal/views/components/form"
 import input "refurbished-marketplace/services/web/internal/views/components/input"
+import page "refurbished-marketplace/services/web/internal/views/components/page"
 import sharedviews "refurbished-marketplace/services/web/internal/views/shared"
 
 templ LoginPage(next string) {
@@ -17,9 +18,9 @@ templ RegisterPage(next string) {
 
 templ LoginSection(next string) {
 	@card.Card(card.CardArgs{Class: "mx-auto w-full max-w-lg", Attributes: templpkg.Attributes{"id": "auth"}}) {
-		@sharedviews.PageHeader("Login", "Sign in to create orders and check out your cart.")
+		@page.Header("Login", "Sign in to create orders and check out your cart.")
 		@card.CardContent(card.CardContentArgs{Class: "grid gap-6"}) {
-			<form class="grid gap-4" method="post" action={ sharedviews.LoginURL(next) }>
+			@form.Form(form.FormArgs{Action: sharedviews.LoginURL(next), Class: "grid gap-4"}) {
 				@form.FormItem(form.FormItemArgs{}) {
 					@form.FormLabel(form.FormLabelArgs{For: "login-email"}) {
 						Email 
@@ -35,7 +36,7 @@ templ LoginSection(next string) {
 				@button.Button(button.ButtonArgs{Type: "submit", Class: "w-full"}) {
 					Login 
 				}
-			</form>
+			}
 			@form.FormDescription(form.FormDescriptionArgs{}) {
 				Don&apos;t have an account? <a class="text-foreground underline underline-offset-4" href={ sharedviews.RegisterURL(next) }>Create one here</a>.
 			}
@@ -45,9 +46,9 @@ templ LoginSection(next string) {
 
 templ RegisterSection(next string) {
 	@card.Card(card.CardArgs{Class: "mx-auto w-full max-w-lg", Attributes: templpkg.Attributes{"id": "register"}}) {
-		@sharedviews.PageHeader("Create account", "Get the best for less. Sign up to unlock 70% off premium refurbished electronics.")
+		@page.Header("Create account", "Get the best for less. Sign up to unlock 70% off premium refurbished electronics.")
 		@card.CardContent(card.CardContentArgs{Class: "grid gap-6"}) {
-			<form class="grid gap-4" method="post" action={ sharedviews.RegisterURL(next) }>
+			@form.Form(form.FormArgs{Action: sharedviews.RegisterURL(next), Class: "grid gap-4"}) {
 				@form.FormItem(form.FormItemArgs{}) {
 					@form.FormLabel(form.FormLabelArgs{For: "register-email"}) {
 						Email 
@@ -63,7 +64,7 @@ templ RegisterSection(next string) {
 				@button.Button(button.ButtonArgs{Type: "submit", Class: "w-full"}) {
 					Create account 
 				}
-			</form>
+			}
 			@form.FormDescription(form.FormDescriptionArgs{}) {
 				Already have an account? <a class="text-foreground underline underline-offset-4" href={ sharedviews.LoginURL(next) }>Sign in</a>.
 			}
