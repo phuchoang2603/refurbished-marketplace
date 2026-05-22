@@ -32,12 +32,12 @@ func (c *CartClient) GetCart(ctx context.Context, cartID string) (*cartv1.Cart, 
 	return c.client.GetCart(ctx, &cartv1.GetCartRequest{CartId: cartID})
 }
 
-func (c *CartClient) AddCartItem(ctx context.Context, cartID, productID string, quantity int32) (*cartv1.Cart, error) {
-	return c.client.AddCartItem(ctx, &cartv1.AddCartItemRequest{CartId: cartID, ProductId: productID, Quantity: quantity})
+func (c *CartClient) AddCartItem(ctx context.Context, cartID, productID, merchantID string, quantity int32) (*cartv1.Cart, error) {
+	return c.client.AddCartItem(ctx, &cartv1.AddCartItemRequest{CartId: cartID, ProductId: productID, Quantity: quantity, MerchantId: merchantID})
 }
 
-func (c *CartClient) SetCartItemQuantity(ctx context.Context, cartID, productID string, quantity int32) (*cartv1.Cart, error) {
-	return c.client.SetCartItemQuantity(ctx, &cartv1.SetCartItemQuantityRequest{CartId: cartID, ProductId: productID, Quantity: quantity})
+func (c *CartClient) SetCartItemQuantity(ctx context.Context, cartID, productID, merchantID string, quantity int32) (*cartv1.Cart, error) {
+	return c.client.SetCartItemQuantity(ctx, &cartv1.SetCartItemQuantityRequest{CartId: cartID, ProductId: productID, Quantity: quantity, MerchantId: merchantID})
 }
 
 func (c *CartClient) RemoveCartItem(ctx context.Context, cartID, productID string) (*cartv1.Cart, error) {

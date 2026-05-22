@@ -58,6 +58,8 @@ func (h *Handler) Register(router chi.Router) {
 
 		r.Group(func(r chi.Router) {
 			r.Use(h.requireAccessToken())
+			h.products.RegisterProtectedPages(r)
+			h.products.RegisterProtectedActions(r)
 			h.cart.RegisterProtectedActions(r)
 			h.orders.RegisterPages(r)
 			h.orders.RegisterActions(r)

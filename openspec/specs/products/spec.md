@@ -1,4 +1,10 @@
-## ADDED Requirements
+# Products
+
+## Purpose
+
+The products capability defines the unified catalog boundary for marketplace listings, seller ownership, stock state, and reservation behavior.
+
+## Requirements
 
 ### Requirement: Products owns colocated stock state
 
@@ -16,17 +22,26 @@ The products service MUST own product catalog data together with the colocated s
 
 ### Requirement: Products creates listings with initial stock in one logical operation
 
-The products service MUST support creating a product and initializing its stock state within one logical catalog write path, and it MUST require initial stock explicitly in that create operation.
+The products service MUST support authenticated seller-managed listing creation through one logical catalog write path that persists the product record together with explicit initial stock.
 
-#### Scenario: Listing is created
+#### Scenario: Seller-managed listing is created
 
-- **WHEN** a caller creates a new product listing with an initial stock quantity
-- **THEN** the service SHALL persist the product record and its initial stock state without requiring a second downstream service call
+- **WHEN** a trusted internal caller creates a product for an authenticated seller-managed listing
+- **THEN** the service SHALL persist the catalog fields and initial stock for that product in one logical operation
 
-#### Scenario: Listing is created without initial stock
+#### Scenario: Seller-managed listing is created without explicit stock
 
-- **WHEN** a caller attempts to create a new product listing without an explicit initial stock quantity
+- **WHEN** a caller attempts to create a seller-managed listing without explicit initial stock
 - **THEN** the service SHALL reject the request instead of silently defaulting stock
+
+### Requirement: Product records carry seller ownership
+
+The products service MUST persist the seller ownership identifier provided as `merchant_id` on product creation so downstream order and payment flows can attribute the listing consistently.
+
+#### Scenario: Product is created with a merchant owner
+
+- **WHEN** a caller creates a product with a valid `merchant_id`
+- **THEN** the service SHALL store that `merchant_id` with the catalog record and return it in subsequent reads
 
 ### Requirement: Products manages reservations
 
@@ -65,8 +80,6 @@ The products service MUST consume order-level `orders.created` events that inclu
 
 - **WHEN** the service cannot reserve one or more item lines for an order
 - **THEN** it SHALL avoid leaving a partial active reservation for that order and emit an order-level `inventory.reservation_failed` event
-
-## MODIFIED Requirements
 
 ### Requirement: Products exposes internal gRPC methods
 

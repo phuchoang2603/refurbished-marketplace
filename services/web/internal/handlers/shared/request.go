@@ -1,7 +1,6 @@
 package shared
 
 import (
-	"errors"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -12,33 +11,6 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/starfederation/datastar-go/datastar"
 )
-
-var ErrInvalidRequestBody = errors.New("invalid request body")
-
-func RefreshTokenFromForm(r *http.Request) (string, error) {
-	if !parseForm(r) {
-		return "", ErrInvalidRequestBody
-	}
-	return r.FormValue("refresh_token"), nil
-}
-
-func EmailPasswordFromForm(r *http.Request) (string, string, error) {
-	if !parseForm(r) {
-		return "", "", ErrInvalidRequestBody
-	}
-	return r.FormValue("email"), r.FormValue("password"), nil
-}
-
-func ProductQuantityFromForm(r *http.Request) (string, int32, error) {
-	if !parseForm(r) {
-		return "", 0, ErrInvalidRequestBody
-	}
-	quantity, err := parseInt32FormValue(r, "quantity")
-	if err != nil {
-		return "", 0, err
-	}
-	return r.FormValue("product_id"), quantity, nil
-}
 
 func RequirePathValue(w http.ResponseWriter, r *http.Request, key, errorMessage string) (string, bool) {
 	value := strings.TrimSpace(chi.URLParam(r, key))
@@ -87,18 +59,6 @@ func Redirect(w http.ResponseWriter, r *http.Request, location string, status in
 		return
 	}
 	http.Redirect(w, r, location, status)
-}
-
-func parseForm(r *http.Request) bool {
-	return r.ParseForm() == nil
-}
-
-func parseInt32FormValue(r *http.Request, key string) (int32, error) {
-	value, err := strconv.ParseInt(r.FormValue(key), 10, 32)
-	if err != nil {
-		return 0, ErrInvalidRequestBody
-	}
-	return int32(value), nil
 }
 
 func sanitizeRedirectTarget(raw, fallback string) string {

@@ -22,6 +22,7 @@ const (
 var DefaultNav = []NavLink{
 	{Label: "Products", Href: "/products"},
 	{Label: "Cart", Href: "/cart"},
+	{Label: "Sell", Href: "/seller/products", Visibility: NavVisibleWhenAuthenticated},
 	{Label: "Orders", Href: "/orders", Visibility: NavVisibleWhenAuthenticated},
 	{Label: "Sign in", Href: "/auth/login", Visibility: NavVisibleWhenGuest},
 	{Label: "Sign up", Href: "/auth/register", Visibility: NavVisibleWhenGuest},
@@ -65,6 +66,7 @@ func urlQueryEscape(v string) string {
 
 type ProductView struct {
 	ID          string
+	MerchantID  string
 	Name        string
 	Description string
 	PriceCents  int64
@@ -75,6 +77,7 @@ type ProductView struct {
 
 type CartItemView struct {
 	ProductID      string
+	MerchantID     string
 	ProductName    string
 	ProductPrice   int64
 	LineTotalCents int64
@@ -82,9 +85,16 @@ type CartItemView struct {
 	Quantity       int32
 }
 
+type CartMerchantGroupView struct {
+	MerchantID    string
+	Items         []CartItemView
+	SubtotalCents int64
+}
+
 type CartView struct {
 	CartID              string
 	Items               []CartItemView
+	MerchantGroups      []CartMerchantGroupView
 	EstimatedTotalCents int64
 	CreatedAt           string
 	UpdatedAt           string

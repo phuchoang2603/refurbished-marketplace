@@ -24,6 +24,7 @@ context: |
   Code style:
   - Don't format the code because I already have a git-hook to autoformat for me.
   - Separate files to logic-related, dont keep in one big file.
+  - Don't add tests for everything when implementing, only do so when prompted
 
 rules:
   proposal:

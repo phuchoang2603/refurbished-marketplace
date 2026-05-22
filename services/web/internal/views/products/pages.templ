@@ -7,6 +7,7 @@ import card "refurbished-marketplace/services/web/internal/views/components/card
 import form "refurbished-marketplace/services/web/internal/views/components/form"
 import input "refurbished-marketplace/services/web/internal/views/components/input"
 import page "refurbished-marketplace/services/web/internal/views/components/page"
+import textarea "refurbished-marketplace/services/web/internal/views/components/textarea"
 import sharedviews "refurbished-marketplace/services/web/internal/views/shared"
 
 templ ProductsPage(products []sharedviews.ProductView) {
@@ -15,6 +16,14 @@ templ ProductsPage(products []sharedviews.ProductView) {
 
 templ ProductDetailPage(product sharedviews.ProductView) {
 	@sharedviews.AppShell(product.Name, sharedviews.DefaultNav, ProductDetailSection(product))
+}
+
+templ CreateProductPage() {
+	@sharedviews.AppShell("Create product", sharedviews.DefaultNav, CreateProductSection())
+}
+
+templ SellerProductsPage(products []sharedviews.ProductView) {
+	@sharedviews.AppShell("Your products", sharedviews.DefaultNav, SellerProductsSection(products))
 }
 
 templ ProductListSection(products []sharedviews.ProductView) {
@@ -34,7 +43,6 @@ templ ProductListSection(products []sharedviews.ProductView) {
 								</div>
 								<div class="flex flex-wrap items-center justify-between gap-3">
 									<strong class="text-2xl font-semibold tracking-tight">{ sharedviews.FormatCents(product.PriceCents) }</strong>
-									@badge.Badge("Stock " + sharedviews.FormatInt32(product.Stock))
 								</div>
 							}
 						}
@@ -50,12 +58,18 @@ templ ProductDetailSection(product sharedviews.ProductView) {
 		@page.Header(product.Name, product.Description)
 		@card.CardContent(card.CardContentArgs{Class: "grid gap-6"}) {
 			<p class="text-4xl font-semibold tracking-tight sm:text-5xl">{ sharedviews.FormatCents(product.PriceCents) }</p>
-			@badge.Badge("Stock " + sharedviews.FormatInt32(product.Stock))
+			<p class="text-sm text-muted-foreground">Merchant <code>{ product.MerchantID }</code></p>
+			if product.Stock > 0 {
+				@badge.Badge("In stock " + sharedviews.FormatInt32(product.Stock))
+			} else {
+				@badge.Badge("Out of stock")
+			}
 			<div class="h-px bg-border"></div>
 			<div class="grid gap-3">
 				<h2 class="text-xl font-semibold">Add to cart</h2>
 				@form.Form(form.FormArgs{Action: "/cart/items", Class: "grid gap-4"}) {
 					<input type="hidden" name="product_id" value={ product.ID }/>
+					<input type="hidden" name="merchant_id" value={ product.MerchantID }/>
 					@form.FormItem(form.FormItemArgs{}) {
 						@form.FormLabel(form.FormLabelArgs{For: "product-quantity"}) {
 							Quantity 
@@ -67,12 +81,106 @@ templ ProductDetailSection(product sharedviews.ProductView) {
 					}
 				}
 			</div>
-			@card.Card(card.CardArgs{Class: "bg-muted/30 shadow-none", Attributes: templpkg.Attributes{"id": "cart"}}) {
-				@card.CardContent(card.CardContentArgs{}) {
-					<p class="text-sm text-muted-foreground">Add this product to update the cart summary here.</p>
-				}
-			}
 		}
 		@page.MetaLine(product.CreatedAt, product.UpdatedAt)
+	}
+}
+
+templ CreateProductSection() {
+	@card.Card(card.CardArgs{Class: "mx-auto w-full max-w-2xl", Attributes: templpkg.Attributes{"id": "create-product"}}) {
+		@page.Header("Create product", "List a new refurbished product with an explicit initial stock quantity.")
+		@card.CardContent(card.CardContentArgs{Class: "grid gap-6"}) {
+			@form.Form(form.FormArgs{Action: "/seller/products", Class: "grid gap-5"}) {
+				@form.FormItem(form.FormItemArgs{}) {
+					@form.FormLabel(form.FormLabelArgs{For: "product-name"}) {
+						Name
+					}
+					@input.Input(input.InputArgs{ID: "product-name", Name: "name", Required: true, Placeholder: "Refurbished MacBook Air"})
+				}
+				@form.FormItem(form.FormItemArgs{}) {
+					@form.FormLabel(form.FormLabelArgs{For: "product-description"}) {
+						Description
+					}
+					@textarea.Textarea(textarea.TextareaArgs{ID: "product-description", Name: "description", Rows: 5, Required: true, Placeholder: "Condition, included accessories, battery health, and any cosmetic notes."})
+				}
+				<div class="grid gap-5 sm:grid-cols-2">
+					@form.FormItem(form.FormItemArgs{}) {
+						@form.FormLabel(form.FormLabelArgs{For: "product-price-cents"}) {
+							Price (USD)
+						}
+						@input.Input(input.InputArgs{ID: "product-price-cents", Name: "price", Type: "number", Min: "0.01", Required: true, Placeholder: "999.00", Attributes: templpkg.Attributes{"step": "0.01", "inputmode": "decimal"}})
+					}
+					@form.FormItem(form.FormItemArgs{}) {
+						@form.FormLabel(form.FormLabelArgs{For: "product-initial-stock"}) {
+							Initial stock
+						}
+						@input.Input(input.InputArgs{ID: "product-initial-stock", Name: "initial_stock", Type: "number", Min: "1", Required: true, Placeholder: "5"})
+					}
+				</div>
+				<div class="flex justify-end">
+					@button.Button(button.ButtonArgs{Type: "submit"}) {
+						Create product
+					}
+				</div>
+			}
+		}
+	}
+}
+
+templ SellerProductsSection(products []sharedviews.ProductView) {
+	@card.Card(card.CardArgs{Attributes: templpkg.Attributes{"id": "seller-products"}}) {
+		@page.Header("Your products", "Manage the refurbished products you have listed for sale.")
+		@card.CardContent(card.CardContentArgs{Class: "grid gap-6"}) {
+			<div class="flex justify-end">
+				@button.Button(button.ButtonArgs{AsChild: true}) {
+					<a href="/seller/products/new">Create product</a>
+				}
+			</div>
+			if len(products) == 0 {
+				@page.EmptyState("You have not listed any products yet.")
+			} else {
+				<div class="overflow-x-auto rounded-lg border bg-card/40">
+					<table class="responsive-table min-w-full border-collapse text-sm">
+						<thead>
+							<tr class="bg-muted/40 text-muted-foreground">
+								<th class="px-4 py-3 text-left font-semibold">Product</th>
+								<th class="px-4 py-3 text-left font-semibold">Price</th>
+								<th class="px-4 py-3 text-left font-semibold">Stock</th>
+								<th class="px-4 py-3 text-left font-semibold">Updated</th>
+								<th class="px-4 py-3 text-left font-semibold">Actions</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, product := range products {
+								<tr class="border-t align-top">
+									<td class="px-4 py-4" data-label="Product">
+										<div class="grid gap-1">
+											<strong class="font-medium">{ product.Name }</strong>
+											<small class="text-muted-foreground">{ product.Description }</small>
+										</div>
+									</td>
+									<td class="px-4 py-4" data-label="Price">{ sharedviews.FormatCents(product.PriceCents) }</td>
+									<td class="px-4 py-4" data-label="Stock">
+										if product.Stock > 0 {
+											@badge.Badge("In stock " + sharedviews.FormatInt32(product.Stock))
+										} else {
+											@badge.Badge("Out of stock")
+										}
+									</td>
+									<td class="px-4 py-4 text-muted-foreground" data-label="Updated">{ product.UpdatedAt }</td>
+									<td class="px-4 py-4" data-label="Actions">
+										<div class="flex flex-wrap gap-2">
+											@button.Button(button.ButtonArgs{AsChild: true, Variant: "secondary", Size: "sm"}) {
+												<a href={ "/products/" + product.ID }>View</a>
+											}
+										</div>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			}
+		}
 	}
 }

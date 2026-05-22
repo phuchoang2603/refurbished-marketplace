@@ -1,0 +1,46 @@
+package textarea
+
+import "maps"
+import "strconv"
+import "strings"
+import templpkg "github.com/a-h/templ"
+
+templ Textarea(args TextareaArgs) {
+	{{
+		classes := textareaVariants(args.Class)
+		textareaAttrs := make(templpkg.Attributes)
+
+		maps.Copy(textareaAttrs, args.Attributes)
+
+		textareaAttrs["data-slot"] = "textarea"
+		textareaAttrs["class"] = classes
+
+		if args.Placeholder != "" {
+			textareaAttrs["placeholder"] = args.Placeholder
+		}
+		if args.Name != "" {
+			textareaAttrs["name"] = args.Name
+		}
+		if args.ID != "" {
+			textareaAttrs["id"] = args.ID
+		}
+		if args.Disabled {
+			textareaAttrs["disabled"] = true
+		}
+		if args.Required {
+			textareaAttrs["required"] = true
+		}
+
+		rows := args.Rows
+		if rows == 0 {
+			rows = 4
+		}
+		textareaAttrs["rows"] = strconv.Itoa(rows)
+
+		if args.FormID != "" && args.Name != "" {
+			signalName := strings.ReplaceAll(args.FormID, "-", "_")
+			textareaAttrs["data-bind"] = signalName + "." + args.Name
+		}
+	}}
+	<textarea { textareaAttrs... }>{ args.Value }</textarea>
+}

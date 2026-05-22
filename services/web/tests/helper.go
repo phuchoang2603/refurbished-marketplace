@@ -50,8 +50,16 @@ func (f *fakeUsersService) CreateUser(ctx context.Context, email, password strin
 }
 
 type fakeProductsService struct {
+	createFn  func(context.Context, string, string, int64, string, int32) (*productsv1.Product, error)
 	getByIDFn func(context.Context, string) (*productsv1.Product, error)
 	listFn    func(context.Context, int32, int32) (*productsv1.ListProductsResponse, error)
+}
+
+func (f *fakeProductsService) CreateProduct(ctx context.Context, name, description string, priceCents int64, merchantID string, initialStock int32) (*productsv1.Product, error) {
+	if f.createFn != nil {
+		return f.createFn(ctx, name, description, priceCents, merchantID, initialStock)
+	}
+	return &productsv1.Product{}, nil
 }
 
 func (f *fakeProductsService) GetProductByID(ctx context.Context, id string) (*productsv1.Product, error) {
@@ -97,8 +105,8 @@ func (f *fakeOrdersService) ListOrdersByBuyer(ctx context.Context, buyerUserID s
 
 type fakeCartService struct {
 	getFn       func(context.Context, string) (*cartv1.Cart, error)
-	addFn       func(context.Context, string, string, int32) (*cartv1.Cart, error)
-	setQtyFn    func(context.Context, string, string, int32) (*cartv1.Cart, error)
+	addFn       func(context.Context, string, string, string, int32) (*cartv1.Cart, error)
+	setQtyFn    func(context.Context, string, string, string, int32) (*cartv1.Cart, error)
 	removeFn    func(context.Context, string, string) (*cartv1.Cart, error)
 	clearCartFn func(context.Context, string) error
 }
@@ -110,16 +118,16 @@ func (f *fakeCartService) GetCart(ctx context.Context, cartID string) (*cartv1.C
 	return &cartv1.Cart{}, nil
 }
 
-func (f *fakeCartService) AddCartItem(ctx context.Context, cartID, productID string, quantity int32) (*cartv1.Cart, error) {
+func (f *fakeCartService) AddCartItem(ctx context.Context, cartID, productID, merchantID string, quantity int32) (*cartv1.Cart, error) {
 	if f.addFn != nil {
-		return f.addFn(ctx, cartID, productID, quantity)
+		return f.addFn(ctx, cartID, productID, merchantID, quantity)
 	}
 	return &cartv1.Cart{}, nil
 }
 
-func (f *fakeCartService) SetCartItemQuantity(ctx context.Context, cartID, productID string, quantity int32) (*cartv1.Cart, error) {
+func (f *fakeCartService) SetCartItemQuantity(ctx context.Context, cartID, productID, merchantID string, quantity int32) (*cartv1.Cart, error) {
 	if f.setQtyFn != nil {
-		return f.setQtyFn(ctx, cartID, productID, quantity)
+		return f.setQtyFn(ctx, cartID, productID, merchantID, quantity)
 	}
 	return &cartv1.Cart{}, nil
 }
@@ -159,22 +167,6 @@ type routerDeps struct {
 
 func newTestRouter(t *testing.T, deps routerDeps) http.Handler {
 	t.Helper()
-	if deps.users == nil {
-		deps.users = &fakeUsersService{}
-	}
-	if deps.products == nil {
-		deps.products = &fakeProductsService{}
-	}
-	if deps.orders == nil {
-		deps.orders = &fakeOrdersService{}
-	}
-	if deps.cart == nil {
-		deps.cart = &fakeCartService{}
-	}
-	if deps.payment == nil {
-		deps.payment = &fakePaymentService{}
-	}
-
 	h := handlers.New(deps.users, deps.products, deps.orders, deps.cart, deps.payment, authconfig.DefaultConfig(testJWTSecret))
 	router := chi.NewRouter()
 	h.Register(router)

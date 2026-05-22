@@ -23,26 +23,17 @@ func (h *Handler) RegisterProtectedActions(r chi.Router) {
 
 func (h *Handler) handleAddCartItem(w http.ResponseWriter, r *http.Request) {
 	cartID := h.getOrCreateCartID(w, r)
-	productID, quantity, err := shared.ProductQuantityFromForm(r)
-	if err != nil || strings.TrimSpace(productID) == "" || quantity <= 0 {
+	productID, merchantID, quantity, err := shared.ProductQuantityMerchantFromForm(r)
+	if err != nil || strings.TrimSpace(productID) == "" || strings.TrimSpace(merchantID) == "" || quantity <= 0 {
 		shared.WriteBadRequest(w, r, "invalid request body")
 		return
 	}
-	if h.deps.Cart == nil {
-		shared.WriteGRPCError(w, r, shared.DependencyUnavailable("cart"))
-		return
-	}
-	cart, err := h.deps.Cart.AddCartItem(r.Context(), cartID, strings.TrimSpace(productID), quantity)
+	_, err = h.deps.Cart.AddCartItem(r.Context(), cartID, strings.TrimSpace(productID), strings.TrimSpace(merchantID), quantity)
 	if err != nil {
 		shared.WriteGRPCError(w, r, err)
 		return
 	}
-	view, err := h.mapCartView(r.Context(), cart)
-	if err != nil {
-		shared.WriteGRPCError(w, r, err)
-		return
-	}
-	shared.WriteFragment(w, r, http.StatusOK, "#cart", cartviews.CartSection(view))
+	shared.Redirect(w, r, "/cart", http.StatusSeeOther)
 }
 
 func (h *Handler) handleSetCartItemQuantity(w http.ResponseWriter, r *http.Request) {
@@ -51,16 +42,12 @@ func (h *Handler) handleSetCartItemQuantity(w http.ResponseWriter, r *http.Reque
 	if !ok {
 		return
 	}
-	if h.deps.Cart == nil {
-		shared.WriteGRPCError(w, r, shared.DependencyUnavailable("cart"))
-		return
-	}
-	_, quantity, err := shared.ProductQuantityFromForm(r)
-	if err != nil {
+	_, merchantID, quantity, err := shared.ProductQuantityMerchantFromForm(r)
+	if err != nil || strings.TrimSpace(merchantID) == "" {
 		shared.WriteBadRequest(w, r, "invalid request body")
 		return
 	}
-	cart, err := h.deps.Cart.SetCartItemQuantity(r.Context(), cartID, productID, quantity)
+	cart, err := h.deps.Cart.SetCartItemQuantity(r.Context(), cartID, productID, strings.TrimSpace(merchantID), quantity)
 	if err != nil {
 		shared.WriteGRPCError(w, r, err)
 		return
@@ -77,10 +64,6 @@ func (h *Handler) handleRemoveCartItem(w http.ResponseWriter, r *http.Request) {
 	cartID := h.getOrCreateCartID(w, r)
 	productID, ok := shared.RequirePathValue(w, r, "product_id", "invalid product id")
 	if !ok {
-		return
-	}
-	if h.deps.Cart == nil {
-		shared.WriteGRPCError(w, r, shared.DependencyUnavailable("cart"))
 		return
 	}
 	cart, err := h.deps.Cart.RemoveCartItem(r.Context(), cartID, productID)
@@ -101,21 +84,14 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	merchantID, err := shared.MerchantIDFromForm(r)
+	if err != nil {
+		shared.WriteBadRequest(w, r, "invalid request body")
+		return
+	}
 	cartID := cartIDFromRequest(r)
 	if cartID == "" {
 		shared.WriteBadRequest(w, r, "empty cart")
-		return
-	}
-	if h.deps.Cart == nil {
-		shared.WriteGRPCError(w, r, shared.DependencyUnavailable("cart"))
-		return
-	}
-	if h.deps.Products == nil {
-		shared.WriteGRPCError(w, r, shared.DependencyUnavailable("products"))
-		return
-	}
-	if h.deps.Orders == nil {
-		shared.WriteGRPCError(w, r, shared.DependencyUnavailable("orders"))
 		return
 	}
 	cart, err := h.deps.Cart.GetCart(r.Context(), cartID)
@@ -128,9 +104,12 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	items := make([]*ordersv1.CreateOrderItem, 0, len(cart.GetItems()))
+	selectedProductIDs := make([]string, 0, len(cart.GetItems()))
 	var totalCents int64
-	merchantID := ""
 	for _, item := range cart.GetItems() {
+		if item.GetMerchantId() != merchantID {
+			continue
+		}
 		product, err := h.deps.Products.GetProductByID(r.Context(), item.GetProductId())
 		if err != nil {
 			shared.WriteGRPCError(w, r, err)
@@ -138,20 +117,33 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 		}
 		lineTotal := product.PriceCents * int64(item.GetQuantity())
 		totalCents += lineTotal
-		if merchantID == "" {
-			merchantID = product.GetMerchantId()
-		} else if merchantID != product.GetMerchantId() {
-			shared.WritePopup(w, r, http.StatusConflict, "Cart requires split checkout", "This cart contains items from multiple merchants. Please keep checkout to a single merchant for now.")
+		if product.GetMerchantId() != merchantID {
+			shared.WritePopup(w, r, http.StatusConflict, "Merchant mismatch", "One or more cart items no longer match the selected merchant.")
 			return
 		}
 		items = append(items, &ordersv1.CreateOrderItem{ProductId: item.GetProductId(), Quantity: item.GetQuantity(), UnitPriceCents: product.PriceCents})
+		selectedProductIDs = append(selectedProductIDs, item.GetProductId())
+	}
+	if len(items) == 0 {
+		shared.WriteBadRequest(w, r, "no items for selected merchant")
+		return
 	}
 	order, err := h.deps.Orders.CreateOrder(r.Context(), buyerUserID, merchantID, items, totalCents)
 	if err != nil {
 		shared.WriteGRPCError(w, r, err)
 		return
 	}
-	_ = h.deps.Cart.ClearCart(r.Context(), cartID)
-	h.clearCartCookie(w)
+	remainingItems := len(cart.GetItems())
+	for _, productID := range selectedProductIDs {
+		updatedCart, err := h.deps.Cart.RemoveCartItem(r.Context(), cartID, productID)
+		if err != nil {
+			shared.WriteGRPCError(w, r, err)
+			return
+		}
+		remainingItems = len(updatedCart.GetItems())
+	}
+	if remainingItems == 0 {
+		h.clearCartCookie(w)
+	}
 	shared.Redirect(w, r, "/orders/"+order.GetId(), http.StatusSeeOther)
 }

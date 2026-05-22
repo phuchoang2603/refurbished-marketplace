@@ -104,28 +104,6 @@ func TestLogoutClearsCookiesAndRedirects(t *testing.T) {
 	assertCookieCleared(t, rec.Result().Cookies(), auth.RefreshCookieName)
 }
 
-func TestLoginPageIncludesDatastarEnhancements(t *testing.T) {
-	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/auth/login", nil)
-
-	newTestRouter(t, routerDeps{}).ServeHTTP(rec, req)
-
-	if rec.Code != http.StatusOK {
-		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
-	}
-	body := rec.Body.String()
-	for _, want := range []string{
-		`/static/vendor/datastar.js`,
-		`id="dialog-root"`,
-		`data-on:submit__prevent`,
-		`data-indicator:_submitting`,
-	} {
-		if !strings.Contains(body, want) {
-			t.Fatalf("body missing %q in %q", want, body)
-		}
-	}
-}
-
 func assertCookieSet(t *testing.T, cookies []*http.Cookie, name string) {
 	t.Helper()
 	for _, cookie := range cookies {

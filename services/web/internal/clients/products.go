@@ -28,12 +28,13 @@ func (c *ProductsClient) Close() error {
 	return nil
 }
 
-func (c *ProductsClient) CreateProduct(ctx context.Context, name, description string, priceCents int64, merchantID string) (*productsv1.Product, error) {
+func (c *ProductsClient) CreateProduct(ctx context.Context, name, description string, priceCents int64, merchantID string, initialStock int32) (*productsv1.Product, error) {
 	return c.client.CreateProduct(ctx, &productsv1.CreateProductRequest{
-		Name:        name,
-		Description: description,
-		PriceCents:  priceCents,
-		MerchantId:  merchantID,
+		Name:         name,
+		Description:  description,
+		PriceCents:   priceCents,
+		MerchantId:   merchantID,
+		InitialStock: &initialStock,
 	})
 }
 

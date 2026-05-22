@@ -3,7 +3,12 @@ package shared
 import "fmt"
 
 func FormatCents(v int64) string {
-	return "$" + formatInt64(v)
+	sign := ""
+	if v < 0 {
+		sign = "-"
+		v = -v
+	}
+	return fmt.Sprintf("%s$%d.%02d", sign, v/100, v%100)
 }
 
 func FormatInt32(v int32) string {

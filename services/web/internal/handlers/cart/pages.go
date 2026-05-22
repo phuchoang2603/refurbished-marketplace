@@ -32,9 +32,11 @@ func (h *Handler) RegisterPages(r chi.Router) {
 
 func (h *Handler) mapCartView(ctx context.Context, c *cartv1.Cart) (sharedviews.CartView, error) {
 	items := make([]sharedviews.CartItemView, 0, len(c.GetItems()))
+	groups := make(map[string]*sharedviews.CartMerchantGroupView, len(c.GetItems()))
+	groupOrder := make([]string, 0, len(c.GetItems()))
 	var estimatedTotalCents int64
 	for _, item := range c.GetItems() {
-		view := sharedviews.CartItemView{ProductID: item.GetProductId(), Quantity: item.GetQuantity()}
+		view := sharedviews.CartItemView{ProductID: item.GetProductId(), MerchantID: item.GetMerchantId(), Quantity: item.GetQuantity()}
 		if h.deps.Products != nil {
 			product, err := h.deps.Products.GetProductByID(ctx, item.GetProductId())
 			if err != nil {
@@ -49,12 +51,24 @@ func (h *Handler) mapCartView(ctx context.Context, c *cartv1.Cart) (sharedviews.
 				view.ProductPrice = product.GetPriceCents()
 				view.LineTotalCents = product.GetPriceCents() * int64(item.GetQuantity())
 				view.Available = true
-				estimatedTotalCents += view.LineTotalCents
 			}
 		}
+		estimatedTotalCents += view.LineTotalCents
 		items = append(items, view)
+		group, ok := groups[view.MerchantID]
+		if !ok {
+			group = &sharedviews.CartMerchantGroupView{MerchantID: view.MerchantID}
+			groups[view.MerchantID] = group
+			groupOrder = append(groupOrder, view.MerchantID)
+		}
+		group.Items = append(group.Items, view)
+		group.SubtotalCents += view.LineTotalCents
 	}
-	return sharedviews.CartView{CartID: c.GetCartId(), Items: items, EstimatedTotalCents: estimatedTotalCents, CreatedAt: shared.FormatTimestamp(c.GetCreatedAt()), UpdatedAt: shared.FormatTimestamp(c.GetUpdatedAt())}, nil
+	merchantGroups := make([]sharedviews.CartMerchantGroupView, 0, len(groupOrder))
+	for _, merchantID := range groupOrder {
+		merchantGroups = append(merchantGroups, *groups[merchantID])
+	}
+	return sharedviews.CartView{CartID: c.GetCartId(), Items: items, MerchantGroups: merchantGroups, EstimatedTotalCents: estimatedTotalCents, CreatedAt: shared.FormatTimestamp(c.GetCreatedAt()), UpdatedAt: shared.FormatTimestamp(c.GetUpdatedAt())}, nil
 }
 
 func cartIDFromRequest(r *http.Request) string {
@@ -79,10 +93,6 @@ func (h *Handler) clearCartCookie(w http.ResponseWriter) {
 
 func (h *Handler) handleGetCart(w http.ResponseWriter, r *http.Request) {
 	cartID := h.getOrCreateCartID(w, r)
-	if h.deps.Cart == nil {
-		shared.WriteUnavailablePage(w, r, http.StatusServiceUnavailable, cartUnavailableView())
-		return
-	}
 	cart, err := h.deps.Cart.GetCart(r.Context(), cartID)
 	if err != nil {
 		if shared.IsUnavailableError(err) {
