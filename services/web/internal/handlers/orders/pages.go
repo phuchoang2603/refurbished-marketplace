@@ -42,11 +42,6 @@ func (h *Handler) handleGetOrderByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if h.deps.Orders == nil {
-		shared.WriteUnavailablePage(w, r, http.StatusServiceUnavailable, ordersUnavailableView())
-		return
-	}
-
 	order, err := h.deps.Orders.GetOrderByID(r.Context(), id)
 	if err != nil {
 		if shared.IsUnavailableError(err) {
@@ -67,11 +62,6 @@ func (h *Handler) handleGetOrderByID(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) handleListOrdersByBuyer(w http.ResponseWriter, r *http.Request) {
 	buyerUserID, ok := shared.RequireUserID(w, r)
 	if !ok {
-		return
-	}
-
-	if h.deps.Orders == nil {
-		shared.WriteUnavailablePage(w, r, http.StatusServiceUnavailable, ordersUnavailableView())
 		return
 	}
 

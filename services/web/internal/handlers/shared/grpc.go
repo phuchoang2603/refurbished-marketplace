@@ -7,10 +7,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func DependencyUnavailable(service string) error {
-	return status.Error(codes.Unavailable, service+" service is temporarily unavailable")
-}
-
 func IsUnavailableError(err error) bool {
 	st, ok := status.FromError(err)
 	if !ok {

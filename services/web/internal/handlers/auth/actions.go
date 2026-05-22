@@ -21,11 +21,6 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 		shared.WriteBadRequest(w, r, "invalid request body")
 		return
 	}
-	if h.deps.Users == nil {
-		shared.WriteGRPCError(w, r, shared.DependencyUnavailable("users"))
-		return
-	}
-
 	tokens, err := h.deps.Users.Login(r.Context(), email, password)
 	if err != nil {
 		shared.WriteGRPCError(w, r, err)
@@ -41,11 +36,6 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		shared.WriteBadRequest(w, r, "invalid request body")
 		return
 	}
-	if h.deps.Users == nil {
-		shared.WriteGRPCError(w, r, shared.DependencyUnavailable("users"))
-		return
-	}
-
 	_, err = h.deps.Users.CreateUser(r.Context(), email, password)
 	if err != nil {
 		shared.WriteGRPCError(w, r, err)
@@ -70,11 +60,6 @@ func (h *Handler) handleLogout(w http.ResponseWriter, r *http.Request) {
 		shared.Redirect(w, r, "/products", http.StatusSeeOther)
 		return
 	}
-	if h.deps.Users == nil {
-		shared.WriteGRPCError(w, r, shared.DependencyUnavailable("users"))
-		return
-	}
-
 	_, err = h.deps.Users.Logout(r.Context(), refreshToken)
 	webAuth.ClearTokenCookies(w, r)
 	if err != nil {
