@@ -5,7 +5,7 @@ context: |
   Domain: multi-service e-commerce marketplace
 
   Stack:
-  - Go multi-module workspace (one go.mod per service plus shared/)
+  - Go multi-module workspace
   - HTML-first web edge using chi, templ, Tailwind CSS, Datastar, and vendored DatastarUI-style components
   - gRPC for internal service-to-service traffic
   - PostgreSQL with goose migrations and sqlc queries
@@ -25,6 +25,7 @@ context: |
   - Don't format the code because I already have a git-hook to autoformat for me.
   - Separate files to logic-related, dont keep in one big file.
   - Don't add tests for everything when implementing, only do so when prompted
+  - Do not try to add compability code, when possible, remove the legacy and strive for the newest version.
 
 rules:
   proposal:
