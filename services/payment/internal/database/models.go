@@ -18,15 +18,19 @@ type PaymentInbox struct {
 }
 
 type PaymentIntent struct {
-	OrderID         uuid.UUID
-	BuyerUserID     uuid.UUID
-	PaymentToken    string
-	Currency        string
-	BillingAddress  json.RawMessage
-	ShippingAddress json.RawMessage
-	Status          string
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
+	OrderID          uuid.UUID
+	BuyerUserID      uuid.UUID
+	Currency         string
+	BillingAddress   json.RawMessage
+	ShippingAddress  json.RawMessage
+	Status           string
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+	PaymentSessionID sql.NullString
+	ReturnUrl        string
+	CancelUrl        string
+	ExpiresAt        sql.NullTime
+	FailureReason    sql.NullString
 }
 
 type PaymentOutbox struct {

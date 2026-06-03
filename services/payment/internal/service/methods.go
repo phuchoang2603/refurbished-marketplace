@@ -29,31 +29,96 @@ type PaymentTransactionView struct {
 	UpdatedAt            time.Time
 }
 
-type InitiatePaymentParams struct {
+type HostedPaymentSessionView struct {
+	OrderID          string
+	PaymentSessionID string
+	Currency         string
+	Status           string
+	ReturnURL        string
+	CancelURL        string
+	FailureReason    string
+	ExpiresAt        time.Time
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+}
+
+type CreateHostedPaymentSessionParams struct {
 	OrderID         uuid.UUID
 	BuyerUserID     uuid.UUID
-	PaymentToken    string
 	Currency        string
-	BillingAddress  json.RawMessage
 	ShippingAddress json.RawMessage
+	ReturnURL       string
+	CancelURL       string
 }
 
-func (s *Service) InitiatePayment(ctx context.Context, p InitiatePaymentParams) error {
+func (s *Service) CreateHostedPaymentSession(ctx context.Context, p CreateHostedPaymentSessionParams) (HostedPaymentSessionView, error) {
 	p.Currency = defaultPaymentCurrency(p.Currency)
-	_, err := s.queries.UpsertPaymentIntent(ctx, database.UpsertPaymentIntentParams{
-		OrderID:         p.OrderID,
-		BuyerUserID:     p.BuyerUserID,
-		PaymentToken:    p.PaymentToken,
-		Currency:        p.Currency,
-		BillingAddress:  p.BillingAddress,
-		ShippingAddress: p.ShippingAddress,
-		Status:          PaymentTxStatusInitialized,
+
+	intent, err := loadPaymentIntentByOrderID(ctx, s.queries, p.OrderID)
+	if err == nil {
+		return mapDBHostedPaymentSessionView(intent), nil
+	}
+	if !errors.Is(err, ErrIntentNotFound) {
+		return HostedPaymentSessionView{}, err
+	}
+
+	expiresAt := time.Now().UTC().Add(30 * time.Minute)
+	created, err := s.queries.CreateHostedPaymentSession(ctx, database.CreateHostedPaymentSessionParams{
+		OrderID:          p.OrderID,
+		BuyerUserID:      p.BuyerUserID,
+		Currency:         p.Currency,
+		ShippingAddress:  p.ShippingAddress,
+		Status:           HostedPaymentSessionStatusPending,
+		PaymentSessionID: optionalNullString(uuid.NewString()),
+		ReturnUrl:        p.ReturnURL,
+		CancelUrl:        p.CancelURL,
+		ExpiresAt:        optionalNullTime(expiresAt),
+		FailureReason:    sql.NullString{},
 	})
-	return err
+	if err != nil {
+		return HostedPaymentSessionView{}, err
+	}
+
+	return mapDBHostedPaymentSessionView(created), nil
 }
 
-// ApplyGatewayWebhook updates the transaction and appends payment_outbox in one DB transaction.
-func (s *Service) ApplyGatewayWebhook(ctx context.Context, transactionID uuid.UUID, gatewayTransactionID string, succeeded bool, failureReason string) error {
+func (s *Service) ApplyGatewayWebhook(ctx context.Context, orderID uuid.UUID, paymentSessionID, status, failureReason string) error {
+	intent, err := loadPaymentIntentByOrderID(ctx, s.queries, orderID)
+	if err != nil {
+		return err
+	}
+	if !intent.PaymentSessionID.Valid || intent.PaymentSessionID.String != paymentSessionID {
+		return ErrSessionMismatch
+	}
+	if hostedPaymentSessionIsTerminal(intent.Status) {
+		return nil
+	}
+
+	updatedIntent, err := s.queries.UpdateHostedPaymentSessionOutcome(ctx, database.UpdateHostedPaymentSessionOutcomeParams{
+		OrderID:          orderID,
+		PaymentSessionID: optionalNullString(paymentSessionID),
+		Status:           status,
+		FailureReason:    optionalNullString(failureReason),
+	})
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrSessionMismatch
+		}
+		return err
+	}
+
+	txRow, err := s.queries.GetPaymentTransactionByOrderID(ctx, orderID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+		return err
+	}
+
+	return s.applyTerminalOutcome(ctx, txRow.ID, updatedIntent.Status, updatedIntent.FailureReason)
+}
+
+func (s *Service) applyTerminalOutcome(ctx context.Context, transactionID uuid.UUID, hostedStatus string, failureReason sql.NullString) error {
 	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
@@ -64,15 +129,15 @@ func (s *Service) ApplyGatewayWebhook(ctx context.Context, transactionID uuid.UU
 	}()
 
 	newStatus := PaymentTxStatusFailed
-	if succeeded {
+	if hostedPaymentSessionMapsToSuccess(hostedStatus) {
 		newStatus = PaymentTxStatusSucceeded
 	}
 
 	updated, err := q.UpdatePaymentTransactionGatewayResult(ctx, database.UpdatePaymentTransactionGatewayResultParams{
 		ID:                   transactionID,
 		Status:               newStatus,
-		GatewayTransactionID: optionalNullString(gatewayTransactionID),
-		FailureReason:        optionalNullString(failureReason),
+		GatewayTransactionID: sql.NullString{},
+		FailureReason:        failureReason,
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -88,12 +153,10 @@ func (s *Service) ApplyGatewayWebhook(ctx context.Context, transactionID uuid.UU
 	}
 
 	eventType := messaging.EventTypePaymentFailed
-	if succeeded {
+	if newStatus == PaymentTxStatusSucceeded {
 		eventType = messaging.EventTypePaymentSucceeded
 	}
-	payload, err := proto.Marshal(&paymentv1.PaymentOutcome{
-		OrderId: updated.OrderID.String(),
-	})
+	payload, err := proto.Marshal(&paymentv1.PaymentOutcome{OrderId: updated.OrderID.String()})
 	if err != nil {
 		return err
 	}
@@ -108,6 +171,14 @@ func (s *Service) ApplyGatewayWebhook(ctx context.Context, transactionID uuid.UU
 	}
 
 	return tx.Commit()
+}
+
+func (s *Service) GetHostedPaymentSessionByOrder(ctx context.Context, orderID uuid.UUID) (HostedPaymentSessionView, error) {
+	row, err := loadPaymentIntentByOrderID(ctx, s.queries, orderID)
+	if err != nil {
+		return HostedPaymentSessionView{}, err
+	}
+	return mapDBHostedPaymentSessionView(row), nil
 }
 
 func (s *Service) GetPaymentTransaction(ctx context.Context, id uuid.UUID) (PaymentTransactionView, error) {

@@ -46,7 +46,7 @@ func (s *Service) KafkaInventoryReservedHandler() messaging.KafkaHandler {
 			return err
 		}
 
-		_, err = s.queries.CreatePaymentTransaction(ctx, database.CreatePaymentTransactionParams{
+		created, err := s.queries.CreatePaymentTransaction(ctx, database.CreatePaymentTransactionParams{
 			ID:             uuid.New(),
 			OrderID:        orderID,
 			MerchantID:     merchantID,
@@ -60,6 +60,11 @@ func (s *Service) KafkaInventoryReservedHandler() messaging.KafkaHandler {
 				return nil
 			}
 			return err
+		}
+		if hostedPaymentSessionIsTerminal(intent.Status) {
+			if err := s.applyTerminalOutcome(ctx, created.ID, intent.Status, intent.FailureReason); err != nil {
+				return err
+			}
 		}
 		return nil
 	}

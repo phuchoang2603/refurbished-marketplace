@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"refurbished-marketplace/services/payment/internal/database"
 
@@ -26,6 +27,31 @@ func mapDBPaymentTransactionView(tx database.PaymentTransaction) PaymentTransact
 	}
 	if tx.GatewayTransactionID.Valid {
 		v.GatewayTransactionID = tx.GatewayTransactionID.String
+	}
+	return v
+}
+
+func mapDBHostedPaymentSessionView(intent database.PaymentIntent) HostedPaymentSessionView {
+	v := HostedPaymentSessionView{
+		OrderID:   intent.OrderID.String(),
+		Currency:  intent.Currency,
+		Status:    intent.Status,
+		ReturnURL: intent.ReturnUrl,
+		CancelURL: intent.CancelUrl,
+		CreatedAt: intent.CreatedAt,
+		UpdatedAt: intent.UpdatedAt,
+		FailureReason: func() string {
+			if intent.FailureReason.Valid {
+				return intent.FailureReason.String
+			}
+			return ""
+		}(),
+	}
+	if intent.PaymentSessionID.Valid {
+		v.PaymentSessionID = intent.PaymentSessionID.String
+	}
+	if intent.ExpiresAt.Valid {
+		v.ExpiresAt = intent.ExpiresAt.Time
 	}
 	return v
 }
@@ -72,8 +98,20 @@ func optionalNullString(s string) sql.NullString {
 	return sql.NullString{String: s, Valid: s != ""}
 }
 
+func optionalNullTime(t time.Time) sql.NullTime {
+	return sql.NullTime{Time: t, Valid: !t.IsZero()}
+}
+
 func paymentTransactionIsTerminal(status string) bool {
 	return status == PaymentTxStatusSucceeded || status == PaymentTxStatusFailed
+}
+
+func hostedPaymentSessionIsTerminal(status string) bool {
+	return status == HostedPaymentSessionStatusSucceeded || status == HostedPaymentSessionStatusFailed || status == HostedPaymentSessionStatusCancelled || status == HostedPaymentSessionStatusExpired
+}
+
+func hostedPaymentSessionMapsToSuccess(status string) bool {
+	return status == HostedPaymentSessionStatusSucceeded
 }
 
 func isPostgresUniqueViolation(err error) bool {

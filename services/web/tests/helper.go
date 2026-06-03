@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"refurbished-marketplace/services/web/internal/handlers"
+	shared "refurbished-marketplace/services/web/internal/handlers/shared"
 	cartv1 "refurbished-marketplace/shared/proto/cart/v1"
 	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
 	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
@@ -147,7 +148,23 @@ func (f *fakeCartService) ClearCart(ctx context.Context, cartID string) error {
 }
 
 type fakePaymentService struct {
+	createSessionFn func(context.Context, *paymentv1.CreateHostedPaymentSessionRequest) (*paymentv1.CreateHostedPaymentSessionResponse, error)
+	getSessionFn    func(context.Context, string) (*paymentv1.HostedPaymentSession, error)
 	handleWebhookFn func(context.Context, *paymentv1.HandleGatewayWebhookRequest) (*paymentv1.HandleGatewayWebhookResponse, error)
+}
+
+func (f *fakePaymentService) CreateHostedPaymentSession(ctx context.Context, req *paymentv1.CreateHostedPaymentSessionRequest) (*paymentv1.CreateHostedPaymentSessionResponse, error) {
+	if f.createSessionFn != nil {
+		return f.createSessionFn(ctx, req)
+	}
+	return &paymentv1.CreateHostedPaymentSessionResponse{}, nil
+}
+
+func (f *fakePaymentService) GetHostedPaymentSessionByOrder(ctx context.Context, orderID string) (*paymentv1.HostedPaymentSession, error) {
+	if f.getSessionFn != nil {
+		return f.getSessionFn(ctx, orderID)
+	}
+	return nil, nil
 }
 
 func (f *fakePaymentService) HandleGatewayWebhook(ctx context.Context, req *paymentv1.HandleGatewayWebhookRequest) (*paymentv1.HandleGatewayWebhookResponse, error) {
@@ -158,16 +175,25 @@ func (f *fakePaymentService) HandleGatewayWebhook(ctx context.Context, req *paym
 }
 
 type routerDeps struct {
-	users    *fakeUsersService
-	products *fakeProductsService
-	orders   *fakeOrdersService
-	cart     *fakeCartService
-	payment  *fakePaymentService
+	users         *fakeUsersService
+	products      *fakeProductsService
+	orders        *fakeOrdersService
+	cart          *fakeCartService
+	payment       *fakePaymentService
+	hostedPayment shared.HostedPaymentConfig
+}
+
+var defaultTestHostedPayment = shared.HostedPaymentConfig{
+	GatewayBaseURL: "http://localhost:8097",
 }
 
 func newTestRouter(t *testing.T, deps routerDeps) http.Handler {
 	t.Helper()
-	h := handlers.New(deps.users, deps.products, deps.orders, deps.cart, deps.payment, authconfig.DefaultConfig(testJWTSecret))
+	hostedPayment := deps.hostedPayment
+	if hostedPayment.GatewayBaseURL == "" {
+		hostedPayment = defaultTestHostedPayment
+	}
+	h := handlers.New(deps.users, deps.products, deps.orders, deps.cart, deps.payment, hostedPayment, authconfig.DefaultConfig(testJWTSecret))
 	router := chi.NewRouter()
 	h.Register(router)
 	return router

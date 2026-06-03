@@ -86,7 +86,7 @@ templ CartSection(cart sharedviews.CartView) {
 							@form.Form(form.FormArgs{Action: "/cart/checkout"}) {
 								<input type="hidden" name="merchant_id" value={ group.MerchantID }/>
 								@button.Button(button.ButtonArgs{Type: "submit", Class: "w-full sm:w-fit"}) {
-									Checkout this merchant
+									Continue to payment
 								}
 							}
 						</div>

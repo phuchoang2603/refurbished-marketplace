@@ -19,24 +19,21 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PaymentService_InitiatePayment_FullMethodName      = "/payment.v1.PaymentService/InitiatePayment"
-	PaymentService_HandleGatewayWebhook_FullMethodName = "/payment.v1.PaymentService/HandleGatewayWebhook"
-	PaymentService_GetTransaction_FullMethodName       = "/payment.v1.PaymentService/GetTransaction"
+	PaymentService_CreateHostedPaymentSession_FullMethodName     = "/payment.v1.PaymentService/CreateHostedPaymentSession"
+	PaymentService_GetHostedPaymentSessionByOrder_FullMethodName = "/payment.v1.PaymentService/GetHostedPaymentSessionByOrder"
+	PaymentService_HandleGatewayWebhook_FullMethodName           = "/payment.v1.PaymentService/HandleGatewayWebhook"
 )
 
 // PaymentServiceClient is the client API for PaymentService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PaymentServiceClient interface {
-	// Called by the web edge when the user submits payment details on the order
-	// confirmation screen. Payment stores the intent and will correlate it with
-	// `orders.created` events by `order_id`.
-	InitiatePayment(ctx context.Context, in *InitiatePaymentRequest, opts ...grpc.CallOption) (*InitiatePaymentResponse, error)
-	// Called by the web edge webhook handler when the external gateway/simulator
-	// posts an asynchronous result.
+	// Called by the web edge after order creation so payment can create or reuse
+	// a hosted payment session for that order.
+	CreateHostedPaymentSession(ctx context.Context, in *CreateHostedPaymentSessionRequest, opts ...grpc.CallOption) (*CreateHostedPaymentSessionResponse, error)
+	GetHostedPaymentSessionByOrder(ctx context.Context, in *GetHostedPaymentSessionByOrderRequest, opts ...grpc.CallOption) (*HostedPaymentSession, error)
+	// Called by the web edge when a hosted gateway posts a terminal payment outcome.
 	HandleGatewayWebhook(ctx context.Context, in *HandleGatewayWebhookRequest, opts ...grpc.CallOption) (*HandleGatewayWebhookResponse, error)
-	// Optional: used for polling/debugging.
-	GetTransaction(ctx context.Context, in *GetTransactionRequest, opts ...grpc.CallOption) (*PaymentTransaction, error)
 }
 
 type paymentServiceClient struct {
@@ -47,10 +44,20 @@ func NewPaymentServiceClient(cc grpc.ClientConnInterface) PaymentServiceClient {
 	return &paymentServiceClient{cc}
 }
 
-func (c *paymentServiceClient) InitiatePayment(ctx context.Context, in *InitiatePaymentRequest, opts ...grpc.CallOption) (*InitiatePaymentResponse, error) {
+func (c *paymentServiceClient) CreateHostedPaymentSession(ctx context.Context, in *CreateHostedPaymentSessionRequest, opts ...grpc.CallOption) (*CreateHostedPaymentSessionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(InitiatePaymentResponse)
-	err := c.cc.Invoke(ctx, PaymentService_InitiatePayment_FullMethodName, in, out, cOpts...)
+	out := new(CreateHostedPaymentSessionResponse)
+	err := c.cc.Invoke(ctx, PaymentService_CreateHostedPaymentSession_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *paymentServiceClient) GetHostedPaymentSessionByOrder(ctx context.Context, in *GetHostedPaymentSessionByOrderRequest, opts ...grpc.CallOption) (*HostedPaymentSession, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(HostedPaymentSession)
+	err := c.cc.Invoke(ctx, PaymentService_GetHostedPaymentSessionByOrder_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -67,29 +74,16 @@ func (c *paymentServiceClient) HandleGatewayWebhook(ctx context.Context, in *Han
 	return out, nil
 }
 
-func (c *paymentServiceClient) GetTransaction(ctx context.Context, in *GetTransactionRequest, opts ...grpc.CallOption) (*PaymentTransaction, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(PaymentTransaction)
-	err := c.cc.Invoke(ctx, PaymentService_GetTransaction_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // PaymentServiceServer is the server API for PaymentService service.
 // All implementations must embed UnimplementedPaymentServiceServer
 // for forward compatibility.
 type PaymentServiceServer interface {
-	// Called by the web edge when the user submits payment details on the order
-	// confirmation screen. Payment stores the intent and will correlate it with
-	// `orders.created` events by `order_id`.
-	InitiatePayment(context.Context, *InitiatePaymentRequest) (*InitiatePaymentResponse, error)
-	// Called by the web edge webhook handler when the external gateway/simulator
-	// posts an asynchronous result.
+	// Called by the web edge after order creation so payment can create or reuse
+	// a hosted payment session for that order.
+	CreateHostedPaymentSession(context.Context, *CreateHostedPaymentSessionRequest) (*CreateHostedPaymentSessionResponse, error)
+	GetHostedPaymentSessionByOrder(context.Context, *GetHostedPaymentSessionByOrderRequest) (*HostedPaymentSession, error)
+	// Called by the web edge when a hosted gateway posts a terminal payment outcome.
 	HandleGatewayWebhook(context.Context, *HandleGatewayWebhookRequest) (*HandleGatewayWebhookResponse, error)
-	// Optional: used for polling/debugging.
-	GetTransaction(context.Context, *GetTransactionRequest) (*PaymentTransaction, error)
 	mustEmbedUnimplementedPaymentServiceServer()
 }
 
@@ -100,14 +94,14 @@ type PaymentServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedPaymentServiceServer struct{}
 
-func (UnimplementedPaymentServiceServer) InitiatePayment(context.Context, *InitiatePaymentRequest) (*InitiatePaymentResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method InitiatePayment not implemented")
+func (UnimplementedPaymentServiceServer) CreateHostedPaymentSession(context.Context, *CreateHostedPaymentSessionRequest) (*CreateHostedPaymentSessionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method CreateHostedPaymentSession not implemented")
+}
+func (UnimplementedPaymentServiceServer) GetHostedPaymentSessionByOrder(context.Context, *GetHostedPaymentSessionByOrderRequest) (*HostedPaymentSession, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetHostedPaymentSessionByOrder not implemented")
 }
 func (UnimplementedPaymentServiceServer) HandleGatewayWebhook(context.Context, *HandleGatewayWebhookRequest) (*HandleGatewayWebhookResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method HandleGatewayWebhook not implemented")
-}
-func (UnimplementedPaymentServiceServer) GetTransaction(context.Context, *GetTransactionRequest) (*PaymentTransaction, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetTransaction not implemented")
 }
 func (UnimplementedPaymentServiceServer) mustEmbedUnimplementedPaymentServiceServer() {}
 func (UnimplementedPaymentServiceServer) testEmbeddedByValue()                        {}
@@ -130,20 +124,38 @@ func RegisterPaymentServiceServer(s grpc.ServiceRegistrar, srv PaymentServiceSer
 	s.RegisterService(&PaymentService_ServiceDesc, srv)
 }
 
-func _PaymentService_InitiatePayment_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(InitiatePaymentRequest)
+func _PaymentService_CreateHostedPaymentSession_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateHostedPaymentSessionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PaymentServiceServer).InitiatePayment(ctx, in)
+		return srv.(PaymentServiceServer).CreateHostedPaymentSession(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PaymentService_InitiatePayment_FullMethodName,
+		FullMethod: PaymentService_CreateHostedPaymentSession_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaymentServiceServer).InitiatePayment(ctx, req.(*InitiatePaymentRequest))
+		return srv.(PaymentServiceServer).CreateHostedPaymentSession(ctx, req.(*CreateHostedPaymentSessionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PaymentService_GetHostedPaymentSessionByOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetHostedPaymentSessionByOrderRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PaymentServiceServer).GetHostedPaymentSessionByOrder(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PaymentService_GetHostedPaymentSessionByOrder_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PaymentServiceServer).GetHostedPaymentSessionByOrder(ctx, req.(*GetHostedPaymentSessionByOrderRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -166,24 +178,6 @@ func _PaymentService_HandleGatewayWebhook_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
-func _PaymentService_GetTransaction_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetTransactionRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(PaymentServiceServer).GetTransaction(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: PaymentService_GetTransaction_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PaymentServiceServer).GetTransaction(ctx, req.(*GetTransactionRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // PaymentService_ServiceDesc is the grpc.ServiceDesc for PaymentService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -192,16 +186,16 @@ var PaymentService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*PaymentServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "InitiatePayment",
-			Handler:    _PaymentService_InitiatePayment_Handler,
+			MethodName: "CreateHostedPaymentSession",
+			Handler:    _PaymentService_CreateHostedPaymentSession_Handler,
+		},
+		{
+			MethodName: "GetHostedPaymentSessionByOrder",
+			Handler:    _PaymentService_GetHostedPaymentSessionByOrder_Handler,
 		},
 		{
 			MethodName: "HandleGatewayWebhook",
 			Handler:    _PaymentService_HandleGatewayWebhook_Handler,
-		},
-		{
-			MethodName: "GetTransaction",
-			Handler:    _PaymentService_GetTransaction_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

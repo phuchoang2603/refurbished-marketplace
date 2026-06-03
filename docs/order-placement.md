@@ -1,40 +1,46 @@
 # Merchant-Scoped Order, Inventory, And Payment Flow
 
-This document describes the current core contract between `cart`, `orders`, `inventory`, and `payment`.
+This document describes the current core contract between `cart`, `orders`, `inventory`, and `payment`, including the hosted-payment redirect flow used in development.
 
 ## Core Model
 
-- `cart` stores ephemeral cart state and requires caller-supplied `merchant_id` on item writes.
+- `cart` stores ephemeral cart state and requires web-supplied `merchant_id` on item writes.
 - `orders` accepts only merchant-scoped order creation requests.
 - `inventory` reserves stock per order before payment proceeds.
-- `payment` creates one payment transaction per order.
+- `payment` creates or reuses one hosted payment session per order and creates one payment transaction per order after reservation.
 
 ## Flow
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant C as Caller
+    participant WEB as Web
+    participant SIM as Simulator
     participant CRT as Cart
     participant ORD as Orders
     participant K as Kafka
     participant INV as Inventory
     participant PAY as Payment
 
-    Note over C, CRT: Ephemeral Phase
-    C->>CRT: AddCartItem(merchant_id, qty)
-    CRT-->>C: 200 OK
+    Note over WEB, CRT: Ephemeral Phase
+    WEB->>CRT: AddCartItem(merchant_id, qty)
+    CRT-->>WEB: 200 OK
 
-    Note over C, PAY: Payment Setup
-    C->>PAY: InitiatePayment(order_id, buyer, token, addresses)
-    PAY->>PAY: Persist payment_intent(order_id)
-    PAY-->>C: 200 OK
-
-    Note over C, ORD: Order Creation
-    C->>ORD: CreateOrder(merchant_id, total)
+    Note over WEB, ORD: Order Creation
+    WEB->>ORD: CreateOrder(merchant_id, total)
     ORD->>ORD: Persist Order (Status: Pending)
     ORD->>K: Emit "orders.created"
-    ORD-->>C: 201 Created
+    ORD-->>WEB: 201 Created
+
+    Note over WEB, SIM: Hosted Payment Setup
+    WEB->>PAY: CreateHostedPaymentSession(order_id, buyer, shipping, return URLs)
+    PAY->>PAY: Persist payment session(order_id)
+    PAY-->>WEB: payment session metadata
+    WEB->>WEB: Build hosted payment URL
+    WEB->>SIM: Redirect browser to hosted payment URL
+    SIM->>WEB: POST hosted payment callback
+    WEB->>PAY: HandleGatewayWebhook
+    SIM->>WEB: Redirect browser back to /orders/{id}
 
     Note over K, INV: Reservation Loop
     K->>INV: Consume "orders.created"
@@ -61,6 +67,12 @@ sequenceDiagram
 
 ## Responsibilities
 
+### Web
+
+- Orchestrates browser checkout, order creation, and hosted payment redirect.
+- Builds the buyer-facing hosted payment URL from payment session metadata and gateway configuration.
+- Accepts hosted gateway callbacks and forwards terminal outcomes to `payment` over gRPC.
+
 ### Cart
 
 - Stores `product_id`, `merchant_id`, and `quantity` in Redis/Valkey-backed state.
@@ -85,10 +97,16 @@ sequenceDiagram
 
 ### Payment
 
-- Stores payment intent by `order_id`.
+- Stores hosted payment session state by `order_id`.
+- Reuses `order_id` as the idempotency anchor for hosted session creation.
 - Consumes `inventory.reserved`.
 - Creates one payment transaction per `order_id`.
-- Emits `payment.succeeded` or `payment.failed` through the payment outbox.
+- Applies hosted gateway outcomes from the web edge and emits `payment.succeeded` or `payment.failed` through the payment outbox.
+
+### Dev Simulator
+
+- A dev-only hosted payment simulator can live under `tools/`.
+- It renders a mock hosted payment page, posts a terminal callback to `services/web`, and redirects the browser back to the marketplace order page.
 
 ## Event Contracts
 

@@ -34,18 +34,19 @@ func TestPaymentService_ApplyGatewayWebhook(t *testing.T) {
 
 		orderID := uuid.New()
 		buyerID := uuid.New()
-		if err := svc.InitiatePayment(ctx, service.InitiatePaymentParams{
+		session, err := svc.CreateHostedPaymentSession(ctx, service.CreateHostedPaymentSessionParams{
 			OrderID:         orderID,
 			BuyerUserID:     buyerID,
-			PaymentToken:    "tok_visa",
 			Currency:        "USD",
-			BillingAddress:  json.RawMessage(`{}`),
 			ShippingAddress: json.RawMessage(`{}`),
-		}); err != nil {
-			t.Fatalf("InitiatePayment: %v", err)
+			ReturnURL:       "/orders/" + orderID.String(),
+			CancelURL:       "/orders/" + orderID.String(),
+		})
+		if err != nil {
+			t.Fatalf("CreateHostedPaymentSession: %v", err)
 		}
 
-		_, err := queries.CreatePaymentTransaction(ctx, database.CreatePaymentTransactionParams{
+		_, err = queries.CreatePaymentTransaction(ctx, database.CreatePaymentTransactionParams{
 			ID:             uuid.New(),
 			OrderID:        orderID,
 			MerchantID:     uuid.New(),
@@ -63,7 +64,7 @@ func TestPaymentService_ApplyGatewayWebhook(t *testing.T) {
 			t.Fatalf("GetPaymentTransactionByOrderID: %v", err)
 		}
 
-		if err := svc.ApplyGatewayWebhook(ctx, txRow.ID, "gw_abc", true, ""); err != nil {
+		if err := svc.ApplyGatewayWebhook(ctx, orderID, session.PaymentSessionID, service.HostedPaymentSessionStatusSucceeded, ""); err != nil {
 			t.Fatalf("ApplyGatewayWebhook: %v", err)
 		}
 
@@ -75,18 +76,18 @@ func TestPaymentService_ApplyGatewayWebhook(t *testing.T) {
 			t.Fatalf("status: got %q", view.Status)
 		}
 
-		if err := svc.ApplyGatewayWebhook(ctx, txRow.ID, "gw_ignored", true, ""); err != nil {
+		if err := svc.ApplyGatewayWebhook(ctx, orderID, session.PaymentSessionID, service.HostedPaymentSessionStatusSucceeded, ""); err != nil {
 			t.Fatalf("ApplyGatewayWebhook idempotent second call: %v", err)
 		}
 	})
 
-	t.Run("transaction not found", func(t *testing.T) {
+	t.Run("session not found", func(t *testing.T) {
 		svc, _ := newPaymentFixture(t)
 		ctx := t.Context()
 
-		err := svc.ApplyGatewayWebhook(ctx, uuid.New(), "gw", true, "")
-		if !errors.Is(err, service.ErrTransactionNotFound) {
-			t.Fatalf("expected ErrTransactionNotFound, got %v", err)
+		err := svc.ApplyGatewayWebhook(ctx, uuid.New(), "sess", service.HostedPaymentSessionStatusSucceeded, "")
+		if !errors.Is(err, service.ErrIntentNotFound) {
+			t.Fatalf("expected ErrIntentNotFound, got %v", err)
 		}
 	})
 }

@@ -38,8 +38,6 @@ in
     # ai stuff
     nodejs
     openspec
-    playwright-test
-    playwright-driver
 
     # formatter
     gofumpt

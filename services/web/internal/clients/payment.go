@@ -28,14 +28,14 @@ func (c *PaymentClient) Close() error {
 	return nil
 }
 
-func (c *PaymentClient) InitiatePayment(ctx context.Context, req *paymentv1.InitiatePaymentRequest) (*paymentv1.InitiatePaymentResponse, error) {
-	return c.client.InitiatePayment(ctx, req)
+func (c *PaymentClient) CreateHostedPaymentSession(ctx context.Context, req *paymentv1.CreateHostedPaymentSessionRequest) (*paymentv1.CreateHostedPaymentSessionResponse, error) {
+	return c.client.CreateHostedPaymentSession(ctx, req)
+}
+
+func (c *PaymentClient) GetHostedPaymentSessionByOrder(ctx context.Context, orderID string) (*paymentv1.HostedPaymentSession, error) {
+	return c.client.GetHostedPaymentSessionByOrder(ctx, &paymentv1.GetHostedPaymentSessionByOrderRequest{OrderId: orderID})
 }
 
 func (c *PaymentClient) HandleGatewayWebhook(ctx context.Context, req *paymentv1.HandleGatewayWebhookRequest) (*paymentv1.HandleGatewayWebhookResponse, error) {
 	return c.client.HandleGatewayWebhook(ctx, req)
-}
-
-func (c *PaymentClient) GetTransaction(ctx context.Context, paymentTransactionID string) (*paymentv1.PaymentTransaction, error) {
-	return c.client.GetTransaction(ctx, &paymentv1.GetTransactionRequest{PaymentTransactionId: paymentTransactionID})
 }

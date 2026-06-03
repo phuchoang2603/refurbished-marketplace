@@ -7,13 +7,76 @@ package database
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 
 	"github.com/google/uuid"
 )
 
+const createHostedPaymentSession = `-- name: CreateHostedPaymentSession :one
+INSERT INTO payment_intents (
+    order_id,
+    buyer_user_id,
+    currency,
+    shipping_address,
+    status,
+    payment_session_id,
+    return_url,
+    cancel_url,
+    expires_at,
+    failure_reason
+)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+RETURNING payment_intents.order_id, payment_intents.buyer_user_id, payment_intents.currency, payment_intents.billing_address, payment_intents.shipping_address, payment_intents.status, payment_intents.created_at, payment_intents.updated_at, payment_intents.payment_session_id, payment_intents.return_url, payment_intents.cancel_url, payment_intents.expires_at, payment_intents.failure_reason
+`
+
+type CreateHostedPaymentSessionParams struct {
+	OrderID          uuid.UUID
+	BuyerUserID      uuid.UUID
+	Currency         string
+	ShippingAddress  json.RawMessage
+	Status           string
+	PaymentSessionID sql.NullString
+	ReturnUrl        string
+	CancelUrl        string
+	ExpiresAt        sql.NullTime
+	FailureReason    sql.NullString
+}
+
+func (q *Queries) CreateHostedPaymentSession(ctx context.Context, arg CreateHostedPaymentSessionParams) (PaymentIntent, error) {
+	row := q.db.QueryRowContext(ctx, createHostedPaymentSession,
+		arg.OrderID,
+		arg.BuyerUserID,
+		arg.Currency,
+		arg.ShippingAddress,
+		arg.Status,
+		arg.PaymentSessionID,
+		arg.ReturnUrl,
+		arg.CancelUrl,
+		arg.ExpiresAt,
+		arg.FailureReason,
+	)
+	var i PaymentIntent
+	err := row.Scan(
+		&i.OrderID,
+		&i.BuyerUserID,
+		&i.Currency,
+		&i.BillingAddress,
+		&i.ShippingAddress,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.PaymentSessionID,
+		&i.ReturnUrl,
+		&i.CancelUrl,
+		&i.ExpiresAt,
+		&i.FailureReason,
+	)
+	return i, err
+}
+
 const getPaymentIntentByOrderID = `-- name: GetPaymentIntentByOrderID :one
-SELECT order_id, buyer_user_id, payment_token, currency, billing_address, shipping_address, status, created_at, updated_at
+SELECT order_id, buyer_user_id, currency, billing_address, shipping_address, status, created_at, updated_at, payment_session_id, return_url, cancel_url, expires_at, failure_reason
 FROM payment_intents
 WHERE order_id = $1
 `
@@ -24,70 +87,60 @@ func (q *Queries) GetPaymentIntentByOrderID(ctx context.Context, orderID uuid.UU
 	err := row.Scan(
 		&i.OrderID,
 		&i.BuyerUserID,
-		&i.PaymentToken,
 		&i.Currency,
 		&i.BillingAddress,
 		&i.ShippingAddress,
 		&i.Status,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.PaymentSessionID,
+		&i.ReturnUrl,
+		&i.CancelUrl,
+		&i.ExpiresAt,
+		&i.FailureReason,
 	)
 	return i, err
 }
 
-const upsertPaymentIntent = `-- name: UpsertPaymentIntent :one
-INSERT INTO payment_intents (
-    order_id,
-    buyer_user_id,
-    payment_token,
-    currency,
-    billing_address,
-    shipping_address,
-    status
-)
-VALUES ($1, $2, $3, $4, $5, $6, $7)
-ON CONFLICT (order_id) DO UPDATE
-SET buyer_user_id = excluded.buyer_user_id,
-payment_token = excluded.payment_token,
-currency = excluded.currency,
-billing_address = excluded.billing_address,
-shipping_address = excluded.shipping_address,
-status = excluded.status,
-updated_at = NOW()
-RETURNING payment_intents.order_id, payment_intents.buyer_user_id, payment_intents.payment_token, payment_intents.currency, payment_intents.billing_address, payment_intents.shipping_address, payment_intents.status, payment_intents.created_at, payment_intents.updated_at
+const updateHostedPaymentSessionOutcome = `-- name: UpdateHostedPaymentSessionOutcome :one
+UPDATE payment_intents
+SET
+    status = $3,
+    failure_reason = $4,
+    updated_at = NOW()
+WHERE order_id = $1 AND payment_session_id = $2
+RETURNING payment_intents.order_id, payment_intents.buyer_user_id, payment_intents.currency, payment_intents.billing_address, payment_intents.shipping_address, payment_intents.status, payment_intents.created_at, payment_intents.updated_at, payment_intents.payment_session_id, payment_intents.return_url, payment_intents.cancel_url, payment_intents.expires_at, payment_intents.failure_reason
 `
 
-type UpsertPaymentIntentParams struct {
-	OrderID         uuid.UUID
-	BuyerUserID     uuid.UUID
-	PaymentToken    string
-	Currency        string
-	BillingAddress  json.RawMessage
-	ShippingAddress json.RawMessage
-	Status          string
+type UpdateHostedPaymentSessionOutcomeParams struct {
+	OrderID          uuid.UUID
+	PaymentSessionID sql.NullString
+	Status           string
+	FailureReason    sql.NullString
 }
 
-func (q *Queries) UpsertPaymentIntent(ctx context.Context, arg UpsertPaymentIntentParams) (PaymentIntent, error) {
-	row := q.db.QueryRowContext(ctx, upsertPaymentIntent,
+func (q *Queries) UpdateHostedPaymentSessionOutcome(ctx context.Context, arg UpdateHostedPaymentSessionOutcomeParams) (PaymentIntent, error) {
+	row := q.db.QueryRowContext(ctx, updateHostedPaymentSessionOutcome,
 		arg.OrderID,
-		arg.BuyerUserID,
-		arg.PaymentToken,
-		arg.Currency,
-		arg.BillingAddress,
-		arg.ShippingAddress,
+		arg.PaymentSessionID,
 		arg.Status,
+		arg.FailureReason,
 	)
 	var i PaymentIntent
 	err := row.Scan(
 		&i.OrderID,
 		&i.BuyerUserID,
-		&i.PaymentToken,
 		&i.Currency,
 		&i.BillingAddress,
 		&i.ShippingAddress,
 		&i.Status,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.PaymentSessionID,
+		&i.ReturnUrl,
+		&i.CancelUrl,
+		&i.ExpiresAt,
+		&i.FailureReason,
 	)
 	return i, err
 }

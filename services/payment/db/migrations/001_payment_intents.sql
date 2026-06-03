@@ -2,7 +2,6 @@
 CREATE TABLE IF NOT EXISTS payment_intents (
     order_id UUID PRIMARY KEY,
     buyer_user_id UUID NOT NULL,
-    payment_token TEXT NOT NULL,
     currency TEXT NOT NULL DEFAULT 'USD',
     billing_address JSONB NOT NULL DEFAULT '{}'::JSONB,
     shipping_address JSONB NOT NULL DEFAULT '{}'::JSONB,

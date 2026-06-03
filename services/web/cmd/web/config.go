@@ -3,16 +3,18 @@ package main
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 type config struct {
-	addr         string
-	usersAddr    string
-	productsAddr string
-	ordersAddr   string
-	cartAddr     string
-	paymentAddr  string
-	jwtSecret    string
+	addr           string
+	usersAddr      string
+	productsAddr   string
+	ordersAddr     string
+	cartAddr       string
+	paymentAddr    string
+	jwtSecret      string
+	gatewayBaseURL string
 }
 
 func loadConfig() (config, error) {
@@ -46,14 +48,23 @@ func loadConfig() (config, error) {
 		return config{}, err
 	}
 
+	gatewayBaseURL := strings.TrimRight(os.Getenv("HOSTED_PAYMENT_BASE_URL"), "/")
+	if gatewayBaseURL == "" {
+		gatewayBaseURL = strings.TrimRight(os.Getenv("HOSTED_PAYMENT_SIMULATOR_BASE_URL"), "/")
+	}
+	if gatewayBaseURL == "" {
+		gatewayBaseURL = "http://localhost:8097"
+	}
+
 	return config{
-		addr:         addr,
-		usersAddr:    usersAddr,
-		productsAddr: productsAddr,
-		ordersAddr:   ordersAddr,
-		cartAddr:     cartAddr,
-		paymentAddr:  paymentAddr,
-		jwtSecret:    jwtSecret,
+		addr:           addr,
+		usersAddr:      usersAddr,
+		productsAddr:   productsAddr,
+		ordersAddr:     ordersAddr,
+		cartAddr:       cartAddr,
+		paymentAddr:    paymentAddr,
+		jwtSecret:      jwtSecret,
+		gatewayBaseURL: gatewayBaseURL,
 	}, nil
 }
 

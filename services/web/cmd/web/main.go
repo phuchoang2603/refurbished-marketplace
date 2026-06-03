@@ -6,6 +6,7 @@ import (
 
 	webclients "refurbished-marketplace/services/web/internal/clients"
 	"refurbished-marketplace/services/web/internal/handlers"
+	sharedhandlers "refurbished-marketplace/services/web/internal/handlers/shared"
 	authconfig "refurbished-marketplace/shared/auth/config"
 )
 
@@ -33,6 +34,7 @@ func main() {
 		deps.Orders,
 		deps.Cart,
 		deps.Payment,
+		sharedhandlers.HostedPaymentConfig{GatewayBaseURL: cfg.gatewayBaseURL},
 		authconfig.DefaultConfig(cfg.jwtSecret),
 	)
 

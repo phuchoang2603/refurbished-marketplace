@@ -4,7 +4,6 @@ import (
 	authhandlers "refurbished-marketplace/services/web/internal/handlers/auth"
 	carthandlers "refurbished-marketplace/services/web/internal/handlers/cart"
 	orderhandlers "refurbished-marketplace/services/web/internal/handlers/orders"
-	paymenthandlers "refurbished-marketplace/services/web/internal/handlers/payment"
 	producthandlers "refurbished-marketplace/services/web/internal/handlers/products"
 	shared "refurbished-marketplace/services/web/internal/handlers/shared"
 
@@ -14,11 +13,11 @@ import (
 )
 
 type Handler struct {
+	deps     *shared.Dependencies
 	auth     *authhandlers.Handler
 	products *producthandlers.Handler
 	cart     *carthandlers.Handler
 	orders   *orderhandlers.Handler
-	payment  *paymenthandlers.Handler
 	authCfg  authconfig.Config
 }
 
@@ -28,21 +27,23 @@ func New(
 	orders shared.OrdersService,
 	cart shared.CartService,
 	payment shared.PaymentService,
+	hostedPayment shared.HostedPaymentConfig,
 	authCfg authconfig.Config,
 ) *Handler {
 	deps := &shared.Dependencies{
-		Users:    users,
-		Products: products,
-		Orders:   orders,
-		Cart:     cart,
-		Payment:  payment,
+		Users:         users,
+		Products:      products,
+		Orders:        orders,
+		Cart:          cart,
+		Payment:       payment,
+		HostedPayment: hostedPayment,
 	}
 	return &Handler{
+		deps:     deps,
 		auth:     authhandlers.New(deps),
 		products: producthandlers.New(deps),
 		cart:     carthandlers.New(deps),
 		orders:   orderhandlers.New(deps),
-		payment:  paymenthandlers.New(deps),
 		authCfg:  authCfg,
 	}
 }
@@ -68,6 +69,6 @@ func (h *Handler) Register(router chi.Router) {
 
 	router.Group(func(r chi.Router) {
 		h.registerStatusRoutes(r)
-		h.payment.RegisterActions(r)
+		h.registerCallbackRoutes(r)
 	})
 }

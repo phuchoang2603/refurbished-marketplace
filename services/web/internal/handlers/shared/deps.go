@@ -37,13 +37,16 @@ type CartService interface {
 }
 
 type PaymentService interface {
+	CreateHostedPaymentSession(ctx context.Context, req *paymentv1.CreateHostedPaymentSessionRequest) (*paymentv1.CreateHostedPaymentSessionResponse, error)
+	GetHostedPaymentSessionByOrder(ctx context.Context, orderID string) (*paymentv1.HostedPaymentSession, error)
 	HandleGatewayWebhook(ctx context.Context, req *paymentv1.HandleGatewayWebhookRequest) (*paymentv1.HandleGatewayWebhookResponse, error)
 }
 
 type Dependencies struct {
-	Users    UsersService
-	Products ProductsService
-	Orders   OrdersService
-	Cart     CartService
-	Payment  PaymentService
+	Users         UsersService
+	Products      ProductsService
+	Orders        OrdersService
+	Cart          CartService
+	Payment       PaymentService
+	HostedPayment HostedPaymentConfig
 }

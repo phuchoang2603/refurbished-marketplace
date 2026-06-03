@@ -112,13 +112,15 @@ type OrderItemView struct {
 }
 
 type OrderView struct {
-	ID          string
-	BuyerUserID string
-	Status      string
-	TotalCents  int64
-	Items       []OrderItemView
-	CreatedAt   string
-	UpdatedAt   string
+	ID                   string
+	BuyerUserID          string
+	Status               string
+	PaymentStatus        string
+	PaymentFailureReason string
+	TotalCents           int64
+	Items                []OrderItemView
+	CreatedAt            string
+	UpdatedAt            string
 }
 
 type UnavailableView struct {

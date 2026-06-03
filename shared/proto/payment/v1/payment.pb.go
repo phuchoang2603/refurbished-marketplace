@@ -9,7 +9,6 @@ package paymentv1
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
-	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -22,58 +21,61 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
-type PaymentTransactionStatus int32
+type HostedPaymentSessionStatus int32
 
 const (
-	PaymentTransactionStatus_PAYMENT_TRANSACTION_STATUS_UNSPECIFIED PaymentTransactionStatus = 0
-	PaymentTransactionStatus_PAYMENT_TRANSACTION_STATUS_INITIALIZED PaymentTransactionStatus = 1
-	PaymentTransactionStatus_PAYMENT_TRANSACTION_STATUS_SUBMITTED   PaymentTransactionStatus = 2
-	PaymentTransactionStatus_PAYMENT_TRANSACTION_STATUS_SUCCEEDED   PaymentTransactionStatus = 3
-	PaymentTransactionStatus_PAYMENT_TRANSACTION_STATUS_FAILED      PaymentTransactionStatus = 4
+	HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_UNSPECIFIED HostedPaymentSessionStatus = 0
+	HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_PENDING     HostedPaymentSessionStatus = 1
+	HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_SUCCEEDED   HostedPaymentSessionStatus = 2
+	HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_FAILED      HostedPaymentSessionStatus = 3
+	HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_CANCELLED   HostedPaymentSessionStatus = 4
+	HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_EXPIRED     HostedPaymentSessionStatus = 5
 )
 
-// Enum value maps for PaymentTransactionStatus.
+// Enum value maps for HostedPaymentSessionStatus.
 var (
-	PaymentTransactionStatus_name = map[int32]string{
-		0: "PAYMENT_TRANSACTION_STATUS_UNSPECIFIED",
-		1: "PAYMENT_TRANSACTION_STATUS_INITIALIZED",
-		2: "PAYMENT_TRANSACTION_STATUS_SUBMITTED",
-		3: "PAYMENT_TRANSACTION_STATUS_SUCCEEDED",
-		4: "PAYMENT_TRANSACTION_STATUS_FAILED",
+	HostedPaymentSessionStatus_name = map[int32]string{
+		0: "HOSTED_PAYMENT_SESSION_STATUS_UNSPECIFIED",
+		1: "HOSTED_PAYMENT_SESSION_STATUS_PENDING",
+		2: "HOSTED_PAYMENT_SESSION_STATUS_SUCCEEDED",
+		3: "HOSTED_PAYMENT_SESSION_STATUS_FAILED",
+		4: "HOSTED_PAYMENT_SESSION_STATUS_CANCELLED",
+		5: "HOSTED_PAYMENT_SESSION_STATUS_EXPIRED",
 	}
-	PaymentTransactionStatus_value = map[string]int32{
-		"PAYMENT_TRANSACTION_STATUS_UNSPECIFIED": 0,
-		"PAYMENT_TRANSACTION_STATUS_INITIALIZED": 1,
-		"PAYMENT_TRANSACTION_STATUS_SUBMITTED":   2,
-		"PAYMENT_TRANSACTION_STATUS_SUCCEEDED":   3,
-		"PAYMENT_TRANSACTION_STATUS_FAILED":      4,
+	HostedPaymentSessionStatus_value = map[string]int32{
+		"HOSTED_PAYMENT_SESSION_STATUS_UNSPECIFIED": 0,
+		"HOSTED_PAYMENT_SESSION_STATUS_PENDING":     1,
+		"HOSTED_PAYMENT_SESSION_STATUS_SUCCEEDED":   2,
+		"HOSTED_PAYMENT_SESSION_STATUS_FAILED":      3,
+		"HOSTED_PAYMENT_SESSION_STATUS_CANCELLED":   4,
+		"HOSTED_PAYMENT_SESSION_STATUS_EXPIRED":     5,
 	}
 )
 
-func (x PaymentTransactionStatus) Enum() *PaymentTransactionStatus {
-	p := new(PaymentTransactionStatus)
+func (x HostedPaymentSessionStatus) Enum() *HostedPaymentSessionStatus {
+	p := new(HostedPaymentSessionStatus)
 	*p = x
 	return p
 }
 
-func (x PaymentTransactionStatus) String() string {
+func (x HostedPaymentSessionStatus) String() string {
 	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
 }
 
-func (PaymentTransactionStatus) Descriptor() protoreflect.EnumDescriptor {
+func (HostedPaymentSessionStatus) Descriptor() protoreflect.EnumDescriptor {
 	return file_shared_proto_payment_v1_payment_proto_enumTypes[0].Descriptor()
 }
 
-func (PaymentTransactionStatus) Type() protoreflect.EnumType {
+func (HostedPaymentSessionStatus) Type() protoreflect.EnumType {
 	return &file_shared_proto_payment_v1_payment_proto_enumTypes[0]
 }
 
-func (x PaymentTransactionStatus) Number() protoreflect.EnumNumber {
+func (x HostedPaymentSessionStatus) Number() protoreflect.EnumNumber {
 	return protoreflect.EnumNumber(x)
 }
 
-// Deprecated: Use PaymentTransactionStatus.Descriptor instead.
-func (PaymentTransactionStatus) EnumDescriptor() ([]byte, []int) {
+// Deprecated: Use HostedPaymentSessionStatus.Descriptor instead.
+func (HostedPaymentSessionStatus) EnumDescriptor() ([]byte, []int) {
 	return file_shared_proto_payment_v1_payment_proto_rawDescGZIP(), []int{0}
 }
 
@@ -169,32 +171,32 @@ func (x *Address) GetCountry() string {
 	return ""
 }
 
-type InitiatePaymentRequest struct {
+type CreateHostedPaymentSessionRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	OrderId         string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
 	BuyerUserId     string                 `protobuf:"bytes,2,opt,name=buyer_user_id,json=buyerUserId,proto3" json:"buyer_user_id,omitempty"`
-	PaymentToken    string                 `protobuf:"bytes,3,opt,name=payment_token,json=paymentToken,proto3" json:"payment_token,omitempty"`
-	Currency        string                 `protobuf:"bytes,4,opt,name=currency,proto3" json:"currency,omitempty"`
-	BillingAddress  *Address               `protobuf:"bytes,5,opt,name=billing_address,json=billingAddress,proto3" json:"billing_address,omitempty"`
-	ShippingAddress *Address               `protobuf:"bytes,6,opt,name=shipping_address,json=shippingAddress,proto3" json:"shipping_address,omitempty"`
+	Currency        string                 `protobuf:"bytes,3,opt,name=currency,proto3" json:"currency,omitempty"`
+	ShippingAddress *Address               `protobuf:"bytes,4,opt,name=shipping_address,json=shippingAddress,proto3" json:"shipping_address,omitempty"`
+	ReturnUrl       string                 `protobuf:"bytes,5,opt,name=return_url,json=returnUrl,proto3" json:"return_url,omitempty"`
+	CancelUrl       string                 `protobuf:"bytes,6,opt,name=cancel_url,json=cancelUrl,proto3" json:"cancel_url,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
 
-func (x *InitiatePaymentRequest) Reset() {
-	*x = InitiatePaymentRequest{}
+func (x *CreateHostedPaymentSessionRequest) Reset() {
+	*x = CreateHostedPaymentSessionRequest{}
 	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *InitiatePaymentRequest) String() string {
+func (x *CreateHostedPaymentSessionRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*InitiatePaymentRequest) ProtoMessage() {}
+func (*CreateHostedPaymentSessionRequest) ProtoMessage() {}
 
-func (x *InitiatePaymentRequest) ProtoReflect() protoreflect.Message {
+func (x *CreateHostedPaymentSessionRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -206,74 +208,77 @@ func (x *InitiatePaymentRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use InitiatePaymentRequest.ProtoReflect.Descriptor instead.
-func (*InitiatePaymentRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use CreateHostedPaymentSessionRequest.ProtoReflect.Descriptor instead.
+func (*CreateHostedPaymentSessionRequest) Descriptor() ([]byte, []int) {
 	return file_shared_proto_payment_v1_payment_proto_rawDescGZIP(), []int{1}
 }
 
-func (x *InitiatePaymentRequest) GetOrderId() string {
+func (x *CreateHostedPaymentSessionRequest) GetOrderId() string {
 	if x != nil {
 		return x.OrderId
 	}
 	return ""
 }
 
-func (x *InitiatePaymentRequest) GetBuyerUserId() string {
+func (x *CreateHostedPaymentSessionRequest) GetBuyerUserId() string {
 	if x != nil {
 		return x.BuyerUserId
 	}
 	return ""
 }
 
-func (x *InitiatePaymentRequest) GetPaymentToken() string {
-	if x != nil {
-		return x.PaymentToken
-	}
-	return ""
-}
-
-func (x *InitiatePaymentRequest) GetCurrency() string {
+func (x *CreateHostedPaymentSessionRequest) GetCurrency() string {
 	if x != nil {
 		return x.Currency
 	}
 	return ""
 }
 
-func (x *InitiatePaymentRequest) GetBillingAddress() *Address {
-	if x != nil {
-		return x.BillingAddress
-	}
-	return nil
-}
-
-func (x *InitiatePaymentRequest) GetShippingAddress() *Address {
+func (x *CreateHostedPaymentSessionRequest) GetShippingAddress() *Address {
 	if x != nil {
 		return x.ShippingAddress
 	}
 	return nil
 }
 
-type InitiatePaymentResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	OrderId       string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+func (x *CreateHostedPaymentSessionRequest) GetReturnUrl() string {
+	if x != nil {
+		return x.ReturnUrl
+	}
+	return ""
 }
 
-func (x *InitiatePaymentResponse) Reset() {
-	*x = InitiatePaymentResponse{}
+func (x *CreateHostedPaymentSessionRequest) GetCancelUrl() string {
+	if x != nil {
+		return x.CancelUrl
+	}
+	return ""
+}
+
+type CreateHostedPaymentSessionResponse struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	OrderId          string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	PaymentSessionId string                 `protobuf:"bytes,2,opt,name=payment_session_id,json=paymentSessionId,proto3" json:"payment_session_id,omitempty"`
+	ReturnUrl        string                 `protobuf:"bytes,3,opt,name=return_url,json=returnUrl,proto3" json:"return_url,omitempty"`
+	CancelUrl        string                 `protobuf:"bytes,4,opt,name=cancel_url,json=cancelUrl,proto3" json:"cancel_url,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *CreateHostedPaymentSessionResponse) Reset() {
+	*x = CreateHostedPaymentSessionResponse{}
 	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *InitiatePaymentResponse) String() string {
+func (x *CreateHostedPaymentSessionResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*InitiatePaymentResponse) ProtoMessage() {}
+func (*CreateHostedPaymentSessionResponse) ProtoMessage() {}
 
-func (x *InitiatePaymentResponse) ProtoReflect() protoreflect.Message {
+func (x *CreateHostedPaymentSessionResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -285,33 +290,148 @@ func (x *InitiatePaymentResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use InitiatePaymentResponse.ProtoReflect.Descriptor instead.
-func (*InitiatePaymentResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use CreateHostedPaymentSessionResponse.ProtoReflect.Descriptor instead.
+func (*CreateHostedPaymentSessionResponse) Descriptor() ([]byte, []int) {
 	return file_shared_proto_payment_v1_payment_proto_rawDescGZIP(), []int{2}
 }
 
-func (x *InitiatePaymentResponse) GetOrderId() string {
+func (x *CreateHostedPaymentSessionResponse) GetOrderId() string {
 	if x != nil {
 		return x.OrderId
 	}
 	return ""
 }
 
+func (x *CreateHostedPaymentSessionResponse) GetPaymentSessionId() string {
+	if x != nil {
+		return x.PaymentSessionId
+	}
+	return ""
+}
+
+func (x *CreateHostedPaymentSessionResponse) GetReturnUrl() string {
+	if x != nil {
+		return x.ReturnUrl
+	}
+	return ""
+}
+
+func (x *CreateHostedPaymentSessionResponse) GetCancelUrl() string {
+	if x != nil {
+		return x.CancelUrl
+	}
+	return ""
+}
+
+type GetHostedPaymentSessionByOrderRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	OrderId       string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetHostedPaymentSessionByOrderRequest) Reset() {
+	*x = GetHostedPaymentSessionByOrderRequest{}
+	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetHostedPaymentSessionByOrderRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetHostedPaymentSessionByOrderRequest) ProtoMessage() {}
+
+func (x *GetHostedPaymentSessionByOrderRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetHostedPaymentSessionByOrderRequest.ProtoReflect.Descriptor instead.
+func (*GetHostedPaymentSessionByOrderRequest) Descriptor() ([]byte, []int) {
+	return file_shared_proto_payment_v1_payment_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GetHostedPaymentSessionByOrderRequest) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
+type HostedPaymentSession struct {
+	state         protoimpl.MessageState     `protogen:"open.v1"`
+	Status        HostedPaymentSessionStatus `protobuf:"varint,1,opt,name=status,proto3,enum=payment.v1.HostedPaymentSessionStatus" json:"status,omitempty"`
+	FailureReason string                     `protobuf:"bytes,2,opt,name=failure_reason,json=failureReason,proto3" json:"failure_reason,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HostedPaymentSession) Reset() {
+	*x = HostedPaymentSession{}
+	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HostedPaymentSession) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HostedPaymentSession) ProtoMessage() {}
+
+func (x *HostedPaymentSession) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HostedPaymentSession.ProtoReflect.Descriptor instead.
+func (*HostedPaymentSession) Descriptor() ([]byte, []int) {
+	return file_shared_proto_payment_v1_payment_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *HostedPaymentSession) GetStatus() HostedPaymentSessionStatus {
+	if x != nil {
+		return x.Status
+	}
+	return HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_UNSPECIFIED
+}
+
+func (x *HostedPaymentSession) GetFailureReason() string {
+	if x != nil {
+		return x.FailureReason
+	}
+	return ""
+}
+
 type HandleGatewayWebhookRequest struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Internal transaction ID generated by payment service.
-	PaymentTransactionId string `protobuf:"bytes,1,opt,name=payment_transaction_id,json=paymentTransactionId,proto3" json:"payment_transaction_id,omitempty"`
-	// Gateway-specific ID for debugging/idempotency.
-	GatewayTransactionId string                   `protobuf:"bytes,2,opt,name=gateway_transaction_id,json=gatewayTransactionId,proto3" json:"gateway_transaction_id,omitempty"`
-	Status               PaymentTransactionStatus `protobuf:"varint,3,opt,name=status,proto3,enum=payment.v1.PaymentTransactionStatus" json:"status,omitempty"`
-	FailureReason        string                   `protobuf:"bytes,4,opt,name=failure_reason,json=failureReason,proto3" json:"failure_reason,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
+	state            protoimpl.MessageState     `protogen:"open.v1"`
+	OrderId          string                     `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	PaymentSessionId string                     `protobuf:"bytes,2,opt,name=payment_session_id,json=paymentSessionId,proto3" json:"payment_session_id,omitempty"`
+	Status           HostedPaymentSessionStatus `protobuf:"varint,3,opt,name=status,proto3,enum=payment.v1.HostedPaymentSessionStatus" json:"status,omitempty"`
+	FailureReason    string                     `protobuf:"bytes,4,opt,name=failure_reason,json=failureReason,proto3" json:"failure_reason,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *HandleGatewayWebhookRequest) Reset() {
 	*x = HandleGatewayWebhookRequest{}
-	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[3]
+	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -323,7 +443,7 @@ func (x *HandleGatewayWebhookRequest) String() string {
 func (*HandleGatewayWebhookRequest) ProtoMessage() {}
 
 func (x *HandleGatewayWebhookRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[3]
+	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -336,28 +456,28 @@ func (x *HandleGatewayWebhookRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HandleGatewayWebhookRequest.ProtoReflect.Descriptor instead.
 func (*HandleGatewayWebhookRequest) Descriptor() ([]byte, []int) {
-	return file_shared_proto_payment_v1_payment_proto_rawDescGZIP(), []int{3}
+	return file_shared_proto_payment_v1_payment_proto_rawDescGZIP(), []int{5}
 }
 
-func (x *HandleGatewayWebhookRequest) GetPaymentTransactionId() string {
+func (x *HandleGatewayWebhookRequest) GetOrderId() string {
 	if x != nil {
-		return x.PaymentTransactionId
+		return x.OrderId
 	}
 	return ""
 }
 
-func (x *HandleGatewayWebhookRequest) GetGatewayTransactionId() string {
+func (x *HandleGatewayWebhookRequest) GetPaymentSessionId() string {
 	if x != nil {
-		return x.GatewayTransactionId
+		return x.PaymentSessionId
 	}
 	return ""
 }
 
-func (x *HandleGatewayWebhookRequest) GetStatus() PaymentTransactionStatus {
+func (x *HandleGatewayWebhookRequest) GetStatus() HostedPaymentSessionStatus {
 	if x != nil {
 		return x.Status
 	}
-	return PaymentTransactionStatus_PAYMENT_TRANSACTION_STATUS_UNSPECIFIED
+	return HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_UNSPECIFIED
 }
 
 func (x *HandleGatewayWebhookRequest) GetFailureReason() string {
@@ -375,7 +495,7 @@ type HandleGatewayWebhookResponse struct {
 
 func (x *HandleGatewayWebhookResponse) Reset() {
 	*x = HandleGatewayWebhookResponse{}
-	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[4]
+	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -387,7 +507,7 @@ func (x *HandleGatewayWebhookResponse) String() string {
 func (*HandleGatewayWebhookResponse) ProtoMessage() {}
 
 func (x *HandleGatewayWebhookResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[4]
+	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -400,167 +520,7 @@ func (x *HandleGatewayWebhookResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HandleGatewayWebhookResponse.ProtoReflect.Descriptor instead.
 func (*HandleGatewayWebhookResponse) Descriptor() ([]byte, []int) {
-	return file_shared_proto_payment_v1_payment_proto_rawDescGZIP(), []int{4}
-}
-
-type GetTransactionRequest struct {
-	state                protoimpl.MessageState `protogen:"open.v1"`
-	PaymentTransactionId string                 `protobuf:"bytes,1,opt,name=payment_transaction_id,json=paymentTransactionId,proto3" json:"payment_transaction_id,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
-}
-
-func (x *GetTransactionRequest) Reset() {
-	*x = GetTransactionRequest{}
-	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[5]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetTransactionRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetTransactionRequest) ProtoMessage() {}
-
-func (x *GetTransactionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[5]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetTransactionRequest.ProtoReflect.Descriptor instead.
-func (*GetTransactionRequest) Descriptor() ([]byte, []int) {
-	return file_shared_proto_payment_v1_payment_proto_rawDescGZIP(), []int{5}
-}
-
-func (x *GetTransactionRequest) GetPaymentTransactionId() string {
-	if x != nil {
-		return x.PaymentTransactionId
-	}
-	return ""
-}
-
-type PaymentTransaction struct {
-	state                protoimpl.MessageState   `protogen:"open.v1"`
-	Id                   string                   `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
-	OrderId              string                   `protobuf:"bytes,2,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
-	MerchantId           string                   `protobuf:"bytes,4,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
-	AmountCents          int64                    `protobuf:"varint,5,opt,name=amount_cents,json=amountCents,proto3" json:"amount_cents,omitempty"`
-	Currency             string                   `protobuf:"bytes,6,opt,name=currency,proto3" json:"currency,omitempty"`
-	Status               PaymentTransactionStatus `protobuf:"varint,7,opt,name=status,proto3,enum=payment.v1.PaymentTransactionStatus" json:"status,omitempty"`
-	IdempotencyKey       string                   `protobuf:"bytes,8,opt,name=idempotency_key,json=idempotencyKey,proto3" json:"idempotency_key,omitempty"`
-	GatewayTransactionId string                   `protobuf:"bytes,9,opt,name=gateway_transaction_id,json=gatewayTransactionId,proto3" json:"gateway_transaction_id,omitempty"`
-	CreatedAt            *timestamppb.Timestamp   `protobuf:"bytes,10,opt,name=created_at,json=createdAt,proto3" json:"created_at,omitempty"`
-	UpdatedAt            *timestamppb.Timestamp   `protobuf:"bytes,11,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
-	unknownFields        protoimpl.UnknownFields
-	sizeCache            protoimpl.SizeCache
-}
-
-func (x *PaymentTransaction) Reset() {
-	*x = PaymentTransaction{}
-	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[6]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PaymentTransaction) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PaymentTransaction) ProtoMessage() {}
-
-func (x *PaymentTransaction) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[6]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PaymentTransaction.ProtoReflect.Descriptor instead.
-func (*PaymentTransaction) Descriptor() ([]byte, []int) {
 	return file_shared_proto_payment_v1_payment_proto_rawDescGZIP(), []int{6}
-}
-
-func (x *PaymentTransaction) GetId() string {
-	if x != nil {
-		return x.Id
-	}
-	return ""
-}
-
-func (x *PaymentTransaction) GetOrderId() string {
-	if x != nil {
-		return x.OrderId
-	}
-	return ""
-}
-
-func (x *PaymentTransaction) GetMerchantId() string {
-	if x != nil {
-		return x.MerchantId
-	}
-	return ""
-}
-
-func (x *PaymentTransaction) GetAmountCents() int64 {
-	if x != nil {
-		return x.AmountCents
-	}
-	return 0
-}
-
-func (x *PaymentTransaction) GetCurrency() string {
-	if x != nil {
-		return x.Currency
-	}
-	return ""
-}
-
-func (x *PaymentTransaction) GetStatus() PaymentTransactionStatus {
-	if x != nil {
-		return x.Status
-	}
-	return PaymentTransactionStatus_PAYMENT_TRANSACTION_STATUS_UNSPECIFIED
-}
-
-func (x *PaymentTransaction) GetIdempotencyKey() string {
-	if x != nil {
-		return x.IdempotencyKey
-	}
-	return ""
-}
-
-func (x *PaymentTransaction) GetGatewayTransactionId() string {
-	if x != nil {
-		return x.GatewayTransactionId
-	}
-	return ""
-}
-
-func (x *PaymentTransaction) GetCreatedAt() *timestamppb.Timestamp {
-	if x != nil {
-		return x.CreatedAt
-	}
-	return nil
-}
-
-func (x *PaymentTransaction) GetUpdatedAt() *timestamppb.Timestamp {
-	if x != nil {
-		return x.UpdatedAt
-	}
-	return nil
 }
 
 var File_shared_proto_payment_v1_payment_proto protoreflect.FileDescriptor
@@ -568,7 +528,7 @@ var File_shared_proto_payment_v1_payment_proto protoreflect.FileDescriptor
 const file_shared_proto_payment_v1_payment_proto_rawDesc = "" +
 	"\n" +
 	"%shared/proto/payment/v1/payment.proto\x12\n" +
-	"payment.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb0\x01\n" +
+	"payment.v1\"\xb0\x01\n" +
 	"\aAddress\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05line1\x18\x02 \x01(\tR\x05line1\x12\x14\n" +
@@ -577,49 +537,45 @@ const file_shared_proto_payment_v1_payment_proto_rawDesc = "" +
 	"\x06region\x18\x05 \x01(\tR\x06region\x12\x1f\n" +
 	"\vpostal_code\x18\x06 \x01(\tR\n" +
 	"postalCode\x12\x18\n" +
-	"\acountry\x18\a \x01(\tR\acountry\"\x96\x02\n" +
-	"\x16InitiatePaymentRequest\x12\x19\n" +
+	"\acountry\x18\a \x01(\tR\acountry\"\xfc\x01\n" +
+	"!CreateHostedPaymentSessionRequest\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12\"\n" +
-	"\rbuyer_user_id\x18\x02 \x01(\tR\vbuyerUserId\x12#\n" +
-	"\rpayment_token\x18\x03 \x01(\tR\fpaymentToken\x12\x1a\n" +
-	"\bcurrency\x18\x04 \x01(\tR\bcurrency\x12<\n" +
-	"\x0fbilling_address\x18\x05 \x01(\v2\x13.payment.v1.AddressR\x0ebillingAddress\x12>\n" +
-	"\x10shipping_address\x18\x06 \x01(\v2\x13.payment.v1.AddressR\x0fshippingAddress\"4\n" +
-	"\x17InitiatePaymentResponse\x12\x19\n" +
-	"\border_id\x18\x01 \x01(\tR\aorderId\"\xee\x01\n" +
-	"\x1bHandleGatewayWebhookRequest\x124\n" +
-	"\x16payment_transaction_id\x18\x01 \x01(\tR\x14paymentTransactionId\x124\n" +
-	"\x16gateway_transaction_id\x18\x02 \x01(\tR\x14gatewayTransactionId\x12<\n" +
-	"\x06status\x18\x03 \x01(\x0e2$.payment.v1.PaymentTransactionStatusR\x06status\x12%\n" +
+	"\rbuyer_user_id\x18\x02 \x01(\tR\vbuyerUserId\x12\x1a\n" +
+	"\bcurrency\x18\x03 \x01(\tR\bcurrency\x12>\n" +
+	"\x10shipping_address\x18\x04 \x01(\v2\x13.payment.v1.AddressR\x0fshippingAddress\x12\x1d\n" +
+	"\n" +
+	"return_url\x18\x05 \x01(\tR\treturnUrl\x12\x1d\n" +
+	"\n" +
+	"cancel_url\x18\x06 \x01(\tR\tcancelUrl\"\xab\x01\n" +
+	"\"CreateHostedPaymentSessionResponse\x12\x19\n" +
+	"\border_id\x18\x01 \x01(\tR\aorderId\x12,\n" +
+	"\x12payment_session_id\x18\x02 \x01(\tR\x10paymentSessionId\x12\x1d\n" +
+	"\n" +
+	"return_url\x18\x03 \x01(\tR\treturnUrl\x12\x1d\n" +
+	"\n" +
+	"cancel_url\x18\x04 \x01(\tR\tcancelUrl\"B\n" +
+	"%GetHostedPaymentSessionByOrderRequest\x12\x19\n" +
+	"\border_id\x18\x01 \x01(\tR\aorderId\"}\n" +
+	"\x14HostedPaymentSession\x12>\n" +
+	"\x06status\x18\x01 \x01(\x0e2&.payment.v1.HostedPaymentSessionStatusR\x06status\x12%\n" +
+	"\x0efailure_reason\x18\x02 \x01(\tR\rfailureReason\"\xcd\x01\n" +
+	"\x1bHandleGatewayWebhookRequest\x12\x19\n" +
+	"\border_id\x18\x01 \x01(\tR\aorderId\x12,\n" +
+	"\x12payment_session_id\x18\x02 \x01(\tR\x10paymentSessionId\x12>\n" +
+	"\x06status\x18\x03 \x01(\x0e2&.payment.v1.HostedPaymentSessionStatusR\x06status\x12%\n" +
 	"\x0efailure_reason\x18\x04 \x01(\tR\rfailureReason\"\x1e\n" +
-	"\x1cHandleGatewayWebhookResponse\"M\n" +
-	"\x15GetTransactionRequest\x124\n" +
-	"\x16payment_transaction_id\x18\x01 \x01(\tR\x14paymentTransactionId\"\xb2\x03\n" +
-	"\x12PaymentTransaction\x12\x0e\n" +
-	"\x02id\x18\x01 \x01(\tR\x02id\x12\x19\n" +
-	"\border_id\x18\x02 \x01(\tR\aorderId\x12\x1f\n" +
-	"\vmerchant_id\x18\x04 \x01(\tR\n" +
-	"merchantId\x12!\n" +
-	"\famount_cents\x18\x05 \x01(\x03R\vamountCents\x12\x1a\n" +
-	"\bcurrency\x18\x06 \x01(\tR\bcurrency\x12<\n" +
-	"\x06status\x18\a \x01(\x0e2$.payment.v1.PaymentTransactionStatusR\x06status\x12'\n" +
-	"\x0fidempotency_key\x18\b \x01(\tR\x0eidempotencyKey\x124\n" +
-	"\x16gateway_transaction_id\x18\t \x01(\tR\x14gatewayTransactionId\x129\n" +
-	"\n" +
-	"created_at\x18\n" +
-	" \x01(\v2\x1a.google.protobuf.TimestampR\tcreatedAt\x129\n" +
-	"\n" +
-	"updated_at\x18\v \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt*\xed\x01\n" +
-	"\x18PaymentTransactionStatus\x12*\n" +
-	"&PAYMENT_TRANSACTION_STATUS_UNSPECIFIED\x10\x00\x12*\n" +
-	"&PAYMENT_TRANSACTION_STATUS_INITIALIZED\x10\x01\x12(\n" +
-	"$PAYMENT_TRANSACTION_STATUS_SUBMITTED\x10\x02\x12(\n" +
-	"$PAYMENT_TRANSACTION_STATUS_SUCCEEDED\x10\x03\x12%\n" +
-	"!PAYMENT_TRANSACTION_STATUS_FAILED\x10\x042\xac\x02\n" +
-	"\x0ePaymentService\x12Z\n" +
-	"\x0fInitiatePayment\x12\".payment.v1.InitiatePaymentRequest\x1a#.payment.v1.InitiatePaymentResponse\x12i\n" +
-	"\x14HandleGatewayWebhook\x12'.payment.v1.HandleGatewayWebhookRequest\x1a(.payment.v1.HandleGatewayWebhookResponse\x12S\n" +
-	"\x0eGetTransaction\x12!.payment.v1.GetTransactionRequest\x1a\x1e.payment.v1.PaymentTransactionB;Z9refurbished-marketplace/shared/proto/payment/v1;paymentv1b\x06proto3"
+	"\x1cHandleGatewayWebhookResponse*\xa5\x02\n" +
+	"\x1aHostedPaymentSessionStatus\x12-\n" +
+	")HOSTED_PAYMENT_SESSION_STATUS_UNSPECIFIED\x10\x00\x12)\n" +
+	"%HOSTED_PAYMENT_SESSION_STATUS_PENDING\x10\x01\x12+\n" +
+	"'HOSTED_PAYMENT_SESSION_STATUS_SUCCEEDED\x10\x02\x12(\n" +
+	"$HOSTED_PAYMENT_SESSION_STATUS_FAILED\x10\x03\x12+\n" +
+	"'HOSTED_PAYMENT_SESSION_STATUS_CANCELLED\x10\x04\x12)\n" +
+	"%HOSTED_PAYMENT_SESSION_STATUS_EXPIRED\x10\x052\xef\x02\n" +
+	"\x0ePaymentService\x12{\n" +
+	"\x1aCreateHostedPaymentSession\x12-.payment.v1.CreateHostedPaymentSessionRequest\x1a..payment.v1.CreateHostedPaymentSessionResponse\x12u\n" +
+	"\x1eGetHostedPaymentSessionByOrder\x121.payment.v1.GetHostedPaymentSessionByOrderRequest\x1a .payment.v1.HostedPaymentSession\x12i\n" +
+	"\x14HandleGatewayWebhook\x12'.payment.v1.HandleGatewayWebhookRequest\x1a(.payment.v1.HandleGatewayWebhookResponseB;Z9refurbished-marketplace/shared/proto/payment/v1;paymentv1b\x06proto3"
 
 var (
 	file_shared_proto_payment_v1_payment_proto_rawDescOnce sync.Once
@@ -636,34 +592,30 @@ func file_shared_proto_payment_v1_payment_proto_rawDescGZIP() []byte {
 var file_shared_proto_payment_v1_payment_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
 var file_shared_proto_payment_v1_payment_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_shared_proto_payment_v1_payment_proto_goTypes = []any{
-	(PaymentTransactionStatus)(0),        // 0: payment.v1.PaymentTransactionStatus
-	(*Address)(nil),                      // 1: payment.v1.Address
-	(*InitiatePaymentRequest)(nil),       // 2: payment.v1.InitiatePaymentRequest
-	(*InitiatePaymentResponse)(nil),      // 3: payment.v1.InitiatePaymentResponse
-	(*HandleGatewayWebhookRequest)(nil),  // 4: payment.v1.HandleGatewayWebhookRequest
-	(*HandleGatewayWebhookResponse)(nil), // 5: payment.v1.HandleGatewayWebhookResponse
-	(*GetTransactionRequest)(nil),        // 6: payment.v1.GetTransactionRequest
-	(*PaymentTransaction)(nil),           // 7: payment.v1.PaymentTransaction
-	(*timestamppb.Timestamp)(nil),        // 8: google.protobuf.Timestamp
+	(HostedPaymentSessionStatus)(0),               // 0: payment.v1.HostedPaymentSessionStatus
+	(*Address)(nil),                               // 1: payment.v1.Address
+	(*CreateHostedPaymentSessionRequest)(nil),     // 2: payment.v1.CreateHostedPaymentSessionRequest
+	(*CreateHostedPaymentSessionResponse)(nil),    // 3: payment.v1.CreateHostedPaymentSessionResponse
+	(*GetHostedPaymentSessionByOrderRequest)(nil), // 4: payment.v1.GetHostedPaymentSessionByOrderRequest
+	(*HostedPaymentSession)(nil),                  // 5: payment.v1.HostedPaymentSession
+	(*HandleGatewayWebhookRequest)(nil),           // 6: payment.v1.HandleGatewayWebhookRequest
+	(*HandleGatewayWebhookResponse)(nil),          // 7: payment.v1.HandleGatewayWebhookResponse
 }
 var file_shared_proto_payment_v1_payment_proto_depIdxs = []int32{
-	1, // 0: payment.v1.InitiatePaymentRequest.billing_address:type_name -> payment.v1.Address
-	1, // 1: payment.v1.InitiatePaymentRequest.shipping_address:type_name -> payment.v1.Address
-	0, // 2: payment.v1.HandleGatewayWebhookRequest.status:type_name -> payment.v1.PaymentTransactionStatus
-	0, // 3: payment.v1.PaymentTransaction.status:type_name -> payment.v1.PaymentTransactionStatus
-	8, // 4: payment.v1.PaymentTransaction.created_at:type_name -> google.protobuf.Timestamp
-	8, // 5: payment.v1.PaymentTransaction.updated_at:type_name -> google.protobuf.Timestamp
-	2, // 6: payment.v1.PaymentService.InitiatePayment:input_type -> payment.v1.InitiatePaymentRequest
-	4, // 7: payment.v1.PaymentService.HandleGatewayWebhook:input_type -> payment.v1.HandleGatewayWebhookRequest
-	6, // 8: payment.v1.PaymentService.GetTransaction:input_type -> payment.v1.GetTransactionRequest
-	3, // 9: payment.v1.PaymentService.InitiatePayment:output_type -> payment.v1.InitiatePaymentResponse
-	5, // 10: payment.v1.PaymentService.HandleGatewayWebhook:output_type -> payment.v1.HandleGatewayWebhookResponse
-	7, // 11: payment.v1.PaymentService.GetTransaction:output_type -> payment.v1.PaymentTransaction
-	9, // [9:12] is the sub-list for method output_type
-	6, // [6:9] is the sub-list for method input_type
-	6, // [6:6] is the sub-list for extension type_name
-	6, // [6:6] is the sub-list for extension extendee
-	0, // [0:6] is the sub-list for field type_name
+	1, // 0: payment.v1.CreateHostedPaymentSessionRequest.shipping_address:type_name -> payment.v1.Address
+	0, // 1: payment.v1.HostedPaymentSession.status:type_name -> payment.v1.HostedPaymentSessionStatus
+	0, // 2: payment.v1.HandleGatewayWebhookRequest.status:type_name -> payment.v1.HostedPaymentSessionStatus
+	2, // 3: payment.v1.PaymentService.CreateHostedPaymentSession:input_type -> payment.v1.CreateHostedPaymentSessionRequest
+	4, // 4: payment.v1.PaymentService.GetHostedPaymentSessionByOrder:input_type -> payment.v1.GetHostedPaymentSessionByOrderRequest
+	6, // 5: payment.v1.PaymentService.HandleGatewayWebhook:input_type -> payment.v1.HandleGatewayWebhookRequest
+	3, // 6: payment.v1.PaymentService.CreateHostedPaymentSession:output_type -> payment.v1.CreateHostedPaymentSessionResponse
+	5, // 7: payment.v1.PaymentService.GetHostedPaymentSessionByOrder:output_type -> payment.v1.HostedPaymentSession
+	7, // 8: payment.v1.PaymentService.HandleGatewayWebhook:output_type -> payment.v1.HandleGatewayWebhookResponse
+	6, // [6:9] is the sub-list for method output_type
+	3, // [3:6] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_shared_proto_payment_v1_payment_proto_init() }

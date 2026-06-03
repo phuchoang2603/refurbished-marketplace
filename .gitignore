@@ -17,6 +17,7 @@ lerna-debug.log*
 .vscode/*
 .nvim.lua
 .sqruff
+test.sql
 .idea
 .DS_Store
 *.suo

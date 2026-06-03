@@ -55,6 +55,12 @@ templ OrderDetailSection(order sharedviews.OrderView) {
 		@card.CardContent(card.CardContentArgs{Class: "grid gap-6"}) {
 			<p><strong>Status:</strong> @badge.Badge(order.Status)
 </p>
+			if order.PaymentStatus != "" {
+				<p><strong>Payment status:</strong> @badge.Badge(order.PaymentStatus)</p>
+				if order.PaymentFailureReason != "" {
+					<p class="text-sm text-muted-foreground">{ order.PaymentFailureReason }</p>
+				}
+			}
 			<p class="text-4xl font-semibold tracking-tight sm:text-5xl">{ sharedviews.FormatCents(order.TotalCents) }</p>
 			<p><small>Buyer { order.BuyerUserID }</small></p>
 			if len(order.Items) > 0 {

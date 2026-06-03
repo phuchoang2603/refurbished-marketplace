@@ -182,3 +182,17 @@ docker_build(
 k8s_resource('payment-db', extra_pod_selectors=[{'cnpg.io/cluster': 'payment-db'}], port_forwards=['5436:5432'], resource_deps=['cnpg-operator-install'], labels='payment')
 k8s_resource('payment-migrate', resource_deps=['payment-db'], labels='payment')
 k8s_resource('payment', port_forwards=['9096:9096'], resource_deps=['payment-db'], labels='payment')
+
+### Payment Simulator Service ###
+k8s_yaml('./infra/k8s/payment-gateway-simulator.yaml')
+
+docker_build(
+  'refurbished-marketplace/payment-gateway-simulator',
+  '.',
+  dockerfile='./infra/docker/payment-gateway-simulator.Dockerfile',
+  only=[
+    './tools/payment-gateway-simulator',
+  ],
+)
+
+k8s_resource('payment-gateway-simulator', port_forwards=['8097:8097'], resource_deps=['payment'], labels='payment')

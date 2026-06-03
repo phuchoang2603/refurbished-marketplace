@@ -11,6 +11,7 @@ import (
 	"refurbished-marketplace/services/web/internal/auth"
 	cartv1 "refurbished-marketplace/shared/proto/cart/v1"
 	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
+	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
 	productsv1 "refurbished-marketplace/shared/proto/products/v1"
 )
 
@@ -61,19 +62,37 @@ func TestCheckoutClearsCartCookieAndRedirectsToOrder(t *testing.T) {
 			return &ordersv1.Order{Id: "order-1", BuyerUserId: buyerUserID, TotalCents: totalCents}, nil
 		},
 	}
+	paymentSvc := &fakePaymentService{
+		createSessionFn: func(ctx context.Context, req *paymentv1.CreateHostedPaymentSessionRequest) (*paymentv1.CreateHostedPaymentSessionResponse, error) {
+			if req.GetOrderId() != "order-1" {
+				t.Fatalf("orderID = %q, want order-1", req.GetOrderId())
+			}
+			if req.GetReturnUrl() != "http://localhost:8080/orders/order-1" {
+				t.Fatalf("return_url = %q", req.GetReturnUrl())
+			}
+			return &paymentv1.CreateHostedPaymentSessionResponse{
+				OrderId:          "order-1",
+				PaymentSessionId: "sess-1",
+				ReturnUrl:        req.GetReturnUrl(),
+				CancelUrl:        req.GetCancelUrl(),
+			}, nil
+		},
+	}
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/cart/checkout", strings.NewReader(url.Values{"merchant_id": {"merchant-1"}}.Encode()))
+	req.Host = "localhost:8080"
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.AddCookie(&http.Cookie{Name: auth.AccessCookieName, Value: signedAccessToken(t, "user-1")})
 	req.AddCookie(&http.Cookie{Name: "cart_id", Value: "cart-1"})
 
-	newTestRouter(t, routerDeps{cart: cartSvc, products: productsSvc, orders: ordersSvc}).ServeHTTP(rec, req)
+	newTestRouter(t, routerDeps{cart: cartSvc, products: productsSvc, orders: ordersSvc, payment: paymentSvc}).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusSeeOther {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusSeeOther)
 	}
-	if got := rec.Header().Get("Location"); got != "/orders/order-1" {
-		t.Fatalf("location = %q, want /orders/order-1", got)
+	wantLocation := "http://localhost:8097/pay?callback_url=http%3A%2F%2Flocalhost%3A8080%2Fcallbacks%2Fhosted-payment&cancel_url=http%3A%2F%2Flocalhost%3A8080%2Forders%2Forder-1&order_id=order-1&payment_session_id=sess-1&return_url=http%3A%2F%2Flocalhost%3A8080%2Forders%2Forder-1"
+	if got := rec.Header().Get("Location"); got != wantLocation {
+		t.Fatalf("location = %q, want %q", got, wantLocation)
 	}
 	assertCookieCleared(t, rec.Result().Cookies(), "cart_id")
 }

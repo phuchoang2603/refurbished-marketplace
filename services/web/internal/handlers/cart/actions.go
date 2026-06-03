@@ -7,6 +7,7 @@ import (
 	shared "refurbished-marketplace/services/web/internal/handlers/shared"
 	cartviews "refurbished-marketplace/services/web/internal/views/cart"
 	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
+	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -145,5 +146,26 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 	if remainingItems == 0 {
 		h.clearCartCookie(w)
 	}
-	shared.Redirect(w, r, "/orders/"+order.GetId(), http.StatusSeeOther)
+	orderPageURL := shared.OrderPageURL(r, order.GetId())
+	if orderPageURL == "" {
+		shared.WriteBadRequest(w, r, "hosted payment unavailable")
+		return
+	}
+	hostedSession, err := h.deps.Payment.CreateHostedPaymentSession(r.Context(), &paymentv1.CreateHostedPaymentSessionRequest{
+		OrderId:     order.GetId(),
+		BuyerUserId: buyerUserID,
+		Currency:    "USD",
+		ReturnUrl:   orderPageURL,
+		CancelUrl:   orderPageURL,
+	})
+	if err != nil {
+		shared.WriteGRPCError(w, r, err)
+		return
+	}
+	hostedPaymentURL := shared.BuildHostedPaymentURL(h.deps.HostedPayment, r, hostedSession)
+	if hostedPaymentURL == "" {
+		shared.WriteBadRequest(w, r, "hosted payment unavailable")
+		return
+	}
+	shared.Redirect(w, r, hostedPaymentURL, http.StatusSeeOther)
 }

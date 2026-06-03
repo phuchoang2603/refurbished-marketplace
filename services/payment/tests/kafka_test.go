@@ -34,15 +34,17 @@ func TestKafkaInventoryReservedHandler_EndToEnd(t *testing.T) {
 
 	orderID := uuid.New()
 	buyerID := uuid.New()
-	if err := svc.InitiatePayment(ctx, service.InitiatePaymentParams{
+	var err error
+	_, err = svc.CreateHostedPaymentSession(ctx, service.CreateHostedPaymentSessionParams{
 		OrderID:         orderID,
 		BuyerUserID:     buyerID,
-		PaymentToken:    "tok_visa",
 		Currency:        "USD",
-		BillingAddress:  json.RawMessage(`{}`),
 		ShippingAddress: json.RawMessage(`{}`),
-	}); err != nil {
-		t.Fatalf("InitiatePayment: %v", err)
+		ReturnURL:       "/orders/" + orderID.String(),
+		CancelURL:       "/orders/" + orderID.String(),
+	})
+	if err != nil {
+		t.Fatalf("CreateHostedPaymentSession: %v", err)
 	}
 
 	merchantID := uuid.New()

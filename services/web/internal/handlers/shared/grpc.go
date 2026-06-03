@@ -15,6 +15,14 @@ func IsUnavailableError(err error) bool {
 	return st.Code() == codes.Unavailable || st.Code() == codes.DeadlineExceeded
 }
 
+func IsNotFoundError(err error) bool {
+	st, ok := status.FromError(err)
+	if !ok {
+		return false
+	}
+	return st.Code() == codes.NotFound
+}
+
 func WriteGRPCError(w http.ResponseWriter, r *http.Request, err error) {
 	st, ok := status.FromError(err)
 	if !ok {

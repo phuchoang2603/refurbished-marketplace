@@ -1,25 +1,29 @@
--- name: UpsertPaymentIntent :one
+-- name: CreateHostedPaymentSession :one
 INSERT INTO payment_intents (
     order_id,
     buyer_user_id,
-    payment_token,
     currency,
-    billing_address,
     shipping_address,
-    status
+    status,
+    payment_session_id,
+    return_url,
+    cancel_url,
+    expires_at,
+    failure_reason
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7)
-ON CONFLICT (order_id) DO UPDATE
-SET buyer_user_id = excluded.buyer_user_id,
-payment_token = excluded.payment_token,
-currency = excluded.currency,
-billing_address = excluded.billing_address,
-shipping_address = excluded.shipping_address,
-status = excluded.status,
-updated_at = NOW()
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 RETURNING payment_intents.*;
 
 -- name: GetPaymentIntentByOrderID :one
 SELECT *
 FROM payment_intents
 WHERE order_id = $1;
+
+-- name: UpdateHostedPaymentSessionOutcome :one
+UPDATE payment_intents
+SET
+    status = $3,
+    failure_reason = $4,
+    updated_at = NOW()
+WHERE order_id = $1 AND payment_session_id = $2
+RETURNING payment_intents.*;

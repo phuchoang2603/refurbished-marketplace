@@ -440,7 +440,7 @@ func CartSection(cart sharedviews.CartView) templ.Component {
 									}()
 								}
 								ctx = templ.InitializeContext(ctx)
-								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "Checkout this merchant")
+								templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "Continue to payment")
 								if templ_7745c5c3_Err != nil {
 									return templ_7745c5c3_Err
 								}

@@ -8,7 +8,6 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"google.golang.org/protobuf/types/known/timestamppb"
 
 	"refurbished-marketplace/services/payment/internal/service"
 	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
@@ -16,36 +15,27 @@ import (
 	"github.com/google/uuid"
 )
 
-func mapPaymentTransaction(tx service.PaymentTransactionView) *paymentv1.PaymentTransaction {
-	out := &paymentv1.PaymentTransaction{
-		Id:             tx.ID,
-		OrderId:        tx.OrderID,
-		MerchantId:     tx.MerchantID,
-		AmountCents:    tx.AmountCents,
-		Currency:       tx.Currency,
-		Status:         paymentStatusStringToProto(tx.Status),
-		IdempotencyKey: tx.IdempotencyKey,
-		CreatedAt:      timestamppb.New(tx.CreatedAt),
-		UpdatedAt:      timestamppb.New(tx.UpdatedAt),
+func mapHostedPaymentSession(session service.HostedPaymentSessionView) *paymentv1.HostedPaymentSession {
+	return &paymentv1.HostedPaymentSession{
+		Status:        hostedPaymentStatusStringToProto(session.Status),
+		FailureReason: session.FailureReason,
 	}
-	if tx.GatewayTransactionID != "" {
-		out.GatewayTransactionId = tx.GatewayTransactionID
-	}
-	return out
 }
 
-func paymentStatusStringToProto(dbStatus string) paymentv1.PaymentTransactionStatus {
+func hostedPaymentStatusStringToProto(dbStatus string) paymentv1.HostedPaymentSessionStatus {
 	switch strings.ToUpper(strings.TrimSpace(dbStatus)) {
-	case service.PaymentTxStatusInitialized:
-		return paymentv1.PaymentTransactionStatus_PAYMENT_TRANSACTION_STATUS_INITIALIZED
-	case service.PaymentTxStatusSubmitted:
-		return paymentv1.PaymentTransactionStatus_PAYMENT_TRANSACTION_STATUS_SUBMITTED
-	case service.PaymentTxStatusSucceeded:
-		return paymentv1.PaymentTransactionStatus_PAYMENT_TRANSACTION_STATUS_SUCCEEDED
-	case service.PaymentTxStatusFailed:
-		return paymentv1.PaymentTransactionStatus_PAYMENT_TRANSACTION_STATUS_FAILED
+	case service.HostedPaymentSessionStatusPending:
+		return paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_PENDING
+	case service.HostedPaymentSessionStatusSucceeded:
+		return paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_SUCCEEDED
+	case service.HostedPaymentSessionStatusFailed:
+		return paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_FAILED
+	case service.HostedPaymentSessionStatusCancelled:
+		return paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_CANCELLED
+	case service.HostedPaymentSessionStatusExpired:
+		return paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_EXPIRED
 	default:
-		return paymentv1.PaymentTransactionStatus_PAYMENT_TRANSACTION_STATUS_UNSPECIFIED
+		return paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_UNSPECIFIED
 	}
 }
 
@@ -81,7 +71,7 @@ func addressToJSON(a *paymentv1.Address) (json.RawMessage, error) {
 	return json.Marshal(m)
 }
 
-func (s *Server) InitiatePayment(ctx context.Context, req *paymentv1.InitiatePaymentRequest) (*paymentv1.InitiatePaymentResponse, error) {
+func (s *Server) CreateHostedPaymentSession(ctx context.Context, req *paymentv1.CreateHostedPaymentSessionRequest) (*paymentv1.CreateHostedPaymentSessionResponse, error) {
 	orderID, err := uuid.Parse(req.GetOrderId())
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid order id")
@@ -90,76 +80,90 @@ func (s *Server) InitiatePayment(ctx context.Context, req *paymentv1.InitiatePay
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid buyer user id")
 	}
-	token := strings.TrimSpace(req.GetPaymentToken())
-	if token == "" {
-		return nil, status.Error(codes.InvalidArgument, "payment_token is required")
+	returnURL := strings.TrimSpace(req.GetReturnUrl())
+	if returnURL == "" {
+		return nil, status.Error(codes.InvalidArgument, "return_url is required")
 	}
-
-	billing, err := addressToJSON(req.GetBillingAddress())
-	if err != nil {
-		return nil, status.Errorf(codes.InvalidArgument, "billing_address: %v", err)
+	cancelURL := strings.TrimSpace(req.GetCancelUrl())
+	if cancelURL == "" {
+		cancelURL = returnURL
 	}
 	shipping, err := addressToJSON(req.GetShippingAddress())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "shipping_address: %v", err)
 	}
 
-	if err := s.svc.InitiatePayment(ctx, service.InitiatePaymentParams{
+	session, err := s.svc.CreateHostedPaymentSession(ctx, service.CreateHostedPaymentSessionParams{
 		OrderID:         orderID,
 		BuyerUserID:     buyerID,
-		PaymentToken:    token,
 		Currency:        strings.TrimSpace(req.GetCurrency()),
-		BillingAddress:  billing,
 		ShippingAddress: shipping,
-	}); err != nil {
+		ReturnURL:       returnURL,
+		CancelURL:       cancelURL,
+	})
+	if err != nil {
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 
-	return &paymentv1.InitiatePaymentResponse{OrderId: orderID.String()}, nil
+	return &paymentv1.CreateHostedPaymentSessionResponse{
+		OrderId:          session.OrderID,
+		PaymentSessionId: session.PaymentSessionID,
+		ReturnUrl:        session.ReturnURL,
+		CancelUrl:        session.CancelURL,
+	}, nil
+}
+
+func (s *Server) GetHostedPaymentSessionByOrder(ctx context.Context, req *paymentv1.GetHostedPaymentSessionByOrderRequest) (*paymentv1.HostedPaymentSession, error) {
+	orderID, err := uuid.Parse(req.GetOrderId())
+	if err != nil {
+		return nil, status.Error(codes.InvalidArgument, "invalid order id")
+	}
+	session, err := s.svc.GetHostedPaymentSessionByOrder(ctx, orderID)
+	if err != nil {
+		if errors.Is(err, service.ErrIntentNotFound) {
+			return nil, status.Error(codes.NotFound, "payment session not found")
+		}
+		return nil, status.Error(codes.Internal, "internal error")
+	}
+	return mapHostedPaymentSession(session), nil
+}
+
+func hostedPaymentStatusProtoToString(v paymentv1.HostedPaymentSessionStatus) (string, error) {
+	switch v {
+	case paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_SUCCEEDED:
+		return service.HostedPaymentSessionStatusSucceeded, nil
+	case paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_FAILED:
+		return service.HostedPaymentSessionStatusFailed, nil
+	case paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_CANCELLED:
+		return service.HostedPaymentSessionStatusCancelled, nil
+	case paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_EXPIRED:
+		return service.HostedPaymentSessionStatusExpired, nil
+	case paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_UNSPECIFIED,
+		paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_PENDING:
+		return "", status.Error(codes.InvalidArgument, "status must be a terminal hosted payment status")
+	default:
+		return "", status.Error(codes.InvalidArgument, "unknown hosted payment status")
+	}
 }
 
 func (s *Server) HandleGatewayWebhook(ctx context.Context, req *paymentv1.HandleGatewayWebhookRequest) (*paymentv1.HandleGatewayWebhookResponse, error) {
-	txID, err := uuid.Parse(req.GetPaymentTransactionId())
+	orderID, err := uuid.Parse(req.GetOrderId())
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid payment transaction id")
+		return nil, status.Error(codes.InvalidArgument, "invalid order id")
 	}
-
-	var succeeded bool
-	switch req.GetStatus() {
-	case paymentv1.PaymentTransactionStatus_PAYMENT_TRANSACTION_STATUS_SUCCEEDED:
-		succeeded = true
-	case paymentv1.PaymentTransactionStatus_PAYMENT_TRANSACTION_STATUS_FAILED:
-		succeeded = false
-	case paymentv1.PaymentTransactionStatus_PAYMENT_TRANSACTION_STATUS_UNSPECIFIED,
-		paymentv1.PaymentTransactionStatus_PAYMENT_TRANSACTION_STATUS_INITIALIZED,
-		paymentv1.PaymentTransactionStatus_PAYMENT_TRANSACTION_STATUS_SUBMITTED:
-		return nil, status.Error(codes.InvalidArgument, "status must be SUCCEEDED or FAILED")
-	default:
-		return nil, status.Error(codes.InvalidArgument, "unknown status")
+	paymentSessionID := strings.TrimSpace(req.GetPaymentSessionId())
+	if paymentSessionID == "" {
+		return nil, status.Error(codes.InvalidArgument, "payment_session_id is required")
 	}
-
-	if err := s.svc.ApplyGatewayWebhook(ctx, txID, req.GetGatewayTransactionId(), succeeded, req.GetFailureReason()); err != nil {
-		if errors.Is(err, service.ErrTransactionNotFound) {
-			return nil, status.Error(codes.NotFound, "payment transaction not found")
+	statusValue, err := hostedPaymentStatusProtoToString(req.GetStatus())
+	if err != nil {
+		return nil, err
+	}
+	if err := s.svc.ApplyGatewayWebhook(ctx, orderID, paymentSessionID, statusValue, strings.TrimSpace(req.GetFailureReason())); err != nil {
+		if errors.Is(err, service.ErrIntentNotFound) || errors.Is(err, service.ErrSessionMismatch) {
+			return nil, status.Error(codes.NotFound, "payment session not found")
 		}
 		return nil, status.Error(codes.Internal, "internal error")
 	}
 	return &paymentv1.HandleGatewayWebhookResponse{}, nil
-}
-
-func (s *Server) GetTransaction(ctx context.Context, req *paymentv1.GetTransactionRequest) (*paymentv1.PaymentTransaction, error) {
-	id, err := uuid.Parse(req.GetPaymentTransactionId())
-	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid payment transaction id")
-	}
-
-	tx, err := s.svc.GetPaymentTransaction(ctx, id)
-	if err != nil {
-		if errors.Is(err, service.ErrTransactionNotFound) {
-			return nil, status.Error(codes.NotFound, "payment transaction not found")
-		}
-		return nil, status.Error(codes.Internal, "internal error")
-	}
-
-	return mapPaymentTransaction(tx), nil
 }
