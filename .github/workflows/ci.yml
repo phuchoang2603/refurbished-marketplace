@@ -35,20 +35,97 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: golangci-lint
-        uses: reviewdog/action-golangci-lint@v2
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          go_version: ${{ env.GO_VERSION }}
-          golangci_lint_version: v2.12.2
-          golangci_lint_flags: --config=.golangci.yml ${{ env.GO_MODULE_GLOBS }}
-          reporter: ${{ github.event_name == 'pull_request' && 'github-pr-review' || 'github-check' }}
-          filter_mode: nofilter
-          fail_level: error
-
       - uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
+
+      - name: Install golangci-lint and reviewdog
+        run: |
+          go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
+          curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh | sh -s -- -b "$(go env GOPATH)/bin" v0.20.3
+
+      - name: golangci-lint
+        id: golangci
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          golangci-lint run --config=.golangci.yml --out-format=line-number \
+            ${{ env.GO_MODULE_GLOBS }} 2>&1 | tee "${RUNNER_TEMP}/golangci.out"
+
+      - name: Post inline review comments
+        if: github.event_name == 'pull_request' && steps.golangci.outcome == 'failure'
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          reviewdog -f=golangci-lint -name=golangci -reporter=github-pr-review \
+            -filter-mode=diff_context -fail-level=none -level=error \
+            < "${RUNNER_TEMP}/golangci.out" || true
+
+      - name: Post lint summary on PR
+        if: github.event_name == 'pull_request' && steps.golangci.outcome == 'failure'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const fs = require('fs');
+            const output = fs.readFileSync(`${process.env.RUNNER_TEMP}/golangci.out`, 'utf8');
+            const maxLen = 65000;
+            const body = output.length > maxLen
+              ? output.slice(0, maxLen) + '\n\n...(truncated)'
+              : output;
+            const issueCount = output.split('\n').filter((line) => /:\d+:\d+:/.test(line)).length;
+            const marker = '<!-- golangci-lint-report -->';
+            const message = [
+              marker,
+              '## golangci-lint findings',
+              '',
+              `Found ${issueCount} issue(s). Inline review comments appear on changed lines only.`,
+              '',
+              '<details>',
+              `<summary>Full report</summary>`,
+              '',
+              '```',
+              body,
+              '```',
+              '',
+              '</details>',
+            ].join('\n');
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find((comment) => comment.body.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body: message,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: message,
+              });
+            }
+
+      - name: Post check annotations
+        if: github.event_name == 'push' && steps.golangci.outcome == 'failure'
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          reviewdog -f=golangci-lint -name=golangci -reporter=github-check \
+            -filter-mode=nofilter -fail-level=none -level=error \
+            < "${RUNNER_TEMP}/golangci.out" || true
+
+      - name: Fail on lint errors
+        if: steps.golangci.outcome == 'failure'
+        run: exit 1
 
       - name: Vet and build
         run: |
