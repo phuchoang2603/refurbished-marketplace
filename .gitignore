@@ -1,8 +1,5 @@
 tmp
 bin/
-.env
-.envrc
-.direnv
 
 # Logs
 logs
@@ -16,8 +13,6 @@ lerna-debug.log*
 # Editor directories and files
 .vscode/*
 .nvim.lua
-.sqruff
-test.sql
 .idea
 .DS_Store
 *.suo
@@ -25,6 +20,11 @@ test.sql
 *.njsproj
 *.sln
 *.sw?
+
+# Sql stuff
+.sqruff
+test.sql
+sqls.yml
 
 node_modules
 dist
@@ -34,13 +34,19 @@ dist-ssr
 # Tilt build
 build/
 
+# Direnv
+.env
+.envrc
+.direnv
+
 # Devenv
 .devenv*
 devenv.local.nix
 devenv.local.yaml
 
-# direnv
-.direnv
-
 # pre-commit
 .pre-commit-config.yaml
+
+# AI stuff
+.opencode/
+.cursor/
