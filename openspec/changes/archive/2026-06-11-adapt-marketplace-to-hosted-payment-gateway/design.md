@@ -27,7 +27,7 @@ That shape does not fit the intended separation where a dedicated payment gatewa
 
 ### Decision: Use hosted payment session creation instead of marketplace-submitted payment tokens
 
-The payment boundary will shift from marketplace-submitted `payment_token` input to hosted payment session creation keyed by `order_id`. The marketplace will create an order, call the payment domain with order, buyer, merchant, item, shipping, and redirect context, then redirect the browser to the hosted payment URL returned by the payment service.
+The payment boundary will shift from marketplace-submitted `payment_token` input to hosted payment session creation keyed by `order_id`. The web edge will create an order, call the payment domain with order, buyer, and redirect context, receive hosted-session metadata, build the buyer-facing hosted payment URL locally, and redirect the browser to the configured gateway base URL.
 
 Rationale:
 
@@ -56,7 +56,7 @@ Alternatives considered:
 
 ### Decision: Keep the marketplace payload narrow and commerce-owned
 
-The marketplace request to the payment domain will include only data it already owns: order ID, buyer ID and coarse account metadata, merchant ID and coarse merchant metadata, line-item summaries, shipping address, and return or cancel URLs.
+The marketplace request to the payment domain will include only data it already owns in v1: order ID, buyer ID, currency, optional shipping address, and return or cancel URLs. Merchant metadata and line-item summaries remain order-domain facts and are not required on the payment-session request in the first version.
 
 Rationale:
 
@@ -67,6 +67,7 @@ Rationale:
 Alternatives considered:
 
 - Add billing address or marketplace-derived behavioral features now. Rejected because they are unnecessary for the first hosted-flow boundary and expand scope without helping the core flow.
+- Add a marketplace checkout shipping-address form now. Rejected for v1 because the hosted flow does not require it; payment accepts an empty shipping address until the marketplace owns address collection.
 
 ### Decision: Create gateway-local customer and merchant records lazily, if needed
 
@@ -96,20 +97,34 @@ Alternatives considered:
 
 - Delay order creation until after payment capture. Rejected because it conflicts with the current merchant-scoped order model and would require larger downstream contract changes.
 
-### Decision: Terminate server-to-server payment callbacks in `services/payment`
+### Decision: Terminate server-to-server payment callbacks at the web edge
 
-Hosted gateway callbacks will terminate in `services/payment`, while browser return paths will terminate in `services/web`.
+Hosted gateway callbacks will terminate in `services/web` over HTTP, and the web edge will forward terminal outcomes to `services/payment` over gRPC. Browser return paths also terminate in `services/web`.
 
 Rationale:
 
-- It keeps payment truth inside the payment domain.
-- It keeps `services/web` focused on browser navigation and rendering.
-- It avoids duplicated callback handling and race-prone split authority between services.
+- It keeps `services/payment` internal and gRPC-only.
+- It gives the marketplace a single public HTTP edge for both browser navigation and gateway callbacks.
+- Payment truth and idempotent state transitions still live in `services/payment`; web only adapts the HTTP callback contract.
 
 Alternatives considered:
 
-- Terminate callbacks in `services/web`. Rejected because callbacks are not a browser concern and would force the web service to own payment-domain state transitions.
+- Terminate callbacks directly in `services/payment` over HTTP. Rejected because it forces the payment service to expose a public HTTP surface.
 - Accept callbacks in both services. Rejected because it increases coordination complexity without helping the simple hosted-flow design.
+
+### Decision: Build hosted payment redirect URLs in `services/web`
+
+The web edge will build the buyer-facing hosted payment URL from payment-session metadata plus `HOSTED_PAYMENT_BASE_URL`. Return, cancel, and callback URLs are derived from the checkout request host.
+
+Rationale:
+
+- It keeps gateway and browser URL configuration at the public edge.
+- It lets payment stay focused on session persistence and outcome handling.
+- It avoids payment-service knowledge of simulators, port-forwards, or external gateway hosts.
+
+Alternatives considered:
+
+- Have `services/payment` return a fully formed hosted payment URL. Rejected because payment should not own browser-edge URL construction.
 
 ### Decision: Return buyers to the existing order page
 
@@ -211,7 +226,7 @@ Alternatives considered:
 
 ## Risks / Trade-offs
 
-- [Hosted payment redirect introduces another user-visible round trip] -> Mitigate by returning a direct hosted URL from the payment domain and using standard browser redirects from the checkout handler.
+- [Hosted payment redirect introduces another user-visible round trip] -> Mitigate by building a direct hosted URL at the web edge and using standard browser redirects from the checkout handler.
 - [Order creation before payment can leave more pending orders after buyer abandonment] -> Mitigate by keeping order status pending until callback completion and documenting follow-up cleanup or expiration work as future scope.
 - [Changing the payment API from token-based initiation can break existing internal assumptions] -> Mitigate by updating the payment spec, protobuf contract, and web integration together in one scoped change.
 - [Gateway callbacks can arrive more than once or after browser return paths] -> Mitigate by making payment outcome handling idempotent and order-state updates tolerant of repeated terminal events.
@@ -219,10 +234,10 @@ Alternatives considered:
 ## Migration Plan
 
 1. Update the payment and web contracts in OpenSpec and protobuf definitions for hosted session creation and outcome handling.
-2. Implement payment-domain support for creating or reusing a hosted session by `order_id` and returning a hosted payment URL.
-3. Add a dev-only hosted payment simulator under `tools/` that can render a mock hosted page, submit a terminal callback, and redirect the browser back to the marketplace.
-4. Update the web checkout flow to create the order, request the hosted payment session, and redirect the browser.
-5. Add browser return handling and payment callback handling so order pages and order state remain usable after payment completion or cancellation.
+2. Implement payment-domain support for creating or reusing a hosted session by `order_id` and returning hosted-session metadata over gRPC.
+3. Add a dev-only hosted payment simulator under `tools/` that can render a mock hosted page, submit a terminal callback to `services/web`, and redirect the browser back to the marketplace.
+4. Update the web checkout flow to create the order, request the hosted payment session, build the gateway URL, and redirect the browser.
+5. Add browser return handling and web-edge callback forwarding so order pages and order state remain usable after payment completion or cancellation.
 6. Remove or retire the old marketplace-submitted token initiation path once the hosted flow is wired end to end.
 
 Rollback strategy:

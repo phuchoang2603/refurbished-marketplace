@@ -2,30 +2,30 @@
 
 ### Requirement: Payment creates hosted payment sessions by order identifier
 
-The payment service MUST create or reuse a hosted payment session using `order_id` as the idempotency anchor and MUST return a hosted payment URL that the marketplace can use to redirect the buyer.
+The payment service MUST create or reuse a hosted payment session using `order_id` as the idempotency anchor and MUST return hosted-session metadata that the web edge can use to redirect the buyer.
 
 #### Scenario: Hosted payment session is requested for a new order
 
-- **WHEN** the marketplace requests a hosted payment session for an order with buyer, merchant, item, shipping, and return context
-- **THEN** the payment service SHALL persist or derive the hosted session state and return a hosted payment URL for that order
+- **WHEN** the web edge requests a hosted payment session for an order with buyer, optional shipping, and return context
+- **THEN** the payment service SHALL persist the hosted session state and return session metadata including `order_id`, `payment_session_id`, and return or cancel URLs
 
 #### Scenario: Hosted payment session is requested again for the same order
 
-- **WHEN** the marketplace repeats the same hosted payment session request for an order that already has an active session
-- **THEN** the payment service SHALL return the same active session instead of creating a duplicate
+- **WHEN** the web edge repeats the hosted payment session request for an order that already has a stored session
+- **THEN** the payment service SHALL return the same stored session metadata instead of creating a duplicate
 
 ### Requirement: Payment accepts hosted gateway outcome callbacks
 
-The payment service MUST accept hosted gateway payment outcomes and update payment state idempotently.
+The payment service MUST accept hosted gateway payment outcomes over its internal gRPC contract and update payment state idempotently.
 
 #### Scenario: Gateway reports a terminal payment result
 
-- **WHEN** the hosted payment gateway reports a successful or failed terminal payment result for an order or payment session
+- **WHEN** the web edge forwards a successful or failed terminal payment result for an order or payment session
 - **THEN** the payment service SHALL update the corresponding payment state and emit the order-level payment outcome expected by downstream consumers
 
 #### Scenario: Gateway repeats a terminal payment result
 
-- **WHEN** the hosted payment gateway retries the same terminal callback
+- **WHEN** the web edge forwards the same terminal callback again
 - **THEN** the payment service SHALL treat the repeat as idempotent and SHALL NOT emit duplicate terminal outcomes for downstream consumers
 
 ## MODIFIED Requirements

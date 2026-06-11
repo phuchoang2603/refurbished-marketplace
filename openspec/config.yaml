@@ -4,15 +4,13 @@ context: |
   Project: Refurbished Marketplace
   Domain: multi-service e-commerce marketplace
 
-  Stack:
-  - Go multi-module workspace
-  - HTML-first web edge using chi, templ, Tailwind CSS, Datastar, and vendored DatastarUI-style components
-  - gRPC for internal service-to-service traffic
-  - PostgreSQL with goose migrations and sqlc queries
-  - Kafka for async eventing, using franz-go in Go services
-  - Redis/Valkey for ephemeral cart state
-  - Kubernetes-based development with Tilt, Helm, CloudNativePG, Strimzi, Kafka UI, and Debezium
+  Development Workflow:
   - devenv.nix manages local development tooling; if there are tools not found, write to devenv.nix and do `direnv reload`
+  - Go multi-module workspace. Try to use the provided `tidy` script in devenv
+  - Kubernetes-based development with Tilt, Helm, CloudNativePG, Strimzi, Kafka UI, and Debezium. Therefore, don't try to compile and run any go services in my local machine (tests is okay).
+  - HTML-first web edge using chi, templ, Tailwind CSS, Datastar, and vendored DatastarUI-style components. All the templ and Tailwind generation will be handled by Tilt, no need to touch on that.
+  - gRPC for internal service-to-service traffic. If you need to generate the proto, use the provided script `generate-proto` in devenv
+  - PostgreSQL with goose migrations and sqlc queries. If you need to use sqlc, use the provided script `sqlc-gen` in devenv
 
   Repo conventions:
   - Keep service code under services/<name>/ and private code in internal/.

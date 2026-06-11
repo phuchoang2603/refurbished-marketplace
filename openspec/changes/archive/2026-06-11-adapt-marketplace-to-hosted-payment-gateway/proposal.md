@@ -7,7 +7,7 @@ The repository currently treats checkout as an internal order-creation flow foll
 - Replace the browser checkout follow-up flow so the marketplace creates an order, requests a hosted payment session from the payment domain, and redirects the buyer to the gateway payment page.
 - Redefine the payment-domain contract around hosted payment session creation keyed by `order_id` instead of marketplace-submitted `payment_token` input.
 - Add a browser return and callback outcome flow so gateway payment results can move orders into usable post-payment states without replaying checkout.
-- Limit the marketplace-to-gateway request payload to commerce facts needed for payment and fraud context, including order identifiers, buyer and merchant identifiers, line-item summaries, shipping address, and return URLs.
+- Limit the marketplace-to-payment-session request in v1 to order identifier, buyer identifier, currency, optional shipping address, and return URLs. The web edge builds the buyer-facing hosted payment URL from payment-session metadata and gateway configuration.
 - Keep derived behavioral history and fraud features out of the marketplace runtime contract; those remain future gateway or analytics concerns.
 - Do not introduce customer or merchant profile-sync event streams in this change.
 
@@ -26,7 +26,8 @@ The repository currently treats checkout as an internal order-creation flow foll
 ## Impact
 
 - Affected code will include `services/web` checkout handlers, protected routes, order detail or return routes, and shared browser response helpers.
-- The payment service gRPC and storage contract will change to support hosted payment sessions and gateway callbacks instead of the current internal token-oriented initiation shape.
+- The payment service gRPC and storage contract will change to support hosted payment sessions and gRPC-forwarded gateway outcomes instead of the current internal token-oriented initiation shape.
+- The web service will expose the public hosted-payment callback HTTP endpoint and remain the browser edge for checkout redirect and return handling.
 - A small dev-only hosted payment simulator under `tools/` may be added so the marketplace can exercise redirect, callback, and return flows before a real external gateway exists.
 - Existing docs such as `docs/order-placement.md` and `docs/ecommerce-fraud-gateway.md` will become the primary architecture context for the implementation.
 - Non-goals for this change include stored payment methods, customer or merchant profile synchronization over Kafka, and full fraud-feature pipeline implementation.
