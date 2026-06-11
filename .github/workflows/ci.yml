@@ -1,4 +1,4 @@
-name: Test
+name: CI
 
 on:
   pull_request:
@@ -7,11 +7,54 @@ on:
 
 permissions:
   contents: read
+  pull-requests: write
+  checks: write
 
 env:
   GO_VERSION: "1.26.1"
+  GO_MODULE_GLOBS: >-
+    ./services/users/...
+    ./services/products/...
+    ./services/orders/...
+    ./services/cart/...
+    ./services/payment/...
+    ./services/web/...
+    ./shared/auth/...
+    ./shared/messaging/...
+    ./shared/proto/...
+    ./shared/testutil/postgres/...
+    ./shared/testutil/kafka/...
+    ./shared/testutil/redis/...
+    ./tools/payment-gateway-simulator/...
 
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: golangci-lint
+        uses: reviewdog/action-golangci-lint@v2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          go_version: ${{ env.GO_VERSION }}
+          golangci_lint_version: v2.12.2
+          golangci_lint_flags: --config=.golangci.yml ${{ env.GO_MODULE_GLOBS }}
+          reporter: ${{ github.event_name == 'pull_request' && 'github-pr-review' || 'github-check' }}
+          filter_mode: nofilter
+          fail_level: error
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Vet and build
+        run: |
+          go vet ${{ env.GO_MODULE_GLOBS }}
+          go build ${{ env.GO_MODULE_GLOBS }}
+
   changes:
     runs-on: ubuntu-latest
     outputs:
@@ -62,82 +105,27 @@ jobs:
             helm:
               - 'infra/charts/**'
 
-  test-users:
+  test:
     needs: changes
-    if: needs.changes.outputs.users == 'true'
+    if: ${{ needs.changes.outputs[matrix.service] == 'true' }}
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - users
+          - products
+          - orders
+          - payment
+          - cart
+          - web
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
-      - name: Test users
-        working-directory: services/users
-        run: go test ./...
-
-  test-products:
-    needs: changes
-    if: needs.changes.outputs.products == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-      - name: Test products
-        working-directory: services/products
-        run: go test ./...
-
-  test-orders:
-    needs: changes
-    if: needs.changes.outputs.orders == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-      - name: Test orders
-        working-directory: services/orders
-        run: go test ./...
-
-  test-payment:
-    needs: changes
-    if: needs.changes.outputs.payment == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-      - name: Test payment
-        working-directory: services/payment
-        run: go test ./...
-
-  test-cart:
-    needs: changes
-    if: needs.changes.outputs.cart == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-      - name: Test cart
-        working-directory: services/cart
-        run: go test ./...
-
-  test-web:
-    needs: changes
-    if: needs.changes.outputs.web == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-      - name: Test web
-        working-directory: services/web
+      - name: Test ${{ matrix.service }}
+        working-directory: services/${{ matrix.service }}
         run: go test ./...
 
   helm:

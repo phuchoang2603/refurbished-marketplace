@@ -105,13 +105,13 @@ Mapping OpenSpec to GitHub:
 
 ## Continuous integration
 
-GitHub Actions runs `.github/workflows/lint.yml` and `.github/workflows/test.yml` on every pull request and push to `main`.
+GitHub Actions runs `.github/workflows/ci.yml` on every pull request and push to `main`.
 
-| Workflow / job   | When it runs              | What it does                                                  |
-| ---------------- | ------------------------- | ------------------------------------------------------------- |
-| `lint`           | Always                    | `golangci-lint`, `go vet`, and `go build` for every Go module |
-| `test-<service>` | Path filter match         | `go test ./...` for the affected service module               |
-| `helm`           | `infra/charts/**` changed | `helm lint`, `helm template`, and `kubeconform`               |
+| Job             | When it runs              | What it does                                                                 |
+| --------------- | ------------------------- | ---------------------------------------------------------------------------- |
+| `lint`          | Always                    | `golangci-lint` (PR review comments via reviewdog), `go vet`, and `go build` |
+| `test` (matrix) | Path filter match         | `go test ./...` for the affected service module                              |
+| `helm`          | `infra/charts/**` changed | `helm lint`, `helm template`, and `kubeconform`                              |
 
 **Branch protection:** require the `lint` job. Service test jobs and `helm` may be skipped when a PR does not touch relevant paths — that is expected.
 
