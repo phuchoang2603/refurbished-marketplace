@@ -97,6 +97,18 @@ jobs:
           go vet ./...
           go build ./...
 
+  lint-required:
+    name: lint
+    needs: lint
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if lint failed
+        run: |
+          if [ "${{ needs.lint.result }}" != "success" ]; then
+            exit 1
+          fi
+
   test-users:
     needs: changes
     if: needs.changes.outputs.users == 'true'
