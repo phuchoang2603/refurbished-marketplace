@@ -107,7 +107,6 @@ jobs:
 
   test:
     needs: changes
-    if: ${{ needs.changes.outputs[matrix.service] == 'true' }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -120,11 +119,20 @@ jobs:
           - cart
           - web
     steps:
+      - name: Skip when path filter does not match
+        if: needs.changes.outputs[matrix.service] != 'true'
+        run: echo "Skipping tests for ${{ matrix.service }}"
+
       - uses: actions/checkout@v4
+        if: needs.changes.outputs[matrix.service] == 'true'
+
       - uses: actions/setup-go@v5
+        if: needs.changes.outputs[matrix.service] == 'true'
         with:
           go-version: ${{ env.GO_VERSION }}
+
       - name: Test ${{ matrix.service }}
+        if: needs.changes.outputs[matrix.service] == 'true'
         working-directory: services/${{ matrix.service }}
         run: go test ./...
 
@@ -149,11 +157,10 @@ jobs:
             helm lint "$chart"
             helm template test-release "$chart" --namespace "$namespace" > "/tmp/$(basename "$chart").yaml"
           done
-      - name: Install kubeconform
-        run: |
-          set -euo pipefail
-          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz
-          sudo mv kubeconform /usr/local/bin/kubeconform
+      - name: Set up kubeconform
+        uses: bmuschko/setup-kubeconform@v1
+        with:
+          kubeconform-version: "0.6.7"
       - name: Kubeconform
         run: |
           set -euo pipefail
