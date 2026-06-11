@@ -14,5 +14,5 @@ linters:
 issues:
   exclude-files:
     - '.*_templ\.go$'
-    - '.*/proto/.*\.go$'
+    - '.*\.pb\.go$'
     - '.*/database/.*\.go$'
