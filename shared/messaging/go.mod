@@ -1,6 +1,6 @@
 module refurbished-marketplace/shared/messaging
 
-go 1.26.1
+go 1.26.4
 
 require (
 	github.com/twmb/franz-go v1.20.7

@@ -1,6 +1,9 @@
 package clients
 
-import "fmt"
+import (
+	"fmt"
+	"log"
+)
 
 type Config struct {
 	UsersAddr    string
@@ -26,31 +29,31 @@ func New(cfg Config) (*Clients, error) {
 
 	productsClient, err := newProductsClient(cfg.ProductsAddr)
 	if err != nil {
-		usersClient.Close()
+		closeClient(usersClient)
 		return nil, fmt.Errorf("products grpc client: %w", err)
 	}
 
 	ordersClient, err := newOrdersClient(cfg.OrdersAddr)
 	if err != nil {
-		usersClient.Close()
-		productsClient.Close()
+		closeClient(usersClient)
+		closeClient(productsClient)
 		return nil, fmt.Errorf("orders grpc client: %w", err)
 	}
 
 	cartClient, err := newCartClient(cfg.CartAddr)
 	if err != nil {
-		usersClient.Close()
-		productsClient.Close()
-		ordersClient.Close()
+		closeClient(usersClient)
+		closeClient(productsClient)
+		closeClient(ordersClient)
 		return nil, fmt.Errorf("cart grpc client: %w", err)
 	}
 
 	paymentClient, err := newPaymentClient(cfg.PaymentAddr)
 	if err != nil {
-		usersClient.Close()
-		productsClient.Close()
-		ordersClient.Close()
-		cartClient.Close()
+		closeClient(usersClient)
+		closeClient(productsClient)
+		closeClient(ordersClient)
+		closeClient(cartClient)
 		return nil, fmt.Errorf("payment grpc client: %w", err)
 	}
 
@@ -67,19 +70,18 @@ func (c *Clients) Close() {
 	if c == nil {
 		return
 	}
-	if c.Users != nil {
-		c.Users.Close()
+	closeClient(c.Users)
+	closeClient(c.Products)
+	closeClient(c.Orders)
+	closeClient(c.Cart)
+	closeClient(c.Payment)
+}
+
+func closeClient(client interface{ Close() error }) {
+	if client == nil {
+		return
 	}
-	if c.Products != nil {
-		c.Products.Close()
-	}
-	if c.Orders != nil {
-		c.Orders.Close()
-	}
-	if c.Cart != nil {
-		c.Cart.Close()
-	}
-	if c.Payment != nil {
-		c.Payment.Close()
+	if err := client.Close(); err != nil {
+		log.Printf("close grpc client: %v", err)
 	}
 }

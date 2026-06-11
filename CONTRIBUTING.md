@@ -41,11 +41,13 @@ From inside `devenv shell`:
 | `generate-proto` | Regenerate Go code from `**/proto/*/v1/*.proto`                          |
 | `sqlc-gen`       | Regenerate sqlc query code for services with `sqlc.yaml`                 |
 | `templ generate` | Regenerate `templ` views (run from `services/web` when templates change) |
-| `tidy`           | `go mod tidy` across `shared/` and `services/` modules                   |
+| `tidy`           | `go mod tidy` across modules and `go work sync` for `go.work`            |
 
 Edit SQL migrations under `services/<service>/db/migrations/` and queries under `services/<service>/db/queries/`, then run `sqlc-gen` when query shapes change.
 
 Formatting is handled by devenv/git hooks via `treefmt` (`gofumpt`, `sqruff`, etc.).
+
+Local Go development uses a root `go.work` so tools like gopls and `golangci-lint` see the whole repo. Container builds keep `ENV GOWORK=off` and copy only the service plus required `shared/` paths, so images still build a single module.
 
 ## How work is planned (OpenSpec)
 
@@ -100,6 +102,32 @@ Mapping OpenSpec to GitHub:
 | Change proposal  | Feature issue (optional but recommended)          |
 | `tasks.md` items | Checklist in the issue or follow-up issues        |
 | PR               | `Closes #<issue>`; OpenSpec change in PR template |
+
+## Continuous integration
+
+GitHub Actions runs `.github/workflows/ci.yml` on every pull request and push to `main`.
+
+| Job             | When it runs              | What it does                                    |
+| --------------- | ------------------------- | ----------------------------------------------- |
+| `lint`          | Always                    | `golangci-lint`, `go vet`, and `govulncheck`    |
+| `test` (matrix) | Path filter match         | `go test ./...` for the affected service module |
+| `helm`          | `infra/charts/**` changed | `helm lint`, `helm template`, and `kubeconform` |
+
+**Branch protection:** require the `lint` job. Service test jobs and `helm` may be skipped when a PR does not touch relevant paths — that is expected.
+
+**Path-filter fan-out for tests:**
+
+| Changed paths                 | Tests triggered                             |
+| ----------------------------- | ------------------------------------------- |
+| `services/<name>/**`          | That service only                           |
+| `shared/proto/**`             | users, products, orders, cart, payment, web |
+| `shared/auth/**`              | users, web                                  |
+| `shared/messaging/**`         | products, orders, payment                   |
+| `shared/testutil/postgres/**` | users, products, orders, payment            |
+| `shared/testutil/kafka/**`    | products, orders, payment                   |
+| `shared/testutil/redis/**`    | cart                                        |
+
+Local formatting and codegen drift checks (`treefmt`, `generate-proto`, `sqlc-gen`, `templ generate`) stay in devenv/git hooks — they are not run in CI.
 
 ## Pull requests
 

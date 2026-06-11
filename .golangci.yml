@@ -1,0 +1,19 @@
+version: "2"
+
+run:
+  tests: true
+
+linters:
+  default: none
+  enable:
+    - govet
+    - staticcheck
+    - errcheck
+    - unused
+    - ineffassign
+
+issues:
+  exclude-files:
+    - '.*_templ\.go$'
+    - '.*\.pb\.go$'
+    - '.*/database/.*\.go$'

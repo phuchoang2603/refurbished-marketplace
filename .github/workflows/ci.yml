@@ -1,0 +1,165 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  GO_VERSION: "1.26.4"
+  GO_MODULE_GLOBS: >-
+    ./services/users/...
+    ./services/products/...
+    ./services/orders/...
+    ./services/cart/...
+    ./services/payment/...
+    ./services/web/...
+    ./shared/auth/...
+    ./shared/messaging/...
+    ./shared/proto/...
+    ./shared/testutil/postgres/...
+    ./shared/testutil/kafka/...
+    ./shared/testutil/redis/...
+    ./tools/payment-gateway-simulator/...
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Install lint tools
+        run: |
+          go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: golangci-lint
+        run: golangci-lint run --config=.golangci.yml ${{ env.GO_MODULE_GLOBS }}
+
+      - name: govulncheck
+        run: |
+          set -euo pipefail
+          for dir in $(grep -E '^\s*\./' go.work | tr -d ' \t'); do
+            echo "==> $dir"
+            (cd "$dir" && govulncheck ./...)
+          done
+
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      users: ${{ steps.filter.outputs.users }}
+      products: ${{ steps.filter.outputs.products }}
+      orders: ${{ steps.filter.outputs.orders }}
+      payment: ${{ steps.filter.outputs.payment }}
+      cart: ${{ steps.filter.outputs.cart }}
+      web: ${{ steps.filter.outputs.web }}
+      helm: ${{ steps.filter.outputs.helm }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            users:
+              - 'services/users/**'
+              - 'shared/proto/**'
+              - 'shared/auth/**'
+              - 'shared/testutil/postgres/**'
+            products:
+              - 'services/products/**'
+              - 'shared/proto/**'
+              - 'shared/messaging/**'
+              - 'shared/testutil/postgres/**'
+              - 'shared/testutil/kafka/**'
+            orders:
+              - 'services/orders/**'
+              - 'shared/proto/**'
+              - 'shared/messaging/**'
+              - 'shared/testutil/postgres/**'
+              - 'shared/testutil/kafka/**'
+            payment:
+              - 'services/payment/**'
+              - 'shared/proto/**'
+              - 'shared/messaging/**'
+              - 'shared/testutil/postgres/**'
+              - 'shared/testutil/kafka/**'
+            cart:
+              - 'services/cart/**'
+              - 'shared/proto/**'
+              - 'shared/testutil/redis/**'
+            web:
+              - 'services/web/**'
+              - 'shared/proto/**'
+              - 'shared/auth/**'
+            helm:
+              - 'infra/charts/**'
+
+  test:
+    needs: changes
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - users
+          - products
+          - orders
+          - payment
+          - cart
+          - web
+    steps:
+      - name: Skip when path filter does not match
+        if: needs.changes.outputs[matrix.service] != 'true'
+        run: echo "Skipping tests for ${{ matrix.service }}"
+
+      - uses: actions/checkout@v4
+        if: needs.changes.outputs[matrix.service] == 'true'
+
+      - uses: actions/setup-go@v5
+        if: needs.changes.outputs[matrix.service] == 'true'
+        with:
+          go-version: ${{ env.GO_VERSION }}
+
+      - name: Test ${{ matrix.service }}
+        if: needs.changes.outputs[matrix.service] == 'true'
+        working-directory: services/${{ matrix.service }}
+        run: go test ./...
+
+  helm:
+    needs: changes
+    if: needs.changes.outputs.helm == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.17.3
+      - name: Helm lint and template
+        run: |
+          set -euo pipefail
+          namespace=ecommerce
+          charts=(
+            infra/charts/refurbished-marketplace
+            infra/charts/kafka
+          )
+          for chart in "${charts[@]}"; do
+            helm lint "$chart"
+            helm template test-release "$chart" --namespace "$namespace" > "/tmp/$(basename "$chart").yaml"
+          done
+      - name: Set up kubeconform
+        uses: bmuschko/setup-kubeconform@v1
+        with:
+          kubeconform-version: "0.6.7"
+      - name: Kubeconform
+        run: |
+          set -euo pipefail
+          kubeconform -summary -ignore-missing-schemas \
+            /tmp/refurbished-marketplace.yaml \
+            /tmp/kafka.yaml

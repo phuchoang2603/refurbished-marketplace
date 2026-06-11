@@ -14,7 +14,7 @@ func (e *callbackError) Error() string {
 	return "callback failed: " + e.status
 }
 
-func postCallback(ctx context.Context, callbackURL string, req callbackRequest) error {
+func postCallback(ctx context.Context, callbackURL string, req callbackRequest) (err error) {
 	payload, err := json.Marshal(req)
 	if err != nil {
 		return err
@@ -28,7 +28,11 @@ func postCallback(ctx context.Context, callbackURL string, req callbackRequest) 
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if closeErr := resp.Body.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 	if resp.StatusCode != http.StatusNoContent {
 		return &callbackError{status: resp.Status}
 	}

@@ -31,7 +31,11 @@ func main() {
 	}
 
 	rdb := redis.NewClient(&redis.Options{Addr: redisAddr})
-	defer rdb.Close()
+	defer func() {
+		if err := rdb.Close(); err != nil {
+			log.Printf("close redis: %v", err)
+		}
+	}()
 
 	svc := service.New(rdb, 24*time.Hour)
 	grpcSvc := grpcserver.New(svc)

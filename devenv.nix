@@ -88,10 +88,12 @@ in
     tidy = {
       exec = ''
         echo "Tidying Go modules..."
-        for dir in $(find shared services -name go.mod -exec dirname {} \; | sort); do
+        for dir in $(find shared services tools -name go.mod -exec dirname {} \; | sort); do
           echo "Tidying $dir..."
           (cd "$dir" && go mod tidy)
         done
+        echo "Syncing go.work..."
+        go work sync
       '';
     };
 
@@ -102,6 +104,40 @@ in
           (cd "$dir" && sqlc generate)
         done
       '';
+    };
+  };
+
+  tasks = {
+    "codegen:proto" = {
+      exec = "generate-proto";
+      before = [ "devenv:enterShell" ];
+
+      execIfModified = [
+        "services/**/proto/**/*.proto"
+        "shared/**/proto/**/*.proto"
+      ];
+    };
+
+    "codegen:sqlc" = {
+      exec = "sqlc-gen";
+      before = [ "devenv:enterShell" ];
+
+      execIfModified = [
+        "services/**/sqlc.yaml"
+        "services/**/*.sql"
+      ];
+    };
+
+    "go:tidy" = {
+      exec = "tidy";
+      before = [ "devenv:enterShell" ];
+
+      execIfModified = [
+        "services/**/go.mod"
+        "shared/**/go.mod"
+        "tools/**/go.mod"
+        "go.work"
+      ];
     };
   };
 
