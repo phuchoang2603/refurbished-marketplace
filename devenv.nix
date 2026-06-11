@@ -105,6 +105,38 @@ in
     };
   };
 
+  tasks = {
+    "codegen:proto" = {
+      exec = "generate-proto";
+      before = [ "devenv:enterShell" ];
+
+      execIfModified = [
+        "services/**/proto/**/*.proto"
+        "shared/**/proto/**/*.proto"
+      ];
+    };
+
+    "codegen:sqlc" = {
+      exec = "sqlc-gen";
+      before = [ "devenv:enterShell" ];
+
+      execIfModified = [
+        "services/**/sqlc.yaml"
+        "services/**/*.sql"
+      ];
+    };
+
+    "go:tidy" = {
+      exec = "tidy";
+      before = [ "devenv:enterShell" ];
+
+      execIfModified = [
+        "services/**/go.mod"
+        "shared/**/go.mod"
+      ];
+    };
+  };
+
   git-hooks.hooks = {
     treefmt.enable = true;
   };

@@ -101,6 +101,32 @@ Mapping OpenSpec to GitHub:
 | `tasks.md` items | Checklist in the issue or follow-up issues        |
 | PR               | `Closes #<issue>`; OpenSpec change in PR template |
 
+## Continuous integration
+
+GitHub Actions runs `.github/workflows/ci.yml` on every pull request and push to `main`.
+
+| Job              | When it runs              | What it does                                                  |
+| ---------------- | ------------------------- | ------------------------------------------------------------- |
+| `lint`           | Always                    | `golangci-lint`, `go vet`, and `go build` for every Go module |
+| `test-<service>` | Path filter match         | `go test ./...` for the affected service module               |
+| `helm`           | `infra/charts/**` changed | `helm lint`, `helm template`, and `kubeconform`               |
+
+**Branch protection:** require the `lint` job. Service test jobs and `helm` may be skipped when a PR does not touch relevant paths — that is expected.
+
+**Path-filter fan-out for tests:**
+
+| Changed paths                 | Tests triggered                             |
+| ----------------------------- | ------------------------------------------- |
+| `services/<name>/**`          | That service only                           |
+| `shared/proto/**`             | users, products, orders, cart, payment, web |
+| `shared/auth/**`              | users, web                                  |
+| `shared/messaging/**`         | products, orders, payment                   |
+| `shared/testutil/postgres/**` | users, products, orders, payment            |
+| `shared/testutil/kafka/**`    | products, orders, payment                   |
+| `shared/testutil/redis/**`    | cart                                        |
+
+Local formatting and codegen drift checks (`treefmt`, `generate-proto`, `sqlc-gen`, `templ generate`) stay in devenv/git hooks — they are not run in CI.
+
 ## Pull requests
 
 - Use the PR template in `.github/pull_request_template.md`.

@@ -1,0 +1,209 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+env:
+  GO_VERSION: "1.26.1"
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      users: ${{ steps.filter.outputs.users }}
+      products: ${{ steps.filter.outputs.products }}
+      orders: ${{ steps.filter.outputs.orders }}
+      payment: ${{ steps.filter.outputs.payment }}
+      cart: ${{ steps.filter.outputs.cart }}
+      web: ${{ steps.filter.outputs.web }}
+      helm: ${{ steps.filter.outputs.helm }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            users:
+              - 'services/users/**'
+              - 'shared/proto/**'
+              - 'shared/auth/**'
+              - 'shared/testutil/postgres/**'
+            products:
+              - 'services/products/**'
+              - 'shared/proto/**'
+              - 'shared/messaging/**'
+              - 'shared/testutil/postgres/**'
+              - 'shared/testutil/kafka/**'
+            orders:
+              - 'services/orders/**'
+              - 'shared/proto/**'
+              - 'shared/messaging/**'
+              - 'shared/testutil/postgres/**'
+              - 'shared/testutil/kafka/**'
+            payment:
+              - 'services/payment/**'
+              - 'shared/proto/**'
+              - 'shared/messaging/**'
+              - 'shared/testutil/postgres/**'
+              - 'shared/testutil/kafka/**'
+            cart:
+              - 'services/cart/**'
+              - 'shared/proto/**'
+              - 'shared/testutil/redis/**'
+            web:
+              - 'services/web/**'
+              - 'shared/proto/**'
+              - 'shared/auth/**'
+            helm:
+              - 'infra/charts/**'
+
+  lint:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        module:
+          - services/users
+          - services/products
+          - services/orders
+          - services/cart
+          - services/payment
+          - services/web
+          - shared/auth
+          - shared/messaging
+          - shared/proto
+          - shared/testutil/postgres
+          - shared/testutil/kafka
+          - shared/testutil/redis
+          - tools/payment-gateway-simulator
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.1.6
+          working-directory: ${{ matrix.module }}
+          args: --config=${{ github.workspace }}/.golangci.yml
+      - name: Vet and build
+        working-directory: ${{ matrix.module }}
+        run: |
+          go vet ./...
+          go build ./...
+
+  test-users:
+    needs: changes
+    if: needs.changes.outputs.users == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Test users
+        working-directory: services/users
+        run: go test ./...
+
+  test-products:
+    needs: changes
+    if: needs.changes.outputs.products == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Test products
+        working-directory: services/products
+        run: go test ./...
+
+  test-orders:
+    needs: changes
+    if: needs.changes.outputs.orders == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Test orders
+        working-directory: services/orders
+        run: go test ./...
+
+  test-payment:
+    needs: changes
+    if: needs.changes.outputs.payment == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Test payment
+        working-directory: services/payment
+        run: go test ./...
+
+  test-cart:
+    needs: changes
+    if: needs.changes.outputs.cart == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Test cart
+        working-directory: services/cart
+        run: go test ./...
+
+  test-web:
+    needs: changes
+    if: needs.changes.outputs.web == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: Test web
+        working-directory: services/web
+        run: go test ./...
+
+  helm:
+    needs: changes
+    if: needs.changes.outputs.helm == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: azure/setup-helm@v4
+        with:
+          version: v3.17.3
+      - name: Helm lint and template
+        run: |
+          set -euo pipefail
+          namespace=ecommerce
+          charts=(
+            infra/charts/refurbished-marketplace
+            infra/charts/kafka
+          )
+          for chart in "${charts[@]}"; do
+            helm lint "$chart"
+            helm template test-release "$chart" --namespace "$namespace" > "/tmp/$(basename "$chart").yaml"
+          done
+      - name: Install kubeconform
+        run: |
+          set -euo pipefail
+          curl -sSL https://github.com/yannh/kubeconform/releases/download/v0.6.7/kubeconform-linux-amd64.tar.gz | tar xz
+          sudo mv kubeconform /usr/local/bin/kubeconform
+      - name: Kubeconform
+        run: |
+          set -euo pipefail
+          kubeconform -summary -ignore-missing-schemas \
+            /tmp/refurbished-marketplace.yaml \
+            /tmp/kafka.yaml
