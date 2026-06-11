@@ -1,4 +1,4 @@
-name: CI
+name: Test
 
 on:
   pull_request:
@@ -61,53 +61,6 @@ jobs:
               - 'shared/auth/**'
             helm:
               - 'infra/charts/**'
-
-  lint:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        module:
-          - services/users
-          - services/products
-          - services/orders
-          - services/cart
-          - services/payment
-          - services/web
-          - shared/auth
-          - shared/messaging
-          - shared/proto
-          - shared/testutil/postgres
-          - shared/testutil/kafka
-          - shared/testutil/redis
-          - tools/payment-gateway-simulator
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-      - uses: golangci/golangci-lint-action@v7
-        with:
-          version: latest
-          working-directory: ${{ matrix.module }}
-          args: --config=${{ github.workspace }}/.golangci.yml
-      - name: Vet and build
-        working-directory: ${{ matrix.module }}
-        run: |
-          go vet ./...
-          go build ./...
-
-  lint-required:
-    name: lint
-    needs: lint
-    if: ${{ always() }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Fail if lint failed
-        run: |
-          if [ "${{ needs.lint.result }}" != "success" ]; then
-            exit 1
-          fi
 
   test-users:
     needs: changes

@@ -1,18 +1,18 @@
+version: "2"
+
 run:
-  timeout: 5m
   tests: true
 
 linters:
+  default: none
   enable:
     - govet
     - staticcheck
     - errcheck
     - unused
-    - gosimple
     - ineffassign
-
-issues:
-  exclude-files:
-    - '.*_templ\.go$'
-    - '.*\.pb\.go$'
-    - '.*/database/.*\.go$'
+  exclusions:
+    paths:
+      - '.*_templ\.go$'
+      - '.*\.pb\.go$'
+      - '.*/database/.*\.go$'

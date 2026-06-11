@@ -88,10 +88,12 @@ in
     tidy = {
       exec = ''
         echo "Tidying Go modules..."
-        for dir in $(find shared services -name go.mod -exec dirname {} \; | sort); do
+        for dir in $(find shared services tools -name go.mod -exec dirname {} \; | sort); do
           echo "Tidying $dir..."
           (cd "$dir" && go mod tidy)
         done
+        echo "Syncing go.work..."
+        go work sync
       '';
     };
 
@@ -133,6 +135,8 @@ in
       execIfModified = [
         "services/**/go.mod"
         "shared/**/go.mod"
+        "tools/**/go.mod"
+        "go.work"
       ];
     };
   };

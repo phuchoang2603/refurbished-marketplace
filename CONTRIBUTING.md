@@ -41,11 +41,13 @@ From inside `devenv shell`:
 | `generate-proto` | Regenerate Go code from `**/proto/*/v1/*.proto`                          |
 | `sqlc-gen`       | Regenerate sqlc query code for services with `sqlc.yaml`                 |
 | `templ generate` | Regenerate `templ` views (run from `services/web` when templates change) |
-| `tidy`           | `go mod tidy` across `shared/` and `services/` modules                   |
+| `tidy`           | `go mod tidy` across modules and `go work sync` for `go.work`            |
 
 Edit SQL migrations under `services/<service>/db/migrations/` and queries under `services/<service>/db/queries/`, then run `sqlc-gen` when query shapes change.
 
 Formatting is handled by devenv/git hooks via `treefmt` (`gofumpt`, `sqruff`, etc.).
+
+Local Go development uses a root `go.work` so tools like gopls and `golangci-lint` see the whole repo. Container builds keep `ENV GOWORK=off` and copy only the service plus required `shared/` paths, so images still build a single module.
 
 ## How work is planned (OpenSpec)
 
@@ -103,9 +105,9 @@ Mapping OpenSpec to GitHub:
 
 ## Continuous integration
 
-GitHub Actions runs `.github/workflows/ci.yml` on every pull request and push to `main`.
+GitHub Actions runs `.github/workflows/lint.yml` and `.github/workflows/test.yml` on every pull request and push to `main`.
 
-| Job              | When it runs              | What it does                                                  |
+| Workflow / job   | When it runs              | What it does                                                  |
 | ---------------- | ------------------------- | ------------------------------------------------------------- |
 | `lint`           | Always                    | `golangci-lint`, `go vet`, and `go build` for every Go module |
 | `test-<service>` | Path filter match         | `go test ./...` for the affected service module               |

@@ -1,0 +1,17 @@
+go 1.26.1
+
+use (
+	./services/cart
+	./services/orders
+	./services/payment
+	./services/products
+	./services/users
+	./services/web
+	./shared/auth
+	./shared/messaging
+	./shared/proto
+	./shared/testutil/kafka
+	./shared/testutil/postgres
+	./shared/testutil/redis
+	./tools/payment-gateway-simulator
+)
