@@ -11,8 +11,9 @@ linters:
     - errcheck
     - unused
     - ineffassign
-  exclusions:
-    paths:
-      - '.*_templ\.go$'
-      - '.*\.pb\.go$'
-      - '.*/database/.*\.go$'
+
+issues:
+  exclude-files:
+    - '.*_templ\.go$'
+    - '.*\.pb\.go$'
+    - '.*/database/.*\.go$'
