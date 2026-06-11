@@ -1,0 +1,19 @@
+name: Chore
+description: Tooling, refactors, migrations, or maintenance without a product story
+title: ""
+labels: ["type: chore"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What needs to change and why?
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Done when
+    validations:
+      required: true

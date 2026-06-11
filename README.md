@@ -49,20 +49,4 @@ graph LR
 
 ## Development
 
-This repository uses `devenv` to install and pin local tooling. Enter the development shell before running generators, tests, or local infrastructure commands:
-
-```bash
-devenv shell
-```
-
-The shell provides the project tooling defined in `devenv.nix`, such as Go, protobuf tooling, database migration/query generators, Kubernetes tooling, and related CLIs.
-
-Integration tests rely on Testcontainers for Kafka, PostgreSQL, and Redis/Valkey.
-
-Local Kubernetes development is managed with Tilt. After entering the `devenv` shell, start the stack with:
-
-```bash
-tilt up
-```
-
-Tilt uses the root `Tiltfile` to build services, apply the Kubernetes/Helm resources under `infra/`, and keep the local cluster in sync while you edit code. Use the Tilt UI to inspect service status, logs, resource readiness, and rebuilds.
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the local workflow (`devenv`, Tilt, code generation), OpenSpec planning, and GitHub issue conventions.

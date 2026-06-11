@@ -1,0 +1,39 @@
+name: Feature
+description: New capability, infrastructure, or multi-step improvement
+title: ""
+labels: ["type: feature"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem / goal
+      description: What user or system problem does this issue solve?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Brief implementation direction. Link design notes or OpenSpec tasks if helpful.
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Testable checks for closing this issue.
+      placeholder: |
+        - [ ] 
+        - [ ]
+    validations:
+      required: true
+
+  - type: textarea
+    id: test_plan
+    attributes:
+      label: Test plan
+      description: How will you verify this in Tilt or tests?
+    validations:
+      required: false

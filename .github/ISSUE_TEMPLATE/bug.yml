@@ -1,0 +1,50 @@
+name: Bug
+description: Report broken behavior in an environment
+title: ""
+labels: ["type: bug"]
+body:
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. 
+        2. 
+        3.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: severity
+    attributes:
+      label: Severity
+      options:
+        - blocker
+        - high
+        - medium
+        - low
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: e.g. Tilt local stack, branch name, browser
+      placeholder: Tilt on main, localhost:8080
+    validations:
+      required: false
