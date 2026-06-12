@@ -27,12 +27,6 @@ tilt up
 | Issues, labels, pull requests       | [docs/development/github-workflow.md](docs/development/github-workflow.md) |
 | CI, path filters, GHCR releases     | [docs/development/ci.md](docs/development/ci.md)                           |
 
-## Architecture references
-
-- Service boundaries and stack: [README.md](README.md)
-- Order/inventory/payment flow: [docs/order-placement.md](docs/order-placement.md)
-- Capability requirements: `openspec/specs/`
-
 ## Questions
 
 Open a **Feature**, **Bug**, or **Chore** issue. For multi-step work, use one Feature issue with a checklist or split into several linked issues — see [docs/development/github-workflow.md](docs/development/github-workflow.md).

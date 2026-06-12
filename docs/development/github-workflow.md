@@ -12,10 +12,13 @@ Large work can be a single **Feature** issue with a detailed checklist, or split
 
 ## Labels
 
-Apply **type** and **area** as GitHub labels when opening an issue (not in the issue body):
+Apply **type**, **service**, and **area** as GitHub labels when opening an issue (not in the issue body):
 
 - `type: feature`, `type: bug`, `type: chore`
-- `area: web`, `area: payment`, `area: orders`, `area: cart`, `area: products`, `area: users`, `area: infra`, `area: ci`, `area: observability`, `area: docs`
+- `service: web`, `service: payment`, `service: orders`, `service: cart`, `service: products`, `service: users`
+- `area: infra`, `area: ci`, `area: observability`, `area: security`, `area: data`, `area: ml`
+
+Use **type** on every issue. Add **service** when the work is scoped to one or more services (omit for cross-cutting platform work). Add **area** for the primary concern (infra, CI, observability, etc.)., `area: data`, `area: ml`
 
 ## Example flow
 
