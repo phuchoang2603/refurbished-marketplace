@@ -122,7 +122,7 @@ The `govulncheck` job uses the same service matrix and path-filter fan-out as `t
 
 ### Container images (GHCR)
 
-Pushes to `main` that touch image-related paths trigger `.github/workflows/release-images.yml`. The workflow builds all twelve Dockerfiles under `infra/docker/` and pushes them to GHCR:
+Pushes to `main` that touch image-related paths trigger `.github/workflows/release-images.yml`. The workflow uses the same path-filter fan-out pattern as CI tests: only affected images are built and pushed (for example a `services/web/**` change rebuilds `web`, not all twelve). Changes under `shared/**` or `go.work` fan out to the dependent service images. `workflow_dispatch` builds all images.
 
 - `ghcr.io/<repository>/<image>:<commit-sha>`
 - `ghcr.io/<repository>/<image>:main` (rolling tag)
