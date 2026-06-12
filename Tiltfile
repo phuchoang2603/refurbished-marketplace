@@ -2,27 +2,41 @@ load('ext://namespace', 'namespace_create')
 namespace_create('ecommerce')
 namespace_create('operators')
 
-### Operators ###
-k8s_kind('Cluster', pod_readiness='wait')
+### External Secrets Operators ###
 local_resource(
-  'cnpg-operator-install',
-  'helm repo add cnpg https://cloudnative-pg.github.io/charts && helm repo update && helm upgrade --install cnpg --namespace operators cnpg/cloudnative-pg',
-  )
+  'eso-operator-install',
+  'helm repo add external-secrets https://charts.external-secrets.io && \
+   helm repo update && \
+   helm upgrade --install external-secrets external-secrets/external-secrets \
+     --namespace operators --create-namespace --version 2.6.0',
+)
+
+k8s_yaml([
+  'infra/eso/doppler-token.secret.yaml',
+  'infra/eso/cluster-secret-store.yaml',
+  'infra/eso/external-secret-users-app.yaml',
+  'infra/eso/external-secret-products-app.yaml',
+  'infra/eso/external-secret-orders-app.yaml',
+  'infra/eso/external-secret-payment-app.yaml',
+  'infra/eso/external-secret-users-auth.yaml',
+])
+
+### Kafka Cluster and Topics ###
 local_resource(
   'kafka-cluster-install',
   'helm upgrade --install strimzi-cluster-operator oci://quay.io/strimzi-helm/strimzi-kafka-operator \
-  --namespace operators \
+  --namespace operators --create-namespace \
   --set watchAnyNamespace=true \
   --version 1.0.0',
 )
 
-### Kafka Cluster and Topics ###
 k8s_yaml(helm(
   './infra/charts/kafka',
   name='ecommerce-kafka-cluster',
   namespace='ecommerce',
   values=['./infra/charts/kafka/values.yaml']
 ))
+
 k8s_resource(
     new_name='kafka-cluster', 
     objects=[
@@ -32,6 +46,7 @@ k8s_resource(
     resource_deps=['kafka-cluster-install'],
     labels=['kafka']
 )
+
 k8s_resource(
     new_name='debezium-connect',
     objects=['ecommerce-connect-cluster:kafkaconnect'],
@@ -41,7 +56,14 @@ k8s_resource(
 k8s_resource('kafka-ui', port_forwards=['8081:8080'], resource_deps=['kafka-cluster'], labels='kafka')
 
 ### Our helm charts
-k8s_yaml('./infra/k8s/secrets.yaml')
+k8s_kind('Cluster', pod_readiness='wait')
+local_resource(
+  'cnpg-operator-install',
+  'helm repo add cnpg https://cloudnative-pg.io/charts/ && \
+   helm repo update && \
+   helm upgrade --install cnpg cnpg/cloudnative-pg \
+   --namespace operators --create-namespace --version 0.28.3',
+  )
 app_yaml = helm(
     './infra/charts/refurbished-marketplace',
     name='refurbished-marketplace',
