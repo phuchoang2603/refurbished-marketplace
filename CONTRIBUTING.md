@@ -7,6 +7,7 @@ Thanks for helping build this project. This guide covers local development, how 
 - [Nix](https://nixos.org/) with [devenv](https://devenv.sh/) for pinned tooling
 - A local Kubernetes runtime used by Tilt (for example Colima + Docker)
 - [Tilt](https://tilt.dev/) (provided inside the devenv shell)
+- [Doppler](https://www.doppler.com/) account and CLI (provided inside the devenv shell) for cluster secrets
 
 ## Local development
 
@@ -18,11 +19,39 @@ This repository uses `devenv` to install and pin local tooling. Enter the develo
 devenv shell
 ```
 
-The shell provides the project tooling defined in `devenv.nix`, including Go, protobuf tooling, database migration/query generators, Kubernetes tooling, Tilt, and OpenSpec.
+The shell provides the project tooling defined in `devenv.nix`, including Go, protobuf tooling, database migration/query generators, Kubernetes tooling, Tilt, Doppler, and OpenSpec. A gitignored `.env` file is loaded automatically (`dotenv.enable`).
+
+### Secrets (Doppler + External Secrets Operator)
+
+Application secrets are **not** committed to Git. Tilt syncs them from Doppler via [External Secrets Operator](https://external-secrets.io/).
+
+**One-time setup:**
+
+```bash
+devenv shell
+doppler login                    # once, to manage secrets via CLI
+# Create a read-only service token for the dev config in the Doppler dashboard
+echo 'DOPPLER_TOKEN=dp.st.dev.xxxx' >> .env
+devenv shell                     # re-enter so devenv links infra/eso/doppler-token.secret.yaml
+```
+
+Project and config (`refurbished-marketplace` / `dev`) are set in `devenv.nix` as `DOPPLER_PROJECT` and `DOPPLER_CONFIG` — no `.doppler.yaml` needed.
+
+Seed the Doppler **`dev`** config with the keys listed in [docs/secrets-doppler.md](docs/secrets-doppler.md) (values match the old local dev credentials).
+
+**Run Tilt** (use the devenv wrapper so `DOPPLER_TOKEN` is required):
+
+```bash
+tilt up          # via scripts.tilt — same as running tilt directly inside devenv shell with .env loaded
+```
+
+devenv generates `infra/eso/doppler-token.secret.yaml` from `DOPPLER_TOKEN` when you enter the shell (symlinked, gitignored). Tilt applies it with the other manifests in `infra/eso/` and waits for synced secrets before database and app charts deploy.
+
+To swap secret providers later (Doppler → AWS Secrets Manager, Vault, etc.), change `infra/eso/cluster-secret-store.yaml` only — see [docs/secrets-doppler.md](docs/secrets-doppler.md).
 
 ### Run the stack with Tilt
 
-Local Kubernetes development is managed with Tilt. After entering the `devenv` shell, start the stack with:
+Local Kubernetes development is managed with Tilt. After Doppler setup and entering the `devenv` shell, start the stack with:
 
 ```bash
 tilt up

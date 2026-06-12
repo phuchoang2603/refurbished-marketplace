@@ -43,6 +43,7 @@ build/
 .devenv*
 devenv.local.nix
 devenv.local.yaml
+infra/eso/doppler-token.secret.yaml
 
 # pre-commit
 .pre-commit-config.yaml
