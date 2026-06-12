@@ -1,6 +1,6 @@
 module refurbished-marketplace/shared/testutil/kafka
 
-go 1.26.4
+go 1.26.2
 
 require (
 	github.com/testcontainers/testcontainers-go/modules/kafka v0.42.0

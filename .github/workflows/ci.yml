@@ -4,12 +4,18 @@ on:
   pull_request:
   push:
     branches: [main]
+  schedule:
+    # Mondays at 0000 UTC — full govulncheck scan (path filters skipped)
+    - cron: "0 0 * * 1"
 
 permissions:
   contents: read
 
 env:
-  GO_VERSION: "1.26.4"
+  GO_VERSION: "1.26.2"
+  GO_CACHE_DEPENDENCY_PATH: |
+    go.work
+    **/go.sum
   GO_MODULE_GLOBS: >-
     ./services/users/...
     ./services/products/...
@@ -28,28 +34,24 @@ env:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-go@v5
+      - uses: actions/checkout@v6
         with:
-          go-version: ${{ env.GO_VERSION }}
+          fetch-depth: 0
 
-      - name: Install lint tools
-        run: |
-          go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
-          go install golang.org/x/vuln/cmd/govulncheck@latest
-
-      - name: golangci-lint
-        run: golangci-lint run --config=.golangci.yml ${{ env.GO_MODULE_GLOBS }}
-
-      - name: govulncheck
-        run: |
-          set -euo pipefail
-          for dir in $(grep -E '^\s*\./' go.work | tr -d ' \t'); do
-            echo "==> $dir"
-            (cd "$dir" && govulncheck ./...)
-          done
+      - uses: reviewdog/action-golangci-lint@v2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          go_version: ${{ env.GO_VERSION }}
+          golangci_lint_version: v2.12.2
+          golangci_lint_flags: --config=.golangci.yml ${{ env.GO_MODULE_GLOBS }}
+          reporter: ${{ github.event_name == 'pull_request' && 'github-pr-review' || 'github-check' }}
+          filter_mode: diff_context
+          fail_level: error
 
   changes:
     runs-on: ubuntu-latest
@@ -62,8 +64,8 @@ jobs:
       web: ${{ steps.filter.outputs.web }}
       helm: ${{ steps.filter.outputs.helm }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
+      - uses: actions/checkout@v6
+      - uses: dorny/paths-filter@v4
         id: filter
         with:
           filters: |
@@ -119,25 +121,69 @@ jobs:
         if: needs.changes.outputs[matrix.service] != 'true'
         run: echo "Skipping tests for ${{ matrix.service }}"
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         if: needs.changes.outputs[matrix.service] == 'true'
 
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         if: needs.changes.outputs[matrix.service] == 'true'
         with:
           go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: ${{ env.GO_CACHE_DEPENDENCY_PATH }}
 
       - name: Test ${{ matrix.service }}
         if: needs.changes.outputs[matrix.service] == 'true'
         working-directory: services/${{ matrix.service }}
         run: go test ./...
 
+  govulncheck:
+    needs: changes
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - users
+          - products
+          - orders
+          - payment
+          - cart
+          - web
+    steps:
+      - name: Skip when path filter does not match
+        if: github.event_name != 'schedule' && needs.changes.outputs[matrix.service] != 'true'
+        run: echo "Skipping govulncheck for ${{ matrix.service }}"
+
+      - uses: actions/checkout@v6
+        if: github.event_name == 'schedule' || needs.changes.outputs[matrix.service] == 'true'
+
+      - uses: actions/setup-go@v6
+        if: github.event_name == 'schedule' || needs.changes.outputs[matrix.service] == 'true'
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: ${{ env.GO_CACHE_DEPENDENCY_PATH }}
+
+      - name: Run govulncheck
+        if: github.event_name == 'schedule' || needs.changes.outputs[matrix.service] == 'true'
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck -C "services/${{ matrix.service }}" -format sarif ./... > govulncheck.sarif
+
+      - name: Upload SARIF file
+        if: github.event_name == 'schedule' || needs.changes.outputs[matrix.service] == 'true'
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: govulncheck.sarif
+          category: govulncheck-${{ matrix.service }}
+
   helm:
     needs: changes
     if: needs.changes.outputs.helm == 'true'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: azure/setup-helm@v4
         with:
           version: v3.17.3

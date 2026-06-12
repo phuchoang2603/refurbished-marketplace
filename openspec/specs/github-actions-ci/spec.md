@@ -16,17 +16,59 @@ The repository SHALL run GitHub Actions CI on every pull request and on every pu
 
 ### Requirement: Lint all Go modules
 
-The CI workflow SHALL lint every Go module in the repository on each run using `golangci-lint`, `go vet`, and `govulncheck`.
+The CI workflow SHALL lint every Go module in the repository on each run using `golangci-lint`. The lint job SHALL fail when `golangci-lint` reports errors.
 
 #### Scenario: Lint job succeeds
 
-- **WHEN** CI runs and all Go modules pass lint, vet, and vulnerability checks
+- **WHEN** CI runs and all Go modules pass `golangci-lint`
 - **THEN** the lint job reports success
 
-#### Scenario: Lint job fails on violation
+#### Scenario: Lint job fails on golangci violation
 
-- **WHEN** CI runs and a Go module fails `golangci-lint`, `go vet`, or `govulncheck`
+- **WHEN** CI runs and a Go module fails `golangci-lint`
 - **THEN** the lint job reports failure and the workflow fails
+
+### Requirement: Lint posts PR review comments via Reviewdog
+
+On pull requests, the CI lint job SHALL post review comments for `golangci-lint` findings using the official Reviewdog GitHub Action, without custom JavaScript comment scripts.
+
+#### Scenario: Pull request lint comments
+
+- **WHEN** CI runs on a pull request and `golangci-lint` reports findings on changed lines
+- **THEN** Reviewdog posts PR review comments for those findings
+
+#### Scenario: Push to main uses check annotations
+
+- **WHEN** CI lint runs on a push to `main`
+- **THEN** Reviewdog reports `golangci-lint` findings via GitHub Checks rather than PR review comments
+
+### Requirement: Vulnerability scanning via govulncheck SARIF
+
+The CI workflow SHALL run `govulncheck` for service modules selected by the same path filters as integration tests, produce SARIF output, and upload results via `github/codeql-action/upload-sarif`. The job SHALL NOT fail when vulnerabilities are found.
+
+#### Scenario: SARIF uploaded for affected services
+
+- **WHEN** CI runs and path filters select a service module
+- **THEN** `govulncheck` scans that service and uploads SARIF to GitHub Code Scanning
+
+#### Scenario: Vulnerabilities do not fail CI
+
+- **WHEN** `govulncheck` reports vulnerabilities
+- **THEN** the govulncheck job completes successfully
+
+#### Scenario: Weekly full scan
+
+- **WHEN** CI runs on the scheduled weekly workflow trigger
+- **THEN** `govulncheck` scans all service modules regardless of path filters
+
+### Requirement: Go toolchain version
+
+The repository CI and Go module toolchain SHALL use Go **1.26.2**.
+
+#### Scenario: CI Go version
+
+- **WHEN** CI installs Go for lint or test jobs
+- **THEN** it uses Go 1.26.2
 
 ### Requirement: golangci-lint configuration
 
@@ -115,9 +157,14 @@ The CI workflow SHALL NOT run treefmt, proto generation drift checks, sqlc gener
 
 ### Requirement: CI excludes container image publishing
 
-The CI workflow SHALL NOT build or push container images to a registry.
+The CI workflow (`ci.yml`) SHALL NOT build or push container images to a registry. Image publishing SHALL be handled by the separate GHCR release workflow.
 
-#### Scenario: Merge to main without image workflow
+#### Scenario: CI workflow on main
 
-- **WHEN** a commit is merged to `main`
-- **THEN** CI does not publish images to GHCR or any other registry as part of this capability
+- **WHEN** CI runs on a push to `main`
+- **THEN** `ci.yml` does not publish container images to GHCR
+
+#### Scenario: Merge to main without image workflow trigger
+
+- **WHEN** a commit is merged to `main` without image-related path changes
+- **THEN** neither `ci.yml` nor the release workflow publishes images
