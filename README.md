@@ -49,4 +49,4 @@ graph LR
 
 ## Development
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the local workflow (`devenv`, Tilt, code generation), OpenSpec planning, and GitHub issue conventions.
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/development/](docs/development/) for the local workflow (`devenv`, Tilt, secrets, code generation), OpenSpec planning, and GitHub issue conventions.
