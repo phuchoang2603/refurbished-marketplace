@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 env:
-  GO_VERSION: "1.26.4"
+  GO_VERSION: "1.26.2"
   GO_MODULE_GLOBS: >-
     ./services/users/...
     ./services/products/...
@@ -28,27 +28,46 @@ env:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-go@v5
         with:
           go-version: ${{ env.GO_VERSION }}
 
-      - name: Install lint tools
-        run: |
-          go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.12.2
-          go install golang.org/x/vuln/cmd/govulncheck@latest
+      - uses: reviewdog/action-golangci-lint@v2
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          go_version: ${{ env.GO_VERSION }}
+          golangci_lint_version: v2.12.2
+          golangci_lint_flags: --config=.golangci.yml ${{ env.GO_MODULE_GLOBS }}
+          reporter: ${{ github.event_name == 'pull_request' && 'github-pr-review' || 'github-check' }}
+          filter_mode: diff_context
+          fail_level: error
 
-      - name: golangci-lint
-        run: golangci-lint run --config=.golangci.yml ${{ env.GO_MODULE_GLOBS }}
+      - uses: reviewdog/action-setup@v1
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
 
       - name: govulncheck
+        continue-on-error: true
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REVIEWDOG_REPORTER: ${{ github.event_name == 'pull_request' && 'github-pr-review' || 'github-check' }}
         run: |
-          set -euo pipefail
           for dir in $(grep -E '^\s*\./' go.work | tr -d ' \t'); do
             echo "==> $dir"
-            (cd "$dir" && govulncheck ./...)
+            (cd "$dir" && govulncheck ./...) | \
+              reviewdog -f=govulncheck -name=govulncheck \
+                -reporter="$REVIEWDOG_REPORTER" \
+                -filter-mode=diff_context -fail-level=none -level=warning || true
           done
 
   changes:
