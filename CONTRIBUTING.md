@@ -107,13 +107,24 @@ Mapping OpenSpec to GitHub:
 
 GitHub Actions runs `.github/workflows/ci.yml` on every pull request and push to `main`.
 
-| Job             | When it runs              | What it does                                    |
-| --------------- | ------------------------- | ----------------------------------------------- |
-| `lint`          | Always                    | `golangci-lint`, `go vet`, and `govulncheck`    |
-| `test` (matrix) | Path filter match         | `go test ./...` for the affected service module |
-| `helm`          | `infra/charts/**` changed | `helm lint`, `helm template`, and `kubeconform` |
+| Job             | When it runs              | What it does                                                                           |
+| --------------- | ------------------------- | -------------------------------------------------------------------------------------- |
+| `lint`          | Always                    | `golangci-lint` (blocking) and `govulncheck` (informational PR comments via Reviewdog) |
+| `test` (matrix) | Path filter match         | `go test ./...` for the affected service module                                        |
+| `helm`          | `infra/charts/**` changed | `helm lint`, `helm template`, and `kubeconform`                                        |
+
+On pull requests, Reviewdog posts inline review comments for `golangci-lint` and `govulncheck` findings on changed lines. `govulncheck` never fails the lint job — it is informational only.
 
 **Branch protection:** require the `lint` job. Service test jobs and `helm` may be skipped when a PR does not touch relevant paths — that is expected.
+
+### Container images (GHCR)
+
+Pushes to `main` that touch image-related paths trigger `.github/workflows/release-images.yml`. The workflow builds all twelve Dockerfiles under `infra/docker/` and pushes them to GHCR:
+
+- `ghcr.io/<repository>/<image>:<commit-sha>`
+- `ghcr.io/<repository>/<image>:main` (rolling tag)
+
+Local Tilt development continues to use unqualified image names (for example `refurbished-marketplace/web`). Helm chart values are not yet wired to GHCR — that is deferred to the ArgoCD GitOps phase.
 
 **Path-filter fan-out for tests:**
 

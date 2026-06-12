@@ -1,0 +1,66 @@
+name: Release Images
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - infra/docker/**
+      - services/**
+      - shared/**
+      - tools/**
+      - go.work
+      - "**/go.mod"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: web
+            dockerfile: infra/docker/web.Dockerfile
+          - image: users
+            dockerfile: infra/docker/users.Dockerfile
+          - image: users-migrator
+            dockerfile: infra/docker/users-migrator.Dockerfile
+          - image: products
+            dockerfile: infra/docker/products.Dockerfile
+          - image: products-migrator
+            dockerfile: infra/docker/products-migrator.Dockerfile
+          - image: orders
+            dockerfile: infra/docker/orders.Dockerfile
+          - image: orders-migrator
+            dockerfile: infra/docker/orders-migrator.Dockerfile
+          - image: cart
+            dockerfile: infra/docker/cart.Dockerfile
+          - image: payment
+            dockerfile: infra/docker/payment.Dockerfile
+          - image: payment-migrator
+            dockerfile: infra/docker/payment-migrator.Dockerfile
+          - image: payment-gateway-simulator
+            dockerfile: infra/docker/payment-gateway-simulator.Dockerfile
+          - image: connect-debezium
+            dockerfile: infra/docker/connect-debezium.Dockerfile
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/${{ matrix.image }}:${{ github.sha }}
+            ghcr.io/${{ github.repository }}/${{ matrix.image }}:main
