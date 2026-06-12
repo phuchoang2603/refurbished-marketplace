@@ -9,8 +9,8 @@ Issue #4 next step: publish images to GHCR on `main` without ArgoCD wiring yet. 
 **Goals:**
 
 - Push all 12 Dockerfiles in `infra/docker/` to GHCR on relevant `main` pushes.
-- Use standard GitHub Actions (`docker/login-action`, `docker/build-push-action`, `reviewdog/action-golangci-lint`, `reviewdog/action-setup`).
-- Post PR review comments for golangci-lint (blocking) and govulncheck (informational).
+- Use standard GitHub Actions (`docker/login-action`, `docker/build-push-action`, `reviewdog/action-golangci-lint`, `golang/govulncheck-action`, `github/codeql-action/upload-sarif`).
+- Post PR review comments for `golangci-lint` (blocking); surface `govulncheck` via SARIF Code Scanning.
 - Path-filter the release workflow so doc-only merges do not rebuild images.
 - Revert Go to 1.26.2 repo-wide.
 
@@ -121,28 +121,30 @@ permissions:
 
 Uses the official action; no manual install or github-script summary.
 
-**govulncheck (informational, never fails lint):**
+**govulncheck (informational, Code Scanning):**
 
-Run per module (same as today — `govulncheck` requires a module directory). Use `reviewdog/action-setup@v1` plus Reviewdog CLI with `-fail-level=none`:
+In `ci.yml`, the `govulncheck` job reuses the same service matrix and path-filter outputs as `test`. Each selected service module is scanned with `golang/govulncheck-action` and results are uploaded via `github/codeql-action/upload-sarif`. A weekly schedule scans all services regardless of path filters.
 
 ```yaml
-- uses: reviewdog/action-setup@v1
-
-- name: govulncheck
-  continue-on-error: true
-  if: always()
-  env:
-    REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  run: |
-    for dir in $(grep -E '^\s*\./' go.work | tr -d ' \t'); do
-      (cd "$dir" && govulncheck ./...) | \
-        reviewdog -f=govulncheck -name=govulncheck \
-          -reporter=${{ github.event_name == 'pull_request' && 'github-pr-review' || 'github-check' }} \
-          -filter-mode=diff_context -fail-level=none -level=warning || true
-    done
+govulncheck:
+  needs: changes
+  strategy:
+    matrix:
+      service: [users, products, orders, payment, cart, web]
+  steps:
+    - uses: golang/govulncheck-action@v1.0.4
+      if: github.event_name == 'schedule' || needs.changes.outputs[matrix.service] == 'true'
+      with:
+        work-dir: services/${{ matrix.service }}
+        output-format: sarif
+        output-file: govulncheck.sarif
+    - uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: govulncheck.sarif
+        category: govulncheck-${{ matrix.service }}
 ```
 
-`continue-on-error: true` + `fail-level=none` ensures vulnerabilities are reported but **never fail** the job. Install `govulncheck` via `go install` in a prior step (Reviewdog action does not install it).
+SARIF output exits successfully even when vulnerabilities are found, so the job does not block merges.
 
 **Alternatives considered:** Failing lint on govulncheck — rejected (user does not want repeated Go bump pressure). Custom JS sticky comments — rejected.
 

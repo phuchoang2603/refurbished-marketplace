@@ -4,6 +4,9 @@ on:
   pull_request:
   push:
     branches: [main]
+  schedule:
+    # Mondays at 0000 UTC — full govulncheck scan (path filters skipped)
+    - cron: "0 0 * * 1"
 
 permissions:
   contents: read
@@ -50,25 +53,6 @@ jobs:
           reporter: ${{ github.event_name == 'pull_request' && 'github-pr-review' || 'github-check' }}
           filter_mode: diff_context
           fail_level: error
-
-      - uses: reviewdog/action-setup@v1
-
-      - name: Install govulncheck
-        run: go install golang.org/x/vuln/cmd/govulncheck@latest
-
-      - name: govulncheck
-        continue-on-error: true
-        env:
-          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REVIEWDOG_REPORTER: ${{ github.event_name == 'pull_request' && 'github-pr-review' || 'github-check' }}
-        run: |
-          for dir in $(grep -E '^\s*\./' go.work | tr -d ' \t'); do
-            echo "==> $dir"
-            (cd "$dir" && govulncheck ./...) | \
-              reviewdog -f=govulncheck -name=govulncheck \
-                -reporter="$REVIEWDOG_REPORTER" \
-                -filter-mode=diff_context -fail-level=none -level=warning || true
-          done
 
   changes:
     runs-on: ubuntu-latest
@@ -150,6 +134,43 @@ jobs:
         if: needs.changes.outputs[matrix.service] == 'true'
         working-directory: services/${{ matrix.service }}
         run: go test ./...
+
+  govulncheck:
+    needs: changes
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - users
+          - products
+          - orders
+          - payment
+          - cart
+          - web
+    steps:
+      - name: Skip when path filter does not match
+        if: github.event_name != 'schedule' && needs.changes.outputs[matrix.service] != 'true'
+        run: echo "Skipping govulncheck for ${{ matrix.service }}"
+
+      - uses: golang/govulncheck-action@v1.0.4
+        if: github.event_name == 'schedule' || needs.changes.outputs[matrix.service] == 'true'
+        with:
+          work-dir: services/${{ matrix.service }}
+          go-version-file: services/${{ matrix.service }}/go.mod
+          go-version-input: ${{ env.GO_VERSION }}
+          output-format: sarif
+          output-file: govulncheck.sarif
+
+      - name: Upload SARIF file
+        if: github.event_name == 'schedule' || needs.changes.outputs[matrix.service] == 'true'
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: govulncheck.sarif
+          category: govulncheck-${{ matrix.service }}
 
   helm:
     needs: changes

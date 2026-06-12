@@ -7,7 +7,7 @@
 
 - [x] 2.1 Update `ci.yml` lint job permissions for Reviewdog (`pull-requests: write`, `checks: write`)
 - [x] 2.2 Replace manual golangci-lint step with `reviewdog/action-golangci-lint@v2` (`fail_level: error`, `filter_mode: diff_context`, PR `github-pr-review`)
-- [x] 2.3 Add informational `govulncheck` step via `reviewdog/action-setup@v1` + Reviewdog CLI with `-fail-level=none` and `continue-on-error: true`
+- [x] 2.3 Add `govulncheck` job to `ci.yml` (same path-filter matrix as `test`) with `golang/govulncheck-action` SARIF + `upload-sarif`
 - [x] 2.4 Set `GO_VERSION` to 1.26.2 in `ci.yml`
 
 ## 3. GHCR release workflow
