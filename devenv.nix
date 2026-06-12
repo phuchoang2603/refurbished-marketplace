@@ -68,7 +68,7 @@ in
     };
   }
   // lib.optionalAttrs ((config.env.DOPPLER_TOKEN or "") != "") {
-    "infra/eso/doppler-token.secret.yaml".yaml = {
+    "infra/k8s/doppler-token.secret.yaml".yaml = {
       apiVersion = "v1";
       kind = "Secret";
       metadata = {

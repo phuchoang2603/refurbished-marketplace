@@ -12,14 +12,28 @@ local_resource(
 )
 
 k8s_yaml([
-  'infra/eso/doppler-token.secret.yaml',
-  'infra/eso/cluster-secret-store.yaml',
-  'infra/eso/external-secret-users-app.yaml',
-  'infra/eso/external-secret-products-app.yaml',
-  'infra/eso/external-secret-orders-app.yaml',
-  'infra/eso/external-secret-payment-app.yaml',
-  'infra/eso/external-secret-users-auth.yaml',
+  'infra/k8s/doppler-token.secret.yaml',
+  'infra/k8s/cluster-secret-store.yaml',
 ])
+
+### Cloudnative-pg Operators ###
+k8s_kind('Cluster', pod_readiness='wait')
+local_resource(
+  'cnpg-operator-install',
+  'helm repo add cnpg https://cloudnative-pg.io/charts/ && \
+   helm repo update && \
+   helm upgrade --install cnpg cnpg/cloudnative-pg \
+   --namespace operators --create-namespace --version 0.28.3',
+)
+
+### Our helm charts
+app_yaml = helm(
+    './infra/charts/refurbished-marketplace',
+    name='refurbished-marketplace',
+    namespace='ecommerce',
+    values=['./infra/charts/refurbished-marketplace/values.yaml']
+)
+k8s_yaml(app_yaml)
 
 ### Kafka Cluster and Topics ###
 local_resource(
@@ -54,23 +68,6 @@ k8s_resource(
     labels=['kafka']
 )
 k8s_resource('kafka-ui', port_forwards=['8081:8080'], resource_deps=['kafka-cluster'], labels='kafka')
-
-### Our helm charts
-k8s_kind('Cluster', pod_readiness='wait')
-local_resource(
-  'cnpg-operator-install',
-  'helm repo add cnpg https://cloudnative-pg.io/charts/ && \
-   helm repo update && \
-   helm upgrade --install cnpg cnpg/cloudnative-pg \
-   --namespace operators --create-namespace --version 0.28.3',
-  )
-app_yaml = helm(
-    './infra/charts/refurbished-marketplace',
-    name='refurbished-marketplace',
-    namespace='ecommerce',
-    values=['./infra/charts/refurbished-marketplace/values.yaml']
-)
-k8s_yaml(app_yaml)
 
 ### Web Service ###
 local_resource(
