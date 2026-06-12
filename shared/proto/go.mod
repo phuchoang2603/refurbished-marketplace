@@ -1,6 +1,6 @@
 module refurbished-marketplace/shared/proto
 
-go 1.26.4
+go 1.26.2
 
 require (
 	google.golang.org/grpc v1.80.0
