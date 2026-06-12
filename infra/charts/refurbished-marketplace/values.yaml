@@ -1,6 +1,13 @@
 global:
   imagePullPolicy: IfNotPresent
 
+externalSecrets:
+  enabled: true
+  refreshInterval: 1h
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: doppler
+
 services:
   web:
     enabled: true

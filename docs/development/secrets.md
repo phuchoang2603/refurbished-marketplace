@@ -9,12 +9,12 @@ devenv shell
 doppler login                    # once, to manage secrets via CLI
 # Create a read-only service token for the dev config in the Doppler dashboard
 echo 'DOPPLER_TOKEN=dp.st.dev.xxxx' >> .env
-devenv shell                     # re-enter so devenv links infra/eso/doppler-token.secret.yaml
+devenv shell                     # re-enter so devenv links infra/k8s/doppler-token.secret.yaml
 ```
 
 Project and config (`refurbished-marketplace` / `dev`) are set in `devenv.nix` as `DOPPLER_PROJECT` and `DOPPLER_CONFIG` — no `.doppler.yaml` needed.
 
-devenv generates `infra/eso/doppler-token.secret.yaml` from `DOPPLER_TOKEN` when you enter the shell (symlinked, gitignored). Tilt applies it with the other manifests in `infra/eso/` and waits for synced secrets before database and app charts deploy.
+devenv generates `infra/k8s/doppler-token.secret.yaml` from `DOPPLER_TOKEN` when you enter the shell (symlinked, gitignored). Tilt applies it with `infra/k8s/cluster-secret-store.yaml`. Application `ExternalSecret` resources are defined in `infra/charts/refurbished-marketplace/values.yaml` and rendered by the marketplace Helm chart.
 
 ## Doppler project setup
 
@@ -43,11 +43,13 @@ Add the local dev token to gitignored `.env`:
 DOPPLER_TOKEN=dp.st.dev.xxxx
 ```
 
-Re-enter `devenv shell` after changing `.env`. The ESO [Doppler provider](https://external-secrets.io/latest/provider/doppler/) reads Kubernetes Secret `external-secrets/doppler-token` key `dopplerToken`.
+Re-enter `devenv shell` after changing `.env`. The ESO [Doppler provider](https://external-secrets.io/latest/provider/doppler/) reads Kubernetes Secret `operators/doppler-token` key `dopplerToken`.
 
 ## Seed `dev` config keys
 
-Add these keys to the Doppler **`dev`** config. Values match the former `infra/k8s/secrets.yaml` dev credentials:
+Add these keys to the Doppler **`dev`** config. Values match the former `infra/k8s/secrets.yaml` dev credentials.
+
+DB credentials use Doppler keys derived from each service's `db.secretName` (for example `users-app` → `USERS_APP_USERNAME` / `USERS_APP_PASSWORD`). Auth secrets use the `auth.secretKey` as the Doppler key (for example `JWT_SECRET` on `users-auth`).
 
 | Doppler key             | Example value               | K8s Secret     | K8s key      |
 | ----------------------- | --------------------------- | -------------- | ------------ |
@@ -61,7 +63,7 @@ Add these keys to the Doppler **`dev`** config. Values match the former `infra/k
 | `PAYMENT_APP_PASSWORD`  | `payment_app_dev_password`  | `payment-app`  | `password`   |
 | `JWT_SECRET`            | `dev-jwt-secret`            | `users-auth`   | `JWT_SECRET` |
 
-ESO manifests live in `infra/eso/`. After `tilt up`, verify:
+After `tilt up`, verify ExternalSecrets synced from the marketplace chart:
 
 ```bash
 kubectl get externalsecrets,secrets -n ecommerce
@@ -70,9 +72,9 @@ kubectl describe externalsecret -n ecommerce users-app
 
 ## Swapping the secrets provider
 
-Helm and application code reference Kubernetes Secret names only. To move off Doppler, edit `infra/eso/cluster-secret-store.yaml` to use another [ESO provider](https://external-secrets.io/latest/provider/overview/) and update `ExternalSecret` `remoteRef` mappings. No changes to `refurbished-marketplace` or `kafka` chart templates are required.
+Helm and application code reference Kubernetes Secret names only. To move off Doppler, edit `infra/k8s/cluster-secret-store.yaml` to use another [ESO provider](https://external-secrets.io/latest/provider/overview/) and adjust `externalSecrets` / service `db` / `auth` settings in `infra/charts/refurbished-marketplace/values.yaml` if remote key names change. Service deployment templates do not need changes.
 
-Remote clusters use the same `infra/eso/` manifests; bootstrap a config-scoped service token for the target environment separately.
+Remote clusters use the same cluster-level manifests under `infra/k8s/` and the marketplace chart values; bootstrap a config-scoped service token for the target environment separately.
 
 ## Related issues
 

@@ -9,3 +9,7 @@
 {{- printf "%s-%s" .Release.Name (include "refurbished-marketplace.name" .) | trunc 63 | trimSuffix "-" -}}
 {{- end -}}
 {{- end -}}
+
+{{- define "refurbished-marketplace.dopplerKeyPrefix" -}}
+{{- . | upper | replace "-" "_" -}}
+{{- end -}}
