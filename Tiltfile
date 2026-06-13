@@ -83,7 +83,7 @@ local_resource(
 )
 
 docker_build(
-  'refurbished-marketplace/web',
+  'web',
   '.',
   dockerfile='./infra/docker/web.Dockerfile',
   only=[
@@ -95,7 +95,7 @@ k8s_resource('web', port_forwards=['8080:8080'], labels=["web"])
 
 ### Users Service ###
 docker_build(
-  'refurbished-marketplace/users-migrator',
+  'users-migrator',
   '.',
   dockerfile='./infra/docker/users-migrator.Dockerfile',
   only=[
@@ -104,7 +104,7 @@ docker_build(
 )
 
 docker_build(
-  'refurbished-marketplace/users',
+  'users',
   '.',
   dockerfile='./infra/docker/users.Dockerfile',
   only=[
@@ -119,7 +119,7 @@ k8s_resource('users', port_forwards=['9091:9091'], resource_deps=['users-db'], l
 
 ### Products Service ###
 docker_build(
-  'refurbished-marketplace/products-migrator',
+  'products-migrator',
   '.',
   dockerfile='./infra/docker/products-migrator.Dockerfile',
   only=[
@@ -128,7 +128,7 @@ docker_build(
 )
 
 docker_build(
-  'refurbished-marketplace/products',
+  'products',
   '.',
   dockerfile='./infra/docker/products.Dockerfile',
   only=[
@@ -143,7 +143,7 @@ k8s_resource('products', port_forwards=['9092:9092'], resource_deps=['products-d
 
 ### Orders Service ###
 docker_build(
-  'refurbished-marketplace/orders-migrator',
+  'orders-migrator',
   '.',
   dockerfile='./infra/docker/orders-migrator.Dockerfile',
   only=[
@@ -152,7 +152,7 @@ docker_build(
 )
 
 docker_build(
-  'refurbished-marketplace/orders',
+  'orders',
   '.',
   dockerfile='./infra/docker/orders.Dockerfile',
   only=[
@@ -167,7 +167,7 @@ k8s_resource('orders', port_forwards=['9093:9093'], resource_deps=['orders-db'],
 
 ### Cart Service ###
 docker_build(
-  'refurbished-marketplace/cart',
+  'cart',
   '.',
   dockerfile='./infra/docker/cart.Dockerfile',
   only=[
@@ -180,7 +180,7 @@ k8s_resource('cart', port_forwards=['9094:9094'],  labels='cart')
 
 ### Payment Service ###
 docker_build(
-  'refurbished-marketplace/payment-migrator',
+  'payment-migrator',
   '.',
   dockerfile='./infra/docker/payment-migrator.Dockerfile',
   only=[
@@ -189,7 +189,7 @@ docker_build(
 )
 
 docker_build(
-  'refurbished-marketplace/payment',
+  'payment',
   '.',
   dockerfile='./infra/docker/payment.Dockerfile',
   only=[
@@ -203,10 +203,8 @@ k8s_resource('payment-migrate', resource_deps=['payment-db'], labels='payment')
 k8s_resource('payment', port_forwards=['9096:9096'], resource_deps=['payment-db'], labels='payment')
 
 ### Payment Simulator Service ###
-k8s_yaml('./infra/k8s/payment-gateway-simulator.yaml')
-
 docker_build(
-  'refurbished-marketplace/payment-gateway-simulator',
+  'payment-gateway-simulator',
   '.',
   dockerfile='./infra/docker/payment-gateway-simulator.Dockerfile',
   only=[
