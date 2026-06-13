@@ -1,0 +1,26 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: production-strimzi
+  namespace: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+spec:
+  project: default
+  source:
+    repoURL: quay.io/strimzi-helm
+    chart: strimzi-kafka-operator
+    targetRevision: 1.0.0
+    helm:
+      releaseName: strimzi-cluster-operator
+      values: |
+        watchAnyNamespace: true
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: operators
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true

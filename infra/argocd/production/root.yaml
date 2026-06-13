@@ -1,0 +1,20 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: production-root
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
+    targetRevision: main
+    path: infra/argocd/production/apps
+    directory:
+      recurse: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
