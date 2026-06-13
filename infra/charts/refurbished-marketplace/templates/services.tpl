@@ -37,7 +37,7 @@ spec:
             - containerPort: 6379
 {{- end }}
         - name: {{ $name }}
-          image: {{ $svc.image }}
+          image: {{ include "refurbished-marketplace.image" (list $ $svc.image $svc.imageTag) }}
           imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
           ports:
             - containerPort: {{ $svc.port }}

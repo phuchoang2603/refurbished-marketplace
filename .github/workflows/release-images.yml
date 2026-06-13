@@ -17,149 +17,46 @@ permissions:
   packages: write
 
 jobs:
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      web: ${{ steps.filter.outputs.web }}
-      users: ${{ steps.filter.outputs.users }}
-      users-migrator: ${{ steps.filter.outputs.users-migrator }}
-      products: ${{ steps.filter.outputs.products }}
-      products-migrator: ${{ steps.filter.outputs.products-migrator }}
-      orders: ${{ steps.filter.outputs.orders }}
-      orders-migrator: ${{ steps.filter.outputs.orders-migrator }}
-      cart: ${{ steps.filter.outputs.cart }}
-      payment: ${{ steps.filter.outputs.payment }}
-      payment-migrator: ${{ steps.filter.outputs.payment-migrator }}
-      payment-gateway-simulator: ${{ steps.filter.outputs.payment-gateway-simulator }}
-      connect-debezium: ${{ steps.filter.outputs.connect-debezium }}
-    steps:
-      - uses: actions/checkout@v6
-      - uses: dorny/paths-filter@v4
-        id: filter
-        with:
-          filters: |
-            web:
-              - 'infra/docker/web.Dockerfile'
-              - 'services/web/**'
-              - 'shared/proto/**'
-              - 'shared/auth/**'
-              - 'go.work'
-            users:
-              - 'infra/docker/users.Dockerfile'
-              - 'services/users/**'
-              - 'shared/proto/**'
-              - 'shared/auth/**'
-              - 'shared/testutil/postgres/**'
-              - 'go.work'
-            users-migrator:
-              - 'infra/docker/users-migrator.Dockerfile'
-              - 'services/users/db/migrations/**'
-            products:
-              - 'infra/docker/products.Dockerfile'
-              - 'services/products/**'
-              - 'shared/proto/**'
-              - 'shared/messaging/**'
-              - 'shared/testutil/postgres/**'
-              - 'shared/testutil/kafka/**'
-              - 'go.work'
-            products-migrator:
-              - 'infra/docker/products-migrator.Dockerfile'
-              - 'services/products/db/migrations/**'
-            orders:
-              - 'infra/docker/orders.Dockerfile'
-              - 'services/orders/**'
-              - 'shared/proto/**'
-              - 'shared/messaging/**'
-              - 'shared/testutil/postgres/**'
-              - 'shared/testutil/kafka/**'
-              - 'go.work'
-            orders-migrator:
-              - 'infra/docker/orders-migrator.Dockerfile'
-              - 'services/orders/db/migrations/**'
-            cart:
-              - 'infra/docker/cart.Dockerfile'
-              - 'services/cart/**'
-              - 'shared/proto/**'
-              - 'shared/testutil/redis/**'
-              - 'go.work'
-            payment:
-              - 'infra/docker/payment.Dockerfile'
-              - 'services/payment/**'
-              - 'shared/proto/**'
-              - 'shared/messaging/**'
-              - 'shared/testutil/postgres/**'
-              - 'shared/testutil/kafka/**'
-              - 'go.work'
-            payment-migrator:
-              - 'infra/docker/payment-migrator.Dockerfile'
-              - 'services/payment/db/migrations/**'
-            payment-gateway-simulator:
-              - 'infra/docker/payment-gateway-simulator.Dockerfile'
-              - 'tools/payment-gateway-simulator/**'
-              - 'go.work'
-            connect-debezium:
-              - 'infra/docker/connect-debezium.Dockerfile'
-
   release:
-    needs: changes
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
         include:
           - image: web
-            filter: web
             dockerfile: infra/docker/web.Dockerfile
           - image: users
-            filter: users
             dockerfile: infra/docker/users.Dockerfile
           - image: users-migrator
-            filter: users-migrator
             dockerfile: infra/docker/users-migrator.Dockerfile
           - image: products
-            filter: products
             dockerfile: infra/docker/products.Dockerfile
           - image: products-migrator
-            filter: products-migrator
             dockerfile: infra/docker/products-migrator.Dockerfile
           - image: orders
-            filter: orders
             dockerfile: infra/docker/orders.Dockerfile
           - image: orders-migrator
-            filter: orders-migrator
             dockerfile: infra/docker/orders-migrator.Dockerfile
           - image: cart
-            filter: cart
             dockerfile: infra/docker/cart.Dockerfile
           - image: payment
-            filter: payment
             dockerfile: infra/docker/payment.Dockerfile
           - image: payment-migrator
-            filter: payment-migrator
             dockerfile: infra/docker/payment-migrator.Dockerfile
           - image: payment-gateway-simulator
-            filter: payment-gateway-simulator
             dockerfile: infra/docker/payment-gateway-simulator.Dockerfile
           - image: connect-debezium
-            filter: connect-debezium
             dockerfile: infra/docker/connect-debezium.Dockerfile
     steps:
-      - name: Skip when path filter does not match
-        if: github.event_name != 'workflow_dispatch' && needs.changes.outputs[matrix.filter] != 'true'
-        run: echo "Skipping release for ${{ matrix.image }}"
-
       - uses: actions/checkout@v6
-        if: github.event_name == 'workflow_dispatch' || needs.changes.outputs[matrix.filter] == 'true'
 
       - uses: docker/login-action@v3
-        if: github.event_name == 'workflow_dispatch' || needs.changes.outputs[matrix.filter] == 'true'
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: docker/build-push-action@v6
-        if: github.event_name == 'workflow_dispatch' || needs.changes.outputs[matrix.filter] == 'true'
         with:
           context: .
           file: ${{ matrix.dockerfile }}

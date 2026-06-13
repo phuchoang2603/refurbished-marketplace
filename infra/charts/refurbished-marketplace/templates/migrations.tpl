@@ -28,7 +28,7 @@ spec:
               do echo "waiting for database {{ $svc.db.host }}"; sleep 2; done
       containers:
         - name: goose
-          image: {{ $svc.migration.image }}
+          image: {{ include "refurbished-marketplace.image" (list $ $svc.migration.image $svc.migration.imageTag) }}
           imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
           env:
             - name: GOOSE_DRIVER
