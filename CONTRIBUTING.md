@@ -26,6 +26,7 @@ tilt up
 | OpenSpec planning workflow          | [docs/development/openspec.md](docs/development/openspec.md)               |
 | Issues, labels, pull requests       | [docs/development/github-workflow.md](docs/development/github-workflow.md) |
 | CI, path filters, GHCR releases     | [docs/development/ci.md](docs/development/ci.md)                           |
+| Argo CD GitOps (staging/production) | [docs/development/deploy-gitops.md](docs/development/deploy-gitops.md)     |
 
 ## Questions
 

@@ -22,7 +22,7 @@ Pushes to `main` that touch image-related paths trigger `.github/workflows/relea
 - `ghcr.io/<repository>/<image>:<commit-sha>`
 - `ghcr.io/<repository>/<image>:main` (rolling tag)
 
-Local Tilt development continues to use unqualified image names (for example `refurbished-marketplace/web`). Helm chart values are not yet wired to GHCR — that is deferred to the ArgoCD GitOps phase.
+Local Tilt development uses short image names in chart values (for example `web`, `users-migrator`). Staging and production overlays set `global.imageRegistry` and `global.imageTag` to pull from GHCR — see [deploy-gitops.md](deploy-gitops.md).
 
 ## Path-filter fan-out for tests
 
