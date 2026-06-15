@@ -33,10 +33,6 @@ infra/argocd/staging/apps/
 2. Apply `infra/argocd/staging/root.yaml` to the Argo CD namespace
 3. GHCR pull access if images are private
 
-## Branch debugging
-
-Set `targetRevision` on repo-sourced Applications (`root.yaml`, `refurbished-marketplace-infra.yaml`, `refurbished-marketplace.yaml`, `kafka.yaml`) to a feature branch for cluster testing; restore `main` after merge.
-
 ## See also
 
 - [ci.md](ci.md) — image builds and GHCR tags
