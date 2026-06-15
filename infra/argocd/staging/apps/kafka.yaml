@@ -8,7 +8,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
-    targetRevision: main
+    targetRevision: fix/argocd-staging-debug
     path: infra/charts/kafka
     helm:
       releaseName: ecommerce-kafka-cluster

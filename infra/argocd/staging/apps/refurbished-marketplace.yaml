@@ -8,7 +8,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
-    targetRevision: main
+    targetRevision: fix/argocd-staging-debug
     path: infra/charts/refurbished-marketplace
     helm:
       releaseName: refurbished-marketplace
@@ -16,6 +16,12 @@ spec:
         global:
           imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
           imageTag: main
+        services:
+          web:
+            env:
+              HOSTED_PAYMENT_BASE_URL: http://payment-gateway-simulator:8097
+          payment-gateway-simulator:
+            enabled: true
   destination:
     server: https://kubernetes.default.svc
     namespace: ecommerce

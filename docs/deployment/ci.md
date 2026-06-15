@@ -17,12 +17,12 @@ The `govulncheck` job uses the same service matrix and path-filter fan-out as `t
 
 ## Container images (GHCR)
 
-Pushes to `main` that touch image-related paths trigger `.github/workflows/release-images.yml`. The workflow uses the same path-filter fan-out pattern as CI tests: only affected images are built and pushed (for example a `services/web/**` change rebuilds `web`, not all twelve). Changes under `shared/**` or `go.work` fan out to the dependent service images. `workflow_dispatch` builds all images.
+Pushes to `main` that touch image-related paths trigger `.github/workflows/release-images.yml`. The release workflow builds and pushes **all twelve** images on every run (`:main` and `:<commit-sha>`). `workflow_dispatch` also builds the full matrix.
 
 - `ghcr.io/<repository>/<image>:<commit-sha>`
 - `ghcr.io/<repository>/<image>:main` (rolling tag)
 
-Local Tilt development uses short image names in chart values (for example `web`, `users-migrator`). Staging and production overlays set `global.imageRegistry` and `global.imageTag` to pull from GHCR — see [deploy-gitops.md](deploy-gitops.md).
+Local Tilt development uses short image names in chart values (for example `web`, `users-migrator`). Staging Argo CD Applications set `global.imageRegistry` and `global.imageTag` to pull from GHCR — see [gitops.md](gitops.md).
 
 ## Path-filter fan-out for tests
 
