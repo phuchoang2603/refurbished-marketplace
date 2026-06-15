@@ -2,6 +2,7 @@ apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
   name: staging-root
+  namespace: argo-cd
 spec:
   project: default
   source:
@@ -13,6 +14,7 @@ spec:
       recurse: false
   destination:
     server: https://kubernetes.default.svc
+    namespace: argo-cd
   syncPolicy:
     automated:
       prune: true

@@ -13,6 +13,7 @@ How the staging cluster syncs application manifests from this repository. Local 
 **Out of scope (bootstrap, done outside Git):**
 
 - Argo CD installation and cluster registration
+- External Secrets Operator installation (Terraform, same as Argo CD)
 - Doppler service token and `ClusterSecretStore`
 - Terraform wiring that creates the root Application on the cluster
 
@@ -26,13 +27,13 @@ infra/argocd/staging/
 
 The root Application syncs the `apps/` directory **without** a `destination.namespace`, so child Application CRs are created in the same namespace as the root (typically `default`). Workload Applications still set `destination.namespace` for Helm releases (`operators`, `ecommerce`).
 
-| Sync wave | Applications                                      |
-| --------- | ------------------------------------------------- |
-| 0         | External Secrets Operator, CloudNativePG, Strimzi |
-| 1         | `refurbished-marketplace` Helm chart              |
-| 2         | `kafka` Helm chart                                |
+| Sync wave | Applications                         |
+| --------- | ------------------------------------ |
+| 0         | CloudNativePG, Strimzi               |
+| 1         | `refurbished-marketplace` Helm chart |
+| 2         | `kafka` Helm chart                   |
 
-Operator Helm chart versions match the Tiltfile (ESO 2.6.0, CNPG 0.28.3, Strimzi 1.0.0).
+ESO is **not** deployed by Argo CD on staging — Terraform installs it (pinned to 2.6.0, matching the Tiltfile). CNPG and Strimzi chart versions in Argo CD match the Tiltfile (0.28.3 and 1.0.0).
 
 ## Staging
 
@@ -78,9 +79,9 @@ Apply the root Application to the **`default`** namespace — not `argocd` — s
 
 Before the first successful sync:
 
-1. Argo CD installed on the cluster
-2. Root Application applied from `infra/argocd/staging/root.yaml` into `default`
-3. Doppler token secret and `ClusterSecretStore` present (see [secrets](../development/secrets.md))
+1. Argo CD and ESO installed on the cluster (Terraform)
+2. Doppler token secret and `ClusterSecretStore` present (see [secrets](../development/secrets.md))
+3. Root Application applied from `infra/argocd/staging/root.yaml` into `default`
 4. GHCR pull access configured if images are private (`imagePullSecrets` — not automated in this repo)
 
 ## Related docs
