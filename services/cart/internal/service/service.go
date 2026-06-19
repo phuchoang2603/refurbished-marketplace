@@ -17,9 +17,13 @@ var (
 
 type Service struct {
 	client *redis.Client
-	ttl    time.Duration
+	cfg    Config
 }
 
-func New(rdb *redis.Client, ttl time.Duration) *Service {
-	return &Service{client: rdb, ttl: ttl}
+func New(client *redis.Client, cfg Config) *Service {
+	return &Service{client: client, cfg: cfg}
+}
+
+func (s *Service) cartTTL() time.Duration {
+	return s.cfg.CartTTL
 }
