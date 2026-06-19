@@ -16,6 +16,10 @@ spec:
       releaseName: refurbished-marketplace-infra
       valueFiles:
         - ../refurbished-marketplace/values.yaml
+      values: |
+        global:
+          imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
+          imageTag: main
   destination:
     server: https://kubernetes.default.svc
     namespace: ecommerce
