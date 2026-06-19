@@ -1,29 +1,21 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: staging-refurbished-marketplace
+  name: staging-refurbished-marketplace-infra
   finalizers:
     - resources-finalizer.argocd.argoproj.io/foreground
   annotations:
-    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   project: default
   source:
     repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
     targetRevision: fix/argocd-staging-debug
-    path: infra/charts/refurbished-marketplace
+    path: infra/charts/refurbished-marketplace-infra
     helm:
-      releaseName: refurbished-marketplace
-      values: |
-        global:
-          imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
-          imageTag: main
-        services:
-          web:
-            env:
-              HOSTED_PAYMENT_BASE_URL: http://payment-gateway-simulator:8097
-          payment-gateway-simulator:
-            enabled: true
+      releaseName: refurbished-marketplace-infra
+      valueFiles:
+        - ../refurbished-marketplace/values.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: ecommerce

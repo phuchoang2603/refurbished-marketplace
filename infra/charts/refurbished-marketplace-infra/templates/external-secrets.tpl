@@ -1,7 +1,7 @@
 {{- if .Values.externalSecrets.enabled }}
 {{- range $name, $svc := .Values.services }}
 {{- if and $svc.enabled $svc.db }}
-{{- $prefix := include "refurbished-marketplace.dopplerKeyPrefix" $svc.db.secretName }}
+{{- $prefix := include "refurbished-marketplace-infra.dopplerKeyPrefix" $svc.db.secretName }}
 ---
 apiVersion: external-secrets.io/v1
 kind: ExternalSecret

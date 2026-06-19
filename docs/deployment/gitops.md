@@ -4,21 +4,27 @@ Staging syncs from `infra/argocd/staging/`. Tilt uses chart defaults locally —
 
 ## What Argo CD syncs
 
-| Component                 | Source                  | Pin                                     | Namespace   |
-| ------------------------- | ----------------------- | --------------------------------------- | ----------- |
-| CloudNativePG             | Argo CD (upstream Helm) | chart `0.28.3`                          | `operators` |
-| Strimzi                   | Argo CD (upstream Helm) | chart `1.0.0`, `watchAnyNamespace=true` | `operators` |
-| `refurbished-marketplace` | This repo               | `global.imageTag: main` + GHCR registry | `ecommerce` |
-| `kafka`                   | This repo               | same image tag/registry                 | `ecommerce` |
+| Component                       | Source                  | Pin                                     | Namespace   |
+| ------------------------------- | ----------------------- | --------------------------------------- | ----------- |
+| CloudNativePG                   | Argo CD (upstream Helm) | chart `0.28.3`                          | `operators` |
+| Strimzi                         | Argo CD (upstream Helm) | chart `1.0.0`, `watchAnyNamespace=true` | `operators` |
+| `refurbished-marketplace-infra` | This repo               | shared `values.yaml`                    | `ecommerce` |
+| `refurbished-marketplace`       | This repo               | `global.imageTag: main` + GHCR          | `ecommerce` |
+| `kafka`                         | This repo               | same image tag/registry                 | `ecommerce` |
 
 **Terraform (not in Git):** Argo CD, ESO (`2.6.0`), Doppler token, `ClusterSecretStore`.
 
-Sync order: operators (wave 0) → marketplace (1) → kafka (2). Values for repo charts live inline on each Application under `spec.source.helm.values`.
+**Infra chart** (`infra/charts/refurbished-marketplace-infra`): CNPG clusters + ExternalSecrets. Syncs before the app chart so migration jobs can reach databases.
+
+Sync order: operators (0) → infra (1) → marketplace (2) → kafka (3).
 
 ```
-infra/argocd/staging/
-├── root.yaml
-└── apps/   # operators-cnpg, operators-strimzi, refurbished-marketplace, kafka
+infra/argocd/staging/apps/
+├── operators-cnpg.yaml
+├── operators-strimzi.yaml
+├── refurbished-marketplace-infra.yaml
+├── refurbished-marketplace.yaml
+└── kafka.yaml
 ```
 
 ## Bootstrap
@@ -29,7 +35,7 @@ infra/argocd/staging/
 
 ## Branch debugging
 
-Point `targetRevision` at a feature branch on repo-sourced Applications (`root.yaml`, `refurbished-marketplace.yaml`, `kafka.yaml`) to test before merge; set back to `main` after. Operator apps pin upstream chart versions only.
+Set `targetRevision` on repo-sourced Applications (`root.yaml`, `refurbished-marketplace-infra.yaml`, `refurbished-marketplace.yaml`, `kafka.yaml`) to a feature branch for cluster testing; restore `main` after merge.
 
 ## See also
 

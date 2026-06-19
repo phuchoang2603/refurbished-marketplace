@@ -6,9 +6,6 @@ kind: Job
 metadata:
   name: {{ printf "%s-migrate" $name }}
   namespace: {{ $.Release.Namespace }}
-  annotations:
-    "helm.sh/hook": pre-install,pre-upgrade
-    "helm.sh/hook-delete-policy": before-hook-creation,hook-succeeded
 spec:
   backoffLimit: 3
   activeDeadlineSeconds: 300
