@@ -2,6 +2,8 @@ package service
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 
 	"refurbished-marketplace/shared/messaging"
@@ -13,6 +15,11 @@ import (
 
 func (s *Service) KafkaOrderResultHandler() messaging.KafkaHandler {
 	return func(ctx context.Context, msg messaging.KafkaMessage) error {
+		messageID := messaging.KafkaMessageID(msg)
+		if messageID == "" {
+			return errors.New("messageID is required")
+		}
+
 		var (
 			orderID uuid.UUID
 			status  string
@@ -37,10 +44,14 @@ func (s *Service) KafkaOrderResultHandler() messaging.KafkaHandler {
 			return err
 		}
 
-		if err := s.updateOrderStatusOnly(ctx, orderID, status); err != nil {
+		if _, err := s.queries.InsertOrdersInboxMessage(ctx, messageID); err != nil {
+			if errors.Is(err, sql.ErrNoRows) {
+				return nil
+			}
 			return err
 		}
-		return nil
+
+		return s.updateOrderStatusOnly(ctx, orderID, status)
 	}
 }
 

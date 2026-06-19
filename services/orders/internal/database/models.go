@@ -31,6 +31,11 @@ type OrderItem struct {
 	CreatedAt      time.Time
 }
 
+type OrdersInbox struct {
+	MessageID  string
+	ReceivedAt time.Time
+}
+
 type OrdersOutbox struct {
 	ID              uuid.UUID
 	AggregateID     uuid.UUID
