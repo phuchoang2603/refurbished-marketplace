@@ -9,8 +9,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
-    # Debug: track this branch until merged to main, then set back to main.
-    targetRevision: fix/argocd-staging-debug
+    targetRevision: main
     path: infra/argocd/staging/apps
     directory:
       recurse: false

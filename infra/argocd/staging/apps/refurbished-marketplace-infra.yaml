@@ -10,7 +10,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
-    targetRevision: fix/argocd-staging-debug
+    targetRevision: main
     path: infra/charts/refurbished-marketplace-infra
     helm:
       releaseName: refurbished-marketplace-infra
