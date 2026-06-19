@@ -3,48 +3,18 @@ package service
 import (
 	"context"
 	"crypto/sha256"
-	"database/sql"
 	"encoding/hex"
 	"errors"
-	"strings"
 	"time"
 
 	"refurbished-marketplace/services/users/internal/database"
+	shareddb "refurbished-marketplace/shared/db"
 
 	sharedjwt "refurbished-marketplace/shared/auth/jwt"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
-	"github.com/lib/pq"
 )
-
-func normalizeEmail(email string) string {
-	return strings.TrimSpace(strings.ToLower(email))
-}
-
-func isValidEmailShape(email string) bool {
-	return strings.Contains(email, "@") && len(email) >= 3
-}
-
-func mapDBUser(u database.User) User {
-	return User{
-		ID:           u.ID,
-		Email:        u.Email,
-		PasswordHash: u.PasswordHash,
-		CreatedAt:    u.CreatedAt,
-		UpdatedAt:    u.UpdatedAt,
-	}
-}
-
-func mapNotFound(err, notFoundErr error) error {
-	if err == nil {
-		return nil
-	}
-	if errors.Is(err, sql.ErrNoRows) {
-		return notFoundErr
-	}
-	return err
-}
 
 func (s *Service) signToken(tokenType, jti string, userID uuid.UUID, email string, expiresAt time.Time) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
@@ -119,13 +89,7 @@ func hashToken(token string) string {
 }
 
 func mapInvalidToken(err error) error {
-	if err == nil {
-		return nil
-	}
-	if errors.Is(err, sql.ErrNoRows) {
-		return ErrInvalidToken
-	}
-	return err
+	return shareddb.MapErrNoRows(err, ErrInvalidToken)
 }
 
 func loadRefreshSession(ctx context.Context, queries *database.Queries, refreshID uuid.UUID) (database.RefreshToken, error) {
@@ -138,19 +102,4 @@ func loadRefreshSession(ctx context.Context, queries *database.Queries, refreshI
 	}
 
 	return session, nil
-}
-
-func mapInvalidCredentials(err error) error {
-	if err == nil {
-		return nil
-	}
-	if errors.Is(err, sql.ErrNoRows) {
-		return ErrInvalidCredentials
-	}
-	return err
-}
-
-func isPostgresUniqueViolation(err error) bool {
-	var pqErr *pq.Error
-	return errors.As(err, &pqErr) && pqErr.Code == "23505"
 }

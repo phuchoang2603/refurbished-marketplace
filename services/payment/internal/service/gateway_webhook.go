@@ -3,11 +3,10 @@ package service
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
-	"time"
 
 	"refurbished-marketplace/services/payment/internal/database"
+	shareddb "refurbished-marketplace/shared/db"
 	"refurbished-marketplace/shared/messaging"
 
 	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
@@ -15,72 +14,6 @@ import (
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
 )
-
-type PaymentTransactionView struct {
-	ID                   string
-	OrderID              string
-	MerchantID           string
-	AmountCents          int64
-	Currency             string
-	Status               string
-	IdempotencyKey       string
-	GatewayTransactionID string
-	CreatedAt            time.Time
-	UpdatedAt            time.Time
-}
-
-type HostedPaymentSessionView struct {
-	OrderID          string
-	PaymentSessionID string
-	Currency         string
-	Status           string
-	ReturnURL        string
-	CancelURL        string
-	FailureReason    string
-	ExpiresAt        time.Time
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
-}
-
-type CreateHostedPaymentSessionParams struct {
-	OrderID         uuid.UUID
-	BuyerUserID     uuid.UUID
-	Currency        string
-	ShippingAddress json.RawMessage
-	ReturnURL       string
-	CancelURL       string
-}
-
-func (s *Service) CreateHostedPaymentSession(ctx context.Context, p CreateHostedPaymentSessionParams) (HostedPaymentSessionView, error) {
-	p.Currency = defaultPaymentCurrency(p.Currency)
-
-	intent, err := loadPaymentIntentByOrderID(ctx, s.queries, p.OrderID)
-	if err == nil {
-		return mapDBHostedPaymentSessionView(intent), nil
-	}
-	if !errors.Is(err, ErrIntentNotFound) {
-		return HostedPaymentSessionView{}, err
-	}
-
-	expiresAt := time.Now().UTC().Add(30 * time.Minute)
-	created, err := s.queries.CreateHostedPaymentSession(ctx, database.CreateHostedPaymentSessionParams{
-		OrderID:          p.OrderID,
-		BuyerUserID:      p.BuyerUserID,
-		Currency:         p.Currency,
-		ShippingAddress:  p.ShippingAddress,
-		Status:           HostedPaymentSessionStatusPending,
-		PaymentSessionID: optionalNullString(uuid.NewString()),
-		ReturnUrl:        p.ReturnURL,
-		CancelUrl:        p.CancelURL,
-		ExpiresAt:        optionalNullTime(expiresAt),
-		FailureReason:    sql.NullString{},
-	})
-	if err != nil {
-		return HostedPaymentSessionView{}, err
-	}
-
-	return mapDBHostedPaymentSessionView(created), nil
-}
 
 func (s *Service) ApplyGatewayWebhook(ctx context.Context, orderID uuid.UUID, paymentSessionID, status, failureReason string) error {
 	intent, err := loadPaymentIntentByOrderID(ctx, s.queries, orderID)
@@ -96,9 +29,9 @@ func (s *Service) ApplyGatewayWebhook(ctx context.Context, orderID uuid.UUID, pa
 
 	updatedIntent, err := s.queries.UpdateHostedPaymentSessionOutcome(ctx, database.UpdateHostedPaymentSessionOutcomeParams{
 		OrderID:          orderID,
-		PaymentSessionID: optionalNullString(paymentSessionID),
+		PaymentSessionID: shareddb.OptionalNullString(paymentSessionID),
 		Status:           status,
-		FailureReason:    optionalNullString(failureReason),
+		FailureReason:    shareddb.OptionalNullString(failureReason),
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -123,7 +56,7 @@ func (s *Service) applyTerminalOutcome(ctx context.Context, transactionID uuid.U
 	if err != nil {
 		return err
 	}
-	q := database.New(tx)
+	q := s.queries.WithTx(tx)
 	defer func() {
 		_ = tx.Rollback()
 	}()
@@ -171,20 +104,4 @@ func (s *Service) applyTerminalOutcome(ctx context.Context, transactionID uuid.U
 	}
 
 	return tx.Commit()
-}
-
-func (s *Service) GetHostedPaymentSessionByOrder(ctx context.Context, orderID uuid.UUID) (HostedPaymentSessionView, error) {
-	row, err := loadPaymentIntentByOrderID(ctx, s.queries, orderID)
-	if err != nil {
-		return HostedPaymentSessionView{}, err
-	}
-	return mapDBHostedPaymentSessionView(row), nil
-}
-
-func (s *Service) GetPaymentTransaction(ctx context.Context, id uuid.UUID) (PaymentTransactionView, error) {
-	row, err := loadPaymentTransaction(ctx, s.queries, id)
-	if err != nil {
-		return PaymentTransactionView{}, err
-	}
-	return mapDBPaymentTransactionView(row), nil
 }

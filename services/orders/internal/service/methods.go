@@ -2,11 +2,10 @@ package service
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"time"
 
 	"refurbished-marketplace/services/orders/internal/database"
+	shareddb "refurbished-marketplace/shared/db"
 
 	"github.com/google/uuid"
 )
@@ -47,7 +46,7 @@ func (s *Service) CreateOrder(ctx context.Context, buyerUserID, merchantID uuid.
 	if err != nil {
 		return Order{}, err
 	}
-	q := database.New(tx)
+	q := s.queries.WithTx(tx)
 	defer func() {
 		_ = tx.Rollback()
 	}()
@@ -88,10 +87,7 @@ func (s *Service) GetOrderByID(ctx context.Context, id uuid.UUID) (Order, error)
 
 	got, err := s.queries.GetOrderByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return Order{}, ErrOrderNotFound
-		}
-		return Order{}, err
+		return Order{}, shareddb.MapErrNoRows(err, ErrOrderNotFound)
 	}
 
 	orders, err := loadOrdersWithItems(ctx, s.queries, []Order{mapDBOrder(got)})
@@ -108,11 +104,8 @@ func (s *Service) ListOrdersByBuyer(ctx context.Context, buyerUserID uuid.UUID, 
 	if buyerUserID == uuid.Nil {
 		return nil, ErrInvalidBuyerID
 	}
-	if limit <= 0 || limit > 100 {
-		return nil, ErrInvalidQuantity
-	}
-	if offset < 0 {
-		return nil, ErrInvalidQuantity
+	if err := validateListPagination(limit, offset); err != nil {
+		return nil, err
 	}
 
 	rows, err := s.queries.ListOrdersByBuyer(ctx, database.ListOrdersByBuyerParams{BuyerUserID: buyerUserID, Limit: limit, Offset: offset})
@@ -134,10 +127,7 @@ func (s *Service) UpdateOrderStatus(ctx context.Context, id uuid.UUID, status st
 
 	got, err := s.queries.GetOrderByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return Order{}, ErrOrderNotFound
-		}
-		return Order{}, err
+		return Order{}, shareddb.MapErrNoRows(err, ErrOrderNotFound)
 	}
 
 	orders, err := loadOrdersWithItems(ctx, s.queries, []Order{mapDBOrder(got)})
@@ -161,10 +151,7 @@ func (s *Service) updateOrderStatusOnly(ctx context.Context, id uuid.UUID, statu
 
 	_, err = s.queries.UpdateOrderStatus(ctx, database.UpdateOrderStatusParams{ID: id, Status: normalizedStatus})
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return ErrOrderNotFound
-		}
-		return err
+		return shareddb.MapErrNoRows(err, ErrOrderNotFound)
 	}
 	return nil
 }

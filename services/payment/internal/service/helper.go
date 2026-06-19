@@ -2,15 +2,12 @@ package service
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"fmt"
-	"time"
 
 	"refurbished-marketplace/services/payment/internal/database"
+	shareddb "refurbished-marketplace/shared/db"
 
 	"github.com/google/uuid"
-	"github.com/lib/pq"
 )
 
 func mapDBPaymentTransactionView(tx database.PaymentTransaction) PaymentTransactionView {
@@ -59,10 +56,7 @@ func mapDBHostedPaymentSessionView(intent database.PaymentIntent) HostedPaymentS
 func loadPaymentTransaction(ctx context.Context, q *database.Queries, id uuid.UUID) (database.PaymentTransaction, error) {
 	row, err := q.GetPaymentTransactionByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return database.PaymentTransaction{}, ErrTransactionNotFound
-		}
-		return database.PaymentTransaction{}, err
+		return database.PaymentTransaction{}, shareddb.MapErrNoRows(err, ErrTransactionNotFound)
 	}
 	return row, nil
 }
@@ -70,10 +64,7 @@ func loadPaymentTransaction(ctx context.Context, q *database.Queries, id uuid.UU
 func loadPaymentIntentByOrderID(ctx context.Context, q *database.Queries, orderID uuid.UUID) (database.PaymentIntent, error) {
 	row, err := q.GetPaymentIntentByOrderID(ctx, orderID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return database.PaymentIntent{}, ErrIntentNotFound
-		}
-		return database.PaymentIntent{}, err
+		return database.PaymentIntent{}, shareddb.MapErrNoRows(err, ErrIntentNotFound)
 	}
 	return row, nil
 }
@@ -94,14 +85,6 @@ func parseOrderUUIDs(msg interface {
 	return orderID, merchantID, nil
 }
 
-func optionalNullString(s string) sql.NullString {
-	return sql.NullString{String: s, Valid: s != ""}
-}
-
-func optionalNullTime(t time.Time) sql.NullTime {
-	return sql.NullTime{Time: t, Valid: !t.IsZero()}
-}
-
 func paymentTransactionIsTerminal(status string) bool {
 	return status == PaymentTxStatusSucceeded || status == PaymentTxStatusFailed
 }
@@ -115,8 +98,7 @@ func hostedPaymentSessionMapsToSuccess(status string) bool {
 }
 
 func isPostgresUniqueViolation(err error) bool {
-	var pqErr *pq.Error
-	return errors.As(err, &pqErr) && pqErr.Code == "23505"
+	return shareddb.IsUniqueViolation(err)
 }
 
 func defaultPaymentCurrency(currency string) string {

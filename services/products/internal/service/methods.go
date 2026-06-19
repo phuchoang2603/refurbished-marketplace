@@ -2,11 +2,10 @@ package service
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"time"
 
 	"refurbished-marketplace/services/products/internal/database"
+	shareddb "refurbished-marketplace/shared/db"
 
 	"github.com/google/uuid"
 )
@@ -97,11 +96,8 @@ func (s *Service) GetProductByID(ctx context.Context, id uuid.UUID) (Product, er
 }
 
 func (s *Service) ListProducts(ctx context.Context, limit, offset int32) ([]Product, error) {
-	if limit <= 0 || limit > 100 {
-		return nil, ErrInvalidListLimit
-	}
-	if offset < 0 {
-		return nil, ErrInvalidListOffset
+	if err := validateListPagination(limit, offset); err != nil {
+		return nil, err
 	}
 
 	rows, err := s.queries.ListProducts(ctx, database.ListProductsParams{Limit: limit, Offset: offset})
@@ -123,10 +119,7 @@ func (s *Service) GetInventoryByProductID(ctx context.Context, productID uuid.UU
 
 	inv, err := s.queries.GetInventoryByProductID(ctx, productID)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return Inventory{}, ErrInventoryNotFound
-		}
-		return Inventory{}, err
+		return Inventory{}, shareddb.MapErrNoRows(err, ErrInventoryNotFound)
 	}
 
 	return mapDBInventory(inv), nil
