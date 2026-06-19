@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"refurbished-marketplace/services/web/internal/auth"
+	"refurbished-marketplace/services/web/tests/fakes"
 	productsv1 "refurbished-marketplace/shared/proto/products/v1"
 
 	"google.golang.org/grpc/codes"
@@ -16,8 +17,8 @@ import (
 )
 
 func TestCreateProductRedirectsToProductDetail(t *testing.T) {
-	productsSvc := &fakeProductsService{
-		createFn: func(ctx context.Context, name, description string, priceCents int64, merchantID string, initialStock int32) (*productsv1.Product, error) {
+	productsSvc := &fakes.ProductsService{
+		CreateFn: func(ctx context.Context, name, description string, priceCents int64, merchantID string, initialStock int32) (*productsv1.Product, error) {
 			if name != "Refurbished Phone" {
 				t.Fatalf("name = %q, want Refurbished Phone", name)
 			}
@@ -58,8 +59,8 @@ func TestCreateProductRedirectsToProductDetail(t *testing.T) {
 }
 
 func TestCreateProductReturnsUnavailableWhenProductsServiceFails(t *testing.T) {
-	productsSvc := &fakeProductsService{
-		createFn: func(ctx context.Context, name, description string, priceCents int64, merchantID string, initialStock int32) (*productsv1.Product, error) {
+	productsSvc := &fakes.ProductsService{
+		CreateFn: func(ctx context.Context, name, description string, priceCents int64, merchantID string, initialStock int32) (*productsv1.Product, error) {
 			return nil, status.Error(codes.Unavailable, "products service unavailable")
 		},
 	}
@@ -83,8 +84,8 @@ func TestCreateProductReturnsUnavailableWhenProductsServiceFails(t *testing.T) {
 
 func TestSellerProductsPageListsOnlyCurrentSellerProducts(t *testing.T) {
 	stock := int32(4)
-	productsSvc := &fakeProductsService{
-		listFn: func(ctx context.Context, limit, offset int32) (*productsv1.ListProductsResponse, error) {
+	productsSvc := &fakes.ProductsService{
+		ListFn: func(ctx context.Context, limit, offset int32) (*productsv1.ListProductsResponse, error) {
 			return &productsv1.ListProductsResponse{Products: []*productsv1.Product{
 				{Id: "prod-1", MerchantId: "11111111-1111-1111-1111-111111111111", Name: "Seller Phone", PriceCents: 25999, AvailableQty: &stock},
 				{Id: "prod-2", MerchantId: "22222222-2222-2222-2222-222222222222", Name: "Other Laptop", PriceCents: 99999, AvailableQty: &stock},
@@ -111,8 +112,8 @@ func TestSellerProductsPageListsOnlyCurrentSellerProducts(t *testing.T) {
 
 func TestProductsPageHidesCurrentUsersProducts(t *testing.T) {
 	stock := int32(4)
-	productsSvc := &fakeProductsService{
-		listFn: func(ctx context.Context, limit, offset int32) (*productsv1.ListProductsResponse, error) {
+	productsSvc := &fakes.ProductsService{
+		ListFn: func(ctx context.Context, limit, offset int32) (*productsv1.ListProductsResponse, error) {
 			return &productsv1.ListProductsResponse{Products: []*productsv1.Product{
 				{Id: "prod-1", MerchantId: "11111111-1111-1111-1111-111111111111", Name: "Own Phone", Description: "This should be hidden", PriceCents: 25999, AvailableQty: &stock},
 				{Id: "prod-2", MerchantId: "22222222-2222-2222-2222-222222222222", Name: "Other Laptop", Description: "Visible", PriceCents: 99999, AvailableQty: &stock},
@@ -139,8 +140,8 @@ func TestProductsPageHidesCurrentUsersProducts(t *testing.T) {
 
 func TestProductDetailHidesCartFormForOwner(t *testing.T) {
 	stock := int32(4)
-	productsSvc := &fakeProductsService{
-		getByIDFn: func(ctx context.Context, id string) (*productsv1.Product, error) {
+	productsSvc := &fakes.ProductsService{
+		GetByIDFn: func(ctx context.Context, id string) (*productsv1.Product, error) {
 			return &productsv1.Product{Id: id, MerchantId: "11111111-1111-1111-1111-111111111111", Name: "Seller Phone", Description: "Owned item", PriceCents: 25999, AvailableQty: &stock}, nil
 		},
 	}

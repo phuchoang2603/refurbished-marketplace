@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"refurbished-marketplace/services/web/internal/auth"
+	"refurbished-marketplace/services/web/tests/fakes"
 	cartv1 "refurbished-marketplace/shared/proto/cart/v1"
 	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
 	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
@@ -16,8 +17,8 @@ import (
 )
 
 func TestAddCartItemRedirectsToCart(t *testing.T) {
-	cartSvc := &fakeCartService{
-		addFn: func(ctx context.Context, cartID, productID, merchantID string, quantity int32) (*cartv1.Cart, error) {
+	cartSvc := &fakes.CartService{
+		AddFn: func(ctx context.Context, cartID, productID, merchantID string, quantity int32) (*cartv1.Cart, error) {
 			if merchantID != "merchant-1" {
 				t.Fatalf("merchantID = %q, want merchant-1", merchantID)
 			}
@@ -40,30 +41,30 @@ func TestAddCartItemRedirectsToCart(t *testing.T) {
 }
 
 func TestCheckoutClearsCartCookieAndRedirectsToOrder(t *testing.T) {
-	cartSvc := &fakeCartService{
-		getFn: func(ctx context.Context, cartID string) (*cartv1.Cart, error) {
+	cartSvc := &fakes.CartService{
+		GetFn: func(ctx context.Context, cartID string) (*cartv1.Cart, error) {
 			return &cartv1.Cart{
 				CartId: cartID,
 				Items:  []*cartv1.CartItem{{ProductId: "prod-1", Quantity: 1, MerchantId: "merchant-1"}},
 			}, nil
 		},
-		clearCartFn: func(ctx context.Context, cartID string) error { return nil },
+		ClearCartFn: func(ctx context.Context, cartID string) error { return nil },
 	}
-	productsSvc := &fakeProductsService{
-		getByIDFn: func(ctx context.Context, id string) (*productsv1.Product, error) {
+	productsSvc := &fakes.ProductsService{
+		GetByIDFn: func(ctx context.Context, id string) (*productsv1.Product, error) {
 			return &productsv1.Product{Id: id, Name: "Phone", PriceCents: 1200, MerchantId: "merchant-1"}, nil
 		},
 	}
-	ordersSvc := &fakeOrdersService{
-		createFn: func(ctx context.Context, buyerUserID, merchantID string, items []*ordersv1.CreateOrderItem, totalCents int64) (*ordersv1.Order, error) {
+	ordersSvc := &fakes.OrdersService{
+		CreateFn: func(ctx context.Context, buyerUserID, merchantID string, items []*ordersv1.CreateOrderItem, totalCents int64) (*ordersv1.Order, error) {
 			if buyerUserID != "user-1" {
 				t.Fatalf("buyerUserID = %q, want user-1", buyerUserID)
 			}
 			return &ordersv1.Order{Id: "order-1", BuyerUserId: buyerUserID, TotalCents: totalCents}, nil
 		},
 	}
-	paymentSvc := &fakePaymentService{
-		createSessionFn: func(ctx context.Context, req *paymentv1.CreateHostedPaymentSessionRequest) (*paymentv1.CreateHostedPaymentSessionResponse, error) {
+	paymentSvc := &fakes.PaymentService{
+		CreateSessionFn: func(ctx context.Context, req *paymentv1.CreateHostedPaymentSessionRequest) (*paymentv1.CreateHostedPaymentSessionResponse, error) {
 			if req.GetOrderId() != "order-1" {
 				t.Fatalf("orderID = %q, want order-1", req.GetOrderId())
 			}

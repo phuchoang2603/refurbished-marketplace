@@ -3,6 +3,8 @@ module refurbished-marketplace/services/web
 go 1.26.2
 
 require (
+	github.com/Oudwins/tailwind-merge-go v0.2.0
+	github.com/a-h/templ v0.3.1001
 	github.com/go-chi/chi/v5 v5.2.3
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
@@ -12,6 +14,7 @@ require (
 	google.golang.org/protobuf v1.36.11
 	refurbished-marketplace/shared/auth v0.0.0
 	refurbished-marketplace/shared/proto v0.0.0
+	refurbished-marketplace/shared/runtime v0.0.0
 )
 
 require (
