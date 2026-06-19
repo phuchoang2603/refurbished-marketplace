@@ -1,21 +1,30 @@
+# Wrapper around go-service.Dockerfile with payment defaults.
+# Build context must be the repository root.
+
 FROM golang:1.26.2-alpine AS builder
+
+ARG BUILD_PKG=./services/payment/cmd/payment
+ARG BUILD_BIN=payment
 
 WORKDIR /src
 
+COPY go.work go.work.sum ./
 COPY shared ./shared
-COPY services/payment ./services/payment
+COPY services ./services
+COPY tools ./tools
 
-WORKDIR /src/services/payment
-ENV GOWORK=off
 RUN go mod download
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/payment ./cmd/payment
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build -o /out/${BUILD_BIN} ${BUILD_PKG}
 
 FROM gcr.io/distroless/static-debian12
 
+ARG BUILD_BIN=payment
+
 WORKDIR /app
 
-COPY --from=builder /out/payment /app/payment
+COPY --from=builder /out/${BUILD_BIN} /app/service
 
 EXPOSE 9096
 
-ENTRYPOINT ["/app/payment"]
+ENTRYPOINT ["/app/service"]

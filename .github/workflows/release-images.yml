@@ -9,6 +9,7 @@ on:
       - shared/**
       - tools/**
       - go.work
+      - go.work.sum
       - "**/go.mod"
   workflow_dispatch:
 

@@ -94,8 +94,11 @@ docker_build(
   '.',
   dockerfile='./infra/docker/web.Dockerfile',
   only=[
+    './go.work',
+    './go.work.sum',
     './shared',
-    './services/web',
+    './services',
+    './tools',
   ],
 )
 k8s_resource('web', port_forwards=['8080:8080'], labels=["web"])
@@ -115,8 +118,11 @@ docker_build(
   '.',
   dockerfile='./infra/docker/users.Dockerfile',
   only=[
-    './services/users',
+    './go.work',
+    './go.work.sum',
     './shared',
+    './services',
+    './tools',
   ],
 )
 
@@ -139,8 +145,11 @@ docker_build(
   '.',
   dockerfile='./infra/docker/products.Dockerfile',
   only=[
-    './services/products',
+    './go.work',
+    './go.work.sum',
     './shared',
+    './services',
+    './tools',
   ],
 )
 
@@ -163,8 +172,11 @@ docker_build(
   '.',
   dockerfile='./infra/docker/orders.Dockerfile',
   only=[
-    './services/orders',
+    './go.work',
+    './go.work.sum',
     './shared',
+    './services',
+    './tools',
   ],
 )
 
@@ -178,8 +190,11 @@ docker_build(
   '.',
   dockerfile='./infra/docker/cart.Dockerfile',
   only=[
-    './services/cart',
+    './go.work',
+    './go.work.sum',
     './shared',
+    './services',
+    './tools',
   ],
 )
 
@@ -200,8 +215,11 @@ docker_build(
   '.',
   dockerfile='./infra/docker/payment.Dockerfile',
   only=[
-    './services/payment',
+    './go.work',
+    './go.work.sum',
     './shared',
+    './services',
+    './tools',
   ],
 )
 
@@ -215,7 +233,11 @@ docker_build(
   '.',
   dockerfile='./infra/docker/payment-gateway-simulator.Dockerfile',
   only=[
-    './tools/payment-gateway-simulator',
+    './go.work',
+    './go.work.sum',
+    './shared',
+    './services',
+    './tools',
   ],
 )
 

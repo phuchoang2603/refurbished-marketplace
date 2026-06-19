@@ -1,21 +1,27 @@
+# Users service image. Build context must be the repository root.
+
 FROM golang:1.26.2-alpine AS builder
+
+ARG BUILD_PKG=./services/users/cmd/users
+ARG BUILD_BIN=users
 
 WORKDIR /src
 
+COPY go.work go.work.sum ./
 COPY shared ./shared
-COPY services/users ./services/users
+COPY services ./services
+COPY tools ./tools
 
-WORKDIR /src/services/users
-ENV GOWORK=off
 RUN go mod download
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/users ./cmd/users
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build -o /out/${BUILD_BIN} ${BUILD_PKG}
 
 FROM gcr.io/distroless/static-debian12
 
 WORKDIR /app
 
-COPY --from=builder /out/users /app/users
+COPY --from=builder /out/users /app/service
 
 EXPOSE 9091
 
-ENTRYPOINT ["/app/users"]
+ENTRYPOINT ["/app/service"]
