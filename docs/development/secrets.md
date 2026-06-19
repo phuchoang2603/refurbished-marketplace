@@ -74,7 +74,7 @@ kubectl describe externalsecret -n ecommerce users-app
 
 Helm and application code reference Kubernetes Secret names only. To move off Doppler, edit `infra/k8s/cluster-secret-store.yaml` to use another [ESO provider](https://external-secrets.io/latest/provider/overview/) and adjust `externalSecrets` / service `db` / `auth` settings in `infra/charts/refurbished-marketplace/values.yaml` if remote key names change. Service deployment templates do not need changes.
 
-Remote clusters use the same cluster-level manifests under `infra/k8s/` and the marketplace chart values; bootstrap a config-scoped service token for the target environment separately.
+Remote clusters use the same cluster-level manifests under `infra/k8s/` and the marketplace chart values; bootstrap a config-scoped service token for the target environment separately. On staging, the ESO operator itself is installed by Terraform (alongside Argo CD), not by an Argo CD Application — see [gitops.md](../deployment/gitops.md).
 
 ## Related issues
 

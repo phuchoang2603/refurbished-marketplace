@@ -1,22 +1,24 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: staging-cnpg
+  name: staging-refurbished-marketplace-infra
   finalizers:
     - resources-finalizer.argocd.argoproj.io/foreground
   annotations:
-    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   project: default
   source:
-    repoURL: https://cloudnative-pg.io/charts/
-    chart: cloudnative-pg
-    targetRevision: 0.28.3
+    repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
+    targetRevision: main
+    path: infra/charts/refurbished-marketplace-infra
     helm:
-      releaseName: cnpg
+      releaseName: refurbished-marketplace-infra
+      valueFiles:
+        - ../refurbished-marketplace/values.yaml
   destination:
     server: https://kubernetes.default.svc
-    namespace: operators
+    namespace: ecommerce
   syncPolicy:
     automated:
       prune: true
