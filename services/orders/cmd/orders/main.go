@@ -2,10 +2,7 @@ package main
 
 import (
 	"context"
-	"database/sql"
-	"errors"
 	"log"
-	"net"
 	"os"
 	"os/signal"
 	"sync"
@@ -13,29 +10,23 @@ import (
 
 	"refurbished-marketplace/services/orders/internal/grpcserver"
 	"refurbished-marketplace/services/orders/internal/service"
-	"refurbished-marketplace/shared/messaging"
+	"refurbished-marketplace/shared/runtime"
 
 	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
 
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 )
 
 func main() {
-	addr := os.Getenv("GRPC_ADDR")
-	if addr == "" {
-		addr = ":9093"
+	cfg := service.LoadConfig()
+	if err := service.ValidateConfig(cfg); err != nil {
+		log.Fatal(err)
 	}
 
-	dbURL := os.Getenv("DB_URL")
-	if dbURL == "" {
-		log.Fatal("DB_URL is required")
-	}
-
-	db, err := sql.Open("postgres", dbURL)
+	db, err := runtime.OpenPostgres(runtime.MustEnv("DB_URL"))
 	if err != nil {
-		log.Fatalf("open db: %v", err)
+		log.Fatal(err)
 	}
 	defer func() {
 		if err := db.Close(); err != nil {
@@ -43,48 +34,24 @@ func main() {
 		}
 	}()
 
-	if err := db.Ping(); err != nil {
-		log.Fatalf("ping db: %v", err)
-	}
-
 	svc := service.New(db)
 	grpcSvc := grpcserver.New(svc)
-
-	lis, err := net.Listen("tcp", addr)
-	if err != nil {
-		log.Fatalf("listen: %v", err)
-	}
-
-	server := grpc.NewServer()
-	ordersv1.RegisterOrdersServiceServer(server, grpcSvc)
-	reflection.Register(server)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	var wg sync.WaitGroup
-	if raw := os.Getenv("KAFKA_BOOTSTRAP_SERVERS"); raw != "" {
-		brokers := messaging.ParseBootstrapServers(raw)
-		if len(brokers) == 0 {
-			log.Print("KAFKA_BOOTSTRAP_SERVERS has no brokers after parsing; skipping Kafka consumer")
-		} else {
-			wg.Go(func() {
-				if err := runOrderResultConsumer(ctx, svc, brokers); err != nil && !errors.Is(err, context.Canceled) {
-					log.Printf("kafka consumer: %v", err)
-				}
-			})
-		}
-	} else {
-		log.Print("KAFKA_BOOTSTRAP_SERVERS not set; skipping Kafka consumer")
-	}
+	runtime.StartKafkaConsumer(ctx, &wg, func(ctx context.Context, brokers []string) error {
+		return runOrderResultConsumer(ctx, svc, brokers, cfg.KafkaGroupID)
+	})
 
-	go func() {
-		<-ctx.Done()
-		server.GracefulStop()
-	}()
-
-	log.Printf("starting orders grpc service on %s", addr)
-	if err := server.Serve(lis); err != nil {
+	if err := runtime.ServeGRPC(ctx, runtime.GRPCServerConfig{
+		Addr:        cfg.GRPCAddr,
+		ServiceName: "orders",
+		Register: func(server *grpc.Server) {
+			ordersv1.RegisterOrdersServiceServer(server, grpcSvc)
+		},
+	}); err != nil {
 		log.Fatalf("grpc: %v", err)
 	}
 	wg.Wait()
