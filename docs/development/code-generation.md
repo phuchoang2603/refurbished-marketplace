@@ -31,6 +31,12 @@ go build ./services/users/cmd/users
 go test ./services/users/...
 ```
 
-Container images copy `go.work`, `go.work.sum`, `shared/`, `services/`, and `tools/`, then run `go build ./services/<name>/cmd/<name>` from `/src` so the workspace resolves shared modules the same way as local dev.
+Container images copy `go.work`, `go.work.sum`, `shared/`, `services/`, and `tools/`, then run `go build` from `/src` so the workspace resolves shared modules the same way as local dev.
 
-See [`infra/docker/go-service.Dockerfile`](../../infra/docker/go-service.Dockerfile) for the generic image template.
+Generic templates under `infra/docker/`:
+
+| Dockerfile                                                                  | Purpose                                                              |
+| --------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| [`go-service.Dockerfile`](../../infra/docker/go-service.Dockerfile)         | Go microservices and tools (`BUILD_PKG`, `BUILD_BIN`, `EXPOSE_PORT`) |
+| [`goose-migrator.Dockerfile`](../../infra/docker/goose-migrator.Dockerfile) | DB migrations (`MIGRATIONS_DIR`)                                     |
+| [`web.Dockerfile`](../../infra/docker/web.Dockerfile)                       | Web BFF (same workspace build plus static assets)                    |
