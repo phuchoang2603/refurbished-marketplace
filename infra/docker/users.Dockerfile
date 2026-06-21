@@ -18,9 +18,11 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
 
 FROM gcr.io/distroless/static-debian12
 
+ARG BUILD_BIN=users
+
 WORKDIR /app
 
-COPY --from=builder /out/users /app/service
+COPY --from=builder /out/${BUILD_BIN} /app/service
 
 EXPOSE 9091
 

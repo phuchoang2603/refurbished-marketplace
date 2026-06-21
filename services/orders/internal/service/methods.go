@@ -141,6 +141,10 @@ func (s *Service) UpdateOrderStatus(ctx context.Context, id uuid.UUID, status st
 }
 
 func (s *Service) updateOrderStatusOnly(ctx context.Context, id uuid.UUID, status string) error {
+	return s.updateOrderStatusWithQueries(ctx, s.queries, id, status)
+}
+
+func (s *Service) updateOrderStatusWithQueries(ctx context.Context, q *database.Queries, id uuid.UUID, status string) error {
 	if id == uuid.Nil {
 		return ErrOrderNotFound
 	}
@@ -149,7 +153,7 @@ func (s *Service) updateOrderStatusOnly(ctx context.Context, id uuid.UUID, statu
 		return ErrInvalidStatus
 	}
 
-	_, err = s.queries.UpdateOrderStatus(ctx, database.UpdateOrderStatusParams{ID: id, Status: normalizedStatus})
+	_, err = q.UpdateOrderStatus(ctx, database.UpdateOrderStatusParams{ID: id, Status: normalizedStatus})
 	if err != nil {
 		return shareddb.MapErrNoRows(err, ErrOrderNotFound)
 	}

@@ -44,15 +44,32 @@ func (s *Service) KafkaOrderResultHandler() messaging.KafkaHandler {
 			return err
 		}
 
-		if _, err := s.queries.InsertOrdersInboxMessage(ctx, messageID); err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return nil
-			}
-			return err
-		}
-
-		return s.updateOrderStatusOnly(ctx, orderID, status)
+		return s.applyKafkaOrderResult(ctx, messageID, orderID, status)
 	}
+}
+
+func (s *Service) applyKafkaOrderResult(ctx context.Context, messageID string, orderID uuid.UUID, status string) error {
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	q := s.queries.WithTx(tx)
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	if _, err := q.InsertOrdersInboxMessage(ctx, messageID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+		return err
+	}
+
+	if err := s.updateOrderStatusWithQueries(ctx, q, orderID, status); err != nil {
+		return err
+	}
+
+	return tx.Commit()
 }
 
 func parsePaymentOutcomeOrderID(value []byte) (uuid.UUID, error) {

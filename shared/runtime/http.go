@@ -27,14 +27,19 @@ func ServeHTTP(ctx context.Context, cfg HTTPServerConfig) error {
 		shutdownTimeout = defaultHTTPShutdownTimeout
 	}
 
+	errCh := make(chan error, 1)
 	go func() {
 		log.Printf("starting %s http service on %s", cfg.ServiceName, cfg.Addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen and serve error: %v", err)
+			errCh <- err
 		}
 	}()
 
-	<-ctx.Done()
+	select {
+	case err := <-errCh:
+		return err
+	case <-ctx.Done():
+	}
 
 	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 	defer cancel()
