@@ -12,6 +12,7 @@ var (
 	ErrInvalidMerchantID     = errors.New("invalid merchant id")
 	ErrInvalidProductID      = errors.New("invalid product id")
 	ErrInvalidQuantity       = errors.New("invalid quantity")
+	ErrInvalidPagination     = errors.New("invalid pagination")
 	ErrInvalidTotalCents     = errors.New("invalid total cents")
 	ErrInvalidUnitPriceCents = errors.New("invalid unit price cents")
 	ErrOrderNotFound         = errors.New("order not found")

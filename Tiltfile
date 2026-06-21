@@ -76,6 +76,38 @@ k8s_resource(
 )
 k8s_resource('kafka-ui', port_forwards=['8081:8080'], resource_deps=['kafka-cluster'], labels='kafka')
 
+GO_WORKSPACE_ONLY = [
+  './go.work',
+  './go.work.sum',
+  './shared',
+  './services',
+  './tools',
+]
+
+def go_service(name, pkg, port):
+  docker_build(
+    name,
+    '.',
+    dockerfile='./infra/docker/go-service.Dockerfile',
+    build_args={
+      'BUILD_PKG': pkg,
+      'BUILD_BIN': name,
+      'EXPOSE_PORT': str(port),
+    },
+    only=GO_WORKSPACE_ONLY,
+  )
+
+def goose_migrator(name, migrations_dir):
+  docker_build(
+    name + '-migrator',
+    '.',
+    dockerfile='./infra/docker/goose-migrator.Dockerfile',
+    build_args={
+      'MIGRATIONS_DIR': migrations_dir,
+    },
+    only=['./' + migrations_dir],
+  )
+
 ### Web Service ###
 local_resource(
     "templ-watch",
@@ -94,129 +126,53 @@ docker_build(
   '.',
   dockerfile='./infra/docker/web.Dockerfile',
   only=[
+    './go.work',
+    './go.work.sum',
     './shared',
-    './services/web',
+    './services',
+    './tools',
   ],
 )
 k8s_resource('web', port_forwards=['8080:8080'], labels=["web"])
 
 ### Users Service ###
-docker_build(
-  'users-migrator',
-  '.',
-  dockerfile='./infra/docker/users-migrator.Dockerfile',
-  only=[
-    './services/users/db/migrations',
-  ],
-)
-
-docker_build(
-  'users',
-  '.',
-  dockerfile='./infra/docker/users.Dockerfile',
-  only=[
-    './services/users',
-    './shared',
-  ],
-)
+goose_migrator('users', 'services/users/db/migrations')
+go_service('users', './services/users/cmd/users', 9091)
 
 k8s_resource('users-db', extra_pod_selectors=[{'cnpg.io/cluster': 'users-db'}], port_forwards=['5432:5432'], resource_deps=['cnpg-operator-install'], labels=['users'])
 k8s_resource('users-migrate', resource_deps=['users-db'], labels='users')
 k8s_resource('users', port_forwards=['9091:9091'], resource_deps=['users-db'], labels='users')
 
 ### Products Service ###
-docker_build(
-  'products-migrator',
-  '.',
-  dockerfile='./infra/docker/products-migrator.Dockerfile',
-  only=[
-    './services/products/db/migrations',
-  ],
-)
-
-docker_build(
-  'products',
-  '.',
-  dockerfile='./infra/docker/products.Dockerfile',
-  only=[
-    './services/products',
-    './shared',
-  ],
-)
+goose_migrator('products', 'services/products/db/migrations')
+go_service('products', './services/products/cmd/products', 9092)
 
 k8s_resource('products-db', extra_pod_selectors=[{'cnpg.io/cluster': 'products-db'}], port_forwards=['5433:5432'], resource_deps=['cnpg-operator-install'], labels='products')
 k8s_resource('products-migrate', resource_deps=['products-db'], labels='products')
 k8s_resource('products', port_forwards=['9092:9092'], resource_deps=['products-db'], labels='products')
 
 ### Orders Service ###
-docker_build(
-  'orders-migrator',
-  '.',
-  dockerfile='./infra/docker/orders-migrator.Dockerfile',
-  only=[
-    './services/orders/db/migrations',
-  ],
-)
-
-docker_build(
-  'orders',
-  '.',
-  dockerfile='./infra/docker/orders.Dockerfile',
-  only=[
-    './services/orders',
-    './shared',
-  ],
-)
+goose_migrator('orders', 'services/orders/db/migrations')
+go_service('orders', './services/orders/cmd/orders', 9093)
 
 k8s_resource('orders-db', extra_pod_selectors=[{'cnpg.io/cluster': 'orders-db'}], port_forwards=['5434:5432'], resource_deps=['cnpg-operator-install'], labels='orders')
 k8s_resource('orders-migrate', resource_deps=['orders-db'], labels='orders')
 k8s_resource('orders', port_forwards=['9093:9093'], resource_deps=['orders-db'], labels='orders')
 
 ### Cart Service ###
-docker_build(
-  'cart',
-  '.',
-  dockerfile='./infra/docker/cart.Dockerfile',
-  only=[
-    './services/cart',
-    './shared',
-  ],
-)
+go_service('cart', './services/cart/cmd/cart', 9094)
 
 k8s_resource('cart', port_forwards=['9094:9094'],  labels='cart')
 
 ### Payment Service ###
-docker_build(
-  'payment-migrator',
-  '.',
-  dockerfile='./infra/docker/payment-migrator.Dockerfile',
-  only=[
-    './services/payment/db/migrations',
-  ],
-)
-
-docker_build(
-  'payment',
-  '.',
-  dockerfile='./infra/docker/payment.Dockerfile',
-  only=[
-    './services/payment',
-    './shared',
-  ],
-)
+goose_migrator('payment', 'services/payment/db/migrations')
+go_service('payment', './services/payment/cmd/payment', 9096)
 
 k8s_resource('payment-db', extra_pod_selectors=[{'cnpg.io/cluster': 'payment-db'}], port_forwards=['5436:5432'], resource_deps=['cnpg-operator-install'], labels='payment')
 k8s_resource('payment-migrate', resource_deps=['payment-db'], labels='payment')
 k8s_resource('payment', port_forwards=['9096:9096'], resource_deps=['payment-db'], labels='payment')
 
 ### Payment Simulator Service ###
-docker_build(
-  'payment-gateway-simulator',
-  '.',
-  dockerfile='./infra/docker/payment-gateway-simulator.Dockerfile',
-  only=[
-    './tools/payment-gateway-simulator',
-  ],
-)
+go_service('payment-gateway-simulator', './tools/payment-gateway-simulator', 8097)
 
 k8s_resource('payment-gateway-simulator', port_forwards=['8097:8097'], resource_deps=['payment'], labels='payment')

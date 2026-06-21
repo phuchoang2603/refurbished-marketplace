@@ -2,37 +2,27 @@ package main
 
 import (
 	"context"
-	"database/sql"
 	"log"
-	"net"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"refurbished-marketplace/services/users/internal/grpcserver"
 	"refurbished-marketplace/services/users/internal/service"
+	"refurbished-marketplace/shared/runtime"
 
 	usersv1 "refurbished-marketplace/shared/proto/users/v1"
 
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
 )
 
 func main() {
-	addr := os.Getenv("GRPC_ADDR")
-	if addr == "" {
-		addr = ":9091"
-	}
+	addr := runtime.EnvOr("GRPC_ADDR", ":9091")
 
-	dbURL := os.Getenv("DB_URL")
-	if dbURL == "" {
-		log.Fatal("DB_URL is required")
-	}
-
-	db, err := sql.Open("postgres", dbURL)
+	db, err := runtime.OpenPostgres(runtime.MustEnv("DB_URL"))
 	if err != nil {
-		log.Fatalf("open db: %v", err)
+		log.Fatal(err)
 	}
 	defer func() {
 		if err := db.Close(); err != nil {
@@ -40,12 +30,7 @@ func main() {
 		}
 	}()
 
-	if err := db.Ping(); err != nil {
-		log.Fatalf("ping db: %v", err)
-	}
-
-	jwtSecret := os.Getenv("JWT_SECRET")
-	cfg := service.DefaultConfig(jwtSecret)
+	cfg := service.DefaultConfig(os.Getenv("JWT_SECRET"))
 	if err := service.ValidateConfig(cfg); err != nil {
 		log.Fatalf("auth config: %v", err)
 	}
@@ -53,23 +38,16 @@ func main() {
 	svc := service.New(db, cfg)
 	grpcSvc := grpcserver.New(svc)
 
-	lis, err := net.Listen("tcp", addr)
-	if err != nil {
-		log.Fatalf("listen: %v", err)
-	}
-
-	server := grpc.NewServer()
-	usersv1.RegisterUsersServiceServer(server, grpcSvc)
-	reflection.Register(server)
-
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	go func() {
-		<-ctx.Done()
-		server.GracefulStop()
-	}()
-
-	log.Printf("starting users grpc service on %s", addr)
-	log.Fatal(server.Serve(lis))
+	if err := runtime.ServeGRPC(ctx, runtime.GRPCServerConfig{
+		Addr:        addr,
+		ServiceName: "users",
+		Register: func(server *grpc.Server) {
+			usersv1.RegisterUsersServiceServer(server, grpcSvc)
+		},
+	}); err != nil {
+		log.Fatalf("grpc: %v", err)
+	}
 }

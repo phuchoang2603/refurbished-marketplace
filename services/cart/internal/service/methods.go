@@ -19,7 +19,7 @@ type CartItem struct {
 }
 
 func (s *Service) GetCart(ctx context.Context, cartID string) (Cart, error) {
-	if err := validate(cartID, ErrInvalidCartID); err != nil {
+	if err := validateUUID(cartID, ErrInvalidCartID); err != nil {
 		return Cart{}, err
 	}
 
@@ -37,13 +37,13 @@ func (s *Service) AddCartItem(ctx context.Context, cartID, productID, merchantID
 	if quantity <= 0 {
 		return Cart{}, ErrInvalidQuantity
 	}
-	if err := validate(cartID, ErrInvalidCartID); err != nil {
+	if err := validateUUID(cartID, ErrInvalidCartID); err != nil {
 		return Cart{}, err
 	}
-	if err := validate(productID, ErrInvalidProductID); err != nil {
+	if err := validateUUID(productID, ErrInvalidProductID); err != nil {
 		return Cart{}, err
 	}
-	if err := validate(merchantID, ErrInvalidMerchantID); err != nil {
+	if err := validateUUID(merchantID, ErrInvalidMerchantID); err != nil {
 		return Cart{}, err
 	}
 
@@ -72,13 +72,13 @@ func (s *Service) SetCartItemQuantity(ctx context.Context, cartID, productID, me
 	if quantity <= 0 {
 		return s.RemoveCartItem(ctx, cartID, productID)
 	}
-	if err := validate(cartID, ErrInvalidCartID); err != nil {
+	if err := validateUUID(cartID, ErrInvalidCartID); err != nil {
 		return Cart{}, err
 	}
-	if err := validate(productID, ErrInvalidProductID); err != nil {
+	if err := validateUUID(productID, ErrInvalidProductID); err != nil {
 		return Cart{}, err
 	}
-	if err := validate(merchantID, ErrInvalidMerchantID); err != nil {
+	if err := validateUUID(merchantID, ErrInvalidMerchantID); err != nil {
 		return Cart{}, err
 	}
 
@@ -104,10 +104,10 @@ func (s *Service) SetCartItemQuantity(ctx context.Context, cartID, productID, me
 }
 
 func (s *Service) RemoveCartItem(ctx context.Context, cartID, productID string) (Cart, error) {
-	if err := validate(cartID, ErrInvalidCartID); err != nil {
+	if err := validateUUID(cartID, ErrInvalidCartID); err != nil {
 		return Cart{}, err
 	}
-	if err := validate(productID, ErrInvalidProductID); err != nil {
+	if err := validateUUID(productID, ErrInvalidProductID); err != nil {
 		return Cart{}, err
 	}
 
@@ -131,7 +131,7 @@ func (s *Service) RemoveCartItem(ctx context.Context, cartID, productID string) 
 }
 
 func (s *Service) ClearCart(ctx context.Context, cartID string) error {
-	if err := validate(cartID, ErrInvalidCartID); err != nil {
+	if err := validateUUID(cartID, ErrInvalidCartID); err != nil {
 		return err
 	}
 	return s.deleteCart(ctx, cartID)

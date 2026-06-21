@@ -2,14 +2,12 @@ package grpcserver
 
 import (
 	"context"
-	"errors"
 
 	"refurbished-marketplace/services/cart/internal/service"
+	"refurbished-marketplace/shared/grpcerr"
 	cartv1 "refurbished-marketplace/shared/proto/cart/v1"
 
-	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -22,91 +20,88 @@ func mapCart(c service.Cart) *cartv1.Cart {
 }
 
 func (s *Server) GetCart(ctx context.Context, req *cartv1.GetCartRequest) (*cartv1.Cart, error) {
-	if _, err := uuid.Parse(req.GetCartId()); err != nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid cart id")
+	if _, err := grpcerr.ParseUUID(req.GetCartId(), "cart id"); err != nil {
+		return nil, err
 	}
 	c, err := s.cart.GetCart(ctx, req.GetCartId())
 	if err != nil {
-		if errors.Is(err, service.ErrInvalidCartID) {
-			return nil, status.Error(codes.InvalidArgument, err.Error())
-		}
-		return nil, status.Error(codes.Internal, "internal error")
+		return nil, grpcerr.Map(err, grpcerr.Mapping{Err: service.ErrInvalidCartID, Code: codes.InvalidArgument})
 	}
 	return mapCart(c), nil
 }
 
 func (s *Server) AddCartItem(ctx context.Context, req *cartv1.AddCartItemRequest) (*cartv1.Cart, error) {
-	if _, err := uuid.Parse(req.GetCartId()); err != nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid cart id")
+	if _, err := grpcerr.ParseUUID(req.GetCartId(), "cart id"); err != nil {
+		return nil, err
 	}
-	if _, err := uuid.Parse(req.GetProductId()); err != nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid product id")
+	if _, err := grpcerr.ParseUUID(req.GetProductId(), "product id"); err != nil {
+		return nil, err
 	}
-	if _, err := uuid.Parse(req.GetMerchantId()); err != nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid merchant id")
+	if _, err := grpcerr.ParseUUID(req.GetMerchantId(), "merchant id"); err != nil {
+		return nil, err
 	}
 	c, err := s.cart.AddCartItem(ctx, req.GetCartId(), req.GetProductId(), req.GetMerchantId(), req.GetQuantity())
 	if err != nil {
-		switch {
-		case errors.Is(err, service.ErrInvalidProductID), errors.Is(err, service.ErrInvalidMerchantID), errors.Is(err, service.ErrInvalidQuantity), errors.Is(err, service.ErrInvalidCartID):
-			return nil, status.Error(codes.InvalidArgument, err.Error())
-		default:
-			return nil, status.Error(codes.Internal, "internal error")
-		}
+		return nil, grpcerr.Map(
+			err,
+			grpcerr.Mapping{Err: service.ErrInvalidCartID, Code: codes.InvalidArgument},
+			grpcerr.Mapping{Err: service.ErrInvalidProductID, Code: codes.InvalidArgument},
+			grpcerr.Mapping{Err: service.ErrInvalidMerchantID, Code: codes.InvalidArgument},
+			grpcerr.Mapping{Err: service.ErrInvalidQuantity, Code: codes.InvalidArgument},
+		)
 	}
 	return mapCart(c), nil
 }
 
 func (s *Server) SetCartItemQuantity(ctx context.Context, req *cartv1.SetCartItemQuantityRequest) (*cartv1.Cart, error) {
-	if _, err := uuid.Parse(req.GetCartId()); err != nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid cart id")
+	if _, err := grpcerr.ParseUUID(req.GetCartId(), "cart id"); err != nil {
+		return nil, err
 	}
-	if _, err := uuid.Parse(req.GetProductId()); err != nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid product id")
+	if _, err := grpcerr.ParseUUID(req.GetProductId(), "product id"); err != nil {
+		return nil, err
 	}
-	if _, err := uuid.Parse(req.GetMerchantId()); err != nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid merchant id")
+	if _, err := grpcerr.ParseUUID(req.GetMerchantId(), "merchant id"); err != nil {
+		return nil, err
 	}
 	c, err := s.cart.SetCartItemQuantity(ctx, req.GetCartId(), req.GetProductId(), req.GetMerchantId(), req.GetQuantity())
 	if err != nil {
-		switch {
-		case errors.Is(err, service.ErrInvalidProductID), errors.Is(err, service.ErrInvalidMerchantID), errors.Is(err, service.ErrInvalidQuantity), errors.Is(err, service.ErrInvalidCartID), errors.Is(err, service.ErrItemNotFound):
-			return nil, status.Error(codes.InvalidArgument, err.Error())
-		default:
-			return nil, status.Error(codes.Internal, "internal error")
-		}
+		return nil, grpcerr.Map(
+			err,
+			grpcerr.Mapping{Err: service.ErrInvalidCartID, Code: codes.InvalidArgument},
+			grpcerr.Mapping{Err: service.ErrInvalidProductID, Code: codes.InvalidArgument},
+			grpcerr.Mapping{Err: service.ErrInvalidMerchantID, Code: codes.InvalidArgument},
+			grpcerr.Mapping{Err: service.ErrInvalidQuantity, Code: codes.InvalidArgument},
+			grpcerr.Mapping{Err: service.ErrItemNotFound, Code: codes.NotFound, Message: "cart item not found"},
+		)
 	}
 	return mapCart(c), nil
 }
 
 func (s *Server) RemoveCartItem(ctx context.Context, req *cartv1.RemoveCartItemRequest) (*cartv1.Cart, error) {
-	if _, err := uuid.Parse(req.GetCartId()); err != nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid cart id")
+	if _, err := grpcerr.ParseUUID(req.GetCartId(), "cart id"); err != nil {
+		return nil, err
 	}
-	if _, err := uuid.Parse(req.GetProductId()); err != nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid product id")
+	if _, err := grpcerr.ParseUUID(req.GetProductId(), "product id"); err != nil {
+		return nil, err
 	}
 	c, err := s.cart.RemoveCartItem(ctx, req.GetCartId(), req.GetProductId())
 	if err != nil {
-		switch {
-		case errors.Is(err, service.ErrItemNotFound), errors.Is(err, service.ErrInvalidCartID):
-			return nil, status.Error(codes.InvalidArgument, err.Error())
-		default:
-			return nil, status.Error(codes.Internal, "internal error")
-		}
+		return nil, grpcerr.Map(
+			err,
+			grpcerr.Mapping{Err: service.ErrInvalidCartID, Code: codes.InvalidArgument},
+			grpcerr.Mapping{Err: service.ErrInvalidProductID, Code: codes.InvalidArgument},
+			grpcerr.Mapping{Err: service.ErrItemNotFound, Code: codes.NotFound, Message: "cart item not found"},
+		)
 	}
 	return mapCart(c), nil
 }
 
 func (s *Server) ClearCart(ctx context.Context, req *cartv1.ClearCartRequest) (*cartv1.Empty, error) {
-	if _, err := uuid.Parse(req.GetCartId()); err != nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid cart id")
+	if _, err := grpcerr.ParseUUID(req.GetCartId(), "cart id"); err != nil {
+		return nil, err
 	}
 	if err := s.cart.ClearCart(ctx, req.GetCartId()); err != nil {
-		if errors.Is(err, service.ErrInvalidCartID) {
-			return nil, status.Error(codes.InvalidArgument, err.Error())
-		}
-		return nil, status.Error(codes.Internal, "internal error")
+		return nil, grpcerr.Map(err, grpcerr.Mapping{Err: service.ErrInvalidCartID, Code: codes.InvalidArgument})
 	}
 	return &cartv1.Empty{}, nil
 }

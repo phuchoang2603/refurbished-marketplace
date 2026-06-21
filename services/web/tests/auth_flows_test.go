@@ -9,12 +9,13 @@ import (
 	"testing"
 
 	"refurbished-marketplace/services/web/internal/auth"
+	"refurbished-marketplace/services/web/tests/fakes"
 	usersv1 "refurbished-marketplace/shared/proto/users/v1"
 )
 
 func TestLoginSetsCookiesAndRedirects(t *testing.T) {
-	usersSvc := &fakeUsersService{
-		loginFn: func(ctx context.Context, email, password string) (*usersv1.TokenResponse, error) {
+	usersSvc := &fakes.UsersService{
+		LoginFn: func(ctx context.Context, email, password string) (*usersv1.TokenResponse, error) {
 			if email != "buyer@example.com" || password != "secret123" {
 				t.Fatalf("unexpected credentials: %q %q", email, password)
 			}
@@ -44,14 +45,14 @@ func TestLoginSetsCookiesAndRedirects(t *testing.T) {
 }
 
 func TestRegisterSetsCookiesAndRedirects(t *testing.T) {
-	usersSvc := &fakeUsersService{
-		createUserFn: func(ctx context.Context, email, password string) (*usersv1.User, error) {
+	usersSvc := &fakes.UsersService{
+		CreateUserFn: func(ctx context.Context, email, password string) (*usersv1.User, error) {
 			if email != "buyer@example.com" || password != "secret123" {
 				t.Fatalf("unexpected credentials: %q %q", email, password)
 			}
 			return &usersv1.User{Id: "user-1", Email: email}, nil
 		},
-		loginFn: func(ctx context.Context, email, password string) (*usersv1.TokenResponse, error) {
+		LoginFn: func(ctx context.Context, email, password string) (*usersv1.TokenResponse, error) {
 			return &usersv1.TokenResponse{
 				AccessToken:      "access-token",
 				RefreshToken:     "refresh-token",
@@ -79,8 +80,8 @@ func TestRegisterSetsCookiesAndRedirects(t *testing.T) {
 
 func TestLogoutClearsCookiesAndRedirects(t *testing.T) {
 	var gotRefresh string
-	usersSvc := &fakeUsersService{
-		logoutFn: func(ctx context.Context, refreshToken string) (*usersv1.LogoutResponse, error) {
+	usersSvc := &fakes.UsersService{
+		LogoutFn: func(ctx context.Context, refreshToken string) (*usersv1.LogoutResponse, error) {
 			gotRefresh = refreshToken
 			return &usersv1.LogoutResponse{}, nil
 		},

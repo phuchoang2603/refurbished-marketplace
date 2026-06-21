@@ -44,3 +44,17 @@ func (q *Queries) CreateOrderOutbox(ctx context.Context, arg CreateOrderOutboxPa
 	)
 	return i, err
 }
+
+const insertOrdersInboxMessage = `-- name: InsertOrdersInboxMessage :one
+INSERT INTO orders_inbox (message_id)
+VALUES ($1)
+ON CONFLICT (message_id) DO NOTHING
+RETURNING TRUE
+`
+
+func (q *Queries) InsertOrdersInboxMessage(ctx context.Context, messageID string) (bool, error) {
+	row := q.db.QueryRowContext(ctx, insertOrdersInboxMessage, messageID)
+	var column_1 bool
+	err := row.Scan(&column_1)
+	return column_1, err
+}

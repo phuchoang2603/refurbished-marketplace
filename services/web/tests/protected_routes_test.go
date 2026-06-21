@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"refurbished-marketplace/services/web/internal/auth"
+	"refurbished-marketplace/services/web/tests/fakes"
 	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
 )
 
@@ -33,8 +34,8 @@ func TestProtectedPostShowsUnauthorizedPopup(t *testing.T) {
 }
 
 func TestAuthenticatedProtectedRouteProceeds(t *testing.T) {
-	ordersSvc := &fakeOrdersService{
-		listFn: func(ctx context.Context, buyerUserID string, limit, offset int32) (*ordersv1.ListOrdersByBuyerResponse, error) {
+	ordersSvc := &fakes.OrdersService{
+		ListFn: func(ctx context.Context, buyerUserID string, limit, offset int32) (*ordersv1.ListOrdersByBuyerResponse, error) {
 			if buyerUserID != "user-1" {
 				t.Fatalf("buyerUserID = %q, want user-1", buyerUserID)
 			}

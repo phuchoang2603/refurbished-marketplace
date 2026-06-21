@@ -6,7 +6,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/redis/go-redis/v9"
 )
 
@@ -48,28 +47,9 @@ func (s *Service) saveCart(ctx context.Context, cart Cart) error {
 	if err != nil {
 		return err
 	}
-	return s.client.Set(ctx, cartKey(cart.CartID), buf, s.ttl).Err()
+	return s.client.Set(ctx, cartKey(cart.CartID), buf, s.cartTTL()).Err()
 }
 
 func (s *Service) deleteCart(ctx context.Context, cartID string) error {
 	return s.client.Del(ctx, cartKey(cartID)).Err()
-}
-
-func findCartItem(items []CartItem, productID string) int {
-	for i, item := range items {
-		if item.ProductID == productID {
-			return i
-		}
-	}
-	return -1
-}
-
-func validate(id string, errType error) error {
-	if id == "" {
-		return errType
-	}
-	if _, err := uuid.Parse(id); err != nil {
-		return errType
-	}
-	return nil
 }

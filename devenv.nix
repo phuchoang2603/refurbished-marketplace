@@ -107,11 +107,6 @@ in
 
     tidy = {
       exec = ''
-        echo "Tidying Go modules..."
-        for dir in $(find shared services tools -name go.mod -exec dirname {} \; | sort); do
-          echo "Tidying $dir..."
-          (cd "$dir" && go mod tidy)
-        done
         echo "Syncing go.work..."
         go work sync
       '';

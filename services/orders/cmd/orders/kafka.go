@@ -3,18 +3,12 @@ package main
 import (
 	"context"
 	"log"
-	"os"
 
 	"refurbished-marketplace/services/orders/internal/service"
 	"refurbished-marketplace/shared/messaging"
 )
 
-func runOrderResultConsumer(ctx context.Context, svc *service.Service, bootstrap []string) error {
-	groupID := os.Getenv("KAFKA_GROUP_ID")
-	if groupID == "" {
-		groupID = "orders-service"
-	}
-
+func runOrderResultConsumer(ctx context.Context, svc *service.Service, bootstrap []string, groupID string) error {
 	consumer, err := messaging.NewKafkaConsumer(messaging.KafkaConsumerConfig{
 		BootstrapServers: bootstrap,
 		GroupID:          groupID,

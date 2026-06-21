@@ -55,6 +55,54 @@ func TestKafkaPaymentResultHandler_EndToEnd(t *testing.T) {
 	})
 }
 
+func TestKafkaOrderResultHandler_Idempotent(t *testing.T) {
+	svc := newOrdersService(t)
+	ctx := t.Context()
+
+	buyerID := uuid.New()
+	productID := uuid.New()
+	merchantID := uuid.New()
+	created, err := svc.CreateOrder(ctx, buyerID, merchantID, []service.OrderItemInput{{ProductID: productID, Quantity: 1, UnitPriceCents: 1000}}, 1000)
+	if err != nil {
+		t.Fatalf("CreateOrder: %v", err)
+	}
+
+	payload, err := proto.Marshal(&paymentv1.PaymentOutcome{OrderId: created.ID.String()})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	handler := svc.KafkaOrderResultHandler()
+	msg := messaging.KafkaMessage{
+		Topic:     messaging.EventTypePaymentSucceeded,
+		Partition: 0,
+		Offset:    42,
+		Value:     payload,
+	}
+
+	if err := handler(ctx, msg); err != nil {
+		t.Fatalf("first handler call: %v", err)
+	}
+	got, err := svc.GetOrderByID(ctx, created.ID)
+	if err != nil {
+		t.Fatalf("GetOrderByID: %v", err)
+	}
+	if got.Status != service.OrderStatusPaid {
+		t.Fatalf("expected PAID after first delivery, got %s", got.Status)
+	}
+
+	if err := handler(ctx, msg); err != nil {
+		t.Fatalf("duplicate handler call: %v", err)
+	}
+	got, err = svc.GetOrderByID(ctx, created.ID)
+	if err != nil {
+		t.Fatalf("GetOrderByID after duplicate: %v", err)
+	}
+	if got.Status != service.OrderStatusPaid {
+		t.Fatalf("expected PAID after duplicate delivery, got %s", got.Status)
+	}
+}
+
 func TestKafkaInventoryReservationFailedHandler_EndToEnd(t *testing.T) {
 	svc := newOrdersService(t)
 	ctx := t.Context()

@@ -1,11 +1,10 @@
 package service
 
 import (
-	"database/sql"
-	"errors"
 	"strings"
 
 	"refurbished-marketplace/services/products/internal/database"
+	shareddb "refurbished-marketplace/shared/db"
 
 	"github.com/google/uuid"
 )
@@ -54,13 +53,7 @@ func mapDBInventory(i database.Inventory) Inventory {
 }
 
 func mapProductNotFound(err error) error {
-	if err == nil {
-		return nil
-	}
-	if errors.Is(err, sql.ErrNoRows) {
-		return ErrProductNotFound
-	}
-	return err
+	return shareddb.MapErrNoRows(err, ErrProductNotFound)
 }
 
 func normalizeProductName(name string) string {
@@ -92,6 +85,16 @@ func validateNonNegativeQuantity(quantity int32) error {
 func validatePositiveQuantity(quantity int32) error {
 	if quantity <= 0 {
 		return ErrInvalidQuantity
+	}
+	return nil
+}
+
+func validateListPagination(limit, offset int32) error {
+	if limit <= 0 || limit > 100 {
+		return ErrInvalidListLimit
+	}
+	if offset < 0 {
+		return ErrInvalidListOffset
 	}
 	return nil
 }

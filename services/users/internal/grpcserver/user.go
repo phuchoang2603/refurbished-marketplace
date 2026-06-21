@@ -2,14 +2,12 @@ package grpcserver
 
 import (
 	"context"
-	"errors"
 
 	"refurbished-marketplace/services/users/internal/service"
+	"refurbished-marketplace/shared/grpcerr"
 	usersv1 "refurbished-marketplace/shared/proto/users/v1"
 
-	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -25,31 +23,26 @@ func mapUser(u service.User) *usersv1.User {
 func (s *Server) CreateUser(ctx context.Context, req *usersv1.CreateUserRequest) (*usersv1.User, error) {
 	u, err := s.svc.CreateUser(ctx, req.GetEmail(), req.GetPassword())
 	if err != nil {
-		switch {
-		case errors.Is(err, service.ErrInvalidEmail), errors.Is(err, service.ErrInvalidPassword):
-			return nil, status.Error(codes.InvalidArgument, err.Error())
-		case errors.Is(err, service.ErrEmailTaken):
-			return nil, status.Error(codes.AlreadyExists, err.Error())
-		default:
-			return nil, status.Error(codes.Internal, "internal error")
-		}
+		return nil, grpcerr.Map(
+			err,
+			grpcerr.Mapping{Err: service.ErrInvalidEmail, Code: codes.InvalidArgument},
+			grpcerr.Mapping{Err: service.ErrInvalidPassword, Code: codes.InvalidArgument},
+			grpcerr.Mapping{Err: service.ErrEmailTaken, Code: codes.AlreadyExists},
+		)
 	}
 
 	return mapUser(u), nil
 }
 
 func (s *Server) GetUserByID(ctx context.Context, req *usersv1.GetUserByIDRequest) (*usersv1.User, error) {
-	id, err := uuid.Parse(req.GetId())
+	id, err := grpcerr.ParseUUID(req.GetId(), "id")
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, "invalid id")
+		return nil, err
 	}
 
 	u, err := s.svc.GetUserByID(ctx, id)
 	if err != nil {
-		if errors.Is(err, service.ErrUserNotFound) {
-			return nil, status.Error(codes.NotFound, "user not found")
-		}
-		return nil, status.Error(codes.Internal, "internal error")
+		return nil, grpcerr.Map(err, grpcerr.Mapping{Err: service.ErrUserNotFound, Code: codes.NotFound, Message: "user not found"})
 	}
 
 	return mapUser(u), nil

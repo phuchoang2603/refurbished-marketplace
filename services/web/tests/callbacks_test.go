@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"refurbished-marketplace/services/web/tests/fakes"
 	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
 
 	"google.golang.org/grpc/codes"
@@ -16,8 +17,8 @@ import (
 
 func TestHostedPaymentCallbackForwardsToPaymentService(t *testing.T) {
 	var got *paymentv1.HandleGatewayWebhookRequest
-	paymentSvc := &fakePaymentService{
-		handleWebhookFn: func(ctx context.Context, req *paymentv1.HandleGatewayWebhookRequest) (*paymentv1.HandleGatewayWebhookResponse, error) {
+	paymentSvc := &fakes.PaymentService{
+		HandleWebhookFn: func(ctx context.Context, req *paymentv1.HandleGatewayWebhookRequest) (*paymentv1.HandleGatewayWebhookResponse, error) {
 			got = req
 			return &paymentv1.HandleGatewayWebhookResponse{}, nil
 		},
@@ -54,8 +55,8 @@ func TestHostedPaymentCallbackForwardsToPaymentService(t *testing.T) {
 }
 
 func TestHostedPaymentCallbackMapsNotFound(t *testing.T) {
-	paymentSvc := &fakePaymentService{
-		handleWebhookFn: func(ctx context.Context, req *paymentv1.HandleGatewayWebhookRequest) (*paymentv1.HandleGatewayWebhookResponse, error) {
+	paymentSvc := &fakes.PaymentService{
+		HandleWebhookFn: func(ctx context.Context, req *paymentv1.HandleGatewayWebhookRequest) (*paymentv1.HandleGatewayWebhookResponse, error) {
 			return nil, status.Error(codes.NotFound, "payment session not found")
 		},
 	}

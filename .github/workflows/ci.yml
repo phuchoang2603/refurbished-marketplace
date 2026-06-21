@@ -24,8 +24,11 @@ env:
     ./services/payment/...
     ./services/web/...
     ./shared/auth/...
+    ./shared/db/...
+    ./shared/grpcerr/...
     ./shared/messaging/...
     ./shared/proto/...
+    ./shared/runtime/...
     ./shared/testutil/postgres/...
     ./shared/testutil/kafka/...
     ./shared/testutil/redis/...
@@ -73,28 +76,42 @@ jobs:
               - 'services/users/**'
               - 'shared/proto/**'
               - 'shared/auth/**'
+              - 'shared/db/**'
+              - 'shared/grpcerr/**'
+              - 'shared/runtime/**'
               - 'shared/testutil/postgres/**'
             products:
               - 'services/products/**'
               - 'shared/proto/**'
               - 'shared/messaging/**'
+              - 'shared/db/**'
+              - 'shared/grpcerr/**'
+              - 'shared/runtime/**'
               - 'shared/testutil/postgres/**'
               - 'shared/testutil/kafka/**'
             orders:
               - 'services/orders/**'
               - 'shared/proto/**'
               - 'shared/messaging/**'
+              - 'shared/db/**'
+              - 'shared/grpcerr/**'
+              - 'shared/runtime/**'
               - 'shared/testutil/postgres/**'
               - 'shared/testutil/kafka/**'
             payment:
               - 'services/payment/**'
               - 'shared/proto/**'
               - 'shared/messaging/**'
+              - 'shared/db/**'
+              - 'shared/grpcerr/**'
+              - 'shared/runtime/**'
               - 'shared/testutil/postgres/**'
               - 'shared/testutil/kafka/**'
             cart:
               - 'services/cart/**'
               - 'shared/proto/**'
+              - 'shared/grpcerr/**'
+              - 'shared/runtime/**'
               - 'shared/testutil/redis/**'
             web:
               - 'services/web/**'
@@ -132,8 +149,7 @@ jobs:
 
       - name: Test ${{ matrix.service }}
         if: needs.changes.outputs[matrix.service] == 'true'
-        working-directory: services/${{ matrix.service }}
-        run: go test ./...
+        run: go test ./services/${{ matrix.service }}/...
 
   govulncheck:
     needs: changes

@@ -59,7 +59,7 @@ func (s *Service) HandleOrdersCreated(ctx context.Context, messageID string, val
 	}
 
 	if err := reserveOrderItems(ctx, q, orderID, items); err != nil {
-		if err == ErrInventoryNotFound || err == ErrInsufficientStock {
+		if errors.Is(err, ErrInventoryNotFound) || errors.Is(err, ErrInsufficientStock) {
 			if outboxErr := createInventoryReservationFailedOutbox(ctx, q, orderID); outboxErr != nil {
 				return outboxErr
 			}

@@ -1,27 +1,35 @@
 package main
 
 import (
+	"context"
 	"log"
-	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
 
 	webclients "refurbished-marketplace/services/web/internal/clients"
+	"refurbished-marketplace/services/web/internal/config"
 	"refurbished-marketplace/services/web/internal/handlers"
 	sharedhandlers "refurbished-marketplace/services/web/internal/handlers/shared"
 	authconfig "refurbished-marketplace/shared/auth/config"
+	"refurbished-marketplace/shared/runtime"
 )
 
 func main() {
-	cfg, err := loadConfig()
-	if err != nil {
+	cfg := config.LoadConfig()
+	if err := config.ValidateConfig(cfg); err != nil {
 		log.Fatal(err)
 	}
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
 	deps, err := webclients.New(webclients.Config{
-		UsersAddr:    cfg.usersAddr,
-		ProductsAddr: cfg.productsAddr,
-		OrdersAddr:   cfg.ordersAddr,
-		CartAddr:     cfg.cartAddr,
-		PaymentAddr:  cfg.paymentAddr,
+		UsersAddr:    cfg.UsersAddr,
+		ProductsAddr: cfg.ProductsAddr,
+		OrdersAddr:   cfg.OrdersAddr,
+		CartAddr:     cfg.CartAddr,
+		PaymentAddr:  cfg.PaymentAddr,
 	})
 	if err != nil {
 		log.Fatal(err)
@@ -34,13 +42,15 @@ func main() {
 		deps.Orders,
 		deps.Cart,
 		deps.Payment,
-		sharedhandlers.HostedPaymentConfig{GatewayBaseURL: cfg.gatewayBaseURL},
-		authconfig.DefaultConfig(cfg.jwtSecret),
+		sharedhandlers.HostedPaymentConfig{GatewayBaseURL: cfg.GatewayBaseURL},
+		authconfig.DefaultConfig(cfg.JWTSecret),
 	)
 
-	srv := &http.Server{
-		Addr:    cfg.addr,
-		Handler: newRouter(h),
+	if err := runtime.ServeHTTP(ctx, runtime.HTTPServerConfig{
+		Addr:        cfg.HTTPAddr,
+		ServiceName: "web",
+		Handler:     newRouter(h),
+	}); err != nil {
+		log.Fatalf("http: %v", err)
 	}
-	runServer(srv)
 }

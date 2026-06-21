@@ -11,18 +11,19 @@ import (
 
 	"google.golang.org/protobuf/types/known/timestamppb"
 	"refurbished-marketplace/services/web/internal/auth"
+	"refurbished-marketplace/services/web/tests/fakes"
 	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
 	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
 )
 
 func TestOrderPageShowsHostedPaymentStatus(t *testing.T) {
-	ordersSvc := &fakeOrdersService{
-		getFn: func(ctx context.Context, id string) (*ordersv1.Order, error) {
+	ordersSvc := &fakes.OrdersService{
+		GetFn: func(ctx context.Context, id string) (*ordersv1.Order, error) {
 			return &ordersv1.Order{Id: id, BuyerUserId: "user-1", Status: ordersv1.OrderStatus_ORDER_STATUS_PENDING, TotalCents: 1200, CreatedAt: timestamppb.New(time.Now()), UpdatedAt: timestamppb.New(time.Now())}, nil
 		},
 	}
-	paymentSvc := &fakePaymentService{
-		getSessionFn: func(ctx context.Context, orderID string) (*paymentv1.HostedPaymentSession, error) {
+	paymentSvc := &fakes.PaymentService{
+		GetSessionFn: func(ctx context.Context, orderID string) (*paymentv1.HostedPaymentSession, error) {
 			return &paymentv1.HostedPaymentSession{Status: paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_FAILED, FailureReason: "Card declined"}, nil
 		},
 	}
