@@ -9,13 +9,11 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: quay.io/strimzi-helm
-    chart: strimzi-kafka-operator
-    targetRevision: 1.0.0
+    repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
+    targetRevision: main
+    path: infra/charts/operators/strimzi
     helm:
       releaseName: strimzi-cluster-operator
-      values: |
-        watchAnyNamespace: true
   destination:
     server: https://kubernetes.default.svc
     namespace: operators
