@@ -16,14 +16,6 @@ Application-specific metrics endpoints, log shipping changes, and OTLP trace emi
 
 Tilt is intentionally scoped to local microservice application development and does not deploy the observability stack.
 
-After the observability stack is deployed, open Grafana with a Kubernetes port-forward:
-
-```bash
-kubectl port-forward -n monitoring svc/vmks-grafana 3000:80
-```
-
-Then open `http://localhost:3000`.
-
 Useful checks:
 
 ```bash
@@ -54,10 +46,9 @@ Check Grafana, Alertmanager, and service endpoints:
 
 ```bash
 kubectl get svc -n monitoring
-kubectl port-forward -n monitoring svc/vmks-grafana 3000:80
 ```
 
-Then open `http://localhost:3000` and confirm:
+When Grafana access is available, confirm:
 
 - The VictoriaMetrics datasource is present.
 - The VictoriaLogs datasource is present.

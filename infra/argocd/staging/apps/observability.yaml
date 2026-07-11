@@ -30,10 +30,16 @@ spec:
   ignoreDifferences:
     - group: ""
       kind: Secret
+      name: observability-grafana
+      namespace: monitoring
+      jsonPointers:
+        - /data/admin-password
+    - group: ""
+      kind: Secret
+      name: observability-victoria-metrics-operator-validation
       namespace: monitoring
       jsonPointers:
         - /data
-        - /data/admin-password
     - group: admissionregistration.k8s.io
       kind: ValidatingWebhookConfiguration
       jqPathExpressions:
