@@ -9,10 +9,7 @@ local_resource(
      --namespace operators --create-namespace',
 )
 
-k8s_yaml([
-  'infra/k8s/doppler-token.secret.yaml',
-  'infra/k8s/cluster-secret-store.yaml',
-])
+k8s_yaml('infra/k8s/doppler-token.dev.secret.yaml')
 
 ### Cloudnative-pg Operators ###
 k8s_kind('Cluster', pod_readiness='wait')

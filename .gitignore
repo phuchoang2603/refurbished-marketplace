@@ -43,7 +43,8 @@ build/
 .devenv*
 devenv.local.nix
 devenv.local.yaml
-infra/k8s/doppler-token.secret.yaml
+infra/k8s/doppler-token.dev.secret.yaml
+infra/k8s/doppler-token.prd.secret.yaml
 
 # pre-commit
 .pre-commit-config.yaml

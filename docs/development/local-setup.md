@@ -25,7 +25,7 @@ After [secrets setup](secrets.md), start the local stack:
 tilt up
 ```
 
-The devenv `tilt` wrapper requires `DOPPLER_TOKEN` in `.env`. Tilt uses the root `Tiltfile` to build services, apply Kubernetes/Helm resources under `infra/`, and keep the cluster in sync while you edit code. Use the Tilt UI for service status, logs, resource readiness, and rebuilds.
+Tilt uses the root `Tiltfile` to build services, apply Kubernetes/Helm resources under `infra/`, and keep the cluster in sync while you edit code. Use the Tilt UI for service status, logs, resource readiness, and rebuilds.
 
 ## Integration testing
 

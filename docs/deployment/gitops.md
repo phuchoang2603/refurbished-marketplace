@@ -4,15 +4,18 @@ Staging syncs from `infra/argocd/staging/`. Tilt uses chart defaults locally —
 
 ## What Argo CD syncs
 
-| Component                       | Source                  | Pin                                              | Namespace   |
-| ------------------------------- | ----------------------- | ------------------------------------------------ | ----------- |
-| CloudNativePG                   | This repo wrapper chart | upstream chart `0.28.3`                          | `operators` |
-| Strimzi                         | This repo wrapper chart | upstream chart `1.0.0`, `watchAnyNamespace=true` | `operators` |
-| `refurbished-marketplace-infra` | This repo               | CNPG, ExternalSecrets, schema migrations         | `ecommerce` |
-| `refurbished-marketplace`       | This repo               | `global.imageTag: main` + GHCR                   | `ecommerce` |
-| `kafka`                         | This repo               | same image tag/registry                          | `ecommerce` |
+| Component                       | Source                  | Pin                                                   | Namespace   |
+| ------------------------------- | ----------------------- | ----------------------------------------------------- | ----------- |
+| External Secrets Operator       | This repo wrapper chart | upstream chart `2.6.0` + Doppler `ClusterSecretStore` | `operators` |
+| CloudNativePG                   | This repo wrapper chart | upstream chart `0.28.3`                               | `operators` |
+| Strimzi                         | This repo wrapper chart | upstream chart `1.0.0`, `watchAnyNamespace=true`      | `operators` |
+| `refurbished-marketplace-infra` | This repo               | CNPG, ExternalSecrets, schema migrations              | `ecommerce` |
+| `refurbished-marketplace`       | This repo               | `global.imageTag: main` + GHCR                        | `ecommerce` |
+| `kafka`                         | This repo               | same image tag/registry                               | `ecommerce` |
 
-**Terraform (not in Git):** Argo CD, ESO (`2.6.0`), Doppler token, `ClusterSecretStore`.
+**Terraform (not in Git):** Argo CD.
+
+**Bootstrap (not in Git):** Doppler service token secret in `operators` — see [secrets](../development/secrets.md).
 
 **Infra chart** (`infra/charts/refurbished-marketplace-infra`): CNPG clusters, ExternalSecrets, and goose migration Jobs. Staging image pins live on `infra/argocd/staging/apps/refurbished-marketplace-infra.yaml`.
 
@@ -20,6 +23,7 @@ Sync order is set on Application manifests under `infra/argocd/staging/apps/`: o
 
 ```
 infra/argocd/staging/apps/
+├── operators-external-secrets.yaml
 ├── operators-cnpg.yaml
 ├── operators-strimzi.yaml
 ├── refurbished-marketplace-infra.yaml
@@ -29,9 +33,11 @@ infra/argocd/staging/apps/
 
 ## Bootstrap
 
-1. Terraform: Argo CD, ESO, `operators` + `ecommerce` namespaces, Doppler bootstrap ([secrets](../development/secrets.md))
-2. Apply `infra/argocd/staging/root.yaml` to the Argo CD namespace
-3. GHCR pull access if images are private
+1. Terraform: Argo CD, `operators` + `ecommerce` namespaces
+2. Add `prd` application secrets in Doppler ([secrets](../development/secrets.md))
+3. Apply Doppler bootstrap secret: `kubectl apply -f infra/k8s/doppler-token.prd.secret.yaml`
+4. Apply `infra/argocd/staging/root.yaml` to the Argo CD namespace
+5. GHCR pull access if images are private
 
 ## See also
 

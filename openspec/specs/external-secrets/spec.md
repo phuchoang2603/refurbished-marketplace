@@ -51,28 +51,37 @@ The repository SHALL NOT commit plaintext Kubernetes Secret manifests for applic
 - **WHEN** a developer runs `tilt up` after bootstrap
 - **THEN** application secrets are created by ESO and not from `k8s_yaml('./infra/k8s/secrets.yaml')`
 
-### Requirement: devenv Doppler bootstrap
+### Requirement: Doppler bootstrap secret manifests
 
-The repository SHALL provide Doppler CLI via devenv, set `DOPPLER_PROJECT` and `DOPPLER_CONFIG` in `devenv.nix`, load `DOPPLER_TOKEN` from gitignored `.env` through devenv dotenv, and generate `infra/k8s/doppler-token.secret.yaml` via devenv `files` when the token is set.
+The repository SHALL provide example Kubernetes Secret manifests for Doppler service tokens and document manual creation of gitignored `dev` and `prd` bootstrap files under `infra/k8s/`.
 
-#### Scenario: devenv loads service token
+#### Scenario: Developer creates local bootstrap secret
 
-- **WHEN** a developer enters `devenv shell` with `DOPPLER_TOKEN` in `.env`
-- **THEN** `DOPPLER_TOKEN` is available to Tilt child processes
+- **WHEN** a developer prepares local Tilt development
+- **THEN** they copy `infra/k8s/doppler-token.dev.secret.yaml.example` to `infra/k8s/doppler-token.dev.secret.yaml` and paste a `dev` config service token
 
-#### Scenario: devenv links doppler-token manifest
+#### Scenario: Operator bootstraps remote cluster secret
 
-- **WHEN** `devenv shell` runs with `DOPPLER_TOKEN` set
-- **THEN** `infra/k8s/doppler-token.secret.yaml` is linked with key `dopplerToken` for the Doppler ClusterSecretStore
+- **WHEN** a staging or production cluster is prepared for GitOps
+- **THEN** an operator applies `infra/k8s/doppler-token.prd.secret.yaml` manually before application `ExternalSecret` resources sync
 
-#### Scenario: Tilt applies cluster bootstrap manifests
+### Requirement: devenv Doppler CLI defaults
 
-- **WHEN** `tilt up` runs with the doppler-token manifest present
+The repository SHALL provide Doppler CLI via devenv and set `DOPPLER_PROJECT` and `DOPPLER_CONFIG` in `devenv.nix` for local secret management.
+
+#### Scenario: devenv configures Doppler CLI context
+
+- **WHEN** a developer enters `devenv shell`
+- **THEN** `DOPPLER_PROJECT` and `DOPPLER_CONFIG` are available for `doppler` CLI commands
+
+#### Scenario: Tilt applies local bootstrap secret
+
+- **WHEN** `tilt up` runs with `infra/k8s/doppler-token.dev.secret.yaml` present
 - **THEN** Kubernetes Secret `doppler-token` exists in `operators` with key `dopplerToken`
 
 ### Requirement: Provider swap via ClusterSecretStore
 
-Secret provisioning SHALL remain provider-agnostic at the service deployment layer. Changing the external secrets provider SHALL require updating `infra/k8s/cluster-secret-store.yaml` and, if remote key names change, marketplace chart `externalSecrets` / service `db` / `auth` settings — not service deployment templates.
+Secret provisioning SHALL remain provider-agnostic at the service deployment layer. Changing the external secrets provider SHALL require updating `infra/charts/operators/external-secrets/values.yaml` and, if remote key names change, marketplace chart `externalSecrets` / service `db` / `auth` settings — not service deployment templates.
 
 #### Scenario: Deployment templates unchanged after provider swap
 

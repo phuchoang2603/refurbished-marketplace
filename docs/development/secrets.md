@@ -1,80 +1,98 @@
 # Secrets (Doppler + ESO)
 
-Application secrets are **not** committed to Git. Tilt syncs them from Doppler via [External Secrets Operator](https://external-secrets.io/) (ESO). Helm charts continue to reference the same Kubernetes Secret names (`users-app`, `users-auth`, …).
+Application secrets are **not** committed to Git. [External Secrets Operator](https://external-secrets.io/) (ESO) syncs them from Doppler into Kubernetes. Helm charts reference Kubernetes Secret names only (`users-app`, `users-auth`, …).
 
-## One-time setup
+## Doppler project
+
+1. Create a Doppler project named `refurbished-marketplace`.
+2. Create two configs:
+   - `dev` — local Tilt
+   - `prd` — staging and production
+
+`devenv.nix` sets `DOPPLER_PROJECT` and `DOPPLER_CONFIG=dev` for the Doppler CLI.
+
+## Application secrets
+
+Add the keys below in the Doppler UI for each config (`dev` or `prd`).
+
+Open the project → select the config → **Secrets** → add each key and value there. Use the UI password generator for `*_PASSWORD` and `JWT_SECRET` values.
+
+| Doppler key             | K8s Secret     | K8s key      |
+| ----------------------- | -------------- | ------------ |
+| `USERS_APP_USERNAME`    | `users-app`    | `username`   |
+| `USERS_APP_PASSWORD`    | `users-app`    | `password`   |
+| `PRODUCTS_APP_USERNAME` | `products-app` | `username`   |
+| `PRODUCTS_APP_PASSWORD` | `products-app` | `password`   |
+| `ORDERS_APP_USERNAME`   | `orders-app`   | `username`   |
+| `ORDERS_APP_PASSWORD`   | `orders-app`   | `password`   |
+| `PAYMENT_APP_USERNAME`  | `payment-app`  | `username`   |
+| `PAYMENT_APP_PASSWORD`  | `payment-app`  | `password`   |
+| `JWT_SECRET`            | `users-auth`   | `JWT_SECRET` |
+
+Guidelines:
+
+- **dev:** simple values are fine for local development.
+- **prd:** use unique, strong values. Do not reuse `dev` secrets.
+- Usernames should match chart `db.owner` values: `users_app`, `products_app`, `orders_app`, `payment_app`.
+- `JWT_SECRET` is shared by `web` and `users` through `users-auth`.
+
+DB keys are derived from `db.secretName` (for example `users-app` → `USERS_APP_USERNAME` / `USERS_APP_PASSWORD`). Auth keys use the `auth.secretKey` name directly (`JWT_SECRET`).
+
+## Bootstrap service tokens
+
+ESO reads a Doppler service token from Kubernetes Secret `operators/doppler-token`. Create one token per config in the Doppler UI:
+
+1. Open the target config (`dev` or `prd`).
+2. Go to **Access** → **Service Tokens**.
+3. Create a **read-only** token scoped to that config.
+4. Copy the token (`dp.st…`) — it is shown only once.
+
+Reference: [Doppler service tokens](https://docs.doppler.com/docs/service-tokens)
+
+Store each token in a gitignored manifest:
+
+| File                            | Config | Applied by             |
+| ------------------------------- | ------ | ---------------------- |
+| `doppler-token.dev.secret.yaml` | `dev`  | Tilt                   |
+| `doppler-token.prd.secret.yaml` | `prd`  | manual `kubectl apply` |
+
+Examples are committed as `infra/k8s/doppler-token.dev.secret.yaml.example` and `infra/k8s/doppler-token.prd.secret.yaml.example`.
+
+### Local (`dev`)
 
 ```bash
-devenv shell
-doppler login                    # once, to manage secrets via CLI
-# Create a read-only service token for the dev config in the Doppler dashboard
-echo 'DOPPLER_TOKEN=dp.st.dev.xxxx' >> .env
-devenv shell                     # re-enter so devenv links infra/k8s/doppler-token.secret.yaml
+cp infra/k8s/doppler-token.dev.secret.yaml.example infra/k8s/doppler-token.dev.secret.yaml
 ```
 
-Project and config (`refurbished-marketplace` / `dev`) are set in `devenv.nix` as `DOPPLER_PROJECT` and `DOPPLER_CONFIG` — no `.doppler.yaml` needed.
+Paste the `dev` service token, then run `tilt up`.
 
-devenv generates `infra/k8s/doppler-token.secret.yaml` from `DOPPLER_TOKEN` when you enter the shell (symlinked, gitignored). Tilt applies it with `infra/k8s/cluster-secret-store.yaml`. Application `ExternalSecret` resources are defined in `infra/charts/refurbished-marketplace/values.yaml` and rendered by the marketplace Helm chart.
-
-## Doppler project setup
-
-1. Create a Doppler project named `refurbished-marketplace` (or change `DOPPLER_PROJECT` in `devenv.nix`).
-2. Create configs: `dev` (local Tilt), `prd` (production), and others as needed.
-3. `devenv.nix` sets `DOPPLER_PROJECT` and `DOPPLER_CONFIG=dev` for the Doppler CLI.
-
-To seed secrets via CLI (after `doppler login`):
+### Staging / production (`prd`)
 
 ```bash
-devenv shell
-doppler secrets set USERS_APP_USERNAME=users_app
-# … see key table below
+cp infra/k8s/doppler-token.prd.secret.yaml.example infra/k8s/doppler-token.prd.secret.yaml
+kubectl apply -f infra/k8s/doppler-token.prd.secret.yaml
 ```
 
-## Service token for ESO
+Seed `prd` application secrets in Doppler before applying the bootstrap token and syncing Argo CD.
 
-Create a **read-only service token** scoped to the target config ([Doppler service tokens](https://docs.doppler.com/docs/service-tokens)):
+## Verify sync
 
-- Local Tilt: token for the `dev` config
-- Remote cluster: separate token for `prd` (bootstrap once on the cluster; not in Git)
-
-Add the local dev token to gitignored `.env`:
-
-```bash
-DOPPLER_TOKEN=dp.st.dev.xxxx
-```
-
-Re-enter `devenv shell` after changing `.env`. The ESO [Doppler provider](https://external-secrets.io/latest/provider/doppler/) reads Kubernetes Secret `operators/doppler-token` key `dopplerToken`.
-
-## Seed `dev` config keys
-
-Add these keys to the Doppler **`dev`** config. Values match the former `infra/k8s/secrets.yaml` dev credentials.
-
-DB credentials use Doppler keys derived from each service's `db.secretName` (for example `users-app` → `USERS_APP_USERNAME` / `USERS_APP_PASSWORD`). Auth secrets use the `auth.secretKey` as the Doppler key (for example `JWT_SECRET` on `users-auth`).
-
-| Doppler key             | Example value               | K8s Secret     | K8s key      |
-| ----------------------- | --------------------------- | -------------- | ------------ |
-| `USERS_APP_USERNAME`    | `users_app`                 | `users-app`    | `username`   |
-| `USERS_APP_PASSWORD`    | `users_app_dev_password`    | `users-app`    | `password`   |
-| `PRODUCTS_APP_USERNAME` | `products_app`              | `products-app` | `username`   |
-| `PRODUCTS_APP_PASSWORD` | `products_app_dev_password` | `products-app` | `password`   |
-| `ORDERS_APP_USERNAME`   | `orders_app`                | `orders-app`   | `username`   |
-| `ORDERS_APP_PASSWORD`   | `orders_app_dev_password`   | `orders-app`   | `password`   |
-| `PAYMENT_APP_USERNAME`  | `payment_app`               | `payment-app`  | `username`   |
-| `PAYMENT_APP_PASSWORD`  | `payment_app_dev_password`  | `payment-app`  | `password`   |
-| `JWT_SECRET`            | `dev-jwt-secret`            | `users-auth`   | `JWT_SECRET` |
-
-After `tilt up`, verify ExternalSecrets synced from the marketplace chart:
+Local:
 
 ```bash
 kubectl get externalsecrets,secrets -n ecommerce
-kubectl describe externalsecret -n ecommerce users-app
+```
+
+Remote:
+
+```bash
+kubectl get clustersecretstore doppler
+kubectl get externalsecrets,secrets -n ecommerce
 ```
 
 ## Swapping the secrets provider
 
-Helm and application code reference Kubernetes Secret names only. To move off Doppler, edit `infra/k8s/cluster-secret-store.yaml` to use another [ESO provider](https://external-secrets.io/latest/provider/overview/) and adjust `externalSecrets` / service `db` / `auth` settings in `infra/charts/refurbished-marketplace/values.yaml` if remote key names change. Service deployment templates do not need changes.
-
-Remote clusters use the same cluster-level manifests under `infra/k8s/` and the marketplace chart values; bootstrap a config-scoped service token for the target environment separately. On staging, the ESO operator itself is installed by Terraform (alongside Argo CD), not by an Argo CD Application — see [gitops.md](../deployment/gitops.md).
+To move off Doppler, edit `infra/charts/operators/external-secrets/values.yaml` and adjust marketplace chart `externalSecrets` values if remote key names change. Service deployment templates do not need changes.
 
 ## Related issues
 

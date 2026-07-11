@@ -1,1 +1,9 @@
 external-secrets: {}
+
+clusterSecretStore:
+  enabled: true
+  name: doppler
+  dopplerToken:
+    secretName: doppler-token
+    secretKey: dopplerToken
+    namespace: operators

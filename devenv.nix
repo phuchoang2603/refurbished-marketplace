@@ -66,20 +66,6 @@ in
         dialect = "postgres";
       };
     };
-  }
-  // lib.optionalAttrs ((config.env.DOPPLER_TOKEN or "") != "") {
-    "infra/k8s/doppler-token.secret.yaml".yaml = {
-      apiVersion = "v1";
-      kind = "Secret";
-      metadata = {
-        name = "doppler-token";
-        namespace = "operators";
-      };
-      type = "Opaque";
-      stringData = {
-        dopplerToken = config.env.DOPPLER_TOKEN;
-      };
-    };
   };
 
   scripts = {
