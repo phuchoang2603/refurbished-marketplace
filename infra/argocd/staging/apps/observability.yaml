@@ -1,0 +1,45 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: staging-observability
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io/foreground
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
+    targetRevision: main
+    path: infra/charts/observability
+    helm:
+      releaseName: observability
+      valueFiles:
+        - values-staging.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
+      - RespectIgnoreDifferences=true
+  ignoreDifferences:
+    - group: ""
+      kind: Secret
+      namespace: monitoring
+      jsonPointers:
+        - /data
+        - /data/admin-password
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      jqPathExpressions:
+        - ".webhooks[]?.clientConfig.caBundle"
+    - group: apps
+      kind: Deployment
+      namespace: monitoring
+      jsonPointers:
+        - /spec/template/metadata/annotations/checksum~1secret
