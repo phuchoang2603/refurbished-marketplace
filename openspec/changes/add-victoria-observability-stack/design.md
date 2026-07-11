@@ -1,8 +1,8 @@
 ## Context
 
-Issue #1 asks for a VictoriaMetrics Kubernetes stack, Tilt wiring, service monitors, service `/metrics` endpoints, dashboards, and alerting. The Istio observe baseline now depends on an observability foundation, but does not require every Go service to expose its own Prometheus endpoint first.
+Issue #1 asks for a VictoriaMetrics Kubernetes stack, service monitors, service `/metrics` endpoints, dashboards, and alerting. The Istio observe baseline now depends on an observability foundation, but does not require every Go service to expose its own Prometheus endpoint first.
 
-The repository currently has separate Helm charts for the marketplace app, marketplace infrastructure, and Kafka. Tilt installs operators and renders those charts directly. Staging uses ArgoCD app-of-apps under `infra/argocd/staging/apps`.
+The repository currently has separate Helm charts for the marketplace app, marketplace infrastructure, and Kafka. Tilt is used for local microservice application development. Staging uses ArgoCD app-of-apps under `infra/argocd/staging/apps`.
 
 The selected upstream chart is `victoriametrics/victoria-metrics-k8s-stack` from `https://victoriametrics.github.io/helm-charts/`, pinned to version `0.86.0`.
 
@@ -11,7 +11,8 @@ The selected upstream chart is `victoriametrics/victoria-metrics-k8s-stack` from
 **Goals:**
 
 - Add a repository-owned observability Helm wrapper chart around `victoria-metrics-k8s-stack`.
-- Deploy the observability stack in local Tilt development and staging GitOps.
+- Deploy the observability stack through staging GitOps while keeping the wrapper chart locally renderable with Helm.
+- Keep Tilt scoped to microservice application development rather than platform observability infrastructure.
 - Provide Grafana, VMSingle metrics storage, VMAgent scraping, Alertmanager, VLSingle logs storage, VLAgent log collection, VTSingle traces storage, default dashboards/rules, and a place for marketplace-owned dashboards.
 - Establish the metrics, logs, and traces backend prerequisite for Istio observe mode and later application observability work.
 - Document how to access Grafana and verify scrape health.
@@ -41,7 +42,7 @@ helm install my-victoria-metrics-k8s-stack victoriametrics/victoria-metrics-k8s-
 
 ### Deploy in a dedicated monitoring namespace
 
-The observability stack should deploy to a dedicated `monitoring` namespace in Tilt and staging.
+The observability stack should deploy to a dedicated `monitoring` namespace in staging and any manually created local validation environment.
 
 **Rationale:** observability is platform infrastructure, not ecommerce application infrastructure. Separating namespaces also makes RBAC, cleanup, and port-forwarding clearer.
 
@@ -69,19 +70,19 @@ Use conservative initial retention values:
 
 Use conservative initial PVC sizes:
 
-| Backend          | Local/Tilt | Staging |
-| ---------------- | ---------- | ------- |
-| VMSingle metrics | `5Gi`      | `20Gi`  |
-| VLSingle logs    | `5Gi`      | `20Gi`  |
-| VTSingle traces  | `2Gi`      | `10Gi`  |
+| Backend          | Local validation | Staging |
+| ---------------- | ---------------- | ------- |
+| VMSingle metrics | `5Gi`            | `20Gi`  |
+| VLSingle logs    | `5Gi`            | `20Gi`  |
+| VTSingle traces  | `2Gi`            | `10Gi`  |
 
 **Rationale:** this keeps the first rollout portable across local and staging clusters without hard-coding a storage class. Short retention limits resource use while still giving enough history to validate dashboards, alerts, and early Istio telemetry.
 
-### Wire Tilt for local development
+### Keep observability out of Tilt
 
-Tilt should create the `monitoring` namespace, render the local observability chart, and expose Grafana through `localhost:3000`.
+Tilt should remain focused on building and iterating on the marketplace microservice applications. It should not create the `monitoring` namespace, render the observability chart, or port-forward Grafana.
 
-**Rationale:** issue #1 explicitly asks for local Kubernetes observability. Local wiring helps validate chart values and dashboard packaging before staging sync.
+**Rationale:** the VictoriaMetrics stack is platform infrastructure and is relatively heavy for day-to-day service iteration. Keeping it out of Tilt avoids slowing normal microservice development while preserving Helm rendering and staging ArgoCD validation for the observability chart.
 
 ### Add a staging ArgoCD child Application
 
@@ -118,7 +119,7 @@ Cert-manager remains out of scope for the first rollout; self-signed VictoriaMet
 ## Risks / Trade-offs
 
 - **[Chart dependency values drift]** -> Pin the VictoriaMetrics chart dependency and keep values in the local wrapper.
-- **[Local stack is resource-heavy]** -> Tune local values for small retention and modest resource requests.
+- **[Local stack is resource-heavy]** -> Keep it out of Tilt and tune local validation values for small retention and modest resource requests.
 - **[No service `/metrics` yet]** -> Rely on Kubernetes/component metrics first, then Istio L7 metrics after mesh adoption; add app metrics only where needed.
 - **[Backends exist before app signal wiring]** -> Document that logs/traces storage is deployed before app log shipping and OTLP trace emission are wired.
 - **[ArgoCD sync drift from generated secrets/certs]** -> Add required ignore differences and sync options in the observability Application.
@@ -128,13 +129,12 @@ Cert-manager remains out of scope for the first rollout; self-signed VictoriaMet
 ## Migration Plan
 
 1. Add the local observability wrapper chart with `victoria-metrics-k8s-stack` dependency pinned to `0.86.0`.
-2. Add local values tuned for Tilt.
-3. Wire Tilt to deploy the chart in `monitoring` and port-forward Grafana.
-4. Add a staging ArgoCD Application for the observability chart.
-5. Add staging values for single-node metrics, logs, traces, retention, storage, Grafana, Alertmanager, and default dashboards.
-6. Add ArgoCD ignore differences and sync options required by the chart.
-7. Add initial documentation for Grafana access and scrape target verification.
-8. Validate local Tilt readiness, then staging ArgoCD sync.
+2. Add local validation values that keep retention and PVC sizes small.
+3. Add a staging ArgoCD Application for the observability chart.
+4. Add staging values for single-node metrics, logs, traces, retention, storage, Grafana, Alertmanager, and default dashboards.
+5. Add ArgoCD ignore differences and sync options required by the chart.
+6. Add initial documentation for Grafana access and scrape target verification.
+7. Validate Helm rendering, then staging ArgoCD sync.
 
 ## Open Questions
 

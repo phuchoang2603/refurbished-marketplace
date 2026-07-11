@@ -31,7 +31,7 @@ The repository SHALL provide a local Helm wrapper chart for deploying the Victor
 
 #### Scenario: Stack uses local PVC sizes
 
-- **WHEN** the observability chart is rendered for local Tilt development
+- **WHEN** the observability chart is rendered for local validation
 - **THEN** VMSingle requests `5Gi`, VLSingle requests `5Gi`, and VTSingle requests `2Gi` of storage
 
 #### Scenario: Stack uses staging PVC sizes
@@ -49,19 +49,19 @@ The repository SHALL provide a local Helm wrapper chart for deploying the Victor
 - **WHEN** the observability chart is rendered
 - **THEN** it includes VictoriaTraces single-node storage and a Grafana VictoriaTraces datasource according to chart values
 
-### Requirement: Local Tilt observability
+### Requirement: Tilt stays application-focused
 
-The system SHALL deploy the observability stack in local Kubernetes development through Tilt.
+Tilt SHALL remain focused on local marketplace microservice application development and SHALL NOT deploy the observability stack.
 
-#### Scenario: Tilt deploys monitoring namespace
+#### Scenario: Tilt omits observability stack
 
 - **WHEN** `tilt up` runs
-- **THEN** Tilt creates or uses the `monitoring` namespace for observability resources
+- **THEN** it does not create the `monitoring` namespace for observability resources
 
-#### Scenario: Tilt exposes Grafana
+#### Scenario: Tilt omits Grafana port-forward
 
-- **WHEN** the observability stack is running locally
-- **THEN** Grafana is reachable through a documented Tilt port-forward on `localhost:3000`
+- **WHEN** `tilt up` runs
+- **THEN** it does not expose Grafana through a Tilt-managed port-forward
 
 ### Requirement: Backend-first scope
 
@@ -115,9 +115,9 @@ The observability stack SHALL include Grafana datasources and an initial alertin
 
 The repository SHALL document how developers and operators access Grafana and verify scrape health.
 
-#### Scenario: Developer opens local Grafana
+#### Scenario: Developer opens Grafana
 
-- **WHEN** a developer runs the local observability stack
+- **WHEN** observability is deployed
 - **THEN** documentation explains the Grafana port-forward and basic login/access path
 
 #### Scenario: Operator verifies scrape health
