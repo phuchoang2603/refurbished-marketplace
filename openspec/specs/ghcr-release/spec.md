@@ -1,4 +1,10 @@
-## ADDED Requirements
+# GHCR Release
+
+## Purpose
+
+Define how container images under `infra/docker/` are built and published to GitHub Container Registry so staging and production can pin coordinated image tags.
+
+## Requirements
 
 ### Requirement: Release workflow publishes Docker images to GHCR
 
@@ -7,7 +13,7 @@ The repository SHALL provide a GitHub Actions workflow that builds and pushes co
 #### Scenario: Push to main with image-related changes
 
 - **WHEN** a commit is pushed to `main` and modifies paths under `infra/docker/**`, `services/**`, `shared/**`, `tools/**`, `go.work`, or any `go.mod`
-- **THEN** the release workflow runs and builds only the images whose path filters match the change
+- **THEN** the release workflow runs and builds and pushes all configured images in the release matrix
 
 #### Scenario: Push to main without image-related changes
 
@@ -17,26 +23,7 @@ The repository SHALL provide a GitHub Actions workflow that builds and pushes co
 #### Scenario: Manual release of all images
 
 - **WHEN** the release workflow is triggered via `workflow_dispatch`
-- **THEN** it builds and pushes all configured images regardless of path filters
-
-### Requirement: Per-image path-filter fan-out
-
-The release workflow SHALL use path filters aligned with CI test fan-out so shared dependency changes rebuild dependent service images. Migrator images SHALL rebuild only when their migration paths or Dockerfile change.
-
-#### Scenario: Single service change
-
-- **WHEN** a commit modifies files only under `services/web/**`
-- **THEN** the release workflow builds and pushes the `web` image and does not rebuild unrelated images such as `cart`
-
-#### Scenario: Shared proto change
-
-- **WHEN** a commit modifies files under `shared/proto/**`
-- **THEN** the release workflow rebuilds images for users, products, orders, cart, payment, and web
-
-#### Scenario: Migration-only change
-
-- **WHEN** a commit modifies files only under `services/users/db/migrations/**`
-- **THEN** the release workflow rebuilds the `users-migrator` image and does not rebuild the `users` service image unless its path filter also matches
+- **THEN** it builds and pushes all configured images in the release matrix
 
 ### Requirement: GHCR image naming and tags
 
@@ -49,7 +36,12 @@ Published images SHALL use the naming pattern `ghcr.io/<repository>/<image>` whe
 
 ### Requirement: Release workflow includes all infra docker images
 
-The release workflow SHALL support building and pushing all twelve Dockerfiles under `infra/docker/`, including application services, migrators, `payment-gateway-simulator`, and `connect-debezium`.
+The release workflow SHALL build and push all twelve Dockerfiles under `infra/docker/` on every workflow run that executes the release matrix, including application services, migrators, `payment-gateway-simulator`, and `connect-debezium`.
+
+#### Scenario: Full image matrix on main push
+
+- **WHEN** the release workflow runs for a push to `main` that triggers the workflow
+- **THEN** it builds and pushes all twelve images defined under `infra/docker/*.Dockerfile`
 
 #### Scenario: Full image matrix on manual dispatch
 
