@@ -4,13 +4,13 @@ Staging syncs from `infra/argocd/staging/`. Tilt uses chart defaults locally —
 
 ## What Argo CD syncs
 
-| Component                       | Source                  | Pin                                      | Namespace   |
-| ------------------------------- | ----------------------- | ---------------------------------------- | ----------- |
-| CloudNativePG                   | Argo CD (upstream Helm) | chart `0.28.3`                           | `operators` |
-| Strimzi                         | Argo CD (upstream Helm) | chart `1.0.0`, `watchAnyNamespace=true`  | `operators` |
-| `refurbished-marketplace-infra` | This repo               | CNPG, ExternalSecrets, schema migrations | `ecommerce` |
-| `refurbished-marketplace`       | This repo               | `global.imageTag: main` + GHCR           | `ecommerce` |
-| `kafka`                         | This repo               | same image tag/registry                  | `ecommerce` |
+| Component                       | Source                  | Pin                                              | Namespace   |
+| ------------------------------- | ----------------------- | ------------------------------------------------ | ----------- |
+| CloudNativePG                   | This repo wrapper chart | upstream chart `0.28.3`                          | `operators` |
+| Strimzi                         | This repo wrapper chart | upstream chart `1.0.0`, `watchAnyNamespace=true` | `operators` |
+| `refurbished-marketplace-infra` | This repo               | CNPG, ExternalSecrets, schema migrations         | `ecommerce` |
+| `refurbished-marketplace`       | This repo               | `global.imageTag: main` + GHCR                   | `ecommerce` |
+| `kafka`                         | This repo               | same image tag/registry                          | `ecommerce` |
 
 **Terraform (not in Git):** Argo CD, ESO (`2.6.0`), Doppler token, `ClusterSecretStore`.
 

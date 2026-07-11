@@ -1,0 +1,10 @@
+apiVersion: v2
+name: external-secrets-operator
+description: External Secrets Operator wrapper
+type: application
+version: 0.1.0
+appVersion: "2.6.0"
+dependencies:
+  - name: external-secrets
+    version: 2.6.0
+    repository: https://charts.external-secrets.io

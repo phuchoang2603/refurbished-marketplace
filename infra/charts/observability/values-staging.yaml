@@ -1,0 +1,25 @@
+victoria-metrics-k8s-stack:
+  grafana:
+    persistence:
+      enabled: true
+
+  vmsingle:
+    spec:
+      storage:
+        resources:
+          requests:
+            storage: 20Gi
+
+  vlsingle:
+    spec:
+      storage:
+        resources:
+          requests:
+            storage: 20Gi
+
+  vtsingle:
+    spec:
+      storage:
+        resources:
+          requests:
+            storage: 10Gi

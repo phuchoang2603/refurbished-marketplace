@@ -5,10 +5,8 @@ namespace_create('operators')
 ### External Secrets Operators ###
 local_resource(
   'eso-operator-install',
-  'helm repo add external-secrets https://charts.external-secrets.io && \
-   helm repo update && \
-   helm upgrade --install external-secrets external-secrets/external-secrets \
-     --namespace operators --create-namespace --version 2.6.0',
+  'helm upgrade --install external-secrets ./infra/charts/operators/external-secrets \
+     --namespace operators --create-namespace',
 )
 
 k8s_yaml([
@@ -20,10 +18,8 @@ k8s_yaml([
 k8s_kind('Cluster', pod_readiness='wait')
 local_resource(
   'cnpg-operator-install',
-  'helm repo add cnpg https://cloudnative-pg.io/charts/ && \
-   helm repo update && \
-   helm upgrade --install cnpg cnpg/cloudnative-pg \
-   --namespace operators --create-namespace --version 0.28.3',
+  'helm upgrade --install cnpg ./infra/charts/operators/cnpg \
+   --namespace operators --create-namespace',
 )
 
 ### Our helm charts
@@ -45,10 +41,8 @@ k8s_yaml(app_yaml)
 ### Kafka Cluster and Topics ###
 local_resource(
   'kafka-cluster-install',
-  'helm upgrade --install strimzi-cluster-operator oci://quay.io/strimzi-helm/strimzi-kafka-operator \
-  --namespace operators --create-namespace \
-  --set watchAnyNamespace=true \
-  --version 1.0.0',
+  'helm upgrade --install strimzi-cluster-operator ./infra/charts/operators/strimzi \
+  --namespace operators --create-namespace',
 )
 
 k8s_yaml(helm(

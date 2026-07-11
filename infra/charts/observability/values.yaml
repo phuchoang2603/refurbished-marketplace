@@ -1,0 +1,66 @@
+victoria-metrics-k8s-stack:
+  fullnameOverride: vmks
+
+  defaultDashboards:
+    enabled: true
+    annotations:
+      argocd.argoproj.io/sync-options: ServerSideApply=true
+
+  grafana:
+    enabled: true
+    plugins:
+      - victoriametrics-logs-datasource
+    persistence:
+      enabled: false
+
+  victoria-metrics-operator:
+    crds:
+      cleanup:
+        enabled: false
+
+  alertmanager:
+    enabled: true
+
+  vmsingle:
+    enabled: true
+    spec:
+      retentionPeriod: 7d
+      storage:
+        accessModes:
+          - ReadWriteOnce
+        resources:
+          requests:
+            storage: 5Gi
+
+  vmcluster:
+    enabled: false
+
+  vlsingle:
+    enabled: true
+    spec:
+      retentionPeriod: 3d
+      storage:
+        resources:
+          requests:
+            storage: 5Gi
+
+  vlcluster:
+    enabled: false
+
+  vlagent:
+    enabled: true
+    spec:
+      k8sCollector:
+        enabled: true
+
+  vtsingle:
+    enabled: true
+    spec:
+      retentionPeriod: 3d
+      storage:
+        resources:
+          requests:
+            storage: 2Gi
+
+  vtcluster:
+    enabled: false

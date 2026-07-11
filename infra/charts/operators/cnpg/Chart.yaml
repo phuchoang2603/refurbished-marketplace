@@ -1,0 +1,10 @@
+apiVersion: v2
+name: cnpg-operator
+description: CloudNativePG operator wrapper
+type: application
+version: 0.1.0
+appVersion: "0.28.3"
+dependencies:
+  - name: cloudnative-pg
+    version: 0.28.3
+    repository: https://cloudnative-pg.io/charts/
