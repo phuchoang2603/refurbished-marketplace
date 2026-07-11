@@ -42,10 +42,12 @@ spec:
         - /data
     - group: admissionregistration.k8s.io
       kind: ValidatingWebhookConfiguration
+      name: observability-victoria-metrics-operator-admission
       jqPathExpressions:
         - ".webhooks[]?.clientConfig.caBundle"
     - group: apps
       kind: Deployment
+      name: observability-grafana
       namespace: monitoring
       jsonPointers:
         - /spec/template/metadata/annotations/checksum~1secret
