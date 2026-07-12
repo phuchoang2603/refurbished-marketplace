@@ -221,6 +221,10 @@ jobs:
             "infra/charts/operators/external-secrets:operators"
             "infra/charts/operators/cnpg:operators"
             "infra/charts/operators/strimzi:operators"
+            "infra/charts/operators/istio/base:istio-system"
+            "infra/charts/operators/istio/istiod:istio-system"
+            "infra/charts/operators/istio/cni:istio-system"
+            "infra/charts/operators/istio/ztunnel:istio-system"
             "infra/charts/observability:monitoring"
           )
           for item in "${wrapper_charts[@]}"; do
@@ -242,4 +246,8 @@ jobs:
             /tmp/external-secrets.yaml \
             /tmp/cnpg.yaml \
             /tmp/strimzi.yaml \
+            /tmp/base.yaml \
+            /tmp/istiod.yaml \
+            /tmp/cni.yaml \
+            /tmp/ztunnel.yaml \
             /tmp/observability.yaml

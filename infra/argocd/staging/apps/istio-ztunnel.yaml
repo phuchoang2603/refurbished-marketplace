@@ -1,26 +1,22 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: staging-kafka
+  name: staging-ztunnel
   finalizers:
     - resources-finalizer.argocd.argoproj.io/foreground
   annotations:
-    argocd.argoproj.io/sync-wave: "4"
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   project: default
   source:
     repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
     targetRevision: main
-    path: infra/charts/kafka
+    path: infra/charts/operators/istio/ztunnel
     helm:
-      releaseName: ecommerce-kafka-cluster
-      values: |
-        global:
-          imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
-          imageTag: main
+      releaseName: ztunnel
   destination:
     server: https://kubernetes.default.svc
-    namespace: ecommerce
+    namespace: istio-system
   syncPolicy:
     automated:
       prune: true

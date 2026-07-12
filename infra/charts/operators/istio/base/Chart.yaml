@@ -1,0 +1,10 @@
+apiVersion: v2
+name: istio-base
+description: Istio base (CRDs) wrapper
+type: application
+version: 0.1.0
+appVersion: "1.30.2"
+dependencies:
+  - name: base
+    version: 1.30.2
+    repository: https://istio-release.storage.googleapis.com/charts
