@@ -3,6 +3,15 @@ global:
   imageRegistry: ""
   imageTag: ""
 
+# Ambient mesh enrollment is staging-only via ArgoCD values.
+# Leave disabled for Tilt so local pods are not redirected into ztunnel.
+mesh:
+  ambient:
+    enabled: false
+  waypoint:
+    enabled: false
+    name: ecommerce-waypoint
+
 externalSecrets:
   enabled: true
   refreshInterval: 1h
@@ -15,6 +24,7 @@ services:
     enabled: true
     image: web
     port: 8080
+    protocol: http
     auth:
       secretName: users-auth
       secretKey: JWT_SECRET
@@ -31,6 +41,7 @@ services:
     enabled: true
     image: users
     port: 9091
+    protocol: grpc
     auth:
       secretName: users-auth
       secretKey: JWT_SECRET
@@ -52,6 +63,7 @@ services:
     enabled: true
     image: products
     port: 9092
+    protocol: grpc
     env:
       KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap:9092
     migration:
@@ -72,6 +84,7 @@ services:
     enabled: true
     image: orders
     port: 9093
+    protocol: grpc
     env:
       KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap:9092
     migration:
@@ -92,12 +105,15 @@ services:
     enabled: true
     image: cart
     port: 9094
+    protocol: grpc
     env:
       REDIS_ADDR: 127.0.0.1:6379
+
   payment:
     enabled: true
     image: payment
     port: 9096
+    protocol: grpc
     env:
       KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap:9092
     migration:
@@ -118,3 +134,4 @@ services:
     enabled: true
     image: payment-gateway-simulator
     port: 8097
+    protocol: http
