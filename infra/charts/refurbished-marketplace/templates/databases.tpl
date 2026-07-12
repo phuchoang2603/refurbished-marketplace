@@ -6,6 +6,8 @@ kind: Cluster
 metadata:
   name: {{ printf "%s-db" $name }}
   namespace: {{ $.Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
 spec:
   instances: {{ default 1 $svc.db.instances }}
   postgresql:

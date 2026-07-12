@@ -208,7 +208,6 @@ jobs:
           set -euo pipefail
           namespace=ecommerce
           app_charts=(
-            infra/charts/refurbished-marketplace-infra
             infra/charts/refurbished-marketplace
             infra/charts/kafka
           )
@@ -238,7 +237,6 @@ jobs:
         run: |
           set -euo pipefail
           kubeconform -summary -ignore-missing-schemas \
-            /tmp/refurbished-marketplace-infra.yaml \
             /tmp/refurbished-marketplace.yaml \
             /tmp/kafka.yaml \
             /tmp/external-secrets.yaml \

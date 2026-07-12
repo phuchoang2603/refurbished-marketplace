@@ -1,2 +1,0 @@
-# Infra chart uses the marketplace values file (db, auth, externalSecrets).
-# See infra/charts/refurbished-marketplace/values.yaml

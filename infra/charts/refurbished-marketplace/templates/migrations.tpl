@@ -6,6 +6,10 @@ kind: Job
 metadata:
   name: {{ printf "%s-migrate" $name }}
   namespace: {{ $.Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/hook: Sync
+    argocd.argoproj.io/sync-wave: "4"
+    argocd.argoproj.io/hook-delete-policy: BeforeHookCreation
 spec:
   backoffLimit: 3
   activeDeadlineSeconds: 300
@@ -16,6 +20,22 @@ spec:
     spec:
       restartPolicy: OnFailure
       initContainers:
+        - name: wait-for-credentials
+          image: postgres:16-alpine
+          command: ["sh", "-c"]
+          args:
+            - echo "database credentials available"
+          env:
+            - name: DB_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $svc.db.secretName }}
+                  key: {{ $svc.db.usernameKey }}
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $svc.db.secretName }}
+                  key: {{ $svc.db.passwordKey }}
         - name: wait-for-db
           image: postgres:16-alpine
           command: ["sh", "-c"]

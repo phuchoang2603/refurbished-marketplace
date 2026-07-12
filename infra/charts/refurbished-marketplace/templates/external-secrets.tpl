@@ -1,13 +1,15 @@
 {{- if .Values.externalSecrets.enabled }}
 {{- range $name, $svc := .Values.services }}
 {{- if and $svc.enabled $svc.db }}
-{{- $prefix := include "refurbished-marketplace-infra.dopplerKeyPrefix" $svc.db.secretName }}
+{{- $prefix := include "refurbished-marketplace.dopplerKeyPrefix" $svc.db.secretName }}
 ---
 apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
   name: {{ $svc.db.secretName }}
   namespace: {{ $.Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   refreshInterval: {{ default "1h" $.Values.externalSecrets.refreshInterval }}
   secretStoreRef:
@@ -44,6 +46,8 @@ kind: ExternalSecret
 metadata:
   name: {{ $secretName }}
   namespace: {{ $.Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
 spec:
   refreshInterval: {{ default "1h" $.Values.externalSecrets.refreshInterval }}
   secretStoreRef:

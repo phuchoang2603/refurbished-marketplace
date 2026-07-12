@@ -20,13 +20,6 @@ local_resource(
 )
 
 ### Our helm charts
-k8s_yaml(helm(
-    './infra/charts/refurbished-marketplace-infra',
-    name='refurbished-marketplace-infra',
-    namespace='ecommerce',
-    values=['./infra/charts/refurbished-marketplace/values.yaml']
-))
-
 app_yaml = helm(
     './infra/charts/refurbished-marketplace',
     name='refurbished-marketplace',
