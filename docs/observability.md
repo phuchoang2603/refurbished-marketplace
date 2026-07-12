@@ -14,7 +14,23 @@ Application-specific metrics endpoints, log shipping changes, and OTLP trace emi
 
 ## Grafana Access
 
-Tilt is intentionally scoped to local microservice application development and does not deploy the observability stack.
+Tilt is intentionally scoped to local microservice application development and does not deploy the observability stack. Use the staging (or manually deployed) stack in the `monitoring` namespace.
+
+Port-forward Grafana:
+
+```bash
+kubectl port-forward -n monitoring svc/observability-grafana 3000:80
+```
+
+Open http://localhost:3000 and sign in:
+
+- **Username:** `admin`
+- **Password:** generated into Secret `observability-grafana` (key `admin-password`)
+
+```bash
+kubectl get secret observability-grafana -n monitoring \
+  -o jsonpath='{.data.admin-password}' | base64 -d && echo
+```
 
 Useful checks:
 
