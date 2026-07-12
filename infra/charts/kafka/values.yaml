@@ -43,14 +43,25 @@ kafka:
 connect:
   clusterName: ecommerce-connect-cluster
   image: connect-debezium
-  # Sized from staging usage (~475Mi / ~70m).
+  # Connect needs real CPU headroom: a 500m limit made the JVM see os.vcpus=1
+  # and fail liveness (/health) before startup finished.
   resources:
     requests:
-      cpu: 200m
-      memory: 512Mi
-    limits:
       cpu: 500m
-      memory: 1024Mi
+      memory: 768Mi
+    limits:
+      cpu: "2"
+      memory: 1536Mi
+  livenessProbe:
+    initialDelaySeconds: 120
+    timeoutSeconds: 10
+    periodSeconds: 10
+    failureThreshold: 30
+  readinessProbe:
+    initialDelaySeconds: 120
+    timeoutSeconds: 10
+    periodSeconds: 10
+    failureThreshold: 30
 entities:
   orders:
     topics:

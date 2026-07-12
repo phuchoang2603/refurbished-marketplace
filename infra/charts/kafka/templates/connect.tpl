@@ -19,6 +19,14 @@ spec:
   resources:
 {{ toYaml . | nindent 4 }}
 {{- end }}
+{{- with .Values.connect.livenessProbe }}
+  livenessProbe:
+{{ toYaml . | nindent 4 }}
+{{- end }}
+{{- with .Values.connect.readinessProbe }}
+  readinessProbe:
+{{ toYaml . | nindent 4 }}
+{{- end }}
   config:
     config.providers: secrets
     config.providers.secrets.class: io.strimzi.kafka.KubernetesSecretConfigProvider
