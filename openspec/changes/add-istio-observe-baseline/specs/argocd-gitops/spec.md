@@ -7,12 +7,17 @@ The repository SHALL provide GitOps-managed configuration for installing the Ist
 #### Scenario: Staging sync installs Istio
 
 - **WHEN** the staging root Application syncs from Git
-- **THEN** ArgoCD manages the Istio platform resources needed for observe-only marketplace mesh enrollment
+- **THEN** ArgoCD manages four Istio Applications backed by wrapper charts under `infra/charts/operators/istio/{base,istiod,cni,ztunnel}` for observe-only marketplace mesh enrollment
+
+#### Scenario: Istio wrappers pin official charts
+
+- **WHEN** the Istio operator wrapper charts are built
+- **THEN** each wrapper depends on the matching official Istio Helm chart pinned to version `1.30.2`, with ambient profile enabled for `istiod` and `cni`
 
 #### Scenario: Istio syncs before enrolled workloads
 
 - **WHEN** a full staging environment sync runs
-- **THEN** Istio platform resources are ordered before marketplace workloads that require mesh enrollment
+- **THEN** Istio platform resources are ordered `base` → `istiod`/`cni` → `ztunnel` before marketplace workloads that require mesh enrollment
 
 ### Requirement: Environment-scoped mesh rollout
 

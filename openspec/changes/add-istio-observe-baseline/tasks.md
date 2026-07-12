@@ -1,13 +1,13 @@
 ## 1. Istio Platform Setup
 
-- [ ] 1.1 Create a separate prerequisite proposal for VictoriaMetrics/VictoriaTraces with Grafana.
-- [ ] 1.2 Confirm staging cluster Kubernetes version supports Istio ambient mode.
-- [ ] 1.3 Confirm staging cluster networking/CNI compatibility for Istio ambient mode.
-- [ ] 1.4 Confirm Gateway API CRDs are installed or planned for waypoint proxy support.
-- [ ] 1.5 Add the official Istio Helm repository source for GitOps-managed installation.
-- [ ] 1.6 Pin Istio platform charts to version `1.30.2`.
-- [ ] 1.7 Add staging ArgoCD Application resources for Istio base/control plane/CNI/ztunnel components as required by ambient mode.
-- [ ] 1.8 Set Istio sync ordering so platform resources apply before mesh-enrolled marketplace workloads.
+- [x] 1.1 Confirm VictoriaMetrics/VictoriaTraces with Grafana prerequisite (`platform-observability`) is implemented and archived.
+- [x] 1.2 Confirm staging cluster Kubernetes version supports Istio ambient mode (`v1.32.3+rke2r1`).
+- [x] 1.3 Confirm staging cluster networking/CNI compatibility for Istio ambient mode (RKE2 Canal; allow HBONE TCP 15008 in NetworkPolicies).
+- [x] 1.4 Confirm Gateway API CRDs are installed (present on staging; GatewayClass/controller deferred until waypoints).
+- [ ] 1.5 Add four local wrapper charts under `infra/charts/operators/istio/{base,istiod,cni,ztunnel}` sourcing the official Istio Helm charts.
+- [ ] 1.6 Pin each Istio wrapper chart dependency to version `1.30.2` (`istiod`/`cni` with `profile=ambient`).
+- [ ] 1.7 Add four staging ArgoCD Applications for the Istio wrappers (`base`, `istiod`, `cni`, `ztunnel`) in `istio-system`.
+- [ ] 1.8 Set Istio sync waves so base → istiod/cni → ztunnel apply before mesh-enrolled marketplace workloads.
 - [ ] 1.9 Keep production Istio installation and enrollment disabled until staging is verified.
 
 ## 2. Marketplace Mesh Enrollment
@@ -25,13 +25,13 @@
 
 ## 4. Observability Verification
 
-- [ ] 4.1 Document VictoriaTraces with Grafana as the target trace and dashboard path.
+- [x] 4.1 Document VictoriaTraces with Grafana as the target trace and dashboard path (`docs/observability.md`).
 - [ ] 4.2 Verify staging sync installs Istio and enrolls marketplace workloads.
 - [ ] 4.3 Verify Istio CNI and ztunnel pods are healthy in `istio-system`.
 - [ ] 4.4 Exercise product, cart, checkout, and payment flows in staging.
 - [ ] 4.5 Confirm mesh telemetry shows traffic for `web`, `users`, `products`, `orders`, `cart`, `payment`, and `payment-gateway-simulator` where applicable.
 - [ ] 4.6 Confirm internal gRPC traffic is distinguishable from opaque TCP where Istio supports protocol detection.
-- [ ] 4.7 Keep Grafana/VictoriaTraces dashboard checks blocked on the separate prerequisite observability change.
+- [ ] 4.7 Verify Istio metrics/traces/dashboards against the deployed `platform-observability` stack in Grafana / VictoriaTraces.
 
 ## 5. Final Checks
 

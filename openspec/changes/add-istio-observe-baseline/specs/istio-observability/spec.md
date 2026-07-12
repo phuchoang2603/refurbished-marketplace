@@ -12,7 +12,7 @@ The system SHALL support enrolling marketplace workloads in Istio for telemetry 
 #### Scenario: Official Istio release is pinned
 
 - **WHEN** Istio platform resources are configured for staging
-- **THEN** the configuration uses the official Istio Helm repository and pins Istio chart versions to `1.30.2`
+- **THEN** the configuration uses local wrapper charts under `infra/charts/operators/istio/` that pin official Istio Helm chart versions to `1.30.2`
 
 #### Scenario: Ambient prerequisites are verified before enrollment
 
@@ -67,10 +67,10 @@ The system SHALL provide observable Istio telemetry for marketplace service-to-s
 - **WHEN** trace and dashboard verification is documented
 - **THEN** the documentation targets VictoriaTraces with Grafana as the long-term telemetry visualization path
 
-#### Scenario: Telemetry stack is a separate prerequisite
+#### Scenario: Telemetry verification uses platform observability
 
-- **WHEN** Istio trace and dashboard verification depends on VictoriaTraces or Grafana
-- **THEN** that dependency is tracked through a separate prerequisite platform observability change
+- **WHEN** Istio trace and dashboard verification runs in staging
+- **THEN** it uses the deployed `platform-observability` stack (`monitoring` namespace, Grafana / VictoriaTraces) rather than a temporary tracing UI
 
 ### Requirement: Mesh enrollment rollback
 

@@ -1,6 +1,6 @@
 ## Context
 
-The remote Kubernetes delivery model uses ArgoCD app-of-apps. Staging currently syncs operator applications, marketplace infrastructure, the marketplace Helm chart, and Kafka from `infra/argocd/staging/apps`. The marketplace services communicate internally through Kubernetes Services and gRPC, with Kafka and database dependencies managed separately.
+The staging ArgoCD app-of-apps already deploys operators, the VictoriaMetrics observability stack (`monitoring`), the marketplace Helm chart, and Kafka. The marketplace services communicate internally through Kubernetes Services and gRPC, with Kafka and database dependencies managed separately.
 
 The marketplace chart currently renders one `Deployment` and `Service` per enabled service. Every Service port is named `http`, even though the backend service ports are primarily gRPC. That naming is acceptable for basic Kubernetes service discovery, but it weakens Istio protocol detection and the quality of generated telemetry.
 
@@ -41,15 +41,15 @@ The target direction is Istio ambient mode, with waypoint proxies introduced for
 
 ### Pin Istio to the official 1.30.2 Helm release
 
-Istio installation should use the official Helm repository:
+Istio installation should use local wrappers that depend on the official Helm repository charts:
 
 ```bash
-helm repo add istio-official https://istio-release.storage.googleapis.com/charts
+helm repo add istio https://istio-release.storage.googleapis.com/charts
 ```
 
-The first pinned control plane target is `istio-official/istiod` at version `1.30.2`. Ambient-mode installation also needs the matching Istio base, CNI, and ztunnel components required by the selected installation profile.
+Each wrapper under `infra/charts/operators/istio/` pins its upstream chart to `1.30.2`. Ambient mode requires `istiod` and `cni` with `profile=ambient`, plus `base` and `ztunnel`.
 
-**Rationale:** pinning the upstream release keeps staging reproducible and avoids floating chart behavior during GitOps syncs.
+**Rationale:** pinning the upstream release keeps staging reproducible and avoids floating chart behavior during GitOps syncs. Wrappers keep values and pins reviewable in-repo like the other operator charts.
 
 ### Keep the first rollout observe-only
 
@@ -59,9 +59,47 @@ The first Istio change will focus on installation, enrollment, protocol detectio
 
 ### Prefer GitOps-managed Istio platform resources
 
-Istio installation should be represented as ArgoCD-managed manifests or Helm Applications in the environment app-of-apps tree, matching the existing operator pattern.
+Istio installation should be represented as ArgoCD-managed Helm Applications in the environment app-of-apps tree, matching the existing operator pattern.
 
 **Rationale:** remote clusters already use ArgoCD as the control surface. Keeping Istio in that model makes drift, rollback, and environment promotion visible in Git.
+
+### Use four Istio wrapper charts under `infra/charts/operators/istio`
+
+Ship four local Helm wrappers that each pin one official Istio chart to `1.30.2`:
+
+```
+infra/charts/operators/istio/
+├── base/      # istio/base
+├── istiod/    # istio/istiod (profile=ambient)
+├── cni/       # istio/cni (profile=ambient)
+└── ztunnel/   # istio/ztunnel
+```
+
+Staging gets four corresponding ArgoCD Applications (for example `staging-istio-base`, `staging-istiod`, `staging-istio-cni`, `staging-ztunnel`) with sync waves enforcing:
+
+1. `base` (CRDs)
+2. `istiod` + `cni` (ambient profile)
+3. `ztunnel`
+4. marketplace enrollment (after Istio is healthy)
+
+**Rationale:** the official ambient Helm install is already four charts with a required order. Separate Applications match the ESO/CNPG/Strimzi pattern and allow independent upgrade/rollback. Grouping the wrappers under one `istio/` folder keeps them discoverable without collapsing them into a single Helm release.
+
+**Alternatives considered:** one umbrella Istio chart like observability. Rejected because Istio’s upstream packaging is modular and CRD upgrades should not be forced with every ztunnel bump.
+
+### Confirm staging is ambient-capable (with Canal caveats)
+
+Staging (`dev-rke2`) was checked against ambient prerequisites:
+
+| Check            | Result                                                                          |
+| ---------------- | ------------------------------------------------------------------------------- |
+| Kubernetes       | `v1.32.3+rke2r1` — supported for Istio 1.30                                     |
+| Nodes            | Ubuntu 24.04, kernel 6.8, amd64, containerd — fine                              |
+| Cluster CNI      | RKE2 Canal (Calico + Flannel) — supported ambient path since in-pod redirection |
+| Gateway API CRDs | Already installed — good for later waypoints                                    |
+
+Proceed with ambient as the target. During install, verify `istio-cni` and `ztunnel` health. Allow TCP **15008** (HBONE) in any NetworkPolicy that would otherwise block mesh traffic. Fall back to sidecar only if ambient dataplane redirect fails on Canal.
+
+**Rationale:** the cluster meets platform prerequisites; remaining risk is Canal/NetworkPolicy interaction, which is operational rather than a blocker to choosing ambient.
 
 ### Make mesh enrollment explicit and reversible
 
@@ -77,11 +115,11 @@ The marketplace chart should render port names that match the service protocol. 
 
 ### Use VictoriaTraces with Grafana as the telemetry direction
 
-The target observability stack is VictoriaTraces with Grafana, alongside the VictoriaMetrics Kubernetes stack. This stack should be proposed as a separate prerequisite platform observability change. Istio implementation should avoid assuming a different long-term tracing UI, and should document which verification checks are blocked until the prerequisite observability stack exists.
+The target observability stack is VictoriaTraces with Grafana, alongside the VictoriaMetrics Kubernetes stack. That prerequisite is implemented as `platform-observability` (`infra/charts/observability`, staging Application `staging-observability` in `monitoring`). Istio observe-mode verification SHOULD use that stack for metrics, logs, traces, and dashboards rather than introducing a temporary tracing UI.
 
-**Rationale:** Istio can emit telemetry before the final visualization stack is complete, but request tracing and dashboards need a backend. Aligning on VictoriaTraces/Grafana avoids building temporary documentation around another tracing tool.
+**Rationale:** Istio can emit telemetry into the existing Victoria/Grafana backends. Aligning on the deployed stack avoids building temporary documentation around another tracing tool.
 
-**Dependency note:** the VictoriaMetrics/VictoriaTraces proposal should be created before implementation planning for Istio proceeds. It does not have to be fully deployed before every Istio manifest is written, but it must exist as the prerequisite plan for trace and dashboard verification.
+**Dependency note:** `add-victoria-observability-stack` is archived and synced into `openspec/specs/platform-observability`. Grafana/VictoriaTraces checks for Istio are no longer blocked on a missing proposal; they depend on the live staging observability Application.
 
 ## Risks / Trade-offs
 
@@ -90,20 +128,19 @@ The target observability stack is VictoriaTraces with Grafana, alongside the Vic
 - **[Sidecar injection can change pod startup/resource behavior]** -> Keep enrollment reversible and verify main browser flows after sync.
 - **[Kafka and database traffic may not produce useful L7 telemetry]** -> Treat this change as service request observability first; document lower-layer dependencies separately.
 - **[Production rollout may need environment-specific choices]** -> Do not enable production until staging results are known.
-- **[Telemetry stack may lag mesh install]** -> Create a separate VictoriaMetrics/VictoriaTraces prerequisite proposal and keep trace/dashboard checks blocked on it.
+- **[Telemetry stack may lag mesh install]** -> Use the deployed `platform-observability` stack; keep Istio verification steps explicit about Grafana/VictoriaTraces access.
 
 ## Migration Plan
 
-1. Create the separate VictoriaMetrics/VictoriaTraces prerequisite proposal.
-2. Verify staging cluster CNI, node, Kubernetes, and Gateway API readiness for Istio ambient mode.
-3. Add a staging ArgoCD application for Istio installation using the official Istio Helm repository and pinned `1.30.2` release.
-4. Add explicit marketplace mesh enrollment for staging.
-5. Sync staging and verify Istio control plane, CNI, and ztunnel health.
+1. Confirm the staging observability Application (`staging-observability`) is healthy and Grafana/VictoriaTraces are reachable.
+2. Add four wrapper charts under `infra/charts/operators/istio/{base,istiod,cni,ztunnel}` pinned to official Istio `1.30.2` with ambient profile on `istiod`/`cni`.
+3. Add four staging ArgoCD Applications with sync waves: base → istiod/cni → ztunnel → marketplace enrollment.
+4. Sync staging and verify Istio control plane, CNI, and ztunnel health (watch for Canal/NetworkPolicy HBONE port 15008 issues).
+5. Add explicit marketplace ambient enrollment for staging.
 6. Exercise web, product, cart, checkout, and payment flows.
-7. Confirm mesh telemetry shows internal service traffic and expected protocols.
-8. Document rollback: remove marketplace enrollment first, then remove or disable the Istio application if needed.
+7. Confirm mesh telemetry shows internal service traffic and expected protocols in Grafana / VictoriaTraces.
+8. Document rollback: remove marketplace enrollment first, then disable/remove the Istio Applications if needed.
 
 ## Open Questions
 
-- Are the staging cluster CNI and node capabilities ready for Istio ambient mode?
-- Which Istio ambient components should be split into separate ArgoCD Applications versus one grouped Istio platform application?
+- None. Staging ambient readiness and ArgoCD/chart layout are decided above.
