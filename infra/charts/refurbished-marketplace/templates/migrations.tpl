@@ -1,5 +1,6 @@
 {{- range $name, $svc := .Values.services }}
 {{- if and $svc.enabled $svc.migration $svc.migration.enabled }}
+{{- $owner := default (printf "%s_app" $name) $svc.db.owner }}
 ---
 apiVersion: batch/v1
 kind: Job
@@ -35,10 +36,7 @@ spec:
             - name: GOOSE_DRIVER
               value: "postgres"
             - name: DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $svc.db.secretName }}
-                  key: {{ $svc.db.usernameKey }}
+              value: {{ $owner | quote }}
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:

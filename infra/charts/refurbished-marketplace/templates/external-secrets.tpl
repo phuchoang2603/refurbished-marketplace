@@ -2,6 +2,7 @@
 {{- range $name, $svc := .Values.services }}
 {{- if and $svc.enabled $svc.db }}
 {{- $prefix := include "refurbished-marketplace.dopplerKeyPrefix" $svc.db.secretName }}
+{{- $owner := default (printf "%s_app" $name) $svc.db.owner }}
 ---
 apiVersion: external-secrets.io/v1
 kind: ExternalSecret
@@ -22,12 +23,9 @@ spec:
       type: kubernetes.io/basic-auth
       engineVersion: v2
       data:
-        username: "{{`{{ .username }}`}}"
+        username: {{ $owner | quote }}
         password: "{{`{{ .password }}`}}"
   data:
-    - secretKey: username
-      remoteRef:
-        key: {{ $prefix }}_USERNAME
     - secretKey: password
       remoteRef:
         key: {{ $prefix }}_PASSWORD

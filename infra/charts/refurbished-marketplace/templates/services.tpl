@@ -1,5 +1,9 @@
 {{- range $name, $svc := .Values.services }}
 {{- if $svc.enabled }}
+{{- $owner := "" }}
+{{- if $svc.db }}
+{{- $owner = default (printf "%s_app" $name) $svc.db.owner }}
+{{- end }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -46,10 +50,7 @@ spec:
           env:
 {{- if $svc.db }}
             - name: DB_USER
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $svc.db.secretName }}
-                  key: {{ $svc.db.usernameKey }}
+              value: {{ $owner | quote }}
             - name: DB_PASSWORD
               valueFrom:
                 secretKeyRef:
