@@ -12,6 +12,23 @@ It deploys the first platform baseline for:
 
 Application-specific metrics endpoints, log shipping changes, and OTLP trace emission are intentionally deferred. Once Istio observe mode is available, service request rate, latency, and error ratio should prefer Istio L7 metrics where they are sufficient.
 
+The observability wrapper scrapes Istio ambient components into VMSingle via `VMPodScrape` resources (`istioScrapes.enabled`):
+
+| Target    | Namespace                  | Port                          |
+| --------- | -------------------------- | ----------------------------- |
+| istiod    | `istio-system`             | `http-monitoring` (`15014`)   |
+| ztunnel   | `istio-system`             | `ztunnel-stats` (`15020`)     |
+| istio-cni | `istio-system`             | `metrics` (`15014`)           |
+| waypoint  | `ecommerce` (configurable) | `http-envoy-prom` / `metrics` |
+
+Useful PromQL after marketplace traffic:
+
+```promql
+sum by (destination_app, request_protocol) (
+  rate(istio_requests_total{destination_service_namespace="ecommerce"}[5m])
+)
+```
+
 ## Grafana Access
 
 Tilt is intentionally scoped to local microservice application development and does not deploy the observability stack. Use the staging (or manually deployed) stack in the `monitoring` namespace.

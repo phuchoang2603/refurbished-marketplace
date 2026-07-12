@@ -73,3 +73,10 @@ victoria-metrics-k8s-stack:
 # Wrapper-owned dashboard/rules sync job for Argo CD PostSync.
 dashboardSyncJob:
   enabled: true
+
+# Scrape Istio ambient control plane + waypoint L7 metrics into VMSingle.
+istioScrapes:
+  enabled: true
+  waypointName: ecommerce-waypoint
+  waypointNamespaces:
+    - ecommerce

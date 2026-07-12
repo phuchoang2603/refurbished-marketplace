@@ -62,6 +62,8 @@ kubectl get pods -n kafka
 
 Then exercise web → product → cart → checkout → payment flows and inspect Grafana / VictoriaTraces (see [observability.md](../observability.md)).
 
+Istio metrics are scraped by `staging-observability` (`istioScrapes` VMPodScrapes). After traffic, confirm `istio_requests_total` in Grafana Explore (VictoriaMetrics) and that gRPC backends show `request_protocol="grpc"`.
+
 ## Production
 
 Production Istio Applications and marketplace mesh enrollment are intentionally omitted until staging is verified.

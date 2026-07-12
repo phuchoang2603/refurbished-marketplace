@@ -53,5 +53,8 @@ spec:
       default.replication.factor: {{ .Values.kafka.replicationFactor }}
       min.insync.replicas: {{ .Values.kafka.minInsyncReplicas }}
   entityOperator:
-    topicOperator: {}
-    userOperator: {}
+    # Non-empty objects: Helm `{}` becomes YAML/JSON null under Argo SSA and fails CRD validation.
+    topicOperator:
+      reconciliationIntervalSeconds: 120
+    userOperator:
+      reconciliationIntervalSeconds: 120
