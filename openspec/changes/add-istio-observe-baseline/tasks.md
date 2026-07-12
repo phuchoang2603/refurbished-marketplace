@@ -27,8 +27,8 @@
 ## 4. Observability Verification
 
 - [x] 4.1 Document VictoriaTraces with Grafana as the target trace and dashboard path (`docs/observability.md`).
-- [ ] 4.2 Verify staging sync installs Istio and enrolls marketplace workloads.
-- [ ] 4.3 Verify Istio CNI and ztunnel pods are healthy in `istio-system`.
+- [x] 4.2 Verify staging sync installs Istio and enrolls marketplace workloads.
+- [x] 4.3 Verify Istio CNI and ztunnel pods are healthy in `istio-system`.
 - [ ] 4.4 Exercise product, cart, checkout, and payment flows in staging.
 - [ ] 4.5 Confirm mesh telemetry shows traffic for `web`, `users`, `products`, `orders`, `cart`, `payment`, and `payment-gateway-simulator` where applicable.
 - [ ] 4.6 Confirm internal gRPC traffic is distinguishable from opaque TCP where Istio supports protocol detection.
