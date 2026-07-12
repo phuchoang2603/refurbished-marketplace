@@ -6,6 +6,11 @@ victoria-metrics-k8s-stack:
     annotations:
       argocd.argoproj.io/sync-options: ServerSideApply=true
 
+  # Upstream renders vmks-sync-job as a Helm hook, which Argo CD does not run.
+  # The wrapper chart creates an equivalent PostSync Job instead.
+  syncJob:
+    createJob: false
+
   grafana:
     enabled: true
     plugins:
@@ -64,3 +69,7 @@ victoria-metrics-k8s-stack:
 
   vtcluster:
     enabled: false
+
+# Wrapper-owned dashboard/rules sync job for Argo CD PostSync.
+dashboardSyncJob:
+  enabled: true

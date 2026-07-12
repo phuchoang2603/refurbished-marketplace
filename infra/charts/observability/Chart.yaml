@@ -5,6 +5,8 @@ type: application
 version: 0.1.0
 appVersion: "0.1.0"
 dependencies:
+  # Vendored at charts/victoria-metrics-k8s-stack-0.86.0.tgz with a small patch:
+  # syncJob.createJob gates the upstream Helm hook job (see wrapper values).
   - name: victoria-metrics-k8s-stack
     version: 0.86.0
     repository: https://victoriametrics.github.io/helm-charts/

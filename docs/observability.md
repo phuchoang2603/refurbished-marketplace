@@ -26,6 +26,12 @@ kubectl get pvc -n monitoring
 
 Grafana should include datasources for VictoriaMetrics, VictoriaLogs, and VictoriaTraces. VictoriaLogs requires the `victoriametrics-logs-datasource` Grafana plugin. VictoriaTraces uses Grafana's built-in Jaeger datasource support.
 
+Default dashboards are fetched by `vmks-sync-job` (an Argo CD `PostSync` hook in the wrapper chart) and loaded into Grafana via the dashboard sidecar. After sync, verify:
+
+```bash
+kubectl get configmaps -n monitoring -l grafana_dashboard=1
+```
+
 ## Staging Health Checks
 
 After ArgoCD syncs `staging-observability`, check the Application and namespace:
@@ -64,5 +70,6 @@ The upstream chart has a few ArgoCD-specific behaviors that are handled in `infr
 - VictoriaMetrics Operator self-signed webhook certificate drift is ignored.
 - Grafana generated admin password and related deployment checksum drift are ignored.
 - Default dashboards use server-side apply to avoid large annotation failures.
+- The upstream `vmks-sync-job` Helm hook is disabled; the wrapper chart runs an equivalent Argo CD `PostSync` job so dashboards are provisioned on sync.
 
 ArgoCD does not run Helm pre-delete hooks, so removal should not rely on the chart's hook-based cleanup. If removing the stack, inspect operator-managed VictoriaMetrics resources in `monitoring` before deleting the namespace or Application.
