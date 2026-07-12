@@ -12,7 +12,7 @@ Staging syncs from `infra/argocd/staging/`. Tilt uses chart defaults locally —
 | Istio base / istiod / cni / ztunnel | This repo wrappers      | official Istio charts `1.30.2` (ambient)                                    | `istio-system` |
 | `observability`                     | This repo wrapper chart | `victoria-metrics-k8s-stack` `0.86.0`                                       | `monitoring`   |
 | `refurbished-marketplace`           | This repo               | CNPG, ExternalSecrets, migrations, services; `global.imageTag: main` + GHCR | `ecommerce`    |
-| `kafka`                             | This repo               | same image tag/registry                                                     | `ecommerce`    |
+| `kafka`                             | This repo               | same image tag/registry; Debezium reads secrets/DBs in `ecommerce`          | `kafka`        |
 
 **Terraform (not in Git):** Argo CD.
 
@@ -40,7 +40,7 @@ infra/argocd/staging/apps/
 
 ## Bootstrap
 
-1. Terraform: Argo CD, `operators` + `ecommerce` namespaces
+1. Terraform: Argo CD, `operators` + `ecommerce` namespaces (`kafka` is created by the Kafka Application via `CreateNamespace=true`)
 2. Add `prd` application secrets in Doppler ([secrets](../development/secrets.md))
 3. Apply Doppler bootstrap secret: `kubectl apply -f infra/k8s/doppler-token.prd.secret.yaml`
 4. Apply `infra/argocd/staging/root.yaml` to the Argo CD namespace

@@ -37,3 +37,17 @@ The repository SHALL scope the first Istio rollout to staging unless production 
 
 - **WHEN** staging mesh enrollment has not been verified successfully
 - **THEN** production Istio installation and marketplace enrollment remain out of scope for the first rollout
+
+### Requirement: Kafka messaging namespace separation
+
+The staging Kafka Application SHALL deploy Strimzi Kafka, Connect, and UI resources to a dedicated `kafka` namespace so marketplace ambient enrollment in `ecommerce` does not intercept Kafka TLS traffic.
+
+#### Scenario: Kafka sync targets kafka namespace
+
+- **WHEN** the staging Kafka Application syncs from Git
+- **THEN** Kafka cluster resources are applied to the `kafka` namespace rather than `ecommerce`
+
+#### Scenario: Marketplace reaches Kafka across namespaces
+
+- **WHEN** marketplace services publish or consume messages
+- **THEN** they use the Kafka bootstrap address in the `kafka` namespace DNS (for example `*.kafka.svc`)

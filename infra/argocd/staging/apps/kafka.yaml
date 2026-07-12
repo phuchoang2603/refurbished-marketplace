@@ -20,7 +20,7 @@ spec:
           imageTag: main
   destination:
     server: https://kubernetes.default.svc
-    namespace: ecommerce
+    namespace: kafka
   syncPolicy:
     automated:
       prune: true

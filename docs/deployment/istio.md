@@ -27,6 +27,8 @@ mesh:
 
 That labels the `ecommerce` namespace with `istio.io/dataplane-mode=ambient` and creates an `istio-waypoint` Gateway for L7 telemetry.
 
+Kafka/Connect/UI live in the separate `kafka` namespace (not ambient-enrolled) so Strimzi TLS and Debezium are not intercepted by ztunnel/waypoint. Marketplace services reach brokers at `ecommerce-kafka-cluster-kafka-bootstrap.kafka.svc:9092`.
+
 **Tilt defaults keep `mesh.ambient.enabled: false`** so local pods are not redirected into ztunnel.
 
 ## Protocol-aware Service ports
@@ -55,6 +57,7 @@ kubectl get pods -n istio-system
 kubectl get daemonset -n istio-system
 kubectl get ns ecommerce --show-labels
 kubectl get gateway -n ecommerce
+kubectl get pods -n kafka
 ```
 
 Then exercise web → product → cart → checkout → payment flows and inspect Grafana / VictoriaTraces (see [observability.md](../observability.md)).

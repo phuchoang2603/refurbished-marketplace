@@ -107,6 +107,14 @@ Marketplace namespace or workload enrollment should be controlled through chart 
 
 **Rationale:** explicit enrollment makes rollback straightforward and avoids surprising local/Tilt behavior. If sidecar mode is selected, namespace injection labels can be managed by GitOps. If ambient mode is selected, enrollment labels can follow the same principle.
 
+### Keep Kafka out of the mesh-enrolled app namespace
+
+Kafka, Kafka Connect, and kafka-ui deploy to a dedicated `kafka` namespace. Marketplace ambient enrollment stays on `ecommerce` only. Debezium reaches CNPG and app secrets in `ecommerce` via cross-namespace DNS (`*.ecommerce.svc`) and Roles/RoleBindings in `appNamespace`.
+
+**Rationale:** namespace-scoped ambient + waypoint on `ecommerce` breaks Strimzi TLS/admin traffic when Kafka shares that namespace. Separating messaging keeps observe-only mesh enrollment simple without per-pod opt-outs.
+
+**Alternatives considered:** label Kafka pods `istio.io/dataplane-mode: none` while leaving them in `ecommerce`. That unblocks mesh quickly but keeps platform data-plane coupled to the app namespace.
+
 ### Classify service ports by actual protocol
 
 The marketplace chart should render port names that match the service protocol. The web and payment gateway simulator services are HTTP. Internal gRPC services such as users, products, orders, cart, and payment should expose `grpc` port names.

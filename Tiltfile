@@ -1,5 +1,6 @@
 load('ext://namespace', 'namespace_create')
 namespace_create('ecommerce')
+namespace_create('kafka')
 namespace_create('operators')
 
 ### External Secrets Operators ###
@@ -38,7 +39,7 @@ local_resource(
 k8s_yaml(helm(
   './infra/charts/kafka',
   name='ecommerce-kafka-cluster',
-  namespace='ecommerce',
+  namespace='kafka',
   values=['./infra/charts/kafka/values.yaml']
 ))
 

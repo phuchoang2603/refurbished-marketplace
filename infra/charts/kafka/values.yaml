@@ -2,6 +2,10 @@ global:
   imageRegistry: ""
   imageTag: ""
 
+# Namespace that hosts marketplace CNPG databases and app secrets
+# (orders-app, payment-app, products-app). Kafka itself deploys to Release.Namespace.
+appNamespace: ecommerce
+
 kafka:
   clusterName: ecommerce-kafka-cluster
   version: 4.2.0

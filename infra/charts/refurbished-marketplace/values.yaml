@@ -65,7 +65,7 @@ services:
     port: 9092
     protocol: grpc
     env:
-      KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap:9092
+      KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap.kafka.svc:9092
     migration:
       enabled: true
       image: products-migrator
@@ -86,7 +86,7 @@ services:
     port: 9093
     protocol: grpc
     env:
-      KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap:9092
+      KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap.kafka.svc:9092
     migration:
       enabled: true
       image: orders-migrator
@@ -115,7 +115,7 @@ services:
     port: 9096
     protocol: grpc
     env:
-      KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap:9092
+      KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap.kafka.svc:9092
     migration:
       enabled: true
       image: payment-migrator

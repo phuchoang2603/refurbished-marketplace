@@ -1,10 +1,11 @@
+{{- $appNamespace := .Values.appNamespace | default .Release.Namespace }}
 {{- range $entityName, $entity := .Values.entities }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
   name: {{ printf "%s-debezium-connector-role" $entityName }}
-  namespace: {{ $.Release.Namespace }}
+  namespace: {{ $appNamespace }}
 rules:
 - apiGroups: [""]
   resources: ["secrets"]
@@ -15,7 +16,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
   name: {{ printf "%s-debezium-connector-rolebinding" $entityName }}
-  namespace: {{ $.Release.Namespace }}
+  namespace: {{ $appNamespace }}
 subjects:
 - kind: ServiceAccount
   name: {{ printf "%s-connect" $.Values.connect.clusterName }}
@@ -52,10 +53,10 @@ spec:
   tasksMax: 1
   config:
     # --- Database Connection ---
-    database.hostname: {{ $entity.connector.databaseHost }}
+    database.hostname: {{ printf "%s.%s.svc" $entity.connector.databaseHost $appNamespace }}
     database.port: {{ $entity.connector.databasePort }}
-    database.user: ${secrets:{{ $.Release.Namespace }}/{{ $entity.connector.sourceSecretName }}:username}
-    database.password: ${secrets:{{ $.Release.Namespace }}/{{ $entity.connector.sourceSecretName }}:password}
+    database.user: ${secrets:{{ $appNamespace }}/{{ $entity.connector.sourceSecretName }}:username}
+    database.password: ${secrets:{{ $appNamespace }}/{{ $entity.connector.sourceSecretName }}:password}
     database.dbname: {{ $entity.connector.databaseName }}
     
     # --- Debezium Engine Settings ---

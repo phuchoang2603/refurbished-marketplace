@@ -15,6 +15,7 @@
 - [x] 2.1 Add staging marketplace ambient enrollment through GitOps-managed namespace or workload metadata.
 - [x] 2.2 Add waypoint proxy configuration for workloads that need L7 telemetry, policy, or routing behavior.
 - [x] 2.3 Add rollback notes for disabling marketplace mesh enrollment before removing Istio.
+- [x] 2.4 Move Kafka/Connect/UI to dedicated `kafka` namespace with cross-namespace Debezium secret/DB access and marketplace bootstrap FQDNs.
 
 ## 3. Protocol-Aware Service Ports
 
