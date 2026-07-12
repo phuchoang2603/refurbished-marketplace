@@ -1,5 +1,6 @@
 {{- range $name, $svc := .Values.services }}
 {{- if and $svc.enabled $svc.db }}
+{{- $dbResources := default $.Values.defaults.dbResources $svc.db.resources }}
 ---
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
@@ -22,6 +23,10 @@ spec:
           name: {{ $svc.db.secretName }}
   storage:
     size: {{ default "1Gi" $svc.db.storageSize | quote }}
+{{- with $dbResources }}
+  resources:
+{{ toYaml . | nindent 4 }}
+{{- end }}
   bootstrap:
     initdb:
       database: {{ $svc.db.name | quote }}

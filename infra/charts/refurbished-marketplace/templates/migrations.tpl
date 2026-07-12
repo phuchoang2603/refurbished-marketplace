@@ -1,6 +1,8 @@
 {{- range $name, $svc := .Values.services }}
 {{- if and $svc.enabled $svc.migration $svc.migration.enabled }}
 {{- $owner := default (printf "%s_app" $name) $svc.db.owner }}
+{{- $initResources := default $.Values.defaults.initResources $svc.initResources }}
+{{- $migrationResources := default $.Values.defaults.migrationResources $svc.migration.resources }}
 ---
 apiVersion: batch/v1
 kind: Job
@@ -28,10 +30,18 @@ spec:
             - >-
               until pg_isready -h {{ $svc.db.host }} -p {{ $svc.db.port }};
               do echo "waiting for database {{ $svc.db.host }}"; sleep 2; done
+{{- with $initResources }}
+          resources:
+{{ toYaml . | nindent 12 }}
+{{- end }}
       containers:
         - name: goose
           image: {{ include "refurbished-marketplace.image" (list $ $svc.migration.image $svc.migration.imageTag) }}
           imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+{{- with $migrationResources }}
+          resources:
+{{ toYaml . | nindent 12 }}
+{{- end }}
           env:
             - name: GOOSE_DRIVER
               value: "postgres"

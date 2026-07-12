@@ -4,6 +4,9 @@
 {{- if $svc.db }}
 {{- $owner = default (printf "%s_app" $name) $svc.db.owner }}
 {{- end }}
+{{- $resources := default $.Values.defaults.resources $svc.resources }}
+{{- $initResources := default $.Values.defaults.initResources $svc.initResources }}
+{{- $redisResources := default $.Values.defaults.redisResources $svc.redisResources }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -33,6 +36,10 @@ spec:
             - >-
               until pg_isready -h {{ $svc.db.host }} -p {{ $svc.db.port }};
               do echo "waiting for database {{ $svc.db.host }}"; sleep 2; done
+{{- with $initResources }}
+          resources:
+{{ toYaml . | nindent 12 }}
+{{- end }}
 {{- end }}
       containers:
 {{- if eq $name "cart" }}
@@ -41,12 +48,20 @@ spec:
           imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
           ports:
             - containerPort: 6379
+{{- with $redisResources }}
+          resources:
+{{ toYaml . | nindent 12 }}
+{{- end }}
 {{- end }}
         - name: {{ $name }}
           image: {{ include "refurbished-marketplace.image" (list $ $svc.image $svc.imageTag) }}
           imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
           ports:
             - containerPort: {{ $svc.port }}
+{{- with $resources }}
+          resources:
+{{ toYaml . | nindent 12 }}
+{{- end }}
           env:
 {{- if $svc.db }}
             - name: DB_USER

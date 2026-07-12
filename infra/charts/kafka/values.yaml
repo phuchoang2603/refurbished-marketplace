@@ -15,9 +15,42 @@ kafka:
   minInsyncReplicas: 1
   storage:
     size: 10Gi
+  # Sized from staging usage (~535Mi / ~60m) with JVM headroom.
+  resources:
+    requests:
+      cpu: 250m
+      memory: 768Mi
+    limits:
+      cpu: "1"
+      memory: 1536Mi
+  entityOperator:
+    topicOperator:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
+    userOperator:
+      resources:
+        requests:
+          cpu: 100m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
 connect:
   clusterName: ecommerce-connect-cluster
   image: connect-debezium
+  # Sized from staging usage (~475Mi / ~70m).
+  resources:
+    requests:
+      cpu: 200m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1024Mi
 entities:
   orders:
     topics:
@@ -69,3 +102,10 @@ provectus:
   name: kafka-ui
   image: provectuslabs/kafka-ui:v0.7.2
   port: 8080
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 300m
+      memory: 384Mi
