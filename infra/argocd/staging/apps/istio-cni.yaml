@@ -1,26 +1,22 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: staging-kafka
+  name: staging-istio-cni
   finalizers:
     - resources-finalizer.argocd.argoproj.io/foreground
   annotations:
-    argocd.argoproj.io/sync-wave: "4"
+    argocd.argoproj.io/sync-wave: "1"
 spec:
   project: default
   source:
     repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
     targetRevision: main
-    path: infra/charts/kafka
+    path: infra/charts/operators/istio/cni
     helm:
-      releaseName: ecommerce-kafka-cluster
-      values: |
-        global:
-          imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
-          imageTag: main
+      releaseName: istio-cni
   destination:
     server: https://kubernetes.default.svc
-    namespace: kafka
+    namespace: istio-system
   syncPolicy:
     automated:
       prune: true

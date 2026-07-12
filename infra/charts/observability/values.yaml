@@ -52,6 +52,16 @@ victoria-metrics-k8s-stack:
   vlcluster:
     enabled: false
 
+  vmagent:
+    enabled: true
+    spec:
+      # Bind wrapper-owned Istio VMPodScrapes (and other CRs) into scrape config.
+      selectAllByDefault: true
+      podScrapeNamespaceSelector: {}
+      podScrapeSelector: {}
+      serviceScrapeNamespaceSelector: {}
+      serviceScrapeSelector: {}
+
   vlagent:
     enabled: true
     spec:
@@ -73,3 +83,10 @@ victoria-metrics-k8s-stack:
 # Wrapper-owned dashboard/rules sync job for Argo CD PostSync.
 dashboardSyncJob:
   enabled: true
+
+# Scrape Istio ambient control plane + waypoint L7 metrics into VMSingle.
+istioScrapes:
+  enabled: true
+  waypointName: ecommerce-waypoint
+  waypointNamespaces:
+    - ecommerce

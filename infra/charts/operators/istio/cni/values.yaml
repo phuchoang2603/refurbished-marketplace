@@ -1,0 +1,3 @@
+# RKE2 uses the default CNI paths (/opt/cni/bin, /etc/cni/net.d).
+cni:
+  profile: ambient

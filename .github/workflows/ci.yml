@@ -206,21 +206,24 @@ jobs:
       - name: Helm lint and template
         run: |
           set -euo pipefail
-          namespace=ecommerce
-          app_charts=(
-            infra/charts/refurbished-marketplace
-            infra/charts/kafka
-          )
-          values_file=infra/charts/refurbished-marketplace/values.yaml
-          for chart in "${app_charts[@]}"; do
-            helm lint "$chart" -f "$values_file"
-            helm template test-release "$chart" -f "$values_file" --namespace "$namespace" > "/tmp/$(basename "$chart").yaml"
-          done
+          helm lint infra/charts/refurbished-marketplace -f infra/charts/refurbished-marketplace/values.yaml
+          helm template test-release infra/charts/refurbished-marketplace \
+            -f infra/charts/refurbished-marketplace/values.yaml \
+            --namespace ecommerce > /tmp/refurbished-marketplace.yaml
+
+          helm lint infra/charts/kafka -f infra/charts/kafka/values.yaml
+          helm template test-release infra/charts/kafka \
+            -f infra/charts/kafka/values.yaml \
+            --namespace kafka > /tmp/kafka.yaml
 
           wrapper_charts=(
             "infra/charts/operators/external-secrets:operators"
             "infra/charts/operators/cnpg:operators"
             "infra/charts/operators/strimzi:operators"
+            "infra/charts/operators/istio/base:istio-system"
+            "infra/charts/operators/istio/istiod:istio-system"
+            "infra/charts/operators/istio/cni:istio-system"
+            "infra/charts/operators/istio/ztunnel:istio-system"
             "infra/charts/observability:monitoring"
           )
           for item in "${wrapper_charts[@]}"; do
@@ -242,4 +245,8 @@ jobs:
             /tmp/external-secrets.yaml \
             /tmp/cnpg.yaml \
             /tmp/strimzi.yaml \
+            /tmp/base.yaml \
+            /tmp/istiod.yaml \
+            /tmp/cni.yaml \
+            /tmp/ztunnel.yaml \
             /tmp/observability.yaml

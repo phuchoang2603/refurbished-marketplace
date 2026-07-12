@@ -21,6 +21,10 @@ spec:
           ports:
             - containerPort: {{ .Values.provectus.port }}
               protocol: TCP
+{{- with .Values.provectus.resources }}
+          resources:
+{{ toYaml . | nindent 12 }}
+{{- end }}
           env:
             - name: KAFKA_CLUSTERS_0_NAME
               value: {{ .Values.kafka.clusterName }}

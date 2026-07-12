@@ -11,6 +11,10 @@ spec:
   roles:
     - controller
     - broker
+{{- with .Values.kafka.resources }}
+  resources:
+{{ toYaml . | nindent 4 }}
+{{- end }}
   storage:
       type: jbod
       volumes:
@@ -49,5 +53,8 @@ spec:
       default.replication.factor: {{ .Values.kafka.replicationFactor }}
       min.insync.replicas: {{ .Values.kafka.minInsyncReplicas }}
   entityOperator:
-    topicOperator: {}
-    userOperator: {}
+    # Non-empty objects: bare `{}` becomes YAML/JSON null under Argo SSA and fails CRD validation.
+    topicOperator:
+      reconciliationIntervalMs: 120000
+    userOperator:
+      reconciliationIntervalMs: 120000

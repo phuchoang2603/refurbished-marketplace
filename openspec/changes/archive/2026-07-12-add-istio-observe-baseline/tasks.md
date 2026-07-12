@@ -1,0 +1,40 @@
+## 1. Istio Platform Setup
+
+- [x] 1.1 Confirm VictoriaMetrics/VictoriaTraces with Grafana prerequisite (`platform-observability`) is implemented and archived.
+- [x] 1.2 Confirm staging cluster Kubernetes version supports Istio ambient mode (`v1.32.3+rke2r1`).
+- [x] 1.3 Confirm staging cluster networking/CNI compatibility for Istio ambient mode (RKE2 Canal; allow HBONE TCP 15008 in NetworkPolicies).
+- [x] 1.4 Confirm Gateway API CRDs are installed (present on staging; GatewayClass/controller deferred until waypoints).
+- [x] 1.5 Add four local wrapper charts under `infra/charts/operators/istio/{base,istiod,cni,ztunnel}` sourcing the official Istio Helm charts.
+- [x] 1.6 Pin each Istio wrapper chart dependency to version `1.30.2` (`istiod`/`cni` with `profile=ambient`).
+- [x] 1.7 Add four staging ArgoCD Applications for the Istio wrappers (`base`, `istiod`, `cni`, `ztunnel`) in `istio-system`.
+- [x] 1.8 Set Istio sync waves so base → istiod/cni → ztunnel apply before mesh-enrolled marketplace workloads.
+- [x] 1.9 Keep production Istio installation and enrollment disabled until staging is verified.
+
+## 2. Marketplace Mesh Enrollment
+
+- [x] 2.1 Add staging marketplace ambient enrollment through GitOps-managed namespace or workload metadata.
+- [x] 2.2 Add waypoint proxy configuration for workloads that need L7 telemetry, policy, or routing behavior.
+- [x] 2.3 Add rollback notes for disabling marketplace mesh enrollment before removing Istio.
+- [x] 2.4 Move Kafka/Connect/UI to dedicated `kafka` namespace with cross-namespace Debezium secret/DB access and marketplace bootstrap FQDNs.
+
+## 3. Protocol-Aware Service Ports
+
+- [x] 3.1 Add per-service protocol configuration to the marketplace Helm values.
+- [x] 3.2 Render HTTP port names for `web` and `payment-gateway-simulator`.
+- [x] 3.3 Render gRPC port names for `users`, `products`, `orders`, `cart`, and `payment`.
+- [x] 3.4 Verify Helm output no longer labels gRPC service ports as generic `http`.
+
+## 4. Observability Verification
+
+- [x] 4.1 Document VictoriaTraces with Grafana as the target trace and dashboard path (`docs/observability.md`).
+- [x] 4.2 Verify staging sync installs Istio and enrolls marketplace workloads.
+- [x] 4.3 Verify Istio CNI and ztunnel pods are healthy in `istio-system`.
+- [x] 4.4 Defer product/cart/checkout/payment browser flows until Istio ingress is integrated (out of scope for this observe-only baseline).
+- [x] 4.5 Confirm mesh telemetry shows traffic for `web`, `users`, `products`, `orders`, `cart`, `payment`, and `payment-gateway-simulator` where applicable.
+- [x] 4.6 Confirm internal gRPC traffic is distinguishable from opaque TCP where Istio supports protocol detection.
+- [x] 4.7 Verify Istio metrics against the deployed `platform-observability` stack in Grafana / VictoriaMetrics (VictoriaTraces datasource present; Istio-dedicated dashboards deferred).
+
+## 5. Final Checks
+
+- [x] 5.1 Run OpenSpec validation for `add-istio-observe-baseline`.
+- [x] 5.2 Update GitHub issue #18 with ambient mode direction, waypoint proxy plan, official Istio `1.30.2` pin, telemetry prerequisite, and staging-only production gate.
