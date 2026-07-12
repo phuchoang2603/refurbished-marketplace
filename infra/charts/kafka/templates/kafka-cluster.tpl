@@ -54,12 +54,12 @@ spec:
       min.insync.replicas: {{ .Values.kafka.minInsyncReplicas }}
   entityOperator:
     topicOperator:
-{{- with .Values.kafka.entityOperator.topicOperator.resources }}
+{{- with (((.Values.kafka).entityOperator).topicOperator).resources }}
       resources:
 {{ toYaml . | nindent 8 }}
 {{- end }}
     userOperator:
-{{- with .Values.kafka.entityOperator.userOperator.resources }}
+{{- with (((.Values.kafka).entityOperator).userOperator).resources }}
       resources:
 {{ toYaml . | nindent 8 }}
 {{- end }}

@@ -15,43 +15,10 @@ kafka:
   minInsyncReplicas: 1
   storage:
     size: 10Gi
-  # Sized from staging usage (~535Mi / ~60m) with JVM headroom.
-  resources:
-    requests:
-      cpu: 250m
-      memory: 768Mi
-    limits:
-      cpu: "1"
-      memory: 1536Mi
-  entityOperator:
-    topicOperator:
-      resources:
-        requests:
-          cpu: 100m
-          memory: 256Mi
-        limits:
-          cpu: 500m
-          memory: 512Mi
-    userOperator:
-      resources:
-        requests:
-          cpu: 100m
-          memory: 256Mi
-        limits:
-          cpu: 500m
-          memory: 512Mi
 connect:
   clusterName: ecommerce-connect-cluster
   image: connect-debezium
-  # Connect needs real CPU headroom: a 500m limit made the JVM see os.vcpus=1
-  # and fail liveness (/health) before startup finished.
-  resources:
-    requests:
-      cpu: 500m
-      memory: 768Mi
-    limits:
-      cpu: "2"
-      memory: 1536Mi
+  # Give Connect time to finish plugin scan / JVM start before /health is required.
   livenessProbe:
     initialDelaySeconds: 120
     timeoutSeconds: 10
@@ -113,10 +80,3 @@ provectus:
   name: kafka-ui
   image: provectuslabs/kafka-ui:v0.7.2
   port: 8080
-  resources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      cpu: 300m
-      memory: 384Mi
