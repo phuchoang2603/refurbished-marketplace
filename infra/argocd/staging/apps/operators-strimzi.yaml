@@ -10,7 +10,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
-    targetRevision: istio-observe-baseline
+    targetRevision: main
     path: infra/charts/operators/strimzi
     helm:
       releaseName: strimzi-cluster-operator
