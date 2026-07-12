@@ -10,7 +10,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
-    targetRevision: main
+    targetRevision: add-istio-ingress
     path: infra/charts/operators/istio/base
     helm:
       releaseName: istio-base

@@ -10,7 +10,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
-    targetRevision: main
+    targetRevision: add-istio-ingress
     path: infra/charts/refurbished-marketplace
     helm:
       releaseName: refurbished-marketplace
@@ -23,10 +23,16 @@ spec:
             enabled: true
           waypoint:
             enabled: true
+        ingress:
+          enabled: true
+          name: ecommerce-ingress
+          port: 80
+          webHostname: shop.phuchoang.sbs
+          simulatorHostname: pay.phuchoang.sbs
         services:
           web:
             env:
-              HOSTED_PAYMENT_BASE_URL: http://payment-gateway-simulator:8097
+              HOSTED_PAYMENT_BASE_URL: https://pay.phuchoang.sbs
           payment-gateway-simulator:
             enabled: true
   destination:

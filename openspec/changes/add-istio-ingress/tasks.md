@@ -1,21 +1,21 @@
 ## 1. Chart ingress surface
 
-- [ ] 1.1 Add marketplace chart values for `ingress` (enabled flag, Gateway name, web hostname, simulator hostname, listener port).
-- [ ] 1.2 Add Helm templates for Istio `Gateway` (`gatewayClassName: istio`) distinct from the existing waypoint Gateway.
-- [ ] 1.3 Add `HTTPRoute` for `web` attached to the ingress Gateway.
-- [ ] 1.4 Add `HTTPRoute` for `payment-gateway-simulator` on a distinct hostname attached to the same Gateway.
-- [ ] 1.5 Keep chart defaults with `ingress.enabled: false` so Tilt remains unchanged.
+- [x] 1.1 Add marketplace chart values for `ingress` (enabled flag, Gateway name, web hostname, simulator hostname, listener port).
+- [x] 1.2 Add Helm templates for Istio `Gateway` (`gatewayClassName: istio`) distinct from the existing waypoint Gateway.
+- [x] 1.3 Add `HTTPRoute` for `web` attached to the ingress Gateway.
+- [x] 1.4 Add `HTTPRoute` for `payment-gateway-simulator` on a distinct hostname attached to the same Gateway.
+- [x] 1.5 Keep chart defaults with `ingress.enabled: false` so Tilt remains unchanged.
 
 ## 2. Staging GitOps enablement
 
-- [ ] 2.1 Enable ingress on the staging marketplace Argo Application / values overlay with concrete Cloudflare DNS hostnames.
-- [ ] 2.2 Set staging `HOSTED_PAYMENT_BASE_URL` to the Cloudflare-facing simulator HTTPS URL.
-- [ ] 2.3 Confirm production overlays leave ingress disabled.
+- [x] 2.1 Enable ingress on the staging marketplace Argo Application / values overlay with concrete Cloudflare DNS hostnames.
+- [x] 2.2 Set staging `HOSTED_PAYMENT_BASE_URL` to the Cloudflare-facing simulator HTTPS URL.
+- [x] 2.3 Confirm production overlays leave ingress disabled.
 
 ## 3. Docs and TLS ownership
 
-- [ ] 3.1 Update `docs/deployment/istio.md` with edge Gateway vs waypoint, Cloudflare Tunnel origin wiring, and verification commands.
-- [ ] 3.2 Document TLS at Cloudflare + HTTP origin at Istio, and rollback steps to disable ingress.
+- [x] 3.1 Update `docs/deployment/istio.md` with edge Gateway vs waypoint, Cloudflare Tunnel origin wiring, and verification commands.
+- [x] 3.2 Document TLS at Cloudflare + HTTP origin at Istio, and rollback steps to disable ingress.
 
 ## 4. Staging verification
 
@@ -26,5 +26,5 @@
 
 ## 5. Close-out
 
-- [ ] 5.1 Run OpenSpec validation for `add-istio-ingress`.
-- [ ] 5.2 Link or update GitHub issue #19 acceptance criteria against the implemented behavior.
+- [x] 5.1 Run OpenSpec validation for `add-istio-ingress`.
+- [x] 5.2 Link or update GitHub issue #19 acceptance criteria against the implemented behavior.

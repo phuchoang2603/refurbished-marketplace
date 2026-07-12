@@ -25,7 +25,7 @@ Issue #19 asks to move marketplace edge routing onto Istio after the observe bas
 - Strict mTLS, AuthorizationPolicy, retries, or canaries at the edge.
 - Local ambient/ingress mode for Tilt.
 - Marketplace origin TLS / cert-manager (Cloudflare terminates TLS in front of HTTP Istio).
-- Managing Cloudflare Tunnel itself in this repo (tunnel connector + DNS remain outside GitOps unless added later).
+- Managing Cloudflare Tunnel itself in this repo (`cloudflared` stays on the Proxmox LXC; DNS/tunnel config remain outside GitOps unless added later).
 - Any alternate ingress controller for marketplace traffic.
 
 ## Decisions
@@ -59,19 +59,19 @@ Keep `ecommerce-waypoint` (`gatewayClassName: istio-waypoint`, HBONE/15008) for 
 
 **Rationale:** waypoint and ingress GatewayClasses have different controllers and listener semantics; mixing them breaks ambient waypoint behavior.
 
-### 4. Cloudflare Tunnel front door; HTTP-only at Istio (no marketplace cert)
+### 4. Cloudflare Tunnel on Proxmox LXC; HTTP-only at Istio (no marketplace cert)
 
-Staging browser TLS terminates at **Cloudflare**. `cloudflared` forwards to the Istio Gateway origin over **HTTP** (LB IP or in-cluster Service). No cert Secret / cert-manager on the marketplace Gateway in this change.
+Staging browser TLS terminates at **Cloudflare**. `cloudflared` runs on a **Proxmox LXC** (not in-cluster) and forwards to the Istio Gateway origin over **HTTP** using the Gateway LoadBalancer IP on the LAN. No cert Secret / cert-manager on the marketplace Gateway in this change.
 
-| Layer                             | Staging v1                                           |
-| --------------------------------- | ---------------------------------------------------- |
-| Browser → Cloudflare              | HTTPS (Cloudflare-managed cert)                      |
-| Cloudflare Tunnel → Istio Gateway | HTTP to Gateway LoadBalancer IP or ClusterIP Service |
-| Gateway → `web` / simulator       | cluster HTTP                                         |
+| Layer                                   | Staging v1                      |
+| --------------------------------------- | ------------------------------- |
+| Browser → Cloudflare                    | HTTPS (Cloudflare-managed cert) |
+| Cloudflare Tunnel (LXC) → Istio Gateway | HTTP to Gateway LoadBalancer IP |
+| Gateway → `web` / simulator             | cluster HTTP                    |
 
-**Rationale:** matches the intended ops model and removes origin TLS from scope. Istio still owns L7 Host/path routing after the tunnel.
+**Rationale:** LXC keeps the tunnel connector independent of cluster upgrades; MetalLB already provides reachable LAN IPs. In-cluster `cloudflared` was deferred (Service-DNS origin / GitOps) unless needed later.
 
-**Alternatives considered:** TLS at Istio with a Secret (unnecessary with tunnel); Cloudflare orange-cloud proxy to a public LB without tunnel (different network exposure).
+**Alternatives considered:** in-cluster `cloudflared` (nicer Service DNS, couples tunnel to cluster health); TLS at Istio with a Secret (unnecessary with tunnel).
 
 ### 5. Simulator on a distinct hostname
 
@@ -112,9 +112,9 @@ Keep Gateway + HTTPRoutes in `ecommerce` (marketplace chart / Argo destination).
 
 1. Confirm `GatewayClass/istio` Accepted and marketplace Services healthy.
 2. Add chart templates/values; keep default disabled.
-3. Enable on staging via Argo values; sync; record Gateway LB / Service address.
-4. Point Cloudflare Tunnel Public Hostnames at that origin (`http://<lb-or-svc>:80`) for web + simulator hosts.
-5. Set `HOSTED_PAYMENT_BASE_URL` to `https://pay.<domain>`; exercise checkout payment redirect.
+3. Enable on staging via Argo values; sync; record Gateway LB address.
+4. On the Proxmox LXC, point Cloudflare Tunnel Public Hostnames at `http://<gateway-LB-IP>:80` for `shop.phuchoang.sbs` and `pay.phuchoang.sbs`.
+5. Set `HOSTED_PAYMENT_BASE_URL` to `https://pay.phuchoang.sbs`; exercise checkout payment redirect.
 6. Verify traffic enters via Istio (Host-routed) behind the tunnel.
 7. Rollback: disable `ingress.enabled`, sync, remove or repoint tunnel hostnames; Tilt port-forward still works locally.
 
