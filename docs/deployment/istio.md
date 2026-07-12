@@ -60,9 +60,16 @@ kubectl get gateway -n ecommerce
 kubectl get pods -n kafka
 ```
 
-Then exercise web → product → cart → checkout → payment flows and inspect Grafana / VictoriaTraces (see [observability.md](../observability.md)).
+Istio metrics are scraped by `staging-observability` (`istioScrapes` VMPodScrapes). In Grafana Explore (VictoriaMetrics):
 
-Istio metrics are scraped by `staging-observability` (`istioScrapes` VMPodScrapes). After traffic, confirm `istio_requests_total` in Grafana Explore (VictoriaMetrics) and that gRPC backends show `request_protocol="grpc"`.
+```promql
+sum by (source_app, destination_app) (rate(istio_tcp_connections_opened_total[5m]))
+sum by (destination_app, request_protocol) (rate(istio_requests_total[5m]))
+```
+
+gRPC backends should show `request_protocol="grpc"` when L7 waypoint classification applies.
+
+**Deferred until Istio ingress:** end-to-end browser product → cart → checkout → payment flows.
 
 ## Production
 
