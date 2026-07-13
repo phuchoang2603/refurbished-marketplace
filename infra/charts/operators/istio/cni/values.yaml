@@ -1,3 +1,6 @@
-# RKE2 uses the default CNI paths (/opt/cni/bin, /etc/cni/net.d).
+# Chart defaults = local Colima/k3s. Staging overlays values-staging.yaml.
+# See https://istio.io/latest/docs/ambient/install/platform-prerequisites/
 cni:
   profile: ambient
+  global:
+    platform: k3s

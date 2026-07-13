@@ -1,0 +1,19 @@
+# Staging overlays on values.yaml (Argo CD valueFiles).
+global:
+  imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
+  imageTag: main
+
+ingress:
+  enabled: true
+  name: ecommerce-ingress
+  port: 80
+  webHostname: shop.phuchoang.sbs
+  simulatorHostname: pay.phuchoang.sbs
+
+services:
+  web:
+    env:
+      HOSTED_PAYMENT_BASE_URL: https://pay.phuchoang.sbs
+      PUBLIC_BASE_URL: https://shop.phuchoang.sbs
+      # Server-side simulator→web callback stays on cluster DNS.
+      HOSTED_PAYMENT_CALLBACK_BASE_URL: http://web:8080

@@ -14,6 +14,8 @@ spec:
     path: infra/charts/operators/istio/cni
     helm:
       releaseName: istio-cni
+      valueFiles:
+        - values-staging.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: istio-system

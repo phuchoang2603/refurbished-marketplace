@@ -14,30 +14,8 @@ spec:
     path: infra/charts/refurbished-marketplace
     helm:
       releaseName: refurbished-marketplace
-      values: |
-        global:
-          imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
-          imageTag: main
-        mesh:
-          ambient:
-            enabled: true
-          waypoint:
-            enabled: true
-        ingress:
-          enabled: true
-          name: ecommerce-ingress
-          port: 80
-          webHostname: shop.phuchoang.sbs
-          simulatorHostname: pay.phuchoang.sbs
-        services:
-          web:
-            env:
-              HOSTED_PAYMENT_BASE_URL: https://pay.phuchoang.sbs
-              PUBLIC_BASE_URL: https://shop.phuchoang.sbs
-              # Server-side simulator→web callback stays on cluster DNS.
-              HOSTED_PAYMENT_CALLBACK_BASE_URL: http://web:8080
-          payment-gateway-simulator:
-            enabled: true
+      valueFiles:
+        - values-staging.yaml
   destination:
     server: https://kubernetes.default.svc
     namespace: ecommerce

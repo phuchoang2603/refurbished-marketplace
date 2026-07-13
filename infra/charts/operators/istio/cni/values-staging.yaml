@@ -1,0 +1,7 @@
+# Staging (RKE2) overlays on values.yaml — default CNI paths, not k3s.
+cni:
+  profile: ambient
+  global:
+    platform: ""
+  cniBinDir: /opt/cni/bin
+  cniConfDir: /etc/cni/net.d
