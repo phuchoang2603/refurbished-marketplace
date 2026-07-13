@@ -37,8 +37,13 @@ The system SHALL support enrolling marketplace workloads in Istio for telemetry 
 
 #### Scenario: Mesh enrollment remains non-disruptive
 
-- **WHEN** workloads are enrolled for the observe-only baseline
-- **THEN** strict mTLS, AuthorizationPolicy, retries, circuit breakers, traffic splitting, and ingress migration are not required for the application to function
+- **WHEN** workloads are enrolled for the observe-only baseline without ingress enablement
+- **THEN** strict mTLS, AuthorizationPolicy, retries, circuit breakers, and traffic splitting are not required for the application to function
+
+#### Scenario: Ingress is a separate explicit enablement
+
+- **WHEN** marketplace Istio ingress is required for browser traffic
+- **THEN** edge Gateway API resources are enabled through the dedicated ingress configuration path rather than being implied by observe-only mesh enrollment alone
 
 ### Requirement: Protocol-aware service classification
 
