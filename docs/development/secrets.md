@@ -17,19 +17,21 @@ Add the password keys below in the Doppler UI for each config (`dev` or `prd`).
 
 Open the project → select the config → **Secrets** → add each key and value there. Use the UI password generator for `*_PASSWORD` and `JWT_SECRET` values.
 
-| Doppler key             | K8s Secret     | K8s key      |
-| ----------------------- | -------------- | ------------ |
-| `USERS_APP_PASSWORD`    | `users-app`    | `password`   |
-| `PRODUCTS_APP_PASSWORD` | `products-app` | `password`   |
-| `ORDERS_APP_PASSWORD`   | `orders-app`   | `password`   |
-| `PAYMENT_APP_PASSWORD`  | `payment-app`  | `password`   |
-| `JWT_SECRET`            | `users-auth`   | `JWT_SECRET` |
+| Doppler key               | K8s Secret                                         | K8s key      |
+| ------------------------- | -------------------------------------------------- | ------------ |
+| `USERS_APP_PASSWORD`      | `users-app`                                        | `password`   |
+| `PRODUCTS_APP_PASSWORD`   | `products-app`                                     | `password`   |
+| `ORDERS_APP_PASSWORD`     | `orders-app`                                       | `password`   |
+| `PAYMENT_APP_PASSWORD`    | `payment-app`                                      | `password`   |
+| `JWT_SECRET`              | `users-auth`                                       | `JWT_SECRET` |
+| `CLOUDFLARE_TUNNEL_TOKEN` | `cloudflare-tunnel-token` (ns `cloudflare-tunnel`) | `token`      |
 
 Guidelines:
 
 - **dev:** simple values are fine for local development.
 - **prd:** use unique, strong values. Do not reuse `dev` secrets.
 - `JWT_SECRET` is shared by `web` and `users` through `users-auth`.
+- `CLOUDFLARE_TUNNEL_TOKEN` is the Cloudflare Zero Trust tunnel token for in-cluster `cloudflared` (staging). Create the tunnel in the Cloudflare dashboard, then paste the token into Doppler `prd`.
 
 DB password keys are derived from `db.secretName` (for example `users-app` → `USERS_APP_PASSWORD`). Auth keys use the `auth.secretKey` name directly (`JWT_SECRET`).
 
