@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: local-root
+  namespace: argo-cd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io/foreground
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
+    targetRevision: main
+    path: infra/argocd/local/apps
+    directory:
+      recurse: false
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argo-cd
+  # selfHeal off so bootstrap can pin targetRevision to the current branch
+  # without Argo resetting child Applications to the committed "main" value.
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: false
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
