@@ -22,3 +22,17 @@ Staging value overlays SHALL set `HOSTED_PAYMENT_BASE_URL` to the Cloudflare-fac
 
 - **WHEN** staging ingress with simulator routing is enabled
 - **THEN** the web Deployment environment uses the public `https://` simulator hostname, not `http://payment-gateway-simulator:8097` cluster DNS alone and not `http://localhost:8097`
+
+### Requirement: Staging Cloudflare Tunnel application
+
+The repository SHALL include a staging Argo CD child Application that deploys in-cluster `cloudflared` for the marketplace edge.
+
+#### Scenario: Staging root sync includes cloudflare-tunnel
+
+- **WHEN** the staging root Application syncs from Git
+- **THEN** Argo CD manages a child Application for the Cloudflare Tunnel connector in the `cloudflare-tunnel` namespace
+
+#### Scenario: Tunnel token comes from External Secrets
+
+- **WHEN** the cloudflare-tunnel chart syncs with External Secrets enabled
+- **THEN** the tunnel token Secret is populated from Doppler via an ExternalSecret rather than committed to Git

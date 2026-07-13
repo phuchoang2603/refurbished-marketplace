@@ -11,6 +11,8 @@ metadata:
   namespace: {{ .Release.Namespace }}
   annotations:
     argocd.argoproj.io/sync-wave: "5"
+    # In-cluster cloudflared uses ClusterIP; avoid allocating a MetalLB address.
+    networking.istio.io/service-type: ClusterIP
 spec:
   gatewayClassName: istio
   listeners:

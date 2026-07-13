@@ -16,6 +16,7 @@ Issue #19 asks to move marketplace edge routing onto Istio after the observe bas
 
 - GitOps-managed Istio edge for staging that sends browser HTTP to `web`.
 - Explicit browser path to `payment-gateway-simulator` and a matching public `HOSTED_PAYMENT_BASE_URL`.
+- GitOps-managed in-cluster `cloudflared` connector (token via Doppler/ESO).
 - Documented TLS ownership (Cloudflare) and ingress rollback.
 - Preserve Tilt port-forwards with ingress disabled by default in chart values.
 
@@ -25,8 +26,8 @@ Issue #19 asks to move marketplace edge routing onto Istio after the observe bas
 - Strict mTLS, AuthorizationPolicy, retries, or canaries at the edge.
 - Local ambient/ingress mode for Tilt.
 - Marketplace origin TLS / cert-manager (Cloudflare terminates TLS in front of HTTP Istio).
-- Managing Cloudflare Tunnel itself in this repo (`cloudflared` stays on the Proxmox LXC; DNS/tunnel config remain outside GitOps unless added later).
-- Any alternate ingress controller for marketplace traffic.
+- Managing Cloudflare Zero Trust Public Hostname UI config in Git (only the `cloudflared` connector is GitOps-managed; host→origin mapping stays in the Cloudflare dashboard unless added later).
+- Proxmox LXC `cloudflared` as the marketplace edge connector.
 
 ## Decisions
 
@@ -59,19 +60,20 @@ Keep `ecommerce-waypoint` (`gatewayClassName: istio-waypoint`, HBONE/15008) for 
 
 **Rationale:** waypoint and ingress GatewayClasses have different controllers and listener semantics; mixing them breaks ambient waypoint behavior.
 
-### 4. Cloudflare Tunnel on Proxmox LXC; HTTP-only at Istio (no marketplace cert)
+### 4. In-cluster Cloudflare Tunnel (cloudflared) via Argo CD; HTTP-only at Istio
 
-Staging browser TLS terminates at **Cloudflare**. `cloudflared` runs on a **Proxmox LXC** (not in-cluster) and forwards to the Istio Gateway origin over **HTTP** using the Gateway LoadBalancer IP on the LAN. No cert Secret / cert-manager on the marketplace Gateway in this change.
+Staging browser TLS terminates at **Cloudflare**. `cloudflared` runs **in-cluster** (Argo Application `staging-cloudflare-tunnel`, namespace `cloudflare-tunnel`) using a remotely managed tunnel token from Doppler/ESO. Public Hostnames in Cloudflare Zero Trust point at the Istio Gateway **ClusterIP** Service. No cert Secret / cert-manager on the marketplace Gateway.
 
-| Layer                                   | Staging v1                      |
-| --------------------------------------- | ------------------------------- |
-| Browser → Cloudflare                    | HTTPS (Cloudflare-managed cert) |
-| Cloudflare Tunnel (LXC) → Istio Gateway | HTTP to Gateway LoadBalancer IP |
-| Gateway → `web` / simulator             | cluster HTTP                    |
+| Layer                                 | Staging v1                                         |
+| ------------------------------------- | -------------------------------------------------- |
+| Browser → Cloudflare                  | HTTPS (Cloudflare-managed cert)                    |
+| Cloudflare → cloudflared (in-cluster) | Cloudflare edge to tunnel connector                |
+| cloudflared → Istio Gateway           | HTTP to `ecommerce-ingress-istio.ecommerce.svc:80` |
+| Gateway → `web` / simulator           | cluster HTTP                                       |
 
-**Rationale:** LXC keeps the tunnel connector independent of cluster upgrades; MetalLB already provides reachable LAN IPs. In-cluster `cloudflared` was deferred (Service-DNS origin / GitOps) unless needed later.
+**Rationale:** GitOps-managed connector, stable Service DNS origin, no MetalLB dependency for public access. Proxmox LXC tunnel is no longer the target path.
 
-**Alternatives considered:** in-cluster `cloudflared` (nicer Service DNS, couples tunnel to cluster health); TLS at Istio with a Secret (unnecessary with tunnel).
+**Alternatives considered:** Proxmox LXC `cloudflared` (kept out of GitOps); TLS at Istio with a Secret (unnecessary with tunnel).
 
 ### 5. Simulator on a distinct hostname
 
@@ -99,24 +101,24 @@ Keep Gateway + HTTPRoutes in `ecommerce` (marketplace chart / Argo destination).
 
 ## Risks / Trade-offs
 
-| Risk                                              | Mitigation                                                                                             |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Second LoadBalancer IP / MetalLB pool exhaustion  | Confirm LB allocation; prefer in-cluster Service DNS as tunnel origin if `cloudflared` runs on-cluster |
-| Tunnel Host header must match HTTPRoute hostnames | Configure CF Public Hostnames to the same names as Gateway/HTTPRoute `hostnames`                       |
-| Ambient labels missing after NS recreate          | Keep `mesh.ambient` / waypoint values; verify namespace labels after sync                              |
-| Simulator and web on split hosts                  | Related DNS names; web already owns redirect/callback URL construction                                 |
-| Gateway status drift in Argo                      | IgnoreDifferences for known status fields if needed                                                    |
-| Operators confuse waypoint vs ingress Gateway     | Docs table: class, port, purpose                                                                       |
+| Risk                                              | Mitigation                                                                                   |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Tunnel token missing in Doppler                   | Document `CLOUDFLARE_TUNNEL_TOKEN` bootstrap; ExternalSecret blocks Deployment until present |
+| Tunnel Host header must match HTTPRoute hostnames | Configure CF Public Hostnames to the same names as Gateway/HTTPRoute `hostnames`             |
+| Ambient labels missing after NS recreate          | Keep `mesh.ambient` / waypoint values; verify namespace labels after sync                    |
+| Simulator and web on split hosts                  | Related DNS names; web already owns redirect/callback URL construction                       |
+| Gateway status drift in Argo                      | IgnoreDifferences for known status fields if needed                                          |
+| Operators confuse waypoint vs ingress Gateway     | Docs table: class, port, purpose                                                             |
 
 ## Migration Plan
 
 1. Confirm `GatewayClass/istio` Accepted and marketplace Services healthy.
 2. Add chart templates/values; keep default disabled.
-3. Enable on staging via Argo values; sync; record Gateway LB address.
-4. On the Proxmox LXC, point Cloudflare Tunnel Public Hostnames at `http://<gateway-LB-IP>:80` for `shop.phuchoang.sbs` and `pay.phuchoang.sbs`.
-5. Set `HOSTED_PAYMENT_BASE_URL` to `https://pay.phuchoang.sbs`; exercise checkout payment redirect.
-6. Verify traffic enters via Istio (Host-routed) behind the tunnel.
-7. Rollback: disable `ingress.enabled`, sync, remove or repoint tunnel hostnames; Tilt port-forward still works locally.
+3. Enable on staging via Argo values; sync Gateway as ClusterIP Service.
+4. Add `CLOUDFLARE_TUNNEL_TOKEN` to Doppler `prd`; sync `staging-cloudflare-tunnel`.
+5. In Cloudflare Zero Trust, set Public Hostnames `shop.phuchoang.sbs` and `pay.phuchoang.sbs` → `http://ecommerce-ingress-istio.ecommerce.svc.cluster.local:80`.
+6. Set `HOSTED_PAYMENT_BASE_URL` to `https://pay.phuchoang.sbs`; exercise checkout payment redirect.
+7. Rollback: disable marketplace ingress and/or remove the cloudflare-tunnel Application; Tilt port-forward still works locally.
 
 ## Resolved questions (Cloudflare Tunnel)
 
@@ -124,3 +126,4 @@ Keep Gateway + HTTPRoutes in `ecommerce` (marketplace chart / Argo destination).
 2. **TLS:** HTTP-only at Istio; TLS at Cloudflare — no marketplace cert required.
 3. **Simulator:** separate hostname on the same Gateway.
 4. **Gateway namespace:** `ecommerce` with the HTTPRoutes (dedicated `istio-ingress` deferred).
+5. **Tunnel connector:** in-cluster `cloudflared` via Argo CD (not Proxmox LXC).

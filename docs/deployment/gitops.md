@@ -4,15 +4,16 @@ Staging syncs from `infra/argocd/staging/`. Tilt uses chart defaults locally —
 
 ## What Argo CD syncs
 
-| Component                           | Source                  | Pin                                                                         | Namespace      |
-| ----------------------------------- | ----------------------- | --------------------------------------------------------------------------- | -------------- |
-| External Secrets Operator           | This repo wrapper chart | upstream chart `2.6.0` + Doppler `ClusterSecretStore`                       | `operators`    |
-| CloudNativePG                       | This repo wrapper chart | upstream chart `0.28.3`                                                     | `operators`    |
-| Strimzi                             | This repo wrapper chart | upstream chart `1.0.0`, `watchAnyNamespace=true`                            | `operators`    |
-| Istio base / istiod / cni / ztunnel | This repo wrappers      | official Istio charts `1.30.2` (ambient)                                    | `istio-system` |
-| `observability`                     | This repo wrapper chart | `victoria-metrics-k8s-stack` `0.86.0`                                       | `monitoring`   |
-| `refurbished-marketplace`           | This repo               | CNPG, ExternalSecrets, migrations, services; `global.imageTag: main` + GHCR | `ecommerce`    |
-| `kafka`                             | This repo               | same image tag/registry; Debezium reads secrets/DBs in `ecommerce`          | `kafka`        |
+| Component                           | Source                  | Pin                                                                         | Namespace           |
+| ----------------------------------- | ----------------------- | --------------------------------------------------------------------------- | ------------------- |
+| External Secrets Operator           | This repo wrapper chart | upstream chart `2.6.0` + Doppler `ClusterSecretStore`                       | `operators`         |
+| CloudNativePG                       | This repo wrapper chart | upstream chart `0.28.3`                                                     | `operators`         |
+| Strimzi                             | This repo wrapper chart | upstream chart `1.0.0`, `watchAnyNamespace=true`                            | `operators`         |
+| Istio base / istiod / cni / ztunnel | This repo wrappers      | official Istio charts `1.30.2` (ambient)                                    | `istio-system`      |
+| `observability`                     | This repo wrapper chart | `victoria-metrics-k8s-stack` `0.86.0`                                       | `monitoring`        |
+| `refurbished-marketplace`           | This repo               | CNPG, ExternalSecrets, migrations, services; `global.imageTag: main` + GHCR | `ecommerce`         |
+| `kafka`                             | This repo               | same image tag/registry; Debezium reads secrets/DBs in `ecommerce`          | `kafka`             |
+| `cloudflare-tunnel`                 | This repo               | `cloudflared` connector; tunnel token via Doppler ExternalSecret            | `cloudflare-tunnel` |
 
 **Terraform (not in Git):** Argo CD.
 
@@ -20,9 +21,9 @@ Staging syncs from `infra/argocd/staging/`. Tilt uses chart defaults locally —
 
 **Marketplace chart** (`infra/charts/refurbished-marketplace`): CNPG clusters, ExternalSecrets, goose migration Jobs, and service Deployments. Staging image pins live on `infra/argocd/staging/apps/refurbished-marketplace.yaml`.
 
-Sync order is set on Application manifests under `infra/argocd/staging/apps/`: operators + Istio base (0) → observability + istiod/cni (1) → ztunnel (2) → marketplace (3) → kafka (4).
+Sync order is set on Application manifests under `infra/argocd/staging/apps/`: operators + Istio base (0) → observability + istiod/cni (1) → ztunnel (2) → marketplace (3) → kafka (4) → cloudflare-tunnel (5).
 
-Inside `refurbished-marketplace`, resource sync waves order work as: ExternalSecrets (2) → CNPG clusters (3) → migration Jobs (4) → Deployments / waypoint (5).
+Inside `refurbished-marketplace`, resource sync waves order work as: ExternalSecrets (2) → CNPG clusters (3) → migration Jobs (4) → Deployments / waypoint / ingress Gateway (5) → HTTPRoutes (6).
 
 ```
 infra/argocd/staging/apps/
@@ -35,7 +36,8 @@ infra/argocd/staging/apps/
 ├── istio-ztunnel.yaml
 ├── observability.yaml
 ├── refurbished-marketplace.yaml
-└── kafka.yaml
+├── kafka.yaml
+└── cloudflare-tunnel.yaml
 ```
 
 ## Bootstrap

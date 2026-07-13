@@ -1,0 +1,27 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: staging-cloudflare-tunnel
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io/foreground
+  annotations:
+    # After marketplace ingress Gateway exists so ClusterIP origin is available.
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
+    targetRevision: add-istio-ingress
+    path: infra/charts/cloudflare-tunnel
+    helm:
+      releaseName: cloudflare-tunnel
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: cloudflare-tunnel
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

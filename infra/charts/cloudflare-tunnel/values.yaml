@@ -1,0 +1,29 @@
+replicaCount: 2
+
+image:
+  repository: cloudflare/cloudflared
+  tag: "2026.5.0"
+  pullPolicy: IfNotPresent
+
+# Remotely managed tunnel: Public Hostnames are configured in Cloudflare Zero Trust.
+# Point both shop/pay hosts at the Istio Gateway ClusterIP Service, for example:
+#   http://ecommerce-ingress-istio.ecommerce.svc.cluster.local:80
+tunnel:
+  existingSecret: cloudflare-tunnel-token
+  existingSecretKey: token
+
+externalSecrets:
+  enabled: true
+  refreshInterval: 1h
+  remoteKey: CLOUDFLARE_TUNNEL_TOKEN
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: doppler
+
+resources:
+  requests:
+    cpu: 10m
+    memory: 32Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi

@@ -49,17 +49,22 @@ The system SHALL expose the hosted `payment-gateway-simulator` on an Istio-manag
 
 ### Requirement: Cloudflare Tunnel is the public front door
 
-The staging marketplace edge SHALL assume Cloudflare Tunnel as the public HTTPS front door and the Istio Gateway as the HTTP origin. The repository SHALL NOT require a marketplace TLS certificate on the Istio Gateway for this path.
+The staging marketplace edge SHALL assume Cloudflare Tunnel as the public HTTPS front door and the Istio Gateway as the HTTP origin. The repository SHALL deploy an in-cluster `cloudflared` connector through Argo CD and SHALL NOT require a marketplace TLS certificate on the Istio Gateway for this path.
 
 #### Scenario: Origin is HTTP behind Cloudflare
 
 - **WHEN** staging ingress is enabled for Cloudflare Tunnel access
-- **THEN** the Istio Gateway listens for HTTP from the tunnel origin and does not require a marketplace TLS Secret for browser access
+- **THEN** the Istio Gateway listens for HTTP from the in-cluster tunnel connector and does not require a marketplace TLS Secret for browser access
 
 #### Scenario: Public hostnames match route hostnames
 
 - **WHEN** Cloudflare Public Hostnames are configured for web and simulator
 - **THEN** those hostnames match the Gateway/HTTPRoute hostname values used by Istio
+
+#### Scenario: cloudflared is GitOps-managed
+
+- **WHEN** the staging root Application syncs from Git
+- **THEN** Argo CD manages a `cloudflare-tunnel` Application that runs `cloudflared` with a tunnel token sourced from External Secrets
 
 ### Requirement: TLS termination ownership is documented
 
