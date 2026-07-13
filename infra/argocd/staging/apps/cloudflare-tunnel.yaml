@@ -11,7 +11,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
-    targetRevision: add-istio-ingress
+    targetRevision: main
     path: infra/charts/cloudflare-tunnel
     helm:
       releaseName: cloudflare-tunnel

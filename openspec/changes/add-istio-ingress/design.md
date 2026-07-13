@@ -56,7 +56,7 @@ Staging Argo Application values set `ingress.enabled: true` and host/URL overlay
 
 ### 3. Dedicated edge Gateway, not the waypoint Gateway
 
-Keep `ecommerce-waypoint` (`gatewayClassName: istio-waypoint`, HBONE/15008) for east-west L7. Add a separate ingress `Gateway` (`gatewayClassName: istio`) that provisions a north-south proxy and LoadBalancer Service.
+Keep `ecommerce-waypoint` (`gatewayClassName: istio-waypoint`, HBONE/15008) for east-west L7. Add a separate ingress `Gateway` (`gatewayClassName: istio`) that provisions a north-south proxy as a ClusterIP Service (Cloudflare Tunnel origin; no MetalLB LoadBalancer).
 
 **Rationale:** waypoint and ingress GatewayClasses have different controllers and listener semantics; mixing them breaks ambient waypoint behavior.
 

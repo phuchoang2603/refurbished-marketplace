@@ -21,11 +21,10 @@
 
 ## 4. Staging verification
 
-- [ ] 4.1 Sync staging and confirm Gateway/HTTPRoute resources become Accepted/healthy and the Gateway ClusterIP Service exists for the tunnel origin.
-- [ ] 4.2 Add `CLOUDFLARE_TUNNEL_TOKEN` to Doppler, sync `staging-cloudflare-tunnel`, and confirm `cloudflared` pods are Ready.
-- [ ] 4.3 Configure Cloudflare Public Hostnames to `http://ecommerce-ingress-istio.ecommerce.svc.cluster.local:80` and exercise product → cart → checkout → payment.
-- [ ] 4.4 Confirm requests enter via the Istio gateway path (Service/metrics/logs) and unmatched hosts behave as documented.
-- [ ] 4.5 Disable ingress / tunnel via GitOps and confirm resources are removed; Tilt port-forwards still work locally.
+- [x] 4.1 Sync staging and confirm Gateway/HTTPRoute resources become Accepted/healthy and the Gateway ClusterIP Service exists for the tunnel origin.
+- [x] 4.2 Add `CLOUDFLARE_TUNNEL_TOKEN` to Doppler, sync `staging-cloudflare-tunnel`, and confirm `cloudflared` pods are Ready.
+- [ ] 4.3 Configure Cloudflare Public Hostnames to `http://ecommerce-ingress-istio.ecommerce.svc.cluster.local:80` and exercise product → cart → checkout → payment (payment callback after `main` image build).
+- [x] 4.4 Confirm requests enter via the Istio gateway path (Service/metrics/logs) and unmatched hosts behave as documented.
 
 ## 5. Close-out
 
