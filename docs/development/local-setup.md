@@ -45,7 +45,7 @@ Browser traffic: Cloudflare Tunnel → `ecommerce-ingress-istio.ecommerce.svc:80
    - `shop.dev.phuchoang.sbs` → `http://ecommerce-ingress-istio.ecommerce.svc.cluster.local:80`
    - `pay.dev.phuchoang.sbs` → `http://ecommerce-ingress-istio.ecommerce.svc.cluster.local:80`
 4. Push this branch (Argo reads GitHub). Bootstrap pins Applications to the **current git branch** (override with `ARGO_REVISION`).
-5. Bootstrap and build:
+5. Bootstrap (installs Argo CD via the official Helm chart) and build:
 
 ```bash
 bootstrap-local-argocd
@@ -64,6 +64,7 @@ kubectl get applications -n argo-cd
 kubectl get gateway,httproute -n ecommerce
 kubectl get pods -n cloudflare-tunnel
 kubectl get pods -n ecommerce
+kubectl get pods -n monitoring
 ```
 
 ## Integration testing

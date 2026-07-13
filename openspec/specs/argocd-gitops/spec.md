@@ -80,32 +80,32 @@ The repository SHALL document the Argo CD layout (local vs staging), chart-adjac
 - **WHEN** a contributor prepares a local or staging deploy
 - **THEN** documentation explains app-of-apps paths, value overlays, local bootstrap/build-images, and SHA promotion for remote clusters
 
-### Requirement: Staging observability application
+### Requirement: Observability application
 
-The repository SHALL include a staging ArgoCD child Application for the platform observability stack.
+The repository SHALL include local and staging Argo CD child Applications for the platform observability stack.
 
-#### Scenario: Staging root sync includes observability
+#### Scenario: Root sync includes observability
 
-- **WHEN** the staging root Application syncs from Git
-- **THEN** ArgoCD manages a child Application for the observability stack
+- **WHEN** the local or staging root Application syncs from Git
+- **THEN** Argo CD manages a child Application for the observability stack
 
 #### Scenario: Observability deploys to monitoring namespace
 
-- **WHEN** the staging observability Application syncs
+- **WHEN** an observability Application syncs
 - **THEN** it deploys the observability chart into the `monitoring` namespace
 
 ### Requirement: Observability sync ordering
 
-The staging observability Application SHALL sync before workloads or mesh features that depend on metrics storage and Grafana.
+The observability Application SHALL sync before workloads or mesh features that depend on metrics storage and Grafana.
 
 #### Scenario: Observability precedes Istio-dependent telemetry
 
-- **WHEN** staging sync ordering is evaluated
+- **WHEN** sync ordering is evaluated
 - **THEN** the observability stack has a sync wave that allows it to become available before Istio observe-mode dashboard verification depends on it
 
 ### Requirement: Observability ArgoCD drift handling
 
-The staging observability Application SHALL include sync and ignore-difference configuration for known `victoria-metrics-k8s-stack` ArgoCD drift sources.
+Local and staging observability Applications SHALL include sync and ignore-difference configuration for known `victoria-metrics-k8s-stack` ArgoCD drift sources.
 
 #### Scenario: Generated operator webhook certificates do not cause drift
 

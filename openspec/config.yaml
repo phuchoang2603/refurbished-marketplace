@@ -14,7 +14,7 @@ context: |
   - HTML-first web edge using chi, templ, Tailwind CSS, Datastar, and vendored DatastarUI-style components. Prefer devenv tasks `web:templ` / `web:tailwind` (or `templ-gen` / `tailwind-gen`) rather than hand-running codegen unless asked
   - gRPC for internal service-to-service traffic. Prefer devenv `generate-proto` for protobuf codegen
   - PostgreSQL with goose migrations and sqlc queries. Prefer devenv `sqlc-gen`
-  - Staging GitOps: `infra/argocd/staging/` (adds observability + production hostnames/GHCR). Production app-of-apps is not in-tree yet
+  - Staging GitOps: `infra/argocd/staging/` (production hostnames/GHCR overlays). Production app-of-apps is not in-tree yet
 
   Repo conventions:
   - Keep service code under services/<name>/ and private code in internal/

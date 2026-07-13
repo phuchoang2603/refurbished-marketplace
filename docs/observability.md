@@ -31,7 +31,7 @@ sum by (destination_app, request_protocol) (
 
 ## Grafana Access
 
-Local Argo CD does not deploy the observability stack. Use the staging (or manually deployed) stack in the `monitoring` namespace.
+Local and staging Argo CD both deploy the observability chart into `monitoring` (local uses chart `values.yaml`; staging uses `values-staging.yaml`).
 
 Port-forward Grafana:
 

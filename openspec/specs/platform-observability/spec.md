@@ -55,19 +55,19 @@ The repository SHALL provide a local Helm wrapper chart for deploying the Victor
 - **WHEN** the observability chart is rendered
 - **THEN** it includes VictoriaTraces single-node storage and a Grafana VictoriaTraces datasource according to chart values
 
-### Requirement: Local stack stays application-focused
+### Requirement: Local Argo deploys observability
 
-Local Argo CD (`infra/argocd/local/`) SHALL focus on marketplace microservice application development and SHALL NOT deploy the observability stack.
+Local Argo CD (`infra/argocd/local/`) SHALL deploy the observability stack into the `monitoring` namespace using chart default values.
 
-#### Scenario: Local Argo omits observability stack
-
-- **WHEN** the local app-of-apps syncs
-- **THEN** it does not create the `monitoring` namespace for observability resources
-
-#### Scenario: Local stack omits Grafana exposure
+#### Scenario: Local Argo includes observability stack
 
 - **WHEN** the local app-of-apps syncs
-- **THEN** it does not expose Grafana
+- **THEN** Argo CD manages an observability Application that deploys into `monitoring`
+
+#### Scenario: Local Grafana is reachable via port-forward
+
+- **WHEN** the local observability stack is healthy
+- **THEN** documentation explains how to port-forward Grafana in the `monitoring` namespace
 
 ### Requirement: Backend-first scope
 
