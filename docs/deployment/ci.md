@@ -22,7 +22,7 @@ Pushes to `main` that touch image-related paths trigger `.github/workflows/relea
 - `ghcr.io/<repository>/<image>:<commit-sha>`
 - `ghcr.io/<repository>/<image>:main` (rolling tag)
 
-Local Tilt development uses short image names in chart values (for example `web`, `users-migrator`). Staging Argo CD Applications set `global.imageRegistry` and `global.imageTag` to pull from GHCR — see [gitops.md](gitops.md).
+Local development uses short image names in chart values (for example `web`, `users-migrator`) built by `build-images`. Staging Argo CD Applications set `global.imageRegistry` and `global.imageTag` to pull from GHCR — see [gitops.md](gitops.md).
 
 ## Path-filter fan-out for tests
 

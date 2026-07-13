@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define staging and production GitOps delivery via ArgoCD app-of-apps, environment Helm overlays, and coordinated GHCR image tags without requiring Tilt on remote clusters.
+Define staging and production GitOps delivery via ArgoCD app-of-apps, environment Helm overlays, and coordinated GHCR image tags. Local Colima uses `infra/argocd/local/` with the same model.
 
 ## Requirements
 
@@ -15,10 +15,10 @@ The repository SHALL provide ArgoCD Application manifests under `infra/argocd/<e
 - **WHEN** the staging cluster root Application syncs from Git
 - **THEN** child Applications exist for operators, `refurbished-marketplace`, and `kafka` in the `ecommerce` and `operators` namespaces as defined
 
-#### Scenario: No dev ArgoCD overlay
+#### Scenario: Local Argo uses chart defaults
 
-- **WHEN** a developer uses Tilt for local development
-- **THEN** no `infra/argocd/values/dev/` or dev Application set is required; chart default `values.yaml` remains the dev source
+- **WHEN** a developer uses local Argo CD (`infra/argocd/local/`) on Colima
+- **THEN** chart default `values.yaml` is the local source; staging overlays live in `values-staging.yaml`
 
 ### Requirement: Environment-specific Helm values
 
@@ -36,12 +36,12 @@ The repository SHALL provide Helm value overlays at `infra/argocd/values/staging
 
 ### Requirement: Chart image registry and tag resolution
 
-The `refurbished-marketplace` and `kafka` Helm charts SHALL support `global.imageRegistry` and `global.imageTag`. When `global.imageRegistry` is empty, templates SHALL render service image fields unchanged for local Tilt. When set, templates SHALL render images as `{registry}/{shortName}:{tag}`.
+The `refurbished-marketplace` and `kafka` Helm charts SHALL support `global.imageRegistry` and `global.imageTag`. When `global.imageRegistry` is empty, templates SHALL render service image fields unchanged for local Colima builds. When set, templates SHALL render images as `{registry}/{shortName}:{tag}`.
 
-#### Scenario: Tilt local image names unchanged
+#### Scenario: Local image names unchanged
 
 - **WHEN** Helm renders with default chart values and empty `global.imageRegistry`
-- **THEN** service deployments reference short names such as `refurbished-marketplace/web`
+- **THEN** service deployments reference short names such as `web`
 
 #### Scenario: Remote cluster GHCR reference
 
@@ -78,7 +78,7 @@ The repository SHALL document the ArgoCD layout, staging vs production value loc
 #### Scenario: Contributor finds deploy guide
 
 - **WHEN** a contributor prepares a staging or production deploy
-- **THEN** development documentation explains app-of-apps paths, value overlays, and SHA promotion without requiring Tilt
+- **THEN** development documentation explains app-of-apps paths, value overlays, and SHA promotion for remote clusters and local Argo
 
 ### Requirement: Staging observability application
 
@@ -190,7 +190,7 @@ The staging Kafka Application SHALL deploy Strimzi Kafka, Connect, and UI resour
 
 ### Requirement: Staging Istio ingress enablement
 
-The staging ArgoCD marketplace Application SHALL be able to enable Istio edge Gateway API resources through Helm value overlays without requiring Tilt.
+The staging ArgoCD marketplace Application SHALL be able to enable Istio edge Gateway API resources through Helm value overlays.
 
 #### Scenario: Staging overlay enables ingress
 

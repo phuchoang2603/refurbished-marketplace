@@ -55,19 +55,19 @@ The repository SHALL provide a local Helm wrapper chart for deploying the Victor
 - **WHEN** the observability chart is rendered
 - **THEN** it includes VictoriaTraces single-node storage and a Grafana VictoriaTraces datasource according to chart values
 
-### Requirement: Tilt stays application-focused
+### Requirement: Local stack stays application-focused
 
-Tilt SHALL remain focused on local marketplace microservice application development and SHALL NOT deploy the observability stack.
+Local Argo CD (`infra/argocd/local/`) SHALL focus on marketplace microservice application development and SHALL NOT deploy the observability stack.
 
-#### Scenario: Tilt omits observability stack
+#### Scenario: Local Argo omits observability stack
 
-- **WHEN** `tilt up` runs
+- **WHEN** the local app-of-apps syncs
 - **THEN** it does not create the `monitoring` namespace for observability resources
 
-#### Scenario: Tilt omits Grafana port-forward
+#### Scenario: Local stack omits Grafana exposure
 
-- **WHEN** `tilt up` runs
-- **THEN** it does not expose Grafana through a Tilt-managed port-forward
+- **WHEN** the local app-of-apps syncs
+- **THEN** it does not expose Grafana
 
 ### Requirement: Backend-first scope
 

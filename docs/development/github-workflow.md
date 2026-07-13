@@ -40,4 +40,4 @@ Use **type** on every issue. Add **service** when the work is scoped to one or m
 - Use the PR template in `.github/pull_request_template.md`.
 - Keep PRs focused; prefer one issue per PR when practical.
 - Mention the OpenSpec change name when applicable.
-- Describe how you verified the change (usually via Tilt).
+- Describe how you verified the change (usually via the local Argo stack).

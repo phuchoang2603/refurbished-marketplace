@@ -5,15 +5,18 @@ Thanks for helping build this project. This guide is the entry point; detailed h
 ## Prerequisites
 
 - [Nix](https://nixos.org/) with [devenv](https://devenv.sh/) for pinned tooling
-- A local Kubernetes runtime used by Tilt (for example Colima + Docker)
+- A local Kubernetes runtime (for example Colima + Docker / k3s)
 - [Doppler](https://www.doppler.com/) account for cluster secrets
+- Cloudflare Zero Trust tunnel token in Doppler `dev` for local `.dev` hostnames
 
 ## Quick start
 
 ```bash
 devenv shell
-# one-time secrets setup — see docs/development/secrets.md
-tilt up
+# one-time secrets + Cloudflare Public Hostnames — see docs/development/local-setup.md
+bootstrap-local-argocd
+build-images
+# browse https://shop.dev.phuchoang.sbs
 ```
 
 ## Development guides
@@ -22,7 +25,7 @@ Local workflow, codegen, and project conventions.
 
 | Topic                          | Guide                                                                      |
 | ------------------------------ | -------------------------------------------------------------------------- |
-| devenv shell, Tilt, testing    | [docs/development/local-setup.md](docs/development/local-setup.md)         |
+| devenv shell, local Argo, test | [docs/development/local-setup.md](docs/development/local-setup.md)         |
 | Doppler + External Secrets     | [docs/development/secrets.md](docs/development/secrets.md)                 |
 | Code generation and formatting | [docs/development/code-generation.md](docs/development/code-generation.md) |
 | OpenSpec planning workflow     | [docs/development/openspec.md](docs/development/openspec.md)               |

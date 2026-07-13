@@ -15,21 +15,21 @@ Marketplace enrollment and Kafka follow at waves **3** and **4**. The Cloudflare
 
 ## Marketplace enrollment (ambient + waypoint)
 
-Staging enables ambient + waypoint via Helm values on `staging-refurbished-marketplace`:
+Staging enables ambient + waypoint via chart `values.yaml`, with production hostnames/GHCR from `values-staging.yaml` on `staging-refurbished-marketplace`:
 
 ```yaml
-mesh:
-  ambient:
-    enabled: true
-  waypoint:
-    enabled: true
+# values-staging.yaml (excerpt)
+ingress:
+  enabled: true
+  webHostname: shop.phuchoang.sbs
+  simulatorHostname: pay.phuchoang.sbs
 ```
 
 That labels the `ecommerce` namespace with `istio.io/dataplane-mode=ambient` and creates an `istio-waypoint` Gateway for east-west L7 telemetry (HBONE on port 15008).
 
 Kafka/Connect/UI live in the separate `kafka` namespace (not ambient-enrolled) so Strimzi TLS and Debezium are not intercepted by ztunnel/waypoint. Marketplace services reach brokers at `ecommerce-kafka-cluster-kafka-bootstrap.kafka.svc:9092`.
 
-**Tilt defaults keep `mesh.ambient.enabled: false`** so local pods are not redirected into ztunnel.
+Chart `values.yaml` enables ambient, waypoint, and ingress for local Colima (`.dev` hosts + Cloudflare Tunnel). Staging overlays `values-staging.yaml` (production hostnames, GHCR). Istio CNI defaults to `global.platform=k3s` in `values.yaml`; staging uses `values-staging.yaml` for RKE2 paths.
 
 ## Edge ingress (Gateway API + Cloudflare Tunnel)
 
@@ -64,7 +64,7 @@ Services are split by **subdomain** (Host-based `HTTPRoute`s), not by path under
 | `ecommerce-waypoint` | `istio-waypoint`   | East-west L7 (mesh)                       |
 | `ecommerce-ingress`  | `istio`            | North-south HTTP edge (ClusterIP Service) |
 
-Chart defaults keep `ingress.enabled: false` so Tilt continues to use port-forwards (`8080` → web, `8097` → simulator).
+Chart `values.yaml` enables ingress for local `.dev` hosts; staging `values-staging.yaml` sets production hostnames. Local and staging both reach the Gateway through Cloudflare Tunnel (no per-service port-forwards).
 
 ### Traffic path
 
@@ -109,7 +109,7 @@ Marketplace Services render port names from `services.<name>.protocol`:
 
 1. Set `ingress.enabled: false` on the staging marketplace Application (or remove the `ingress:` block), restore a non-public `HOSTED_PAYMENT_BASE_URL` if needed, then sync.
 2. Optionally remove or disable `staging-cloudflare-tunnel`, and remove or repoint Cloudflare Public Hostnames.
-3. Local Tilt port-forwards remain available with chart defaults.
+3. Local access uses Cloudflare Tunnel to `shop.dev.phuchoang.sbs` / `pay.dev.phuchoang.sbs` (see [local-setup](../development/local-setup.md)).
 
 ### Disable mesh enrollment
 
@@ -146,4 +146,4 @@ gRPC backends should show `request_protocol="grpc"` when L7 waypoint classificat
 
 ## Production
 
-Production Istio Applications, marketplace mesh enrollment, ingress enablement, and cloudflared are intentionally omitted until staging is verified. Chart defaults keep `ingress.enabled: false`.
+Production Istio Applications, marketplace mesh enrollment, ingress enablement, and cloudflared are intentionally omitted until staging is verified.

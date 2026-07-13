@@ -20,10 +20,10 @@ The system SHALL provide GitOps-managed Kubernetes Gateway API resources that us
 - **WHEN** marketplace ambient waypoint and ingress are both enabled
 - **THEN** the ingress `Gateway` uses `gatewayClassName: istio` and the waypoint `Gateway` continues to use `gatewayClassName: istio-waypoint`
 
-#### Scenario: Chart defaults keep ingress off for Tilt
+#### Scenario: Chart defaults keep ingress on for local .dev hosts
 
 - **WHEN** the marketplace chart renders with default values
-- **THEN** ingress Gateway and HTTPRoute resources are not rendered
+- **THEN** ingress Gateway and HTTPRoute resources are rendered for `shop.dev.phuchoang.sbs` / `pay.dev.phuchoang.sbs`
 
 ### Requirement: Browser traffic reaches web through Istio
 
@@ -51,7 +51,7 @@ The system SHALL expose the hosted `payment-gateway-simulator` on an Istio-manag
 #### Scenario: Web uses browser-reachable simulator base URL
 
 - **WHEN** staging ingress overlays are applied
-- **THEN** `HOSTED_PAYMENT_BASE_URL` targets the Cloudflare-facing simulator HTTPS URL rather than cluster-only DNS or Tilt localhost
+- **THEN** `HOSTED_PAYMENT_BASE_URL` targets the Cloudflare-facing simulator HTTPS URL rather than cluster-only DNS or localhost
 
 ### Requirement: Cloudflare Tunnel is the public front door
 
@@ -83,7 +83,7 @@ The repository SHALL document that marketplace browser TLS terminates at Cloudfl
 
 ### Requirement: Ingress rollback is documented
 
-The system SHALL document rollback steps that disable Istio marketplace ingress without requiring application code changes. Local Tilt port-forwards remain the local access path when ingress is disabled.
+The system SHALL document rollback steps that disable Istio marketplace ingress without requiring application code changes. Local access continues via the local Cloudflare Tunnel and `.dev` hostnames when staging ingress is disabled.
 
 #### Scenario: Ingress disabled
 

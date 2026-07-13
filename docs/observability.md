@@ -31,7 +31,7 @@ sum by (destination_app, request_protocol) (
 
 ## Grafana Access
 
-Tilt is intentionally scoped to local microservice application development and does not deploy the observability stack. Use the staging (or manually deployed) stack in the `monitoring` namespace.
+Local Argo CD does not deploy the observability stack. Use the staging (or manually deployed) stack in the `monitoring` namespace.
 
 Port-forward Grafana:
 

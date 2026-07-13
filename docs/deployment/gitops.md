@@ -1,6 +1,6 @@
 # GitOps deployment (Argo CD)
 
-Staging syncs from `infra/argocd/staging/`. Tilt uses chart defaults locally — no dev Argo overlay.
+Staging syncs from `infra/argocd/staging/`. Local Colima uses `infra/argocd/local/` (same GitOps model, no observability / Cloudflare Tunnel).
 
 ## What Argo CD syncs
 
@@ -15,13 +15,15 @@ Staging syncs from `infra/argocd/staging/`. Tilt uses chart defaults locally —
 | `kafka`                             | This repo               | same image tag/registry; Debezium reads secrets/DBs in `ecommerce`          | `kafka`             |
 | `cloudflare-tunnel`                 | This repo               | `cloudflared` connector; tunnel token via Doppler ExternalSecret            | `cloudflare-tunnel` |
 
-**Terraform (not in Git):** Argo CD.
+**Local (Colima):** `infra/argocd/local/` uses chart `values.yaml` (k3s CNI, ambient + ingress on `.dev` hosts, short image names) plus Cloudflare Tunnel. Staging uses `values-staging.yaml`. Bootstrap: `bootstrap-local-argocd` — see [local-setup](../development/local-setup.md).
+
+**Terraform (not in Git for staging):** Argo CD on remote clusters.
 
 **Bootstrap (not in Git):** Doppler service token secret in `operators` — see [secrets](../development/secrets.md).
 
-**Marketplace chart** (`infra/charts/refurbished-marketplace`): CNPG clusters, ExternalSecrets, goose migration Jobs, and service Deployments. Staging image pins live on `infra/argocd/staging/apps/refurbished-marketplace.yaml`.
+**Marketplace chart** (`infra/charts/refurbished-marketplace`): CNPG clusters, ExternalSecrets, goose migration Jobs, and service Deployments. Staging overlays live in `values-staging.yaml` (wired from `staging-refurbished-marketplace` via `valueFiles`).
 
-Sync order is set on Application manifests under `infra/argocd/staging/apps/`: operators + Istio base (0) → observability + istiod/cni (1) → ztunnel (2) → marketplace (3) → kafka (4) → cloudflare-tunnel (5).
+Sync order is set on Application manifests under `infra/argocd/staging/apps/` (and the same waves under `infra/argocd/local/apps/`): operators + Istio base (0) → observability + istiod/cni (1) → ztunnel (2) → marketplace (3) → kafka (4) → cloudflare-tunnel (5). Local omits observability and cloudflare-tunnel.
 
 Inside `refurbished-marketplace`, resource sync waves order work as: ExternalSecrets (2) → CNPG clusters (3) → migration Jobs (4) → Deployments / waypoint / ingress Gateway (5) → HTTPRoutes (6).
 
