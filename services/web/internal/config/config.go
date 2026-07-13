@@ -14,14 +14,16 @@ const (
 )
 
 type Config struct {
-	HTTPAddr       string
-	UsersAddr      string
-	ProductsAddr   string
-	OrdersAddr     string
-	CartAddr       string
-	PaymentAddr    string
-	JWTSecret      string
-	GatewayBaseURL string
+	HTTPAddr        string
+	UsersAddr       string
+	ProductsAddr    string
+	OrdersAddr      string
+	CartAddr        string
+	PaymentAddr     string
+	JWTSecret       string
+	GatewayBaseURL  string
+	PublicBaseURL   string
+	CallbackBaseURL string
 }
 
 func LoadConfig() Config {
@@ -34,14 +36,16 @@ func LoadConfig() Config {
 	}
 
 	return Config{
-		HTTPAddr:       runtime.EnvOr("HTTP_ADDR", defaultHTTPAddr),
-		UsersAddr:      strings.TrimSpace(os.Getenv("USERS_SVC_ADDR")),
-		ProductsAddr:   strings.TrimSpace(os.Getenv("PRODUCTS_SVC_ADDR")),
-		OrdersAddr:     strings.TrimSpace(os.Getenv("ORDERS_SVC_ADDR")),
-		CartAddr:       strings.TrimSpace(os.Getenv("CART_SVC_ADDR")),
-		PaymentAddr:    strings.TrimSpace(os.Getenv("PAYMENT_SVC_ADDR")),
-		JWTSecret:      strings.TrimSpace(os.Getenv("JWT_SECRET")),
-		GatewayBaseURL: gatewayBaseURL,
+		HTTPAddr:        runtime.EnvOr("HTTP_ADDR", defaultHTTPAddr),
+		UsersAddr:       strings.TrimSpace(os.Getenv("USERS_SVC_ADDR")),
+		ProductsAddr:    strings.TrimSpace(os.Getenv("PRODUCTS_SVC_ADDR")),
+		OrdersAddr:      strings.TrimSpace(os.Getenv("ORDERS_SVC_ADDR")),
+		CartAddr:        strings.TrimSpace(os.Getenv("CART_SVC_ADDR")),
+		PaymentAddr:     strings.TrimSpace(os.Getenv("PAYMENT_SVC_ADDR")),
+		JWTSecret:       strings.TrimSpace(os.Getenv("JWT_SECRET")),
+		GatewayBaseURL:  gatewayBaseURL,
+		PublicBaseURL:   strings.TrimRight(strings.TrimSpace(os.Getenv("PUBLIC_BASE_URL")), "/"),
+		CallbackBaseURL: strings.TrimRight(strings.TrimSpace(os.Getenv("HOSTED_PAYMENT_CALLBACK_BASE_URL")), "/"),
 	}
 }
 

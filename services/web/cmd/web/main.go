@@ -42,7 +42,11 @@ func main() {
 		deps.Orders,
 		deps.Cart,
 		deps.Payment,
-		sharedhandlers.HostedPaymentConfig{GatewayBaseURL: cfg.GatewayBaseURL},
+		sharedhandlers.HostedPaymentConfig{
+			GatewayBaseURL:  cfg.GatewayBaseURL,
+			PublicBaseURL:   cfg.PublicBaseURL,
+			CallbackBaseURL: cfg.CallbackBaseURL,
+		},
 		authconfig.DefaultConfig(cfg.JWTSecret),
 	)
 

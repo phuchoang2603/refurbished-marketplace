@@ -58,7 +58,7 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	orderPageURL := shared.OrderPageURL(r, order.GetId())
+	orderPageURL := shared.OrderPageURLWithConfig(h.deps.HostedPayment, r, order.GetId())
 	if orderPageURL == "" {
 		shared.WriteBadRequest(w, r, "hosted payment unavailable")
 		return

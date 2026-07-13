@@ -46,7 +46,11 @@ services:
   web:
     env:
       HOSTED_PAYMENT_BASE_URL: https://pay.phuchoang.sbs
+      PUBLIC_BASE_URL: https://shop.phuchoang.sbs
+      HOSTED_PAYMENT_CALLBACK_BASE_URL: http://web:8080
 ```
+
+The web `HTTPRoute` sets `X-Forwarded-Proto: https` because TLS terminates at Cloudflare and the origin sees plain HTTP. Without that (or `PUBLIC_BASE_URL`), hosted-payment callback URLs are built as `http://…`, Cloudflare’s HTTPS redirect turns the simulator’s POST into a GET, and `/callbacks/hosted-payment` returns 405.
 
 Services are split by **subdomain** (Host-based `HTTPRoute`s), not by path under one host:
 

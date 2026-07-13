@@ -40,6 +40,18 @@ spec:
         - path:
             type: PathPrefix
             value: /
+      # TLS terminates at Cloudflare; origin is plain HTTP. Tell web the
+      # browser scheme so hosted-payment callback/return URLs use https.
+      # Without this, callback POSTs hit Cloudflare's HTTP→HTTPS 301, Go
+      # follows as GET, and /callbacks/hosted-payment returns 405.
+      filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            set:
+              - name: X-Forwarded-Proto
+                value: https
+              - name: X-Forwarded-Host
+                value: {{ $webHost | quote }}
       backendRefs:
         - name: web
           port: {{ index .Values.services "web" "port" }}
@@ -61,6 +73,14 @@ spec:
         - path:
             type: PathPrefix
             value: /
+      filters:
+        - type: RequestHeaderModifier
+          requestHeaderModifier:
+            set:
+              - name: X-Forwarded-Proto
+                value: https
+              - name: X-Forwarded-Host
+                value: {{ $simHost | quote }}
       backendRefs:
         - name: payment-gateway-simulator
           port: {{ index .Values.services "payment-gateway-simulator" "port" }}

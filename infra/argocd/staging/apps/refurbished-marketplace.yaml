@@ -33,6 +33,9 @@ spec:
           web:
             env:
               HOSTED_PAYMENT_BASE_URL: https://pay.phuchoang.sbs
+              PUBLIC_BASE_URL: https://shop.phuchoang.sbs
+              # Server-side simulator→web callback stays on cluster DNS.
+              HOSTED_PAYMENT_CALLBACK_BASE_URL: http://web:8080
           payment-gateway-simulator:
             enabled: true
   destination:
