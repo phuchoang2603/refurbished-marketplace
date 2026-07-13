@@ -17,6 +17,7 @@ func runOrderResultConsumer(ctx context.Context, svc *service.Service, bootstrap
 			messaging.EventTypePaymentSucceeded,
 			messaging.EventTypePaymentFailed,
 		},
+		TracerName: "orders",
 	}, svc.KafkaOrderResultHandler())
 	if err != nil {
 		return err

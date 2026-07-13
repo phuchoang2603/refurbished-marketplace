@@ -5,6 +5,8 @@ import (
 	"log"
 	"net"
 
+	sharedtrace "refurbished-marketplace/shared/trace"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -21,7 +23,8 @@ func ServeGRPC(ctx context.Context, cfg GRPCServerConfig) error {
 		return err
 	}
 
-	server := grpc.NewServer()
+	opts := sharedtrace.GRPCServerOptions()
+	server := grpc.NewServer(opts...)
 	cfg.Register(server)
 	reflection.Register(server)
 

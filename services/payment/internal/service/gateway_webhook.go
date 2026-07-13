@@ -8,6 +8,7 @@ import (
 	"refurbished-marketplace/services/payment/internal/database"
 	shareddb "refurbished-marketplace/shared/db"
 	"refurbished-marketplace/shared/messaging"
+	sharedtrace "refurbished-marketplace/shared/trace"
 
 	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
 
@@ -95,10 +96,11 @@ func (s *Service) applyTerminalOutcome(ctx context.Context, transactionID uuid.U
 	}
 
 	if _, err := q.CreatePaymentOutbox(ctx, database.CreatePaymentOutboxParams{
-		ID:          uuid.New(),
-		AggregateID: updated.OrderID,
-		EventType:   eventType,
-		Payload:     payload,
+		ID:                 uuid.New(),
+		AggregateID:        updated.OrderID,
+		EventType:          eventType,
+		Payload:            payload,
+		Tracingspancontext: sharedtrace.SerializeContext(ctx),
 	}); err != nil {
 		return err
 	}

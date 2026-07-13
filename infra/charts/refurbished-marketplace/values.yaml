@@ -11,6 +11,9 @@ mesh:
   waypoint:
     enabled: true
     name: ecommerce-waypoint
+  tracing:
+    enabled: false
+    samplingPercentage: 100
 
 # North-south edge via Kubernetes Gateway API (gatewayClassName: istio).
 # Local uses Cloudflare Tunnel → ClusterIP Gateway (same path as staging).
@@ -24,6 +27,9 @@ ingress:
 # Default container resources (overridable per service).
 # Sized for Colima 4 CPU / 8 GiB; staging overlays via values-staging.yaml.
 defaults:
+  otel:
+    # Empty disables export (Tilt). Staging sets the VTSingle OTLP gRPC host:port.
+    endpoint: ""
   resources:
     requests:
       cpu: 10m

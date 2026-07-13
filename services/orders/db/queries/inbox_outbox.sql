@@ -5,7 +5,9 @@ ON CONFLICT (message_id) DO NOTHING
 RETURNING TRUE;
 
 -- name: CreateOrderOutbox :one
-INSERT INTO orders_outbox (id, aggregate_id, event_type, payload)
-VALUES ($1, $2, $3, $4)
+INSERT INTO orders_outbox (
+    id, aggregate_id, event_type, payload, tracingspancontext
+)
+VALUES ($1, $2, $3, $4, $5)
 RETURNING
     orders_outbox.*;

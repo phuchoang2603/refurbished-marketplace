@@ -24,6 +24,16 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	shutdownTracing, err := runtime.InitTracing(ctx, "web")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		if err := shutdownTracing(context.Background()); err != nil {
+			log.Printf("tracing shutdown: %v", err)
+		}
+	}()
+
 	deps, err := webclients.New(webclients.Config{
 		UsersAddr:    cfg.UsersAddr,
 		ProductsAddr: cfg.ProductsAddr,

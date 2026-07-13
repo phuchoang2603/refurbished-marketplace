@@ -12,17 +12,20 @@ import (
 )
 
 const createOrderOutbox = `-- name: CreateOrderOutbox :one
-INSERT INTO orders_outbox (id, aggregate_id, event_type, payload)
-VALUES ($1, $2, $3, $4)
+INSERT INTO orders_outbox (
+    id, aggregate_id, event_type, payload, tracingspancontext
+)
+VALUES ($1, $2, $3, $4, $5)
 RETURNING
-    orders_outbox.id, orders_outbox.aggregate_id, orders_outbox.event_type, orders_outbox.payload, orders_outbox.publish_attempts, orders_outbox.created_at, orders_outbox.published_at
+    orders_outbox.id, orders_outbox.aggregate_id, orders_outbox.event_type, orders_outbox.payload, orders_outbox.publish_attempts, orders_outbox.created_at, orders_outbox.published_at, orders_outbox.tracingspancontext
 `
 
 type CreateOrderOutboxParams struct {
-	ID          uuid.UUID
-	AggregateID uuid.UUID
-	EventType   string
-	Payload     []byte
+	ID                 uuid.UUID
+	AggregateID        uuid.UUID
+	EventType          string
+	Payload            []byte
+	Tracingspancontext string
 }
 
 func (q *Queries) CreateOrderOutbox(ctx context.Context, arg CreateOrderOutboxParams) (OrdersOutbox, error) {
@@ -31,6 +34,7 @@ func (q *Queries) CreateOrderOutbox(ctx context.Context, arg CreateOrderOutboxPa
 		arg.AggregateID,
 		arg.EventType,
 		arg.Payload,
+		arg.Tracingspancontext,
 	)
 	var i OrdersOutbox
 	err := row.Scan(
@@ -41,6 +45,7 @@ func (q *Queries) CreateOrderOutbox(ctx context.Context, arg CreateOrderOutboxPa
 		&i.PublishAttempts,
 		&i.CreatedAt,
 		&i.PublishedAt,
+		&i.Tracingspancontext,
 	)
 	return i, err
 }

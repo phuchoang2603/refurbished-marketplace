@@ -37,3 +37,16 @@ spec:
     offset.storage.replication.factor: -1
     config.storage.replication.factor: -1
     status.storage.replication.factor: -1
+  template:
+    connectContainer:
+      env:
+        - name: OTEL_SERVICE_NAME
+          value: connect-debezium
+        - name: OTEL_TRACES_EXPORTER
+          value: otlp
+        - name: OTEL_EXPORTER_OTLP_ENDPOINT
+          value: {{ .Values.connect.otelEndpoint | default "http://vtsingle-vmks.monitoring.svc.cluster.local:4317" | quote }}
+        - name: OTEL_EXPORTER_OTLP_PROTOCOL
+          value: grpc
+        - name: OTEL_TRACES_SAMPLER
+          value: parentbased_always_on

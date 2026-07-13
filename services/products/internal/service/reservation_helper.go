@@ -8,6 +8,7 @@ import (
 	"refurbished-marketplace/shared/messaging"
 	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
 	productsv1 "refurbished-marketplace/shared/proto/products/v1"
+	sharedtrace "refurbished-marketplace/shared/trace"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
@@ -98,7 +99,10 @@ func createInventoryReservedOutbox(ctx context.Context, q *database.Queries, ord
 		return err
 	}
 
-	_, err = q.CreateInventoryOutbox(ctx, database.CreateInventoryOutboxParams{ID: uuid.New(), AggregateID: orderID, EventType: messaging.EventTypeInventoryReserved, Payload: payload})
+	_, err = q.CreateInventoryOutbox(ctx, database.CreateInventoryOutboxParams{
+		ID: uuid.New(), AggregateID: orderID, EventType: messaging.EventTypeInventoryReserved, Payload: payload,
+		Tracingspancontext: sharedtrace.SerializeContext(ctx),
+	})
 	return err
 }
 
@@ -108,6 +112,9 @@ func createInventoryReservationFailedOutbox(ctx context.Context, q *database.Que
 		return err
 	}
 
-	_, err = q.CreateInventoryOutbox(ctx, database.CreateInventoryOutboxParams{ID: uuid.New(), AggregateID: orderID, EventType: messaging.EventTypeInventoryReservationFailed, Payload: payload})
+	_, err = q.CreateInventoryOutbox(ctx, database.CreateInventoryOutboxParams{
+		ID: uuid.New(), AggregateID: orderID, EventType: messaging.EventTypeInventoryReservationFailed, Payload: payload,
+		Tracingspancontext: sharedtrace.SerializeContext(ctx),
+	})
 	return err
 }

@@ -5,7 +5,9 @@ ON CONFLICT (message_id) DO NOTHING
 RETURNING TRUE;
 
 -- name: CreatePaymentOutbox :one
-INSERT INTO payment_outbox (id, aggregate_id, event_type, payload)
-VALUES ($1, $2, $3, $4)
+INSERT INTO payment_outbox (
+    id, aggregate_id, event_type, payload, tracingspancontext
+)
+VALUES ($1, $2, $3, $4, $5)
 RETURNING
     payment_outbox.*;

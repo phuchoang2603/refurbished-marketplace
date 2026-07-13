@@ -4,8 +4,10 @@ go 1.26.2
 
 require (
 	github.com/twmb/franz-go v1.20.7
+	go.opentelemetry.io/otel v1.41.0
 	golang.org/x/sync v0.20.0
 	google.golang.org/protobuf v1.36.11
+	refurbished-marketplace/shared/trace v0.0.0
 )
 
 require (

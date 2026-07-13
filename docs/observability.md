@@ -10,16 +10,25 @@ It deploys the first platform baseline for:
 - Dashboards: Grafana
 - Alerts: Alertmanager and stack-managed rules
 
-Application-specific metrics endpoints, log shipping changes, and OTLP trace emission are intentionally deferred. Once Istio observe mode is available, service request rate, latency, and error ratio should prefer Istio L7 metrics where they are sufficient.
+Application metrics endpoints and log shipping changes remain out of scope for the platform slice. Marketplace services and Istio export OTLP traces **directly** to VictoriaTraces (no OpenTelemetry Collector required).
 
-The observability wrapper scrapes Istio ambient components into VMSingle via `VMPodScrape` resources (`istioScrapes.enabled`):
+The observability wrapper scrapes Istio L7 proxies into VMSingle via `VMPodScrape` resources (`istioScrapes.enabled`):
 
-| Target    | Namespace                  | Port                          |
-| --------- | -------------------------- | ----------------------------- |
-| istiod    | `istio-system`             | `http-monitoring` (`15014`)   |
-| ztunnel   | `istio-system`             | `ztunnel-stats` (`15020`)     |
-| istio-cni | `istio-system`             | `metrics` (`15014`)           |
-| waypoint  | `ecommerce` (configurable) | `http-envoy-prom` / `metrics` |
+| Target   | Namespace                  | Port                          |
+| -------- | -------------------------- | ----------------------------- |
+| waypoint | `ecommerce` (configurable) | `http-envoy-prom` / `metrics` |
+| ingress  | `ecommerce` (configurable) | `http-envoy-prom` / `metrics` |
+
+Control-plane targets (istiod, ztunnel, istio-cni) are intentionally not scraped.
+
+### OTLP endpoints (direct to VTSingle)
+
+| Protocol         | Endpoint                                                                                 |
+| ---------------- | ---------------------------------------------------------------------------------------- |
+| gRPC (preferred) | `vtsingle-vmks.monitoring.svc.cluster.local:4317` (insecure TLS in staging)              |
+| HTTP fallback    | `http://vtsingle-vmks.monitoring.svc.cluster.local:10428/insert/opentelemetry/v1/traces` |
+
+Set service env `OTEL_EXPORTER_OTLP_ENDPOINT=vtsingle-vmks.monitoring.svc.cluster.local:4317` (gRPC) or use the HTTP URL with the shared bootstrap’s HTTP mode.
 
 Useful PromQL after marketplace traffic:
 
@@ -106,3 +115,28 @@ The upstream chart has a few ArgoCD-specific behaviors that are handled on the o
 - The upstream `vmks-sync-job` Helm hook is disabled; the wrapper chart runs an equivalent Argo CD `PostSync` job so dashboards are provisioned on sync.
 
 ArgoCD does not run Helm pre-delete hooks, so removal should not rely on the chart's hook-based cleanup. If removing the stack, inspect operator-managed VictoriaMetrics resources in `monitoring` before deleting the namespace or Application.
+
+## Distributed tracing (e2e)
+
+Marketplace services and Istio export OTLP **directly** to VictoriaTraces (no collector).
+
+```
+Browser → ingress → web ──gRPC──▶ domain services
+                         │
+                    outbox.tracingspancontext
+                         │
+              Debezium EventRouter (+ OTEL on Connect)
+                         │  Kafka header traceparent
+                         ▼
+              consumers (child-of spans) → VictoriaTraces → Grafana Explore
+```
+
+**Joining rule:** one W3C `TraceId` across app spans and Istio L7 hops when apps propagate `traceparent`. Async hops continue via the outbox column → Kafka headers. Consumer spans use parent–child (not links) for Grafana waterfall UX.
+
+**Verify after deploy:**
+
+1. Confirm VT Service has port `4317` and apps have `OTEL_EXPORTER_OTLP_ENDPOINT`.
+2. Place a checkout order; in Grafana Explore (VictoriaTraces) search by service `web` / recent traces.
+3. Confirm the TraceId includes web → orders → Debezium/connect → products (inventory) spans.
+4. Complete hosted-payment success/fail; confirm callback → payment → payment outbox path.
+5. Confirm mesh spans appear when Istio Telemetry `ecommerce-tracing` is enabled.

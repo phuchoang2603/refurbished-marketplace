@@ -81,6 +81,14 @@ spec:
                   name: {{ $svc.auth.secretName }}
                   key: {{ $svc.auth.secretKey }}
 {{- end }}
+{{- with $.Values.defaults.otel.endpoint }}
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: {{ . | quote }}
+            - name: OTEL_SERVICE_NAME
+              value: {{ $name | quote }}
+            - name: OTEL_TRACES_SAMPLER_ARG
+              value: "1"
+{{- end }}
 {{- if $svc.env }}
 {{- range $key, $value := $svc.env }}
             - name: {{ $key }}

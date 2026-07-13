@@ -81,6 +81,7 @@ spec:
     transforms.outbox.table.field.event.payload: "payload"
     transforms.outbox.route.by.field: "event_type"
     transforms.outbox.route.topic.replacement: "${routedByValue}"
+    transforms.outbox.tracing.span.context.field: tracingspancontext
     key.converter: org.apache.kafka.connect.storage.StringConverter
     transforms.outbox.table.expand.json.payload: "false"
     value.converter: org.apache.kafka.connect.converters.ByteArrayConverter

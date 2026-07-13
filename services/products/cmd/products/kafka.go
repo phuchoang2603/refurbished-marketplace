@@ -17,6 +17,7 @@ func runReservationConsumer(ctx context.Context, svc *service.Service, bootstrap
 			messaging.EventTypePaymentSucceeded,
 			messaging.EventTypePaymentFailed,
 		},
+		TracerName: "products",
 	}, svc.KafkaReservationHandler())
 	if err != nil {
 		return err

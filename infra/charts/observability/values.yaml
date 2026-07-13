@@ -126,6 +126,11 @@ victoria-metrics-k8s-stack:
     enabled: true
     spec:
       retentionPeriod: 1d
+      # Direct OTLP ingest (no collector). HTTP remains on :10428;
+      # gRPC enabled for app/Istio exporters.
+      extraArgs:
+        otlpGRPCListenAddr: ":4317"
+        otlpGRPC.tls: "false"
       resources:
         requests:
           cpu: 25m
@@ -133,6 +138,18 @@ victoria-metrics-k8s-stack:
         limits:
           cpu: 200m
           memory: 192Mi
+      serviceSpec:
+        useAsDefault: true
+        spec:
+          ports:
+            - name: http
+              port: 10428
+              targetPort: 10428
+              protocol: TCP
+            - name: otlp-grpc
+              port: 4317
+              targetPort: 4317
+              protocol: TCP
       storage:
         resources:
           requests:
@@ -151,9 +168,12 @@ victoria-metrics-k8s-stack:
 dashboardSyncJob:
   enabled: false
 
-# Scrape Istio ambient control plane + waypoint L7 metrics into VMSingle.
+# Scrape Istio L7 proxies only (waypoint + ingress). Control-plane scrapes omitted.
 istioScrapes:
   enabled: true
   waypointName: ecommerce-waypoint
   waypointNamespaces:
+    - ecommerce
+  ingressName: ecommerce-ingress
+  ingressNamespaces:
     - ecommerce

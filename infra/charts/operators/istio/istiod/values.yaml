@@ -10,6 +10,12 @@ istiod:
     limits:
       cpu: 500m
       memory: 512Mi
+  meshConfig:
+    extensionProviders:
+      - name: otel-vt
+        opentelemetry:
+          port: 4317
+          service: vtsingle-vmks.monitoring.svc.cluster.local
   global:
     proxy:
       resources:
