@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: { { .Release.Namespace } }
+  name: {{ .Release.Namespace }}
   annotations:
     argocd.argoproj.io/sync-options: Prune=false
   labels:
