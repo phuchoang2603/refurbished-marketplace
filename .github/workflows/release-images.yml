@@ -11,6 +11,7 @@ on:
       - go.work
       - go.work.sum
       - "**/go.mod"
+      - .github/workflows/release-images.yml
   workflow_dispatch:
 
 permissions:
@@ -18,68 +19,27 @@ permissions:
   packages: write
 
 jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      images: ${{ steps.set.outputs.images }}
+    steps:
+      - uses: actions/checkout@v6
+      - id: set
+        run: |
+          {
+            echo 'images<<EOF'
+            ./tools/build-images.sh --matrix
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
   release:
+    needs: matrix
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - image: web
-            dockerfile: infra/docker/web.Dockerfile
-          - image: users
-            dockerfile: infra/docker/go-service.Dockerfile
-            build_args: |
-              BUILD_PKG=./services/users/cmd/users
-              BUILD_BIN=users
-              EXPOSE_PORT=9091
-          - image: users-migrator
-            dockerfile: infra/docker/goose-migrator.Dockerfile
-            build_args: |
-              MIGRATIONS_DIR=services/users/db/migrations
-          - image: products
-            dockerfile: infra/docker/go-service.Dockerfile
-            build_args: |
-              BUILD_PKG=./services/products/cmd/products
-              BUILD_BIN=products
-              EXPOSE_PORT=9092
-          - image: products-migrator
-            dockerfile: infra/docker/goose-migrator.Dockerfile
-            build_args: |
-              MIGRATIONS_DIR=services/products/db/migrations
-          - image: orders
-            dockerfile: infra/docker/go-service.Dockerfile
-            build_args: |
-              BUILD_PKG=./services/orders/cmd/orders
-              BUILD_BIN=orders
-              EXPOSE_PORT=9093
-          - image: orders-migrator
-            dockerfile: infra/docker/goose-migrator.Dockerfile
-            build_args: |
-              MIGRATIONS_DIR=services/orders/db/migrations
-          - image: cart
-            dockerfile: infra/docker/go-service.Dockerfile
-            build_args: |
-              BUILD_PKG=./services/cart/cmd/cart
-              BUILD_BIN=cart
-              EXPOSE_PORT=9094
-          - image: payment
-            dockerfile: infra/docker/go-service.Dockerfile
-            build_args: |
-              BUILD_PKG=./services/payment/cmd/payment
-              BUILD_BIN=payment
-              EXPOSE_PORT=9096
-          - image: payment-migrator
-            dockerfile: infra/docker/goose-migrator.Dockerfile
-            build_args: |
-              MIGRATIONS_DIR=services/payment/db/migrations
-          - image: payment-gateway-simulator
-            dockerfile: infra/docker/go-service.Dockerfile
-            build_args: |
-              BUILD_PKG=./tools/payment-gateway-simulator
-              BUILD_BIN=payment-gateway-simulator
-              EXPOSE_PORT=8097
-          - image: connect-debezium
-            dockerfile: infra/docker/connect-debezium.Dockerfile
+        include: ${{ fromJson(needs.matrix.outputs.images) }}
     steps:
       - uses: actions/checkout@v6
 
