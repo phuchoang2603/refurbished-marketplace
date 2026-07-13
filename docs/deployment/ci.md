@@ -36,4 +36,4 @@ Local development uses short image names in chart values (for example `web`, `us
 | `shared/testutil/kafka/**`    | products, orders, payment                   |
 | `shared/testutil/redis/**`    | cart                                        |
 
-Local formatting and codegen drift checks (`treefmt`, `generate-proto`, `sqlc-gen`, `templ generate`) stay in devenv/git hooks — they are not run in CI.
+Local formatting and codegen drift checks (`treefmt`, `generate-proto`, `sqlc-gen`, `templ-gen` / `tailwind-gen`) stay in devenv/git hooks — they are not run in CI.

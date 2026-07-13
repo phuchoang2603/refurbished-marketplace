@@ -2,13 +2,13 @@
 
 ## Purpose
 
-TBD - created by archiving change add-istio-ingress. Update Purpose after archive.
+Define Istio Gateway API edge ingress for marketplace browser traffic, with Cloudflare Tunnel as the public HTTPS front door for local Colima (`.dev` hosts) and staging (production hostnames).
 
 ## Requirements
 
 ### Requirement: GitOps-managed Istio edge gateway
 
-The system SHALL provide GitOps-managed Kubernetes Gateway API resources that use Istio (`gatewayClassName: istio`) as the edge implementation for marketplace browser traffic in staging when ingress is enabled.
+The system SHALL provide GitOps-managed Kubernetes Gateway API resources that use Istio (`gatewayClassName: istio`) as the edge implementation for marketplace browser traffic when ingress is enabled (chart defaults for local; staging overlays for production hostnames).
 
 #### Scenario: Staging sync creates edge Gateway
 
@@ -55,11 +55,11 @@ The system SHALL expose the hosted `payment-gateway-simulator` on an Istio-manag
 
 ### Requirement: Cloudflare Tunnel is the public front door
 
-The staging marketplace edge SHALL assume Cloudflare Tunnel as the public HTTPS front door and the Istio Gateway as the HTTP origin. The repository SHALL deploy an in-cluster `cloudflared` connector through Argo CD and SHALL NOT require a marketplace TLS certificate on the Istio Gateway for this path.
+Local and staging marketplace edges SHALL assume Cloudflare Tunnel as the public HTTPS front door and the Istio Gateway as the HTTP origin. The repository SHALL deploy an in-cluster `cloudflared` connector through Argo CD (`infra/argocd/local/` and `infra/argocd/staging/`) and SHALL NOT require a marketplace TLS certificate on the Istio Gateway for this path.
 
 #### Scenario: Origin is HTTP behind Cloudflare
 
-- **WHEN** staging ingress is enabled for Cloudflare Tunnel access
+- **WHEN** ingress is enabled for Cloudflare Tunnel access
 - **THEN** the Istio Gateway listens for HTTP from the in-cluster tunnel connector and does not require a marketplace TLS Secret for browser access
 
 #### Scenario: Public hostnames match route hostnames
@@ -69,7 +69,7 @@ The staging marketplace edge SHALL assume Cloudflare Tunnel as the public HTTPS 
 
 #### Scenario: cloudflared is GitOps-managed
 
-- **WHEN** the staging root Application syncs from Git
+- **WHEN** the local or staging root Application syncs from Git
 - **THEN** Argo CD manages a `cloudflare-tunnel` Application that runs `cloudflared` with a tunnel token sourced from External Secrets
 
 ### Requirement: TLS termination ownership is documented
@@ -79,13 +79,13 @@ The repository SHALL document that marketplace browser TLS terminates at Cloudfl
 #### Scenario: Contributor finds TLS ownership
 
 - **WHEN** a contributor reads Istio deployment docs after this change
-- **THEN** the docs state that staging terminates TLS at Cloudflare and uses HTTP between the tunnel and Istio
+- **THEN** the docs state that local and staging terminate TLS at Cloudflare and use HTTP between the tunnel and Istio
 
 ### Requirement: Ingress rollback is documented
 
-The system SHALL document rollback steps that disable Istio marketplace ingress without requiring application code changes. Local access continues via the local Cloudflare Tunnel and `.dev` hostnames when staging ingress is disabled.
+The system SHALL document rollback steps that disable Istio marketplace ingress without requiring application code changes.
 
 #### Scenario: Ingress disabled
 
 - **WHEN** staging ingress enablement is turned off and synced
-- **THEN** marketplace browser traffic no longer depends on the Istio edge Gateway and operators can use the documented local or prior access path
+- **THEN** marketplace browser traffic no longer depends on the Istio edge Gateway for that environment

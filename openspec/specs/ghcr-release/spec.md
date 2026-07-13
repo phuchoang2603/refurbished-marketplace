@@ -36,17 +36,22 @@ Published images SHALL use the naming pattern `ghcr.io/<repository>/<image>` whe
 
 ### Requirement: Release workflow includes all infra docker images
 
-The release workflow SHALL build and push all twelve Dockerfiles under `infra/docker/` on every workflow run that executes the release matrix, including application services, migrators, `payment-gateway-simulator`, and `connect-debezium`.
+The release workflow SHALL build and push all images declared by `./tools/build-images.sh --matrix` on every workflow run that executes the release matrix, including application services, migrators, `payment-gateway-simulator`, and `connect-debezium`. The same catalog SHALL drive local Colima builds via `./tools/build-images.sh`.
 
 #### Scenario: Full image matrix on main push
 
 - **WHEN** the release workflow runs for a push to `main` that triggers the workflow
-- **THEN** it builds and pushes all twelve images defined under `infra/docker/*.Dockerfile`
+- **THEN** it builds and pushes every image returned by `./tools/build-images.sh --matrix`
 
 #### Scenario: Full image matrix on manual dispatch
 
 - **WHEN** the release workflow runs via `workflow_dispatch`
-- **THEN** it builds and pushes all twelve images defined under `infra/docker/*.Dockerfile`
+- **THEN** it builds and pushes every image returned by `./tools/build-images.sh --matrix`
+
+#### Scenario: Local catalog matches release matrix
+
+- **WHEN** a developer runs `./tools/build-images.sh --list`
+- **THEN** the image names match the release workflow matrix from `--matrix`
 
 ### Requirement: Release workflow uses standard GitHub Actions
 

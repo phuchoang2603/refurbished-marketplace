@@ -14,9 +14,9 @@
 
 ## Test plan
 
-<!-- Prefer Tilt for integration flows; note any unit tests run -->
+<!-- Prefer local Argo / Colima for integration flows; note any unit tests run -->
 
-- [ ] Verified in Tilt
+- [ ] Verified on local Argo (Colima)
 - [ ] Other:
 
 ## Notes

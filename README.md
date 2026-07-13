@@ -38,15 +38,26 @@ graph LR
 
 - Go for all services and shared libraries.
 - gRPC and Protocol Buffers for internal service APIs.
-- PostgreSQL for service-local durable persistence, `sqlc` for queries generation and `goose` for schema migration
+- PostgreSQL for service-local durable persistence, `sqlc` for query generation and `goose` for schema migration.
 - Redis/Valkey for cart state.
 - Kafka for asynchronous domain integration.
 - `templ` for typed server-rendered HTML components.
 - Datastar-compatible markup for browser interactions and fragment updates.
-- Tilt, Helm, and Kubernetes manifests for local/runtime orchestration.
-- Nix/devenv for local development environment setup.
+- Kubernetes + Helm (CloudNativePG, Strimzi, Istio ambient, External Secrets).
+- Argo CD GitOps for local Colima (`infra/argocd/local/`) and staging (`infra/argocd/staging/`).
+- Cloudflare Tunnel to Istio Gateway for browser ingress (`.dev` hosts locally, production hosts in staging).
+- Nix/devenv for local tooling, codegen tasks, and scripts (`bootstrap-local-argocd`, `build-images`).
 - OpenSpec for change proposals, specs, designs, tasks, and archives.
 
 ## Development
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/development/](docs/development/) for the local workflow (`devenv`, Tilt, secrets, code generation), OpenSpec planning, and GitHub issue conventions.
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/development/](docs/development/) for the local workflow (`devenv`, Argo on Colima, secrets, code generation), OpenSpec planning, and GitHub issue conventions.
+
+Quick start:
+
+```bash
+devenv shell
+bootstrap-local-argocd
+build-images
+# https://shop.dev.phuchoang.sbs
+```

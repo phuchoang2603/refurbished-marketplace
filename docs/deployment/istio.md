@@ -1,6 +1,6 @@
 # Istio mesh and ingress
 
-Staging installs Istio ambient mode through four wrapper charts under `infra/charts/operators/istio/`, pinned to official Istio `1.30.2`. Marketplace browser traffic enters through in-cluster Cloudflare Tunnel (`cloudflared`) → an Istio Gateway API edge (`gatewayClassName: istio`).
+Local Colima and staging install Istio ambient mode through four wrapper charts under `infra/charts/operators/istio/`, pinned to official Istio `1.30.2`. Marketplace browser traffic enters through in-cluster Cloudflare Tunnel (`cloudflared`) → an Istio Gateway API edge (`gatewayClassName: istio`).
 
 ## Components
 

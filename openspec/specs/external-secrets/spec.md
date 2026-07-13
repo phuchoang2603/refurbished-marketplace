@@ -1,4 +1,10 @@
-## ADDED Requirements
+# External Secrets
+
+## Purpose
+
+Define how External Secrets Operator and Doppler sync application credentials into local Colima and remote GitOps clusters without committing plaintext secrets.
+
+## Requirements
 
 ### Requirement: External Secrets Operator installed
 

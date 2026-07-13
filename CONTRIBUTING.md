@@ -35,10 +35,10 @@ Local workflow, codegen, and project conventions.
 
 CI, container releases, and remote cluster GitOps.
 
-| Topic                         | Guide                                                  |
-| ----------------------------- | ------------------------------------------------------ |
-| GitHub Actions, GHCR releases | [docs/deployment/ci.md](docs/deployment/ci.md)         |
-| Argo CD GitOps (staging)      | [docs/deployment/gitops.md](docs/deployment/gitops.md) |
+| Topic                            | Guide                                                  |
+| -------------------------------- | ------------------------------------------------------ |
+| GitHub Actions, GHCR releases    | [docs/deployment/ci.md](docs/deployment/ci.md)         |
+| Argo CD GitOps (local + staging) | [docs/deployment/gitops.md](docs/deployment/gitops.md) |
 
 ## Questions
 

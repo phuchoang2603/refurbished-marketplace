@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Define staging and production GitOps delivery via ArgoCD app-of-apps, environment Helm overlays, and coordinated GHCR image tags. Local Colima uses `infra/argocd/local/` with the same model.
+Define local Colima (`infra/argocd/local/`) and staging (`infra/argocd/staging/`) GitOps delivery via Argo CD app-of-apps, chart-adjacent Helm overlays, and coordinated GHCR image tags. Production app-of-apps is deferred until added.
 
 ## Requirements
 
 ### Requirement: App-of-apps per environment
 
-The repository SHALL provide ArgoCD Application manifests under `infra/argocd/<environment>/` for `staging` and `production` only. Each environment SHALL include a root Application that syncs child Applications for operators, the `refurbished-marketplace` Helm chart, and the `kafka` Helm chart.
+The repository SHALL provide ArgoCD Application manifests under `infra/argocd/<environment>/` for `local` and `staging` (and `production` when added). Each environment SHALL include a root Application that syncs child Applications for operators, the `refurbished-marketplace` Helm chart, and the `kafka` Helm chart.
 
 #### Scenario: Staging root application
 
@@ -18,11 +18,11 @@ The repository SHALL provide ArgoCD Application manifests under `infra/argocd/<e
 #### Scenario: Local Argo uses chart defaults
 
 - **WHEN** a developer uses local Argo CD (`infra/argocd/local/`) on Colima
-- **THEN** chart default `values.yaml` is the local source; staging overlays live in `values-staging.yaml`
+- **THEN** chart default `values.yaml` is the local source; staging overlays live in chart-adjacent `values-staging.yaml` files
 
 ### Requirement: Environment-specific Helm values
 
-The repository SHALL provide Helm value overlays at `infra/argocd/values/staging/` and `infra/argocd/values/production/` for the marketplace and kafka charts. Staging overlays SHALL set `global.imageTag` to `main`. Production overlays SHALL set `global.imageTag` to a commit SHA for coordinated releases.
+The repository SHALL provide Helm value overlays as chart-adjacent `values-staging.yaml` files (referenced from staging Applications via `valueFiles`) for marketplace, Istio CNI, and observability where needed. Staging overlays SHALL set `global.imageTag` to `main` for marketplace/kafka images. Production overlays SHALL set `global.imageTag` to a commit SHA for coordinated releases when production is added.
 
 #### Scenario: Staging pulls rolling main tag
 
@@ -73,12 +73,12 @@ Child ArgoCD Applications SHALL use sync waves so operators sync before the mark
 
 ### Requirement: GitOps documentation
 
-The repository SHALL document the ArgoCD layout, staging vs production value locations, image tag promotion for production, and prerequisites that remain outside Git (Argo bootstrap, Doppler token, ClusterSecretStore).
+The repository SHALL document the Argo CD layout (local vs staging), chart-adjacent `values-staging.yaml` overlays, image tag promotion for production when added, and prerequisites that remain outside Git (Argo bootstrap, Doppler token, ClusterSecretStore, Cloudflare tunnel token).
 
 #### Scenario: Contributor finds deploy guide
 
-- **WHEN** a contributor prepares a staging or production deploy
-- **THEN** development documentation explains app-of-apps paths, value overlays, and SHA promotion for remote clusters and local Argo
+- **WHEN** a contributor prepares a local or staging deploy
+- **THEN** documentation explains app-of-apps paths, value overlays, local bootstrap/build-images, and SHA promotion for remote clusters
 
 ### Requirement: Staging observability application
 
@@ -211,13 +211,13 @@ Staging value overlays SHALL set `HOSTED_PAYMENT_BASE_URL` to the Cloudflare-fac
 - **WHEN** staging ingress with simulator routing is enabled
 - **THEN** the web Deployment environment uses the public `https://` simulator hostname, not `http://payment-gateway-simulator:8097` cluster DNS alone and not `http://localhost:8097`
 
-### Requirement: Staging Cloudflare Tunnel application
+### Requirement: Cloudflare Tunnel application
 
-The repository SHALL include a staging Argo CD child Application that deploys in-cluster `cloudflared` for the marketplace edge.
+The repository SHALL include Argo CD child Applications under local and staging that deploy in-cluster `cloudflared` for the marketplace edge.
 
-#### Scenario: Staging root sync includes cloudflare-tunnel
+#### Scenario: Root sync includes cloudflare-tunnel
 
-- **WHEN** the staging root Application syncs from Git
+- **WHEN** the local or staging root Application syncs from Git
 - **THEN** Argo CD manages a child Application for the Cloudflare Tunnel connector in the `cloudflare-tunnel` namespace
 
 #### Scenario: Tunnel token comes from External Secrets

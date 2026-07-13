@@ -34,6 +34,6 @@ body:
     id: test_plan
     attributes:
       label: Test plan
-      description: How will you verify this in Tilt or tests?
+      description: How will you verify this on local Argo (Colima), staging, or in tests?
     validations:
       required: false
