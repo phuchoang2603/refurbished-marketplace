@@ -16,7 +16,7 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: argo-cd
-  # selfHeal off so bootstrap can pin targetRevision to the current branch
+  # selfHeal off so Tilt can pin targetRevision to the current branch
   # without Argo resetting child Applications to the committed "main" value.
   syncPolicy:
     automated:
