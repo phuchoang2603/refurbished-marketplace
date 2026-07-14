@@ -57,7 +57,7 @@ The repository SHALL provide a local Helm wrapper chart for deploying the Victor
 
 ### Requirement: Local Argo deploys observability
 
-Local Argo CD (`infra/argocd/local/`) SHALL deploy the observability stack into the `monitoring` namespace using chart default values.
+Local Argo CD (`values-local.yaml` on the shared app-of-apps chart) SHALL deploy the observability stack into the `monitoring` namespace using chart default values.
 
 #### Scenario: Local Argo includes observability stack
 

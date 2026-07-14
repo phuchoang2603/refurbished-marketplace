@@ -44,7 +44,7 @@ graph LR
 - `templ` for typed server-rendered HTML components.
 - Datastar-compatible markup for browser interactions and fragment updates.
 - Kubernetes + Helm (CloudNativePG, Strimzi, Istio ambient, External Secrets).
-- Local DX: Tilt for the marketplace chart + image builds; Argo CD (`infra/argocd/local/`) for operators, Istio, Kafka, observability, and Cloudflare Tunnel. Staging uses full Argo (`infra/argocd/staging/`).
+- Local DX: Tilt for the marketplace chart + image builds; Argo CD (`local-root` / shared `app-of-apps`) for operators, Istio, Kafka, observability, and Cloudflare Tunnel. Staging uses the same chart with `values-staging.yaml`.
 - Cloudflare Tunnel to Istio Gateway for browser ingress (`.dev` hosts locally, production hosts in staging).
 - Nix/devenv for local tooling (`tilt`, codegen); OpenSpec for change proposals.
 

@@ -2,28 +2,33 @@
 
 ## Purpose
 
-Define local Colima (`infra/argocd/local/`) and staging (`infra/argocd/staging/`) GitOps delivery via Argo CD app-of-apps, chart-adjacent Helm overlays, and coordinated GHCR image tags. Production app-of-apps is deferred until added.
+Define local and staging GitOps delivery via a shared Argo CD app-of-apps Helm chart (`infra/argocd/app-of-apps`) with env-specific settings inlined on each root Application `helm.values`, chart-adjacent Helm overlays, and coordinated GHCR image tags. Production app-of-apps is deferred until added.
 
 ## Requirements
 
 ### Requirement: App-of-apps per environment
 
-The repository SHALL provide ArgoCD Application manifests under `infra/argocd/<environment>/` for `local` and `staging` (and `production` when added). Staging SHALL include a root Application that syncs child Applications for operators, the `refurbished-marketplace` Helm chart, and the `kafka` Helm chart. Local Argo SHALL sync operators, Istio, Kafka, observability, and Cloudflare Tunnel, and SHALL NOT manage the `refurbished-marketplace` Application (Tilt owns that chart locally).
+The repository SHALL provide a shared Argo CD app-of-apps Helm chart under `infra/argocd/app-of-apps/` plus thin root Applications under `infra/argocd/<environment>/root.yaml` that pass environment settings via inline `helm.values`. Staging SHALL enable the marketplace Application and set `global.imageRegistry` / `global.imageTag`; local SHALL NOT enable marketplace (Tilt owns that chart). Child Applications SHALL inherit `targetRevision` from the root via `$ARGOCD_APP_SOURCE_TARGET_REVISION`.
 
 #### Scenario: Staging root application
 
-- **WHEN** the staging cluster root Application syncs from Git
-- **THEN** child Applications exist for operators, `refurbished-marketplace`, and `kafka` in the `ecommerce` and `operators` namespaces as defined
+- **WHEN** the staging cluster root Application syncs from Git with staging `helm.values`
+- **THEN** child Applications exist for operators, `refurbished-marketplace`, and `kafka` as defined
 
 #### Scenario: Local Argo omits marketplace
 
-- **WHEN** a developer uses local Argo CD (`infra/argocd/local/`) on Colima
-- **THEN** no marketplace Application is present; chart default `values.yaml` is applied by Tilt for the marketplace release
+- **WHEN** local-root syncs with local `helm.values`
+- **THEN** no marketplace Application is rendered; chart default `values.yaml` for marketplace is applied by Tilt
 
-#### Scenario: Local infra uses chart defaults
+#### Scenario: Local and staging inherit root revision
 
-- **WHEN** local Argo syncs infra Applications
-- **THEN** chart default `values.yaml` is used; staging overlays live in chart-adjacent `values-staging.yaml` files
+- **WHEN** a root Application renders the app-of-apps chart with `targetRevision` parameterized from `$ARGOCD_APP_SOURCE_TARGET_REVISION`
+- **THEN** each child Application uses the same Git revision as that root
+
+#### Scenario: Staging shares global image settings
+
+- **WHEN** staging-root sets `global.imageRegistry` and `global.imageTag`
+- **THEN** child Applications that inject global images (for example kafka and marketplace) render those values into their Helm `values`
 
 ### Requirement: Environment-specific Helm values
 

@@ -97,7 +97,7 @@ When Grafana access is available, confirm:
 
 ## ArgoCD Notes
 
-The upstream chart has a few ArgoCD-specific behaviors that are handled in `infra/argocd/staging/apps/observability.yaml`:
+The upstream chart has a few ArgoCD-specific behaviors that are handled on the observability Application in `infra/argocd/app-of-apps/templates/observability.yaml`:
 
 - `RespectIgnoreDifferences=true` is enabled so ignored generated fields are also respected during apply.
 - VictoriaMetrics Operator self-signed webhook certificate drift is ignored.

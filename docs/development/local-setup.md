@@ -32,7 +32,7 @@ The shell provides Go, protobuf tooling, Kubernetes tooling (`kubectl`, `helm`),
 
 | Layer                                                             | Local owner                                 |
 | ----------------------------------------------------------------- | ------------------------------------------- |
-| Operators, Istio, Kafka, observability, Cloudflare Tunnel         | Argo CD (`infra/argocd/local/`)             |
+| Operators, Istio, Kafka, observability, Cloudflare Tunnel         | Argo CD (`local-root` → `app-of-apps`)      |
 | `refurbished-marketplace` chart (DBs, secrets, services, ingress) | Tilt                                        |
 | Image builds + `templ` / Tailwind watches                         | Tilt                                        |
 | Browser                                                           | Cloudflare Tunnel → Istio Gateway           |
@@ -50,7 +50,7 @@ Chart `values.yaml` enables ambient mesh and Istio ingress for:
 3. In Cloudflare Zero Trust → that tunnel → Public Hostnames:
    - `shop.dev.phuchoang.sbs` → `http://ecommerce-ingress-istio.ecommerce.svc.cluster.local:80`
    - `pay.dev.phuchoang.sbs` → `http://ecommerce-ingress-istio.ecommerce.svc.cluster.local:80`
-4. Push this branch (Argo reads GitHub). Tilt pins infra Applications to the **current git branch** (override with `ARGO_REVISION`).
+4. Push this branch (Argo reads GitHub). Tilt applies `local-root` with the **current git branch**; child Applications inherit that revision via `$ARGOCD_APP_SOURCE_TARGET_REVISION`.
 5. Start Tilt:
 
 ```bash

@@ -1,6 +1,6 @@
 # GitOps deployment (Argo CD)
 
-Staging syncs everything from `infra/argocd/staging/`. Local Colima: Tilt owns the marketplace chart; Argo (`infra/argocd/local/`) owns operators, Istio, Kafka, observability, and Cloudflare Tunnel.
+Staging syncs everything via `staging-root` → `infra/argocd/app-of-apps` + `values-staging.yaml`. Local Colima: Tilt owns the marketplace chart; Argo (`local-root` → same chart + `values-local.yaml`) owns operators, Istio, Kafka, observability, and Cloudflare Tunnel.
 
 ## What Argo CD syncs
 
@@ -15,9 +15,9 @@ Staging syncs everything from `infra/argocd/staging/`. Local Colima: Tilt owns t
 | `kafka`                             | This repo               | Debezium reads secrets/DBs in `ecommerce`                        | `kafka`             | yes   | yes     |
 | `cloudflare-tunnel`                 | This repo               | `cloudflared` connector; tunnel token via Doppler ExternalSecret | `cloudflare-tunnel` | yes   | yes     |
 
-**Local (Colima):** `tilt up` installs Argo CD, applies `infra/argocd/local/` (pinned to the current git branch), and deploys the marketplace chart via Tilt. Chart `values.yaml` is Colima-local (k3s CNI, ambient + `.dev` ingress, short image names). See [local-setup](../development/local-setup.md).
+**Local (Colima):** `tilt up` installs Argo CD and applies `local-root` (current git branch). Both environments render children from the shared Helm chart [`infra/argocd/app-of-apps/`](../../infra/argocd/app-of-apps/); env-specific settings live inline on each root Application’s `helm.values`. Children inherit `targetRevision` via `$ARGOCD_APP_SOURCE_TARGET_REVISION`. Local omits the marketplace Application (Tilt owns that chart). See [local-setup](../development/local-setup.md).
 
-**Staging:** Full app-of-apps including marketplace, with `values-staging.yaml` overlays (GHCR `:main`, production hostnames, RKE2 CNI paths).
+**Staging:** Same chart; `staging-root` sets `global.imageRegistry` / `imageTag`, enables marketplace, and points chart `valueFiles` at chart-adjacent `values-staging.yaml` overlays where needed.
 
 **Terraform (not in Git for staging):** Argo CD on remote clusters.
 
@@ -31,12 +31,11 @@ Inside `refurbished-marketplace`, resource sync waves (staging Argo) order work 
 
 ```
 infra/argocd/
-├── local/
-│   ├── root.yaml
-│   └── apps/          # operators, Istio, observability, kafka, cloudflare-tunnel (no marketplace)
-└── staging/
-    ├── root.yaml
-    └── apps/          # + marketplace; staging valueFiles / image tags
+├── app-of-apps/              # shared child Application catalog (one template)
+│   ├── values.yaml           # defaults + apps map
+│   └── templates/applications.yaml
+├── local/root.yaml           # inline helm.values (local)
+└── staging/root.yaml         # inline helm.values (staging + global images)
 ```
 
 ## Bootstrap (staging)
