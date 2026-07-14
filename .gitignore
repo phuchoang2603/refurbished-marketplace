@@ -31,7 +31,7 @@ dist
 dist-ssr
 *.local
 
-# Tilt build
+# Local docker build artifacts
 build/
 
 # Direnv

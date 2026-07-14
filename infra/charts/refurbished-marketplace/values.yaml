@@ -3,23 +3,23 @@ global:
   imageRegistry: ""
   imageTag: ""
 
-# Ambient mesh enrollment is staging-only via ArgoCD values.
-# Leave disabled for Tilt so local pods are not redirected into ztunnel.
+# Chart defaults = local Colima (ambient + ingress via Cloudflare Tunnel .dev hosts).
+# Staging overlays values-staging.yaml via Argo CD valueFiles.
 mesh:
   ambient:
-    enabled: false
+    enabled: true
   waypoint:
-    enabled: false
+    enabled: true
     name: ecommerce-waypoint
 
 # North-south edge via Kubernetes Gateway API (gatewayClassName: istio).
-# Disabled for Tilt; enable from staging Argo values with Cloudflare DNS hostnames.
+# Local uses Cloudflare Tunnel → ClusterIP Gateway (same path as staging).
 ingress:
-  enabled: false
+  enabled: true
   name: ecommerce-ingress
   port: 80
-  webHostname: ""
-  simulatorHostname: ""
+  webHostname: shop.dev.phuchoang.sbs
+  simulatorHostname: pay.dev.phuchoang.sbs
 
 # Default container resources (overridable per service).
 # Sized from staging idle usage with headroom for Go services.
@@ -82,8 +82,10 @@ services:
       ORDERS_SVC_ADDR: orders:9093
       CART_SVC_ADDR: cart:9094
       PAYMENT_SVC_ADDR: payment:9096
-      # Browser-facing URL for hosted payment redirects (Tilt port-forward).
-      HOSTED_PAYMENT_BASE_URL: http://localhost:8097
+      # Browser-facing URLs via local Cloudflare Tunnel (.dev hosts).
+      HOSTED_PAYMENT_BASE_URL: https://pay.dev.phuchoang.sbs
+      PUBLIC_BASE_URL: https://shop.dev.phuchoang.sbs
+      HOSTED_PAYMENT_CALLBACK_BASE_URL: http://web:8080
 
   users:
     enabled: true

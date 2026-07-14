@@ -38,15 +38,24 @@ graph LR
 
 - Go for all services and shared libraries.
 - gRPC and Protocol Buffers for internal service APIs.
-- PostgreSQL for service-local durable persistence, `sqlc` for queries generation and `goose` for schema migration
+- PostgreSQL for service-local durable persistence, `sqlc` for query generation and `goose` for schema migration.
 - Redis/Valkey for cart state.
 - Kafka for asynchronous domain integration.
 - `templ` for typed server-rendered HTML components.
 - Datastar-compatible markup for browser interactions and fragment updates.
-- Tilt, Helm, and Kubernetes manifests for local/runtime orchestration.
-- Nix/devenv for local development environment setup.
-- OpenSpec for change proposals, specs, designs, tasks, and archives.
+- Kubernetes + Helm (CloudNativePG, Strimzi, Istio ambient, External Secrets).
+- Local DX: Tilt for the marketplace chart + image builds; Argo CD (`local-root` / shared `app-of-apps`) for operators, Istio, Kafka, observability, and Cloudflare Tunnel. Staging uses the same chart with `values-staging.yaml`.
+- Cloudflare Tunnel to Istio Gateway for browser ingress (`.dev` hosts locally, production hosts in staging).
+- Nix/devenv for local tooling (`tilt`, codegen); OpenSpec for change proposals.
 
 ## Development
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/development/](docs/development/) for the local workflow (`devenv`, Tilt, secrets, code generation), OpenSpec planning, and GitHub issue conventions.
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/development/](docs/development/) for the local workflow (`devenv`, Tilt + Argo on Colima, secrets, code generation), OpenSpec planning, and GitHub issue conventions.
+
+Quick start:
+
+```bash
+devenv shell
+tilt up
+# https://shop.dev.phuchoang.sbs
+```

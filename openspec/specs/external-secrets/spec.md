@@ -1,10 +1,16 @@
-## ADDED Requirements
+# External Secrets
+
+## Purpose
+
+Define how External Secrets Operator and Doppler sync application credentials into local Colima and remote GitOps clusters without committing plaintext secrets.
+
+## Requirements
 
 ### Requirement: External Secrets Operator installed
 
-The repository SHALL install External Secrets Operator on the local Tilt Kubernetes cluster using the upstream Helm chart in the `operators` namespace.
+The repository SHALL install External Secrets Operator on the local Kubernetes cluster using the upstream Helm chart in the `operators` namespace.
 
-#### Scenario: ESO operator healthy on tilt up
+#### Scenario: ESO operator healthy after local bootstrap
 
 - **WHEN** a developer runs `tilt up` with a valid cluster context
 - **THEN** the External Secrets Operator deployment becomes ready in the `operators` namespace
@@ -46,10 +52,10 @@ The repository SHALL render `ExternalSecret` resources from the `refurbished-mar
 
 The repository SHALL NOT commit plaintext Kubernetes Secret manifests for application credentials. `infra/k8s/secrets.yaml` SHALL be removed.
 
-#### Scenario: Tilt without secrets.yaml
+#### Scenario: Local bootstrap without secrets.yaml
 
-- **WHEN** a developer runs `tilt up` after bootstrap
-- **THEN** application secrets are created by ESO and not from `k8s_yaml('./infra/k8s/secrets.yaml')`
+- **WHEN** a developer runs `tilt up` after secrets setup
+- **THEN** application secrets are created by ESO and not from a committed `infra/k8s/secrets.yaml`
 
 ### Requirement: Doppler bootstrap secret manifests
 
@@ -57,7 +63,7 @@ The repository SHALL provide example Kubernetes Secret manifests for Doppler ser
 
 #### Scenario: Developer creates local bootstrap secret
 
-- **WHEN** a developer prepares local Tilt development
+- **WHEN** a developer prepares local Colima development
 - **THEN** they copy `infra/k8s/doppler-token.dev.secret.yaml.example` to `infra/k8s/doppler-token.dev.secret.yaml` and paste a `dev` config service token
 
 #### Scenario: Operator bootstraps remote cluster secret
@@ -74,7 +80,7 @@ The repository SHALL provide Doppler CLI via devenv and set `DOPPLER_PROJECT` an
 - **WHEN** a developer enters `devenv shell`
 - **THEN** `DOPPLER_PROJECT` and `DOPPLER_CONFIG` are available for `doppler` CLI commands
 
-#### Scenario: Tilt applies local bootstrap secret
+#### Scenario: Bootstrap applies local Doppler secret
 
 - **WHEN** `tilt up` runs with `infra/k8s/doppler-token.dev.secret.yaml` present
 - **THEN** Kubernetes Secret `doppler-token` exists in `operators` with key `dopplerToken`
@@ -90,7 +96,7 @@ Secret provisioning SHALL remain provider-agnostic at the service deployment lay
 
 ### Requirement: Doppler environment configs
 
-Doppler SHALL use separate configs for local development and production (for example `dev` and `prd`). Local Tilt SHALL use a Doppler service token scoped to the development config.
+Doppler SHALL use separate configs for local development and production (for example `dev` and `prd`). Local Colima SHALL use a Doppler service token scoped to the development config.
 
 #### Scenario: Local dev config
 

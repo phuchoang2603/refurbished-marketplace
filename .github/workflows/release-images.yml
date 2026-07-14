@@ -11,6 +11,7 @@ on:
       - go.work
       - go.work.sum
       - "**/go.mod"
+      - .github/workflows/release-images.yml
   workflow_dispatch:
 
 permissions:
@@ -26,6 +27,7 @@ jobs:
         include:
           - image: web
             dockerfile: infra/docker/web.Dockerfile
+            build_args: ""
           - image: users
             dockerfile: infra/docker/go-service.Dockerfile
             build_args: |
@@ -34,8 +36,7 @@ jobs:
               EXPOSE_PORT=9091
           - image: users-migrator
             dockerfile: infra/docker/goose-migrator.Dockerfile
-            build_args: |
-              MIGRATIONS_DIR=services/users/db/migrations
+            build_args: MIGRATIONS_DIR=services/users/db/migrations
           - image: products
             dockerfile: infra/docker/go-service.Dockerfile
             build_args: |
@@ -44,8 +45,7 @@ jobs:
               EXPOSE_PORT=9092
           - image: products-migrator
             dockerfile: infra/docker/goose-migrator.Dockerfile
-            build_args: |
-              MIGRATIONS_DIR=services/products/db/migrations
+            build_args: MIGRATIONS_DIR=services/products/db/migrations
           - image: orders
             dockerfile: infra/docker/go-service.Dockerfile
             build_args: |
@@ -54,8 +54,7 @@ jobs:
               EXPOSE_PORT=9093
           - image: orders-migrator
             dockerfile: infra/docker/goose-migrator.Dockerfile
-            build_args: |
-              MIGRATIONS_DIR=services/orders/db/migrations
+            build_args: MIGRATIONS_DIR=services/orders/db/migrations
           - image: cart
             dockerfile: infra/docker/go-service.Dockerfile
             build_args: |
@@ -70,8 +69,7 @@ jobs:
               EXPOSE_PORT=9096
           - image: payment-migrator
             dockerfile: infra/docker/goose-migrator.Dockerfile
-            build_args: |
-              MIGRATIONS_DIR=services/payment/db/migrations
+            build_args: MIGRATIONS_DIR=services/payment/db/migrations
           - image: payment-gateway-simulator
             dockerfile: infra/docker/go-service.Dockerfile
             build_args: |
@@ -80,6 +78,7 @@ jobs:
               EXPOSE_PORT=8097
           - image: connect-debezium
             dockerfile: infra/docker/connect-debezium.Dockerfile
+            build_args: ""
     steps:
       - uses: actions/checkout@v6
 

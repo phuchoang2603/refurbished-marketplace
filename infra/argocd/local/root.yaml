@@ -1,22 +1,27 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: staging-ztunnel
+  name: local-root
+  namespace: argo-cd
   finalizers:
     - resources-finalizer.argocd.argoproj.io/foreground
-  annotations:
-    argocd.argoproj.io/sync-wave: "2"
 spec:
   project: default
   source:
     repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
     targetRevision: main
-    path: infra/charts/operators/istio/ztunnel
+    path: infra/argocd/app-of-apps
     helm:
-      releaseName: ztunnel
+      values: |
+        namePrefix: local
+        marketplace:
+          enabled: false
+      parameters:
+        - name: targetRevision
+          value: $ARGOCD_APP_SOURCE_TARGET_REVISION
   destination:
     server: https://kubernetes.default.svc
-    namespace: istio-system
+    namespace: argo-cd
   syncPolicy:
     automated:
       prune: true

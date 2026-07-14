@@ -10,9 +10,27 @@ spec:
   source:
     repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
     targetRevision: main
-    path: infra/argocd/staging/apps
-    directory:
-      recurse: false
+    path: infra/argocd/app-of-apps
+    helm:
+      values: |
+        namePrefix: staging
+        global:
+          imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
+          imageTag: main
+        marketplace:
+          enabled: true
+          valueFiles:
+            - values-staging.yaml
+        apps:
+          istio-cni:
+            valueFiles:
+              - values-staging.yaml
+          observability:
+            valueFiles:
+              - values-staging.yaml
+      parameters:
+        - name: targetRevision
+          value: $ARGOCD_APP_SOURCE_TARGET_REVISION
   destination:
     server: https://kubernetes.default.svc
     namespace: argo-cd

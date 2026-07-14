@@ -17,12 +17,12 @@ The `govulncheck` job uses the same service matrix and path-filter fan-out as `t
 
 ## Container images (GHCR)
 
-Pushes to `main` that touch image-related paths trigger `.github/workflows/release-images.yml`. The release workflow builds and pushes **all twelve** images on every run (`:main` and `:<commit-sha>`). `workflow_dispatch` also builds the full matrix.
+Pushes to `main` that touch image-related paths trigger `.github/workflows/release-images.yml`. The workflow matrix lists every image inline and pushes **all** of them (`:main` and `:<commit-sha>`). `workflow_dispatch` also builds the full matrix.
 
 - `ghcr.io/<repository>/<image>:<commit-sha>`
 - `ghcr.io/<repository>/<image>:main` (rolling tag)
 
-Local Tilt development uses short image names in chart values (for example `web`, `users-migrator`). Staging Argo CD Applications set `global.imageRegistry` and `global.imageTag` to pull from GHCR — see [gitops.md](gitops.md).
+Local development builds short image names with Tilt `docker_build`. Staging Argo CD Applications set `global.imageRegistry` and `global.imageTag` to pull from GHCR — see [gitops.md](gitops.md).
 
 ## Path-filter fan-out for tests
 
@@ -36,4 +36,4 @@ Local Tilt development uses short image names in chart values (for example `web`
 | `shared/testutil/kafka/**`    | products, orders, payment                   |
 | `shared/testutil/redis/**`    | cart                                        |
 
-Local formatting and codegen drift checks (`treefmt`, `generate-proto`, `sqlc-gen`, `templ generate`) stay in devenv/git hooks — they are not run in CI.
+Local formatting and codegen drift checks (`treefmt`, `generate-proto`, `sqlc-gen`; templ/tailwind via Tilt watches) stay out of CI.

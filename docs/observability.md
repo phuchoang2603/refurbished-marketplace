@@ -31,7 +31,7 @@ sum by (destination_app, request_protocol) (
 
 ## Grafana Access
 
-Tilt is intentionally scoped to local microservice application development and does not deploy the observability stack. Use the staging (or manually deployed) stack in the `monitoring` namespace.
+Local and staging Argo CD both deploy the observability chart into `monitoring` (local uses chart `values.yaml`; staging uses `values-staging.yaml`).
 
 Port-forward Grafana:
 
@@ -97,7 +97,7 @@ When Grafana access is available, confirm:
 
 ## ArgoCD Notes
 
-The upstream chart has a few ArgoCD-specific behaviors that are handled in `infra/argocd/staging/apps/observability.yaml`:
+The upstream chart has a few ArgoCD-specific behaviors that are handled on the observability Application in `infra/argocd/app-of-apps/templates/applications.tpl`:
 
 - `RespectIgnoreDifferences=true` is enabled so ignored generated fields are also respected during apply.
 - VictoriaMetrics Operator self-signed webhook certificate drift is ignored.

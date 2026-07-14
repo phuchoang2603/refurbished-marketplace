@@ -3,30 +3,74 @@
 ## Prerequisites
 
 - [Nix](https://nixos.org/) with [devenv](https://devenv.sh/) for pinned tooling
-- A local Kubernetes runtime used by Tilt (for example Colima + Docker)
-- [Tilt](https://tilt.dev/) (provided inside the devenv shell)
+- A local Kubernetes runtime (Colima + Docker / k3s recommended)
 - [Doppler](https://www.doppler.com/) account for cluster secrets — see [secrets.md](secrets.md)
+- A Cloudflare Zero Trust tunnel for local `.dev` hostnames (same pattern as staging)
+
+### Colima
+
+Give the VM enough memory for ambient Istio + Kafka + CNPG + observability (about **10 GiB**). Keep Traefik disabled:
+
+```yaml
+cpu: 4
+memory: 10
+kubernetes:
+  enabled: true
+  k3sArgs:
+    - --disable=traefik
+```
 
 ## Development shell
-
-Enter the shell before generators, tests, or infrastructure commands:
 
 ```bash
 devenv shell
 ```
 
-The shell provides Go, protobuf tooling, database migration/query generators, Kubernetes tooling, Tilt, Doppler, and OpenSpec. A gitignored `.env` file is loaded automatically (`dotenv.enable` in `devenv.nix`).
+The shell provides Go, protobuf tooling, Kubernetes tooling (`kubectl`, `helm`), Doppler, OpenSpec, and Tilt. On enter, devenv tasks regenerate proto/sqlc when those inputs change. A gitignored `.env` file is loaded automatically.
 
-## Tilt
+## Hybrid Tilt + Argo CD
 
-After [secrets setup](secrets.md), start the local stack:
+| Layer                                                             | Local owner                                 |
+| ----------------------------------------------------------------- | ------------------------------------------- |
+| Operators, Istio, Kafka, observability, Cloudflare Tunnel         | Argo CD (`local-root` → `app-of-apps`)      |
+| `refurbished-marketplace` chart (DBs, secrets, services, ingress) | Tilt                                        |
+| Image builds + `templ` / Tailwind watches                         | Tilt                                        |
+| Browser                                                           | Cloudflare Tunnel → Istio Gateway           |
+| Debug (optional)                                                  | Tilt port-forwards (`8080` web, gRPC, CNPG) |
+
+Chart `values.yaml` enables ambient mesh and Istio ingress for:
+
+| Hostname                 | Backend                     |
+| ------------------------ | --------------------------- |
+| `shop.dev.phuchoang.sbs` | `web`                       |
+| `pay.dev.phuchoang.sbs`  | `payment-gateway-simulator` |
+
+1. Secrets: copy `infra/k8s/doppler-token.dev.secret.yaml.example` → `doppler-token.dev.secret.yaml` and paste the Doppler `dev` token.
+2. In Doppler `dev`, set `CLOUDFLARE_TUNNEL_TOKEN` for a dedicated local tunnel.
+3. In Cloudflare Zero Trust → that tunnel → Public Hostnames:
+   - `shop.dev.phuchoang.sbs` → `http://ecommerce-ingress-istio.ecommerce.svc.cluster.local:80`
+   - `pay.dev.phuchoang.sbs` → `http://ecommerce-ingress-istio.ecommerce.svc.cluster.local:80`
+4. Push this branch (Argo reads GitHub). Tilt applies `local-root` with the **current git branch**; child Applications inherit that revision via `$ARGOCD_APP_SOURCE_TARGET_REVISION`.
+5. Start Tilt:
 
 ```bash
 tilt up
 ```
 
-Tilt uses the root `Tiltfile` to build services, apply Kubernetes/Helm resources under `infra/`, and keep the cluster in sync while you edit code. Use the Tilt UI for service status, logs, resource readiness, and rebuilds.
+6. Open https://shop.dev.phuchoang.sbs (or use Tilt’s web port-forward on `localhost:8080` for debug).
+
+`templ-watch` / `tailwind-watch` run under Tilt; rebuilds of the `web` image pick up those assets via `docker_build`.
+
+Smoke-check:
+
+```bash
+kubectl get applications -n argo-cd
+kubectl get gateway,httproute -n ecommerce
+kubectl get pods -n cloudflare-tunnel
+kubectl get pods -n ecommerce
+kubectl get pods -n monitoring
+```
 
 ## Integration testing
 
-Integration tests rely on Testcontainers for Kafka, PostgreSQL, and Redis/Valkey. Prefer verifying full-service flows through Tilt; run targeted Go tests when they add meaningful coverage.
+Integration tests rely on Testcontainers for Kafka, PostgreSQL, and Redis/Valkey. Prefer verifying full-service flows against the local Tilt + Argo stack; run targeted Go tests when they add meaningful coverage.

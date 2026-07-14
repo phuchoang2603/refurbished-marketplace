@@ -44,7 +44,7 @@ body:
     id: environment
     attributes:
       label: Environment
-      description: e.g. Tilt local stack, branch name, browser
-      placeholder: Tilt on main, localhost:8080
+      description: e.g. `tilt up` on Colima, staging, branch name, browser
+      placeholder: Colima tilt up, shop.dev.phuchoang.sbs
     validations:
       required: false

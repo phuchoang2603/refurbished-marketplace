@@ -2,27 +2,37 @@
 
 ## Purpose
 
-Define staging and production GitOps delivery via ArgoCD app-of-apps, environment Helm overlays, and coordinated GHCR image tags without requiring Tilt on remote clusters.
+Define local and staging GitOps delivery via a shared Argo CD app-of-apps Helm chart (`infra/argocd/app-of-apps`) with env-specific settings inlined on each root Application `helm.values`, chart-adjacent Helm overlays, and coordinated GHCR image tags. Production app-of-apps is deferred until added.
 
 ## Requirements
 
 ### Requirement: App-of-apps per environment
 
-The repository SHALL provide ArgoCD Application manifests under `infra/argocd/<environment>/` for `staging` and `production` only. Each environment SHALL include a root Application that syncs child Applications for operators, the `refurbished-marketplace` Helm chart, and the `kafka` Helm chart.
+The repository SHALL provide a shared Argo CD app-of-apps Helm chart under `infra/argocd/app-of-apps/` plus thin root Applications under `infra/argocd/<environment>/root.yaml` that pass environment settings via inline `helm.values`. Staging SHALL enable the marketplace Application and set `global.imageRegistry` / `global.imageTag`; local SHALL NOT enable marketplace (Tilt owns that chart). Child Applications SHALL inherit `targetRevision` from the root via `$ARGOCD_APP_SOURCE_TARGET_REVISION`.
 
 #### Scenario: Staging root application
 
-- **WHEN** the staging cluster root Application syncs from Git
-- **THEN** child Applications exist for operators, `refurbished-marketplace`, and `kafka` in the `ecommerce` and `operators` namespaces as defined
+- **WHEN** the staging cluster root Application syncs from Git with staging `helm.values`
+- **THEN** child Applications exist for operators, `refurbished-marketplace`, and `kafka` as defined
 
-#### Scenario: No dev ArgoCD overlay
+#### Scenario: Local Argo omits marketplace
 
-- **WHEN** a developer uses Tilt for local development
-- **THEN** no `infra/argocd/values/dev/` or dev Application set is required; chart default `values.yaml` remains the dev source
+- **WHEN** local-root syncs with local `helm.values`
+- **THEN** no marketplace Application is rendered; chart default `values.yaml` for marketplace is applied by Tilt
+
+#### Scenario: Local and staging inherit root revision
+
+- **WHEN** a root Application renders the app-of-apps chart with `targetRevision` parameterized from `$ARGOCD_APP_SOURCE_TARGET_REVISION`
+- **THEN** each child Application uses the same Git revision as that root
+
+#### Scenario: Staging shares global image settings
+
+- **WHEN** staging-root sets `global.imageRegistry` and `global.imageTag`
+- **THEN** child Applications that inject global images (for example kafka and marketplace) render those values into their Helm `values`
 
 ### Requirement: Environment-specific Helm values
 
-The repository SHALL provide Helm value overlays at `infra/argocd/values/staging/` and `infra/argocd/values/production/` for the marketplace and kafka charts. Staging overlays SHALL set `global.imageTag` to `main`. Production overlays SHALL set `global.imageTag` to a commit SHA for coordinated releases.
+The repository SHALL provide Helm value overlays as chart-adjacent `values-staging.yaml` files (referenced from staging Applications via `valueFiles`) for marketplace, Istio CNI, and observability where needed. Staging overlays SHALL set `global.imageTag` to `main` for marketplace/kafka images. Production overlays SHALL set `global.imageTag` to a commit SHA for coordinated releases when production is added.
 
 #### Scenario: Staging pulls rolling main tag
 
@@ -36,12 +46,12 @@ The repository SHALL provide Helm value overlays at `infra/argocd/values/staging
 
 ### Requirement: Chart image registry and tag resolution
 
-The `refurbished-marketplace` and `kafka` Helm charts SHALL support `global.imageRegistry` and `global.imageTag`. When `global.imageRegistry` is empty, templates SHALL render service image fields unchanged for local Tilt. When set, templates SHALL render images as `{registry}/{shortName}:{tag}`.
+The `refurbished-marketplace` and `kafka` Helm charts SHALL support `global.imageRegistry` and `global.imageTag`. When `global.imageRegistry` is empty, templates SHALL render service image fields unchanged for local Colima builds. When set, templates SHALL render images as `{registry}/{shortName}:{tag}`.
 
-#### Scenario: Tilt local image names unchanged
+#### Scenario: Local image names unchanged
 
 - **WHEN** Helm renders with default chart values and empty `global.imageRegistry`
-- **THEN** service deployments reference short names such as `refurbished-marketplace/web`
+- **THEN** service deployments reference short names such as `web`
 
 #### Scenario: Remote cluster GHCR reference
 
@@ -73,39 +83,39 @@ Child ArgoCD Applications SHALL use sync waves so operators sync before the mark
 
 ### Requirement: GitOps documentation
 
-The repository SHALL document the ArgoCD layout, staging vs production value locations, image tag promotion for production, and prerequisites that remain outside Git (Argo bootstrap, Doppler token, ClusterSecretStore).
+The repository SHALL document the Argo CD layout (local vs staging), chart-adjacent `values-staging.yaml` overlays, image tag promotion for production when added, and prerequisites that remain outside Git (Argo bootstrap, Doppler token, ClusterSecretStore, Cloudflare tunnel token).
 
 #### Scenario: Contributor finds deploy guide
 
-- **WHEN** a contributor prepares a staging or production deploy
-- **THEN** development documentation explains app-of-apps paths, value overlays, and SHA promotion without requiring Tilt
+- **WHEN** a contributor prepares a local or staging deploy
+- **THEN** documentation explains app-of-apps paths, value overlays, local Tilt + Argo DX, and SHA promotion for remote clusters
 
-### Requirement: Staging observability application
+### Requirement: Observability application
 
-The repository SHALL include a staging ArgoCD child Application for the platform observability stack.
+The repository SHALL include local and staging Argo CD child Applications for the platform observability stack.
 
-#### Scenario: Staging root sync includes observability
+#### Scenario: Root sync includes observability
 
-- **WHEN** the staging root Application syncs from Git
-- **THEN** ArgoCD manages a child Application for the observability stack
+- **WHEN** the local or staging root Application syncs from Git
+- **THEN** Argo CD manages a child Application for the observability stack
 
 #### Scenario: Observability deploys to monitoring namespace
 
-- **WHEN** the staging observability Application syncs
+- **WHEN** an observability Application syncs
 - **THEN** it deploys the observability chart into the `monitoring` namespace
 
 ### Requirement: Observability sync ordering
 
-The staging observability Application SHALL sync before workloads or mesh features that depend on metrics storage and Grafana.
+The observability Application SHALL sync before workloads or mesh features that depend on metrics storage and Grafana.
 
 #### Scenario: Observability precedes Istio-dependent telemetry
 
-- **WHEN** staging sync ordering is evaluated
+- **WHEN** sync ordering is evaluated
 - **THEN** the observability stack has a sync wave that allows it to become available before Istio observe-mode dashboard verification depends on it
 
 ### Requirement: Observability ArgoCD drift handling
 
-The staging observability Application SHALL include sync and ignore-difference configuration for known `victoria-metrics-k8s-stack` ArgoCD drift sources.
+Local and staging observability Applications SHALL include sync and ignore-difference configuration for known `victoria-metrics-k8s-stack` ArgoCD drift sources.
 
 #### Scenario: Generated operator webhook certificates do not cause drift
 
@@ -190,7 +200,7 @@ The staging Kafka Application SHALL deploy Strimzi Kafka, Connect, and UI resour
 
 ### Requirement: Staging Istio ingress enablement
 
-The staging ArgoCD marketplace Application SHALL be able to enable Istio edge Gateway API resources through Helm value overlays without requiring Tilt.
+The staging ArgoCD marketplace Application SHALL be able to enable Istio edge Gateway API resources through Helm value overlays.
 
 #### Scenario: Staging overlay enables ingress
 
@@ -211,13 +221,13 @@ Staging value overlays SHALL set `HOSTED_PAYMENT_BASE_URL` to the Cloudflare-fac
 - **WHEN** staging ingress with simulator routing is enabled
 - **THEN** the web Deployment environment uses the public `https://` simulator hostname, not `http://payment-gateway-simulator:8097` cluster DNS alone and not `http://localhost:8097`
 
-### Requirement: Staging Cloudflare Tunnel application
+### Requirement: Cloudflare Tunnel application
 
-The repository SHALL include a staging Argo CD child Application that deploys in-cluster `cloudflared` for the marketplace edge.
+The repository SHALL include Argo CD child Applications under local and staging that deploy in-cluster `cloudflared` for the marketplace edge.
 
-#### Scenario: Staging root sync includes cloudflare-tunnel
+#### Scenario: Root sync includes cloudflare-tunnel
 
-- **WHEN** the staging root Application syncs from Git
+- **WHEN** the local or staging root Application syncs from Git
 - **THEN** Argo CD manages a child Application for the Cloudflare Tunnel connector in the `cloudflare-tunnel` namespace
 
 #### Scenario: Tunnel token comes from External Secrets

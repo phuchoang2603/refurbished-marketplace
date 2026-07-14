@@ -18,7 +18,7 @@ Apply **type**, **service**, and **area** as GitHub labels when opening an issue
 - `service: web`, `service: payment`, `service: orders`, `service: cart`, `service: products`, `service: users`
 - `area: infra`, `area: ci`, `area: observability`, `area: security`, `area: data`, `area: ml`
 
-Use **type** on every issue. Add **service** when the work is scoped to one or more services (omit for cross-cutting platform work). Add **area** for the primary concern (infra, CI, observability, etc.)., `area: data`, `area: ml`
+Use **type** on every issue. Add **service** when the work is scoped to one or more services (omit for cross-cutting platform work). Add **area** for the primary concern (infra, CI, observability, etc.).
 
 ## Example flow
 
@@ -40,4 +40,4 @@ Use **type** on every issue. Add **service** when the work is scoped to one or m
 - Use the PR template in `.github/pull_request_template.md`.
 - Keep PRs focused; prefer one issue per PR when practical.
 - Mention the OpenSpec change name when applicable.
-- Describe how you verified the change (usually via Tilt).
+- Describe how you verified the change (usually via the local Argo stack).

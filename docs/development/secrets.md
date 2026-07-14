@@ -6,7 +6,7 @@ Application secrets are **not** committed to Git. [External Secrets Operator](ht
 
 1. Create a Doppler project named `refurbished-marketplace`.
 2. Create two configs:
-   - `dev` — local Tilt
+   - `dev` — local Argo / Colima
    - `prd` — staging and production
 
 `devenv.nix` sets `DOPPLER_PROJECT` and `DOPPLER_CONFIG=dev` for the Doppler CLI.
@@ -31,7 +31,10 @@ Guidelines:
 - **dev:** simple values are fine for local development.
 - **prd:** use unique, strong values. Do not reuse `dev` secrets.
 - `JWT_SECRET` is shared by `web` and `users` through `users-auth`.
-- `CLOUDFLARE_TUNNEL_TOKEN` is the Cloudflare Zero Trust tunnel token for in-cluster `cloudflared` (staging). Create the tunnel in the Cloudflare dashboard, then paste the token into Doppler `prd`.
+- `CLOUDFLARE_TUNNEL_TOKEN` is the Cloudflare Zero Trust tunnel token for in-cluster `cloudflared`. Use a **separate tunnel** per config:
+  - Doppler `dev` → local Colima (`shop.dev.phuchoang.sbs` / `pay.dev.phuchoang.sbs`)
+  - Doppler `prd` → staging (`shop.phuchoang.sbs` / `pay.phuchoang.sbs`)
+    Create each tunnel in the Cloudflare dashboard, then paste the token into the matching Doppler config.
 
 DB password keys are derived from `db.secretName` (for example `users-app` → `USERS_APP_PASSWORD`). Auth keys use the `auth.secretKey` name directly (`JWT_SECRET`).
 
@@ -48,10 +51,11 @@ Reference: [Doppler service tokens](https://docs.doppler.com/docs/service-tokens
 
 Store each token in a gitignored manifest:
 
-| File                            | Config | Applied by             |
-| ------------------------------- | ------ | ---------------------- |
-| `doppler-token.dev.secret.yaml` | `dev`  | Tilt                   |
-| `doppler-token.prd.secret.yaml` | `prd`  | manual `kubectl apply` |
+| File                            | Config | Applied by                                  |
+| ------------------------------- | ------ | ------------------------------------------- |
+| `doppler-token.dev.secret.yaml` | `dev`  | applied by Tilt (`doppler-secret` resource) |
+
+| `doppler-token.prd.secret.yaml` | `prd` | manual `kubectl apply` |
 
 Examples are committed as `infra/k8s/doppler-token.dev.secret.yaml.example` and `infra/k8s/doppler-token.prd.secret.yaml.example`.
 
@@ -61,7 +65,7 @@ Examples are committed as `infra/k8s/doppler-token.dev.secret.yaml.example` and 
 cp infra/k8s/doppler-token.dev.secret.yaml.example infra/k8s/doppler-token.dev.secret.yaml
 ```
 
-Paste the `dev` service token, then run `tilt up`.
+Paste the `dev` service token, then run `tilt up` (Tilt applies the secret and installs Argo).
 
 ### Staging / production (`prd`)
 

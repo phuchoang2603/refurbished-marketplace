@@ -31,15 +31,15 @@ in
     protoc-gen-go
     protoc-gen-go-grpc
 
-    # templ
+    # templ / css (Tilt watches invoke these)
     templ
     tailwindcss
 
     # kubernetes
     kubectl
     kubernetes-helm
-    tilt
     doppler
+    tilt
 
     # ai stuff
     nodejs
@@ -165,6 +165,8 @@ in
         enable = true;
         excludes = [
           "*.css"
+          "**/templates/*.yaml"
+          "**/templates/*.tpl"
         ];
       };
 
