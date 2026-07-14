@@ -57,6 +57,19 @@ local_resource(
   labels=['argocd'],
 )
 
+# Marketplace Helm needs CNPG + ESO CRDs from Argo-managed operators before apply.
+local_resource(
+  'argocd-operators-ready',
+  '''
+  set -euo pipefail
+  kubectl wait --for=condition=Established --timeout=10m crd/clusters.postgresql.cnpg.io
+  kubectl wait --for=condition=Established --timeout=10m crd/externalsecrets.external-secrets.io
+  kubectl wait --for=condition=Established --timeout=10m crd/clustersecretstores.external-secrets.io
+  ''',
+  resource_deps=['argocd-local-root'],
+  labels=['argocd'],
+)
+
 local_resource(
   'argocd-ui',
   serve_cmd='kubectl -n argo-cd port-forward svc/argocd-server 8088:443',
@@ -75,6 +88,19 @@ k8s_yaml(helm(
   namespace='ecommerce',
   values=['./infra/charts/refurbished-marketplace/values.yaml'],
 ))
+
+k8s_resource(
+  new_name='marketplace-secrets',
+  objects=[
+    'users-app:externalsecret',
+    'products-app:externalsecret',
+    'orders-app:externalsecret',
+    'payment-app:externalsecret',
+    'users-auth:externalsecret',
+  ],
+  resource_deps=['argocd-operators-ready'],
+  labels=['argocd'],
+)
 
 GO_WORKSPACE_ONLY = [
   './go.work',
@@ -128,7 +154,7 @@ docker_build(
   dockerfile='./infra/docker/web.Dockerfile',
   only=GO_WORKSPACE_ONLY,
 )
-k8s_resource('web', port_forwards=['8080:8080'], labels=['web'])
+k8s_resource('web', port_forwards=['8080:8080'], resource_deps=['argocd-operators-ready'], labels=['web'])
 
 ### Users ###
 
@@ -139,10 +165,11 @@ k8s_resource(
   'users-db',
   extra_pod_selectors=[{'cnpg.io/cluster': 'users-db'}],
   port_forwards=['5432:5432'],
+  resource_deps=['argocd-operators-ready', 'marketplace-secrets'],
   labels=['users'],
 )
-k8s_resource('users-migrate', labels=['users'])
-k8s_resource('users', port_forwards=['9091:9091'], labels=['users'])
+k8s_resource('users-migrate', resource_deps=['users-db'], labels=['users'])
+k8s_resource('users', port_forwards=['9091:9091'], resource_deps=['users-db'], labels=['users'])
 
 ### Products ###
 
@@ -153,10 +180,11 @@ k8s_resource(
   'products-db',
   extra_pod_selectors=[{'cnpg.io/cluster': 'products-db'}],
   port_forwards=['5433:5432'],
+  resource_deps=['argocd-operators-ready', 'marketplace-secrets'],
   labels=['products'],
 )
-k8s_resource('products-migrate', labels=['products'])
-k8s_resource('products', port_forwards=['9092:9092'], labels=['products'])
+k8s_resource('products-migrate', resource_deps=['products-db'], labels=['products'])
+k8s_resource('products', port_forwards=['9092:9092'], resource_deps=['products-db'], labels=['products'])
 
 ### Orders ###
 
@@ -167,15 +195,16 @@ k8s_resource(
   'orders-db',
   extra_pod_selectors=[{'cnpg.io/cluster': 'orders-db'}],
   port_forwards=['5434:5432'],
+  resource_deps=['argocd-operators-ready', 'marketplace-secrets'],
   labels=['orders'],
 )
-k8s_resource('orders-migrate', labels=['orders'])
-k8s_resource('orders', port_forwards=['9093:9093'], labels=['orders'])
+k8s_resource('orders-migrate', resource_deps=['orders-db'], labels=['orders'])
+k8s_resource('orders', port_forwards=['9093:9093'], resource_deps=['orders-db'], labels=['orders'])
 
 ### Cart ###
 
 go_service('cart', './services/cart/cmd/cart', 9094)
-k8s_resource('cart', port_forwards=['9094:9094'], labels=['cart'])
+k8s_resource('cart', port_forwards=['9094:9094'], resource_deps=['argocd-operators-ready'], labels=['cart'])
 
 ### Payment ###
 
@@ -186,10 +215,11 @@ k8s_resource(
   'payment-db',
   extra_pod_selectors=[{'cnpg.io/cluster': 'payment-db'}],
   port_forwards=['5436:5432'],
+  resource_deps=['argocd-operators-ready', 'marketplace-secrets'],
   labels=['payment'],
 )
-k8s_resource('payment-migrate', labels=['payment'])
-k8s_resource('payment', port_forwards=['9096:9096'], labels=['payment'])
+k8s_resource('payment-migrate', resource_deps=['payment-db'], labels=['payment'])
+k8s_resource('payment', port_forwards=['9096:9096'], resource_deps=['payment-db'], labels=['payment'])
 
 go_service('payment-gateway-simulator', './tools/payment-gateway-simulator', 8097)
-k8s_resource('payment-gateway-simulator', port_forwards=['8097:8097'], labels=['payment'])
+k8s_resource('payment-gateway-simulator', port_forwards=['8097:8097'], resource_deps=['argocd-operators-ready'], labels=['payment'])

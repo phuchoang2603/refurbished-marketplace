@@ -1,6 +1,6 @@
 # GitOps deployment (Argo CD)
 
-Staging syncs everything via `staging-root` → `infra/argocd/app-of-apps` + `values-staging.yaml`. Local Colima: Tilt owns the marketplace chart; Argo (`local-root` → same chart + `values-local.yaml`) owns operators, Istio, Kafka, observability, and Cloudflare Tunnel.
+Staging syncs everything via `staging-root` → `infra/argocd/app-of-apps` + chart-adjacent `values-staging.yaml` overlays. Local Colima: Tilt owns the marketplace chart; Argo (`local-root` → same chart defaults + inline `helm.values`) owns operators, Istio, Kafka, observability, and Cloudflare Tunnel.
 
 ## What Argo CD syncs
 
@@ -33,7 +33,7 @@ Inside `refurbished-marketplace`, resource sync waves (staging Argo) order work 
 infra/argocd/
 ├── app-of-apps/              # shared child Application catalog (one template)
 │   ├── values.yaml           # defaults + apps map
-│   └── templates/applications.yaml
+│   └── templates/applications.tpl
 ├── local/root.yaml           # inline helm.values (local)
 └── staging/root.yaml         # inline helm.values (staging + global images)
 ```
