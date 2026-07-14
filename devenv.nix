@@ -31,7 +31,7 @@ in
     protoc-gen-go
     protoc-gen-go-grpc
 
-    # templ
+    # templ / css (Tilt watches invoke these)
     templ
     tailwindcss
 
@@ -39,6 +39,7 @@ in
     kubectl
     kubernetes-helm
     doppler
+    tilt
 
     # ai stuff
     nodejs
@@ -105,32 +106,6 @@ in
         done
       '';
     };
-
-    bootstrap-local-argocd = {
-      exec = ''
-        exec "${config.git.root}/tools/bootstrap-local-argocd.sh" "$@"
-      '';
-    };
-
-    build-images = {
-      exec = ''
-        exec "${config.git.root}/tools/build-images.sh" "$@"
-      '';
-    };
-
-    templ-gen = {
-      exec = ''
-        cd "${config.git.root}/services/web"
-        templ generate
-      '';
-    };
-
-    tailwind-gen = {
-      exec = ''
-        cd "${config.git.root}/services/web"
-        tailwindcss -c tailwind.config.js -i tailwind.css -o static/app.css
-      '';
-    };
   };
 
   tasks = {
@@ -151,26 +126,6 @@ in
       execIfModified = [
         "services/**/sqlc.yaml"
         "services/**/*.sql"
-      ];
-    };
-
-    "web:templ" = {
-      exec = "templ-gen";
-      before = [ "devenv:enterShell" ];
-
-      execIfModified = [
-        "services/web/**/*.templ"
-      ];
-    };
-
-    "web:tailwind" = {
-      exec = "tailwind-gen";
-      before = [ "devenv:enterShell" ];
-
-      execIfModified = [
-        "services/web/tailwind.css"
-        "services/web/tailwind.config.js"
-        "services/web/**/*.templ"
       ];
     };
 
