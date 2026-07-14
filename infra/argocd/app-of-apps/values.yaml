@@ -1,0 +1,68 @@
+repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
+targetRevision: main
+namePrefix: local
+
+global:
+  imageRegistry: ""
+  imageTag: ""
+
+marketplace:
+  enabled: false
+  valueFiles: []
+
+# Shared child Application catalog (env roots override fields via helm.values)
+apps:
+  external-secrets:
+    syncWave: "0"
+    path: infra/charts/operators/external-secrets
+    releaseName: external-secrets
+    namespace: operators
+  cnpg:
+    syncWave: "0"
+    path: infra/charts/operators/cnpg
+    releaseName: cnpg
+    namespace: operators
+  strimzi:
+    syncWave: "0"
+    path: infra/charts/operators/strimzi
+    releaseName: strimzi-cluster-operator
+    namespace: operators
+  istio-base:
+    syncWave: "0"
+    path: infra/charts/operators/istio/base
+    releaseName: istio-base
+    namespace: istio-system
+  istiod:
+    syncWave: "1"
+    path: infra/charts/operators/istio/istiod
+    releaseName: istiod
+    namespace: istio-system
+  istio-cni:
+    syncWave: "1"
+    path: infra/charts/operators/istio/cni
+    releaseName: istio-cni
+    namespace: istio-system
+    valueFiles: []
+  ztunnel:
+    syncWave: "2"
+    path: infra/charts/operators/istio/ztunnel
+    releaseName: ztunnel
+    namespace: istio-system
+  observability:
+    syncWave: "1"
+    path: infra/charts/observability
+    releaseName: observability
+    namespace: monitoring
+    valueFiles: []
+    ignoreDifferences: true
+  kafka:
+    syncWave: "4"
+    path: infra/charts/kafka
+    releaseName: ecommerce-kafka-cluster
+    namespace: kafka
+    injectGlobalImages: true
+  cloudflare-tunnel:
+    syncWave: "5"
+    path: infra/charts/cloudflare-tunnel
+    releaseName: cloudflare-tunnel
+    namespace: cloudflare-tunnel

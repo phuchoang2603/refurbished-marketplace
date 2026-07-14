@@ -10,18 +10,22 @@ spec:
   source:
     repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
     targetRevision: main
-    path: infra/argocd/local/apps
-    directory:
-      recurse: false
+    path: infra/argocd/app-of-apps
+    helm:
+      values: |
+        namePrefix: local
+        marketplace:
+          enabled: false
+      parameters:
+        - name: targetRevision
+          value: $ARGOCD_APP_SOURCE_TARGET_REVISION
   destination:
     server: https://kubernetes.default.svc
     namespace: argo-cd
-  # selfHeal off so Tilt can pin targetRevision to the current branch
-  # without Argo resetting child Applications to the committed "main" value.
   syncPolicy:
     automated:
       prune: true
-      selfHeal: false
+      selfHeal: true
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true

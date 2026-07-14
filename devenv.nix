@@ -165,6 +165,8 @@ in
         enable = true;
         excludes = [
           "*.css"
+          "**/templates/*.yaml"
+          "**/templates/*.tpl"
         ];
       };
 
