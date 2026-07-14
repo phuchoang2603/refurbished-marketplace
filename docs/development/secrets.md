@@ -51,10 +51,11 @@ Reference: [Doppler service tokens](https://docs.doppler.com/docs/service-tokens
 
 Store each token in a gitignored manifest:
 
-| File                            | Config | Applied by             |
-| ------------------------------- | ------ | ---------------------- |
-| `doppler-token.dev.secret.yaml` | `dev`  | local bootstrap script |
-| `doppler-token.prd.secret.yaml` | `prd`  | manual `kubectl apply` |
+| File                            | Config | Applied by                                  |
+| ------------------------------- | ------ | ------------------------------------------- |
+| `doppler-token.dev.secret.yaml` | `dev`  | applied by Tilt (`doppler-secret` resource) |
+
+| `doppler-token.prd.secret.yaml` | `prd` | manual `kubectl apply` |
 
 Examples are committed as `infra/k8s/doppler-token.dev.secret.yaml.example` and `infra/k8s/doppler-token.prd.secret.yaml.example`.
 
@@ -64,7 +65,7 @@ Examples are committed as `infra/k8s/doppler-token.dev.secret.yaml.example` and 
 cp infra/k8s/doppler-token.dev.secret.yaml.example infra/k8s/doppler-token.dev.secret.yaml
 ```
 
-Paste the `dev` service token, then run `bootstrap-local-argocd`.
+Paste the `dev` service token, then run `tilt up` (Tilt applies the secret and installs Argo).
 
 ### Staging / production (`prd`)
 

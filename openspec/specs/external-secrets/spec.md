@@ -12,7 +12,7 @@ The repository SHALL install External Secrets Operator on the local Kubernetes c
 
 #### Scenario: ESO operator healthy after local bootstrap
 
-- **WHEN** a developer runs local Argo bootstrap with a valid cluster context
+- **WHEN** a developer runs `tilt up` with a valid cluster context
 - **THEN** the External Secrets Operator deployment becomes ready in the `operators` namespace
 
 ### Requirement: Doppler ClusterSecretStore with service token
@@ -54,7 +54,7 @@ The repository SHALL NOT commit plaintext Kubernetes Secret manifests for applic
 
 #### Scenario: Local bootstrap without secrets.yaml
 
-- **WHEN** a developer bootstraps local Argo after secrets setup
+- **WHEN** a developer runs `tilt up` after secrets setup
 - **THEN** application secrets are created by ESO and not from a committed `infra/k8s/secrets.yaml`
 
 ### Requirement: Doppler bootstrap secret manifests
@@ -82,7 +82,7 @@ The repository SHALL provide Doppler CLI via devenv and set `DOPPLER_PROJECT` an
 
 #### Scenario: Bootstrap applies local Doppler secret
 
-- **WHEN** `bootstrap-local-argocd` runs with `infra/k8s/doppler-token.dev.secret.yaml` present
+- **WHEN** `tilt up` runs with `infra/k8s/doppler-token.dev.secret.yaml` present
 - **THEN** Kubernetes Secret `doppler-token` exists in `operators` with key `dopplerToken`
 
 ### Requirement: Provider swap via ClusterSecretStore

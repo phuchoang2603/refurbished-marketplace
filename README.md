@@ -44,20 +44,18 @@ graph LR
 - `templ` for typed server-rendered HTML components.
 - Datastar-compatible markup for browser interactions and fragment updates.
 - Kubernetes + Helm (CloudNativePG, Strimzi, Istio ambient, External Secrets).
-- Argo CD GitOps for local Colima (`infra/argocd/local/`) and staging (`infra/argocd/staging/`).
+- Local DX: Tilt for the marketplace chart + image builds; Argo CD (`infra/argocd/local/`) for operators, Istio, Kafka, observability, and Cloudflare Tunnel. Staging uses full Argo (`infra/argocd/staging/`).
 - Cloudflare Tunnel to Istio Gateway for browser ingress (`.dev` hosts locally, production hosts in staging).
-- Nix/devenv for local tooling, codegen tasks, and scripts (`bootstrap-local-argocd`, `build-images`).
-- OpenSpec for change proposals, specs, designs, tasks, and archives.
+- Nix/devenv for local tooling (`tilt`, codegen); OpenSpec for change proposals.
 
 ## Development
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/development/](docs/development/) for the local workflow (`devenv`, Argo on Colima, secrets, code generation), OpenSpec planning, and GitHub issue conventions.
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/development/](docs/development/) for the local workflow (`devenv`, Tilt + Argo on Colima, secrets, code generation), OpenSpec planning, and GitHub issue conventions.
 
 Quick start:
 
 ```bash
 devenv shell
-bootstrap-local-argocd
-build-images
+tilt up
 # https://shop.dev.phuchoang.sbs
 ```

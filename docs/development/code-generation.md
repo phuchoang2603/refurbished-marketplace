@@ -2,13 +2,13 @@
 
 Run these from inside `devenv shell`:
 
-| Command          | Purpose                                                                             |
-| ---------------- | ----------------------------------------------------------------------------------- |
-| `generate-proto` | Regenerate Go code from `**/proto/*/v1/*.proto`                                     |
-| `sqlc-gen`       | Regenerate sqlc query code for services with `sqlc.yaml`                            |
-| `templ-gen`      | Regenerate `templ` views under `services/web` (alias: `devenv tasks run web:templ`) |
-| `tailwind-gen`   | Build Tailwind CSS for the web BFF (`devenv tasks run web:tailwind`)                |
-| `tidy`           | `go work sync` — keeps workspace module dependencies aligned                        |
+| Command          | Purpose                                                      |
+| ---------------- | ------------------------------------------------------------ |
+| `generate-proto` | Regenerate Go code from `**/proto/*/v1/*.proto`              |
+| `sqlc-gen`       | Regenerate sqlc query code for services with `sqlc.yaml`     |
+| `tidy`           | `go work sync` — keeps workspace module dependencies aligned |
+
+Web `templ` and Tailwind are regenerated continuously by Tilt (`templ-watch` / `tailwind-watch`) while `tilt up` is running.
 
 Edit SQL migrations under `services/<service>/db/migrations/` and queries under `services/<service>/db/queries/`, then run `sqlc-gen` when query shapes change.
 

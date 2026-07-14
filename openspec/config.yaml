@@ -7,14 +7,13 @@ context: |
   Development Workflow:
   - devenv.nix manages local development tooling; if tools are missing, add them to devenv.nix and run `direnv reload`
   - Go multi-module workspace. Prefer the devenv `tidy` script for `go work sync`
-  - Local Kubernetes is Colima/k3s with Argo CD (`infra/argocd/local/`). Bootstrap via devenv `bootstrap-local-argocd`; do not try to compile and run Go services as host processes (tests are okay)
+  - Local Kubernetes is Colima/k3s. Primary DX is `tilt up`: Tilt deploys the refurbished-marketplace chart and builds images; Tilt also installs Argo CD and applies `infra/argocd/local/` for operators, Istio, Kafka, observability, and Cloudflare Tunnel (marketplace is not an Argo Application locally). Do not try to compile and run Go services as host processes (tests are okay)
   - Chart `values.yaml` is Colima-local (short image names, ambient mesh, Istio ingress on `shop.dev.phuchoang.sbs` / `pay.dev.phuchoang.sbs`). Staging overlays live in `values-staging.yaml`
-  - Local images: devenv `build-images` / `./tools/build-images.sh` (shared catalog with GHCR release CI via `--matrix`)
-  - Browser access locally is Cloudflare Tunnel → Istio Gateway (not per-service port-forwards)
-  - HTML-first web edge using chi, templ, Tailwind CSS, Datastar, and vendored DatastarUI-style components. Prefer devenv tasks `web:templ` / `web:tailwind` (or `templ-gen` / `tailwind-gen`) rather than hand-running codegen unless asked
+  - Browser access locally is Cloudflare Tunnel → Istio Gateway; Tilt also exposes debug port-forwards (web 8080, gRPC, CNPG)
+  - HTML-first web edge using chi, templ, Tailwind CSS, Datastar, and vendored DatastarUI-style components. Prefer Tilt `templ-watch` / `tailwind-watch` rather than hand-running codegen unless asked
   - gRPC for internal service-to-service traffic. Prefer devenv `generate-proto` for protobuf codegen
   - PostgreSQL with goose migrations and sqlc queries. Prefer devenv `sqlc-gen`
-  - Staging GitOps: `infra/argocd/staging/` (production hostnames/GHCR overlays). Production app-of-apps is not in-tree yet
+  - Staging GitOps: `infra/argocd/staging/` (includes marketplace + production hostnames/GHCR). Production app-of-apps is not in-tree yet
 
   Repo conventions:
   - Keep service code under services/<name>/ and private code in internal/
@@ -23,7 +22,6 @@ context: |
   - Keep protobuf contracts under shared/proto/<domain>/v1/
   - Keep docs/ for stable architecture notes, Mermaid diagrams, ADR-style decisions, and service ownership notes
   - Keep operator/app Helm charts under infra/charts/; local/staging Argo under infra/argocd/{local,staging}/
-  - Keep bootstrap/dev shell scripts under tools/ (except Go modules like payment-gateway-simulator)
 
   Code style:
   - Don't format the code because I already have a git-hook to autoformat for me.

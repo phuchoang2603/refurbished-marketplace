@@ -44,7 +44,7 @@ body:
     id: environment
     attributes:
       label: Environment
-      description: e.g. local Argo on Colima, staging, branch name, browser
-      placeholder: Colima local Argo, shop.dev.phuchoang.sbs
+      description: e.g. `tilt up` on Colima, staging, branch name, browser
+      placeholder: Colima tilt up, shop.dev.phuchoang.sbs
     validations:
       required: false

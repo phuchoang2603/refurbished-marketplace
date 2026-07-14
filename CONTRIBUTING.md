@@ -14,8 +14,7 @@ Thanks for helping build this project. This guide is the entry point; detailed h
 ```bash
 devenv shell
 # one-time secrets + Cloudflare Public Hostnames — see docs/development/local-setup.md
-bootstrap-local-argocd
-build-images
+tilt up
 # browse https://shop.dev.phuchoang.sbs
 ```
 
@@ -23,13 +22,13 @@ build-images
 
 Local workflow, codegen, and project conventions.
 
-| Topic                          | Guide                                                                      |
-| ------------------------------ | -------------------------------------------------------------------------- |
-| devenv shell, local Argo, test | [docs/development/local-setup.md](docs/development/local-setup.md)         |
-| Doppler + External Secrets     | [docs/development/secrets.md](docs/development/secrets.md)                 |
-| Code generation and formatting | [docs/development/code-generation.md](docs/development/code-generation.md) |
-| OpenSpec planning workflow     | [docs/development/openspec.md](docs/development/openspec.md)               |
-| Issues, labels, pull requests  | [docs/development/github-workflow.md](docs/development/github-workflow.md) |
+| Topic                           | Guide                                                                      |
+| ------------------------------- | -------------------------------------------------------------------------- |
+| devenv shell, Tilt + Argo, test | [docs/development/local-setup.md](docs/development/local-setup.md)         |
+| Doppler + External Secrets      | [docs/development/secrets.md](docs/development/secrets.md)                 |
+| Code generation and formatting  | [docs/development/code-generation.md](docs/development/code-generation.md) |
+| OpenSpec planning workflow      | [docs/development/openspec.md](docs/development/openspec.md)               |
+| Issues, labels, pull requests   | [docs/development/github-workflow.md](docs/development/github-workflow.md) |
 
 ## Deployment guides
 

@@ -8,17 +8,22 @@ Define local Colima (`infra/argocd/local/`) and staging (`infra/argocd/staging/`
 
 ### Requirement: App-of-apps per environment
 
-The repository SHALL provide ArgoCD Application manifests under `infra/argocd/<environment>/` for `local` and `staging` (and `production` when added). Each environment SHALL include a root Application that syncs child Applications for operators, the `refurbished-marketplace` Helm chart, and the `kafka` Helm chart.
+The repository SHALL provide ArgoCD Application manifests under `infra/argocd/<environment>/` for `local` and `staging` (and `production` when added). Staging SHALL include a root Application that syncs child Applications for operators, the `refurbished-marketplace` Helm chart, and the `kafka` Helm chart. Local Argo SHALL sync operators, Istio, Kafka, observability, and Cloudflare Tunnel, and SHALL NOT manage the `refurbished-marketplace` Application (Tilt owns that chart locally).
 
 #### Scenario: Staging root application
 
 - **WHEN** the staging cluster root Application syncs from Git
 - **THEN** child Applications exist for operators, `refurbished-marketplace`, and `kafka` in the `ecommerce` and `operators` namespaces as defined
 
-#### Scenario: Local Argo uses chart defaults
+#### Scenario: Local Argo omits marketplace
 
 - **WHEN** a developer uses local Argo CD (`infra/argocd/local/`) on Colima
-- **THEN** chart default `values.yaml` is the local source; staging overlays live in chart-adjacent `values-staging.yaml` files
+- **THEN** no marketplace Application is present; chart default `values.yaml` is applied by Tilt for the marketplace release
+
+#### Scenario: Local infra uses chart defaults
+
+- **WHEN** local Argo syncs infra Applications
+- **THEN** chart default `values.yaml` is used; staging overlays live in chart-adjacent `values-staging.yaml` files
 
 ### Requirement: Environment-specific Helm values
 
@@ -78,7 +83,7 @@ The repository SHALL document the Argo CD layout (local vs staging), chart-adjac
 #### Scenario: Contributor finds deploy guide
 
 - **WHEN** a contributor prepares a local or staging deploy
-- **THEN** documentation explains app-of-apps paths, value overlays, local bootstrap/build-images, and SHA promotion for remote clusters
+- **THEN** documentation explains app-of-apps paths, value overlays, local Tilt + Argo DX, and SHA promotion for remote clusters
 
 ### Requirement: Observability application
 
