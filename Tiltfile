@@ -2,17 +2,14 @@
 # - Tilt owns refurbished-marketplace (images + Helm + templ/tailwind watches + debug PFs)
 # - Argo CD (installed here) owns operators, Istio, Kafka, observability, Cloudflare Tunnel
 
-load('ext://namespace', 'namespace_create')
-
-namespace_create('ecommerce')
-namespace_create('operators')
-
 docker_build(
   'connect-debezium',
   '.',
   dockerfile='./infra/docker/connect-debezium.Dockerfile',
   only=['./infra/docker/connect-debezium.Dockerfile'],
 )
+# Built for Argo-managed Kafka Connect (not in Tilt-applied YAML).
+update_settings(suppress_unused_image_warnings=['connect-debezium'])
 
 ### Argo CD + infra apps ###
 
@@ -36,14 +33,39 @@ local_resource(
 
 local_resource(
   'doppler-secret',
-  'kubectl apply -f infra/k8s/doppler-token.dev.secret.yaml',
+  '''
+  kubectl apply -f - <<'EOF'
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: operators
+EOF
+  kubectl apply -f infra/k8s/doppler-token.dev.secret.yaml
+  ''',
   labels=['argocd'],
 )
 
-# Children inherit this revision via $ARGOCD_APP_SOURCE_TARGET_REVISION on local-root.
-root = read_yaml('./infra/argocd/local/root.yaml')
-root['spec']['source']['targetRevision'] = str(local('git branch --show-current', quiet=True)).strip()
-k8s_yaml(encode_yaml(root))
+# Apply only local-root via kubectl — never k8s_yaml Application CRs.
+# Tilt would own them and force-delete on update; Argo finalizers then hang the deploy.
+local_resource(
+  'argocd-local-root',
+  '''
+  set -euo pipefail
+  REV="$(git branch --show-current)"
+  # Pin targetRevision to the current branch (Argo children inherit via $ARGOCD_APP_SOURCE_TARGET_REVISION).
+  sed "s|^    targetRevision:.*|    targetRevision: ${REV}|" infra/argocd/local/root.yaml | kubectl apply -f -
+  ''',
+  resource_deps=['argocd-install', 'gateway-api-crds', 'doppler-secret'],
+  labels=['argocd'],
+)
+
+local_resource(
+  'argocd-ui',
+  serve_cmd='kubectl -n argo-cd port-forward svc/argocd-server 8088:443',
+  resource_deps=['argocd-install'],
+  links=['https://localhost:8088'],
+  labels=['argocd'],
+)
 
 ### Marketplace Helm (Tilt-owned) ###
 
