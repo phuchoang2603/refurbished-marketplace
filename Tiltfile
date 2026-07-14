@@ -2,14 +2,12 @@
 # - Tilt owns refurbished-marketplace (images + Helm + templ/tailwind watches + debug PFs)
 # - Argo CD (installed here) owns operators, Istio, Kafka, observability, Cloudflare Tunnel
 
-docker_build(
+local_resource(
   'connect-debezium',
-  '.',
-  dockerfile='./infra/docker/connect-debezium.Dockerfile',
-  only=['./infra/docker/connect-debezium.Dockerfile'],
+  'docker build -t connect-debezium:latest -f infra/docker/connect-debezium.Dockerfile .',
+  deps=['infra/docker/connect-debezium.Dockerfile'],
+  labels=['kafka'],
 )
-# Built for Argo-managed Kafka Connect (not in Tilt-applied YAML).
-update_settings(suppress_unused_image_warnings=['connect-debezium'])
 
 ### Argo CD + infra apps ###
 
