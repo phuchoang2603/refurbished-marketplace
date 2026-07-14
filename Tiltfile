@@ -7,82 +7,43 @@ load('ext://namespace', 'namespace_create')
 namespace_create('ecommerce')
 namespace_create('operators')
 
-GATEWAY_API_VERSION = 'v1.3.0'
-DOPPLER_SECRET = 'infra/k8s/doppler-token.dev.secret.yaml'
-ARGO_NS = 'argo-cd'
+docker_build(
+  'connect-debezium',
+  '.',
+  dockerfile='./infra/docker/connect-debezium.Dockerfile',
+  only=['./infra/docker/connect-debezium.Dockerfile'],
+)
 
-### Argo CD + infra Applications (no resource_deps) ###
+### Argo CD + infra apps ###
 
 local_resource(
   'argocd-install',
   '''
-  set -euo pipefail
-  helm repo add argo https://argoproj.github.io/argo-helm >/dev/null 2>&1 || true
-  helm repo update argo >/dev/null
+  helm repo add argo https://argoproj.github.io/argo-helm || true
   helm upgrade --install argocd argo/argo-cd \
-    --namespace argo-cd \
-    --create-namespace \
+    --namespace argo-cd --create-namespace \
     --set fullnameOverride=argocd \
-    --wait \
-    --timeout 10m
+    --wait --timeout 10m
   ''',
   labels=['argocd'],
 )
 
 local_resource(
   'gateway-api-crds',
-  '''
-  set -euo pipefail
-  kubectl get crd gateways.gateway.networking.k8s.io >/dev/null 2>&1 || \
-    kubectl apply --server-side -f "https://github.com/kubernetes-sigs/gateway-api/releases/download/%s/standard-install.yaml"
-  ''' % GATEWAY_API_VERSION,
+  'kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.3.0/standard-install.yaml',
   labels=['argocd'],
 )
 
 local_resource(
   'doppler-secret',
-  '''
-  set -euo pipefail
-  if [[ ! -f "%s" ]]; then
-    echo "Missing %s — copy from .example and paste the Doppler dev token." >&2
-    exit 1
-  fi
-  kubectl get ns operators >/dev/null 2>&1 || kubectl create namespace operators
-  kubectl apply -f %s
-  ''' % (DOPPLER_SECRET, DOPPLER_SECRET, DOPPLER_SECRET),
+  'kubectl apply -f infra/k8s/doppler-token.dev.secret.yaml',
   labels=['argocd'],
 )
 
-local_resource(
-  'argocd-local-apps',
-  '''
-  set -euo pipefail
-  REVISION="${ARGO_REVISION:-$(git branch --show-current)}"
-  if [[ -z "$REVISION" || "$REVISION" == "HEAD" ]]; then
-    echo "Detached HEAD; set ARGO_REVISION to a pushable branch name." >&2
-    exit 1
-  fi
-  echo "==> Pinning local Argo Applications to $REVISION"
-  tmpdir="$(mktemp -d)"
-  trap 'rm -rf "$tmpdir"' EXIT
-  sed "s/^    targetRevision: .*/    targetRevision: ${REVISION}/" \
-    infra/argocd/local/root.yaml >"$tmpdir/root.yaml"
-  kubectl apply -n argo-cd -f "$tmpdir/root.yaml"
-  for _ in $(seq 1 60); do
-    count="$(kubectl -n argo-cd get applications -o name 2>/dev/null | wc -l | tr -d ' ')"
-    if [[ "$count" -gt 1 ]]; then
-      break
-    fi
-    sleep 2
-  done
-  kubectl -n argo-cd get applications -o name | while read -r app; do
-    kubectl -n argo-cd patch "$app" --type merge \
-      -p "{\"spec\":{\"source\":{\"targetRevision\":\"${REVISION}\"}}}"
-  done
-  kubectl -n argo-cd get applications -o custom-columns='NAME:.metadata.name,REVISION:.spec.source.targetRevision' || true
-  ''',
-  labels=['argocd'],
-)
+# Children inherit this revision via $ARGOCD_APP_SOURCE_TARGET_REVISION on local-root.
+root = read_yaml('./infra/argocd/local/root.yaml')
+root['spec']['source']['targetRevision'] = str(local('git branch --show-current', quiet=True)).strip()
+k8s_yaml(encode_yaml(root))
 
 ### Marketplace Helm (Tilt-owned) ###
 
@@ -212,12 +173,3 @@ k8s_resource('payment', port_forwards=['9096:9096'], labels=['payment'])
 
 go_service('payment-gateway-simulator', './tools/payment-gateway-simulator', 8097)
 k8s_resource('payment-gateway-simulator', port_forwards=['8097:8097'], labels=['payment'])
-
-### Kafka Connect image (Argo kafka chart; short name for local Colima) ###
-
-docker_build(
-  'connect-debezium',
-  '.',
-  dockerfile='./infra/docker/connect-debezium.Dockerfile',
-  only=['./infra/docker/connect-debezium.Dockerfile'],
-)
