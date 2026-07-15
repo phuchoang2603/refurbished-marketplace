@@ -9,11 +9,11 @@
 
 ### Colima
 
-Give the VM enough memory for ambient Istio + Kafka + CNPG + observability (about **10 GiB**). Keep Traefik disabled:
+Chart defaults target **4 CPU / 8 GiB** Colima (tight Istio/Kafka/CNPG budgets; observability is apps-only: ecommerce/kafka metrics–logs–traces, no node-exporter/ksm/Alertmanager). Keep Traefik disabled:
 
 ```yaml
 cpu: 4
-memory: 10
+memory: 8
 kubernetes:
   enabled: true
   k3sArgs:
@@ -30,13 +30,13 @@ The shell provides Go, protobuf tooling, Kubernetes tooling (`kubectl`, `helm`),
 
 ## Hybrid Tilt + Argo CD
 
-| Layer                                                             | Local owner                                 |
-| ----------------------------------------------------------------- | ------------------------------------------- |
-| Operators, Istio, Kafka, observability, Cloudflare Tunnel         | Argo CD (`local-root` → `app-of-apps`)      |
-| `refurbished-marketplace` chart (DBs, secrets, services, ingress) | Tilt                                        |
-| Image builds + `templ` / Tailwind watches                         | Tilt                                        |
-| Browser                                                           | Cloudflare Tunnel → Istio Gateway           |
-| Debug (optional)                                                  | Tilt port-forwards (`8080` web, gRPC, CNPG) |
+| Layer                                                               | Local owner                                 |
+| ------------------------------------------------------------------- | ------------------------------------------- |
+| Operators, Istio, Kafka, apps-only observability, Cloudflare Tunnel | Argo CD (`local-root` → `app-of-apps`)      |
+| `refurbished-marketplace` chart (DBs, secrets, services, ingress)   | Tilt                                        |
+| Image builds + `templ` / Tailwind watches                           | Tilt                                        |
+| Browser                                                             | Cloudflare Tunnel → Istio Gateway           |
+| Debug (optional)                                                    | Tilt port-forwards (`8080` web, gRPC, CNPG) |
 
 Chart `values.yaml` enables ambient mesh and Istio ingress for:
 

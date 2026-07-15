@@ -22,7 +22,7 @@ spec:
         passwordSecret:
           name: {{ $svc.db.secretName }}
   storage:
-    size: {{ default "1Gi" $svc.db.storageSize | quote }}
+    size: {{ default "512Mi" $svc.db.storageSize | quote }}
 {{- with $dbResources }}
   resources:
 {{ toYaml . | nindent 4 }}

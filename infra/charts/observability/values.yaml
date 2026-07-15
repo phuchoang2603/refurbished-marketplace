@@ -1,10 +1,14 @@
+# Chart defaults = local Colima, apps-only signals:
+# - metrics: Istio waypoint + ingress scrapes (ecommerce) → VMSingle
+# - traces: VTSingle OTLP for marketplace services
+# - logs: VLAgent filtered to ecommerce (+ kafka) → VLSingle
+# No node-exporter, kube-state-metrics, Alertmanager, or default K8s dashboards.
+# Staging overlays values-staging.yaml for full platform stack.
 victoria-metrics-k8s-stack:
   fullnameOverride: vmks
 
   defaultDashboards:
-    enabled: true
-    annotations:
-      argocd.argoproj.io/sync-options: ServerSideApply=true
+    enabled: false
 
   # Upstream renders vmks-sync-job as a Helm hook, which Argo CD does not run.
   # The wrapper chart creates an equivalent PostSync Job instead.
@@ -17,25 +21,50 @@ victoria-metrics-k8s-stack:
       - victoriametrics-logs-datasource
     persistence:
       enabled: false
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 192Mi
 
   victoria-metrics-operator:
     crds:
       cleanup:
         enabled: false
+    resources:
+      requests:
+        cpu: 25m
+        memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
 
   alertmanager:
-    enabled: true
+    enabled: false
+
+  # Needs Alertmanager; enable in values-staging.yaml.
+  vmalert:
+    enabled: false
 
   vmsingle:
     enabled: true
     spec:
-      retentionPeriod: 7d
+      retentionPeriod: 1d
+      resources:
+        requests:
+          cpu: 25m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 192Mi
       storage:
         accessModes:
           - ReadWriteOnce
         resources:
           requests:
-            storage: 5Gi
+            storage: 1Gi
 
   vmcluster:
     enabled: false
@@ -43,11 +72,18 @@ victoria-metrics-k8s-stack:
   vlsingle:
     enabled: true
     spec:
-      retentionPeriod: 3d
+      retentionPeriod: 1d
+      resources:
+        requests:
+          cpu: 25m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 192Mi
       storage:
         resources:
           requests:
-            storage: 5Gi
+            storage: 1Gi
 
   vlcluster:
     enabled: false
@@ -55,34 +91,63 @@ victoria-metrics-k8s-stack:
   vmagent:
     enabled: true
     spec:
-      # Bind wrapper-owned Istio VMPodScrapes (and other CRs) into scrape config.
+      # Pick up wrapper-owned Istio VMPodScrapes only (no node/ksm scrapes locally).
       selectAllByDefault: true
       podScrapeNamespaceSelector: {}
       podScrapeSelector: {}
       serviceScrapeNamespaceSelector: {}
       serviceScrapeSelector: {}
+      resources:
+        requests:
+          cpu: 25m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 128Mi
 
   vlagent:
     enabled: true
     spec:
       k8sCollector:
         enabled: true
+        # Skip every namespace except marketplace apps + Kafka Connect.
+        excludeFilter: "not kubernetes.pod_namespace:in(ecommerce, kafka)"
+      resources:
+        requests:
+          cpu: 25m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 128Mi
 
   vtsingle:
     enabled: true
     spec:
-      retentionPeriod: 3d
+      retentionPeriod: 1d
+      resources:
+        requests:
+          cpu: 25m
+          memory: 64Mi
+        limits:
+          cpu: 200m
+          memory: 192Mi
       storage:
         resources:
           requests:
-            storage: 2Gi
+            storage: 1Gi
 
   vtcluster:
     enabled: false
 
+  prometheus-node-exporter:
+    enabled: false
+
+  kube-state-metrics:
+    enabled: false
+
 # Wrapper-owned dashboard/rules sync job for Argo CD PostSync.
 dashboardSyncJob:
-  enabled: true
+  enabled: false
 
 # Scrape Istio ambient control plane + waypoint L7 metrics into VMSingle.
 istioScrapes:

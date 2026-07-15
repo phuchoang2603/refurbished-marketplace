@@ -11,6 +11,10 @@ spec:
   roles:
     - controller
     - broker
+{{- with .Values.kafka.jvmOptions }}
+  jvmOptions:
+{{ toYaml . | nindent 4 }}
+{{- end }}
 {{- with .Values.kafka.resources }}
   resources:
 {{ toYaml . | nindent 4 }}

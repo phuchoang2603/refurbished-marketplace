@@ -5,3 +5,10 @@ cni:
     platform: ""
   cniBinDir: /opt/cni/bin
   cniConfDir: /etc/cni/net.d
+  resources:
+    requests:
+      cpu: 50m
+      memory: 100Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi

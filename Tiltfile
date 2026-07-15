@@ -1,6 +1,6 @@
 # Hybrid local DX:
 # - Tilt owns refurbished-marketplace (images + Helm + templ/tailwind watches + debug PFs)
-# - Argo CD (installed here) owns operators, Istio, Kafka, observability, Cloudflare Tunnel
+# - Argo CD (installed here) owns operators, Istio, Kafka, apps-only observability, Cloudflare Tunnel
 
 local_resource(
   'connect-debezium',

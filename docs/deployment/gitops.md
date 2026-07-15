@@ -1,6 +1,6 @@
 # GitOps deployment (Argo CD)
 
-Staging syncs everything via `staging-root` → `infra/argocd/app-of-apps` + chart-adjacent `values-staging.yaml` overlays. Local Colima: Tilt owns the marketplace chart; Argo (`local-root` → same chart defaults + inline `helm.values`) owns operators, Istio, Kafka, observability, and Cloudflare Tunnel.
+Staging syncs everything via `staging-root` → `infra/argocd/app-of-apps` + chart-adjacent `values-staging.yaml` overlays. Local Colima: Tilt owns the marketplace chart; Argo (`local-root` → same chart defaults + inline `helm.values`) owns operators, Istio, Kafka, apps-only observability, and Cloudflare Tunnel.
 
 ## What Argo CD syncs
 
@@ -10,12 +10,12 @@ Staging syncs everything via `staging-root` → `infra/argocd/app-of-apps` + cha
 | CloudNativePG                       | This repo wrapper chart | upstream chart `0.28.3`                                          | `operators`         | yes   | yes     |
 | Strimzi                             | This repo wrapper chart | upstream chart `1.0.0`, `watchAnyNamespace=true`                 | `operators`         | yes   | yes     |
 | Istio base / istiod / cni / ztunnel | This repo wrappers      | official Istio charts `1.30.2` (ambient)                         | `istio-system`      | yes   | yes     |
-| `observability`                     | This repo wrapper chart | `victoria-metrics-k8s-stack` `0.86.0`                            | `monitoring`        | yes   | yes     |
+| `observability`                     | This repo wrapper chart | `victoria-metrics-k8s-stack` `0.86.0` (local: apps-only)         | `monitoring`        | yes   | yes     |
 | `refurbished-marketplace`           | This repo               | CNPG, ExternalSecrets, migrations, services                      | `ecommerce`         | Tilt  | yes     |
 | `kafka`                             | This repo               | Debezium reads secrets/DBs in `ecommerce`                        | `kafka`             | yes   | yes     |
 | `cloudflare-tunnel`                 | This repo               | `cloudflared` connector; tunnel token via Doppler ExternalSecret | `cloudflare-tunnel` | yes   | yes     |
 
-**Local (Colima):** `tilt up` installs Argo CD and applies `local-root` (current git branch). Both environments render children from the shared Helm chart [`infra/argocd/app-of-apps/`](../../infra/argocd/app-of-apps/); env-specific settings live inline on each root Application’s `helm.values`. Children inherit `targetRevision` via `$ARGOCD_APP_SOURCE_TARGET_REVISION`. Local omits the marketplace Application (Tilt owns that chart). See [local-setup](../development/local-setup.md).
+**Local (Colima):** `tilt up` installs Argo CD and applies `local-root` (current git branch). Both environments render children from the shared Helm chart [`infra/argocd/app-of-apps/`](../../infra/argocd/app-of-apps/); env-specific settings live inline on each root Application’s `helm.values`. Children inherit `targetRevision` via `$ARGOCD_APP_SOURCE_TARGET_REVISION`. Local omits marketplace (Tilt). Observability defaults are apps-only (Istio L7 scrapes + ecommerce/kafka logs + VT/OTLP; no node-exporter/ksm/Alertmanager). Staging restores full platform budgets via `values-staging.yaml`. See [local-setup](../development/local-setup.md).
 
 **Staging:** Same chart; `staging-root` sets `global.imageRegistry` / `imageTag`, enables marketplace, and points chart `valueFiles` at chart-adjacent `values-staging.yaml` overlays where needed.
 

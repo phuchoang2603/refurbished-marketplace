@@ -4,3 +4,10 @@ cni:
   profile: ambient
   global:
     platform: k3s
+  resources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi

@@ -22,10 +22,31 @@ spec:
           valueFiles:
             - values-staging.yaml
         apps:
+          external-secrets:
+            valueFiles:
+              - values-staging.yaml
+          cnpg:
+            valueFiles:
+              - values-staging.yaml
+          strimzi:
+            valueFiles:
+              - values-staging.yaml
+          istiod:
+            valueFiles:
+              - values-staging.yaml
           istio-cni:
             valueFiles:
               - values-staging.yaml
+          ztunnel:
+            valueFiles:
+              - values-staging.yaml
           observability:
+            valueFiles:
+              - values-staging.yaml
+          kafka:
+            valueFiles:
+              - values-staging.yaml
+          cloudflare-tunnel:
             valueFiles:
               - values-staging.yaml
       parameters:

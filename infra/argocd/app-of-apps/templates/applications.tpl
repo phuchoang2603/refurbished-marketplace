@@ -1,4 +1,6 @@
 {{- range $name, $app := .Values.apps }}
+{{- /* sprig `default` treats false as empty — use hasKey for explicit disables */ -}}
+{{- if or (not (hasKey $app "enabled")) $app.enabled }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -66,6 +68,7 @@ spec:
       namespace: monitoring
       jsonPointers:
         - /spec/template/metadata/annotations/checksum~1secret
+{{- end }}
 {{- end }}
 {{- end }}
 {{- if .Values.marketplace.enabled }}

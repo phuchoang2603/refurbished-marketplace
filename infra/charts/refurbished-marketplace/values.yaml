@@ -22,43 +22,43 @@ ingress:
   simulatorHostname: pay.dev.phuchoang.sbs
 
 # Default container resources (overridable per service).
-# Sized from staging idle usage with headroom for Go services.
+# Sized for Colima 4 CPU / 8 GiB; staging overlays via values-staging.yaml.
 defaults:
   resources:
     requests:
-      cpu: 25m
-      memory: 32Mi
+      cpu: 10m
+      memory: 24Mi
     limits:
-      cpu: 200m
-      memory: 128Mi
+      cpu: 100m
+      memory: 96Mi
   initResources:
     requests:
+      cpu: 5m
+      memory: 8Mi
+    limits:
+      cpu: 50m
+      memory: 32Mi
+  migrationResources:
+    requests:
       cpu: 10m
-      memory: 16Mi
+      memory: 32Mi
     limits:
       cpu: 100m
       memory: 64Mi
-  migrationResources:
-    requests:
-      cpu: 25m
-      memory: 64Mi
-    limits:
-      cpu: 200m
-      memory: 128Mi
   redisResources:
     requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
+  dbResources:
+    requests:
       cpu: 25m
       memory: 64Mi
     limits:
       cpu: 200m
-      memory: 128Mi
-  dbResources:
-    requests:
-      cpu: 50m
-      memory: 128Mi
-    limits:
-      cpu: 500m
-      memory: 512Mi
+      memory: 192Mi
 
 externalSecrets:
   enabled: true
@@ -107,7 +107,7 @@ services:
       usernameKey: username
       passwordKey: password
       instances: 1
-      storageSize: 1Gi
+      storageSize: 512Mi
 
   products:
     enabled: true
@@ -128,7 +128,7 @@ services:
       usernameKey: username
       passwordKey: password
       instances: 1
-      storageSize: 1Gi
+      storageSize: 512Mi
 
   orders:
     enabled: true
@@ -149,7 +149,7 @@ services:
       usernameKey: username
       passwordKey: password
       instances: 1
-      storageSize: 1Gi
+      storageSize: 512Mi
 
   cart:
     enabled: true
@@ -178,7 +178,7 @@ services:
       usernameKey: username
       passwordKey: password
       instances: 1
-      storageSize: 1Gi
+      storageSize: 512Mi
 
   payment-gateway-simulator:
     enabled: true

@@ -1,0 +1,50 @@
+kafka:
+  storage:
+    size: 10Gi
+  jvmOptions:
+    "-Xms": 512m
+    "-Xmx": 512m
+  resources:
+    requests:
+      cpu: 100m
+      memory: 768Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+connect:
+  jvmOptions:
+    "-Xms": 512m
+    "-Xmx": 512m
+  resources:
+    requests:
+      cpu: 100m
+      memory: 768Mi
+    limits:
+      memory: 1Gi
+
+entities:
+  orders:
+    topics:
+      - name: orders.created
+        partitions: 10
+        retention: 604800000
+  payment:
+    topics:
+      - name: payment.succeeded
+        partitions: 6
+        retention: 604800000
+      - name: payment.failed
+        partitions: 6
+        retention: 604800000
+  inventory:
+    topics:
+      - name: inventory.reserved
+        partitions: 6
+        retention: 604800000
+      - name: inventory.reservation-failed
+        partitions: 6
+        retention: 604800000
+
+provectus:
+  enabled: true

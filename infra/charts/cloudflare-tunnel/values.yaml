@@ -1,4 +1,5 @@
-replicaCount: 2
+# Chart defaults = local Colima (single connector).
+replicaCount: 1
 
 image:
   repository: cloudflare/cloudflared
@@ -22,8 +23,8 @@ externalSecrets:
 
 resources:
   requests:
-    cpu: 10m
-    memory: 32Mi
+    cpu: 5m
+    memory: 16Mi
   limits:
-    cpu: 200m
-    memory: 128Mi
+    cpu: 100m
+    memory: 64Mi

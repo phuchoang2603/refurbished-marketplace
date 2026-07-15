@@ -1,10 +1,43 @@
 victoria-metrics-k8s-stack:
+  defaultDashboards:
+    enabled: true
+
   grafana:
     persistence:
       enabled: true
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 512Mi
+
+  victoria-metrics-operator:
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+
+  alertmanager:
+    enabled: true
+
+  vmalert:
+    enabled: true
 
   vmsingle:
     spec:
+      retentionPeriod: 7d
+      resources:
+        requests:
+          cpu: 50m
+          memory: 256Mi
+        limits:
+          cpu: "1"
+          memory: 1Gi
       storage:
         resources:
           requests:
@@ -12,14 +45,57 @@ victoria-metrics-k8s-stack:
 
   vlsingle:
     spec:
+      retentionPeriod: 3d
+      resources:
+        requests:
+          cpu: 50m
+          memory: 256Mi
+        limits:
+          cpu: "1"
+          memory: 1Gi
       storage:
         resources:
           requests:
             storage: 20Gi
 
+  vmagent:
+    spec:
+      resources:
+        requests:
+          cpu: 50m
+          memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 256Mi
+
+  vlagent:
+    enabled: true
+    spec:
+      k8sCollector:
+        enabled: true
+        # Collect cluster-wide on staging (clear local ecommerce/kafka filter).
+        excludeFilter: ""
+
   vtsingle:
     spec:
+      retentionPeriod: 3d
+      resources:
+        requests:
+          cpu: 50m
+          memory: 256Mi
+        limits:
+          cpu: "1"
+          memory: 1Gi
       storage:
         resources:
           requests:
             storage: 10Gi
+
+  prometheus-node-exporter:
+    enabled: true
+
+  kube-state-metrics:
+    enabled: true
+
+dashboardSyncJob:
+  enabled: true

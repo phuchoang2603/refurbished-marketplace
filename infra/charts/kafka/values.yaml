@@ -14,21 +14,31 @@ kafka:
   replicationFactor: 1
   minInsyncReplicas: 1
   storage:
-    size: 10Gi
+    size: 5Gi
+  # Colima-friendly broker JVM / requests (staging overlays values-staging.yaml).
+  jvmOptions:
+    "-Xms": 256m
+    "-Xmx": 256m
+  resources:
+    requests:
+      cpu: 50m
+      memory: 384Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
 connect:
   clusterName: ecommerce-connect-cluster
   image: connect-debezium
-  # Debezium plugin classgraph scan is slow; Strimzi defaults (-Xms128M, BestEffort,
-  # liveness initialDelay 60s) kill the pod before :8083 comes up.
+  # Keep enough heap for Debezium plugin scan; still below prior 512m/768Mi local burn.
   jvmOptions:
-    "-Xms": 512m
-    "-Xmx": 512m
+    "-Xms": 256m
+    "-Xmx": 256m
   resources:
     requests:
-      cpu: 100m
-      memory: 768Mi
+      cpu: 50m
+      memory: 384Mi
     limits:
-      memory: 1Gi
+      memory: 512Mi
   livenessProbe:
     initialDelaySeconds: 180
     timeoutSeconds: 5
@@ -43,8 +53,8 @@ entities:
   orders:
     topics:
       - name: orders.created
-        partitions: 10
-        retention: 604800000 # 7 days
+        partitions: 1
+        retention: 86400000 # 1 day local
     connector:
       name: orders-outbox
       sourceSecretName: orders-app
@@ -56,11 +66,11 @@ entities:
   payment:
     topics:
       - name: payment.succeeded
-        partitions: 6
-        retention: 604800000
+        partitions: 1
+        retention: 86400000
       - name: payment.failed
-        partitions: 6
-        retention: 604800000
+        partitions: 1
+        retention: 86400000
     connector:
       name: payment-outbox
       sourceSecretName: payment-app
@@ -72,11 +82,11 @@ entities:
   inventory:
     topics:
       - name: inventory.reserved
-        partitions: 6
-        retention: 604800000
+        partitions: 1
+        retention: 86400000
       - name: inventory.reservation-failed
-        partitions: 6
-        retention: 604800000
+        partitions: 1
+        retention: 86400000
     connector:
       name: inventory-outbox
       sourceSecretName: products-app
@@ -86,7 +96,14 @@ entities:
       outboxTable: public.inventory_outbox
       publicationAutocreateMode: filtered
 provectus:
-  enabled: true
+  enabled: false
   name: kafka-ui
   image: provectuslabs/kafka-ui:v0.7.2
   port: 8080
+  resources:
+    requests:
+      cpu: 10m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi

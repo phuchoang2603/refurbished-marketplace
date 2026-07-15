@@ -3,6 +3,43 @@ global:
   imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
   imageTag: main
 
+defaults:
+  resources:
+    requests:
+      cpu: 25m
+      memory: 32Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+  initResources:
+    requests:
+      cpu: 10m
+      memory: 16Mi
+    limits:
+      cpu: 100m
+      memory: 64Mi
+  migrationResources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+  redisResources:
+    requests:
+      cpu: 25m
+      memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
+  dbResources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
 ingress:
   enabled: true
   name: ecommerce-ingress
@@ -17,3 +54,15 @@ services:
       PUBLIC_BASE_URL: https://shop.phuchoang.sbs
       # Server-side simulator→web callback stays on cluster DNS.
       HOSTED_PAYMENT_CALLBACK_BASE_URL: http://web:8080
+  users:
+    db:
+      storageSize: 1Gi
+  products:
+    db:
+      storageSize: 1Gi
+  orders:
+    db:
+      storageSize: 1Gi
+  payment:
+    db:
+      storageSize: 1Gi
