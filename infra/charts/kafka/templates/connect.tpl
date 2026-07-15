@@ -15,6 +15,10 @@ spec:
   offsetStorageTopic: {{ printf "%s-offsets" .Values.connect.clusterName }}
   configStorageTopic: {{ printf "%s-configs" .Values.connect.clusterName }}
   statusStorageTopic: {{ printf "%s-status" .Values.connect.clusterName }}
+{{- with .Values.connect.jvmOptions }}
+  jvmOptions:
+{{ toYaml . | nindent 4 }}
+{{- end }}
 {{- with .Values.connect.resources }}
   resources:
 {{ toYaml . | nindent 4 }}
