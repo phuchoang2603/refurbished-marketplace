@@ -6,7 +6,6 @@ local_resource(
   'connect-debezium',
   'docker build -t connect-debezium:latest -f infra/docker/connect-debezium.Dockerfile .',
   deps=['infra/docker/connect-debezium.Dockerfile'],
-  labels=['kafka'],
 )
 
 ### Argo CD + infra apps ###
@@ -26,7 +25,6 @@ local_resource(
 local_resource(
   'gateway-api-crds',
   'kubectl apply --server-side -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.3.0/standard-install.yaml',
-  labels=['argocd'],
 )
 
 local_resource(
@@ -40,7 +38,6 @@ metadata:
 EOF
   kubectl apply -f infra/k8s/doppler-token.dev.secret.yaml
   ''',
-  labels=['argocd'],
 )
 
 # Apply only local-root via kubectl — never k8s_yaml Application CRs.
@@ -99,7 +96,6 @@ k8s_resource(
     'users-auth:externalsecret',
   ],
   resource_deps=['argocd-operators-ready'],
-  labels=['argocd'],
 )
 
 GO_WORKSPACE_ONLY = [
