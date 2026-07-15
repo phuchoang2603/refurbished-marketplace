@@ -28,6 +28,6 @@ VictoriaTraces and Grafana Explore already work, but checkout flows still lack c
 ## Impact
 
 - Touches `shared/` (new observability/trace helpers), `services/web`, `services/orders`, `services/payment`, `services/products` (gRPC + outbox migrations/sqlc), Kafka consumers, `infra/docker/connect-debezium.Dockerfile`, `infra/charts/kafka` connector config, `infra/charts/observability` scrapes, Istio `meshConfig` / `Telemetry` for OTLP to VT.
-- Depends on existing VTSingle + Grafana Jaeger datasource (already verified).
+- Depends on existing VTSingle + Grafana Tempo datasource (`/select/tempo`).
 - Does not change business protobuf payloads or browser UX contracts.
 - Non-goals: full auto-instrumentation of every library call; OTEL messaging **links** instead of child-of for v1; production sampling policy beyond staging-friendly defaults; enrolling Kafka Connect into ambient mesh solely for tracing.

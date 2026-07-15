@@ -1,6 +1,6 @@
 ## Context
 
-Staging already runs VictoriaTraces (VTSingle) with a Grafana Jaeger-compatible datasource (verified in Explore). Istio ambient enrolls marketplace workloads with a waypoint and an ingress Gateway. Metrics scrapes today cover istiod, ztunnel, cni, and waypoint via `VMPodScrape`; ingress Envoy is not scraped.
+Staging already runs VictoriaTraces (VTSingle) with a Grafana Tempo-compatible datasource (`/select/tempo`, TraceQL/Explore). Istio ambient enrolls marketplace workloads with a waypoint and an ingress Gateway. Metrics scrapes today cover istiod, ztunnel, cni, and waypoint via `VMPodScrape`; ingress Envoy is not scraped.
 
 Application tracing is incomplete: `services/web` applies `otelhttp` without a configured exporter or gRPC propagation. Outbox tables lack span context. Debezium `EventRouter` connectors do not map tracing fields. Kafka consumers do not continue traces. Issue #3 defines the desired HTTP → gRPC → outbox → Debezium → Kafka → consumer path.
 

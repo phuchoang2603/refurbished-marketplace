@@ -110,7 +110,7 @@ The observability stack SHALL include Grafana datasources and an initial alertin
 #### Scenario: Grafana has traces datasource
 
 - **WHEN** Grafana starts from the observability stack
-- **THEN** it has a VictoriaTraces datasource configured through the Jaeger-compatible API
+- **THEN** it has a VictoriaTraces datasource configured through the Tempo-compatible API (`/select/tempo`)
 
 #### Scenario: Alertmanager is available
 

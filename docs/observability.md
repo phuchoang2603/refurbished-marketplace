@@ -66,7 +66,7 @@ kubectl get svc -n monitoring
 kubectl get pvc -n monitoring
 ```
 
-Grafana should include datasources for VictoriaMetrics, VictoriaLogs, and VictoriaTraces. VictoriaLogs requires the `victoriametrics-logs-datasource` Grafana plugin. VictoriaTraces uses Grafana's built-in Jaeger datasource support.
+Grafana should include datasources for VictoriaMetrics, VictoriaLogs, and VictoriaTraces. VictoriaLogs requires the `victoriametrics-logs-datasource` Grafana plugin. VictoriaTraces is provisioned as a Grafana **Tempo** datasource (`http://vtsingle-vmks.monitoring.svc.cluster.local:10428/select/tempo`) so Explore can use TraceQL and (optionally) Grafana Traces Drilldown.
 
 Default dashboards are fetched by `vmks-sync-job` (an Argo CD `PostSync` hook in the wrapper chart) and loaded into Grafana via the dashboard sidecar. After sync, verify:
 
@@ -136,7 +136,7 @@ Browser → ingress → web ──gRPC──▶ domain services
 **Verify after deploy:**
 
 1. Confirm VT Service has port `4317` and apps have `OTEL_EXPORTER_OTLP_ENDPOINT`.
-2. Place a checkout order; in Grafana Explore (VictoriaTraces) search by service `web` / recent traces.
+2. Place a checkout order; in Grafana Explore select the **VictoriaTraces** Tempo datasource and search recent traces (TraceQL or Search) for service `web`.
 3. Confirm the TraceId includes web → orders → Debezium/connect → products (inventory) spans.
 4. Complete hosted-payment success/fail; confirm callback → payment → payment outbox path.
 5. Confirm mesh spans appear when Istio Telemetry `ecommerce-tracing` is enabled.

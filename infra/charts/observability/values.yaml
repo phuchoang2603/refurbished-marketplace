@@ -31,6 +31,19 @@ victoria-metrics-k8s-stack:
         cpu: 500m
         memory: 512Mi
 
+  # Upstream hardcodes /select/jaeger for defaultDatasources.victoriatraces and
+  # does not tpl-expand extra URLs. Provide Tempo explicitly for TraceQL /
+  # Traces Drilldown (matches fullnameOverride vmks + monitoring namespace).
+  defaultDatasources:
+    victoriatraces:
+      datasources: []
+    extra:
+      - name: VictoriaTraces
+        type: tempo
+        access: proxy
+        uid: VictoriaTraces
+        url: http://vtsingle-vmks.monitoring.svc.cluster.local:10428/select/tempo
+
   victoria-metrics-operator:
     crds:
       cleanup:
