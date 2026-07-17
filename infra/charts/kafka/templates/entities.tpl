@@ -82,6 +82,8 @@ spec:
     transforms.outbox.route.by.field: "event_type"
     transforms.outbox.route.topic.replacement: "${routedByValue}"
     transforms.outbox.tracing.span.context.field: tracingspancontext
+    transforms.outbox.tracing.operation.name: debezium-read
+    transforms.outbox.tracing.with.context.field.only: "true"
     key.converter: org.apache.kafka.connect.storage.StringConverter
     transforms.outbox.table.expand.json.payload: "false"
     value.converter: org.apache.kafka.connect.converters.ByteArrayConverter

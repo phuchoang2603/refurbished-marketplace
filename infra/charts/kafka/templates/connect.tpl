@@ -31,6 +31,10 @@ spec:
   readinessProbe:
 {{ toYaml . | nindent 4 }}
 {{- end }}
+  # Activates Strimzi tracing-agent → initializes GlobalOpenTelemetry so Debezium
+  # EventRouter can inject W3C traceparent into Kafka record headers.
+  tracing:
+    type: opentelemetry
   config:
     config.providers: secrets
     config.providers.secrets.class: io.strimzi.kafka.KubernetesSecretConfigProvider
@@ -50,3 +54,5 @@ spec:
           value: grpc
         - name: OTEL_TRACES_SAMPLER
           value: parentbased_always_on
+        - name: OTEL_PROPAGATORS
+          value: tracecontext

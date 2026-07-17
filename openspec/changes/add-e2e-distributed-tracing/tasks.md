@@ -13,7 +13,7 @@
 
 - [x] 3.1 Export web spans and inject W3C context on outgoing gRPC clients (checkout + hosted-payment callback paths).
 - [x] 3.2 Add `otelgrpc` (or equivalent) server/client instrumentation on orders, payment, and other services on the checkout/callback paths.
-- [ ] 3.3 Verify a sync-only TraceId appears in Grafana Explore for web → gRPC before enabling outbox work.
+- [x] 3.3 Verify a sync-only TraceId appears in Grafana Explore for web → gRPC before enabling outbox work.
 
 ## 4. Outbox span context
 
@@ -23,9 +23,9 @@
 
 ## 5. Debezium / Connect tracing
 
-- [x] 5.1 Add OpenTelemetry API/SDK dependencies to `connect-debezium` image.
+- [x] 5.1 Rely on Strimzi Kafka image OpenTelemetry jars + enable Connect `tracing.type: opentelemetry` (agent); keep Debezium plugin in `connect-debezium` image.
 - [x] 5.2 Configure EventRouter tracing fields on orders/payment/inventory outbox connectors.
-- [ ] 5.3 Rebuild/push Connect image and confirm connector tasks start with tracing enabled.
+- [ ] 5.3 Rebuild Connect image if needed, sync Kafka chart, and confirm connector tasks emit Kafka `traceparent`.
 
 ## 6. Istio mesh tracing
 

@@ -12,7 +12,7 @@ Application tracing is incomplete: `services/web` applies `otelhttp` without a c
 - Export app and mesh spans to VictoriaTraces; visualize in Grafana Explore.
 - Persist span context on outbox rows; EventRouter emits `traceparent` Kafka headers.
 - Child-of async span relation for Grafana waterfall UX.
-- OpenTelemetry SDK on the `connect-debezium` image.
+- OpenTelemetry via Strimzi Connect tracing agent (EventRouter → Kafka `traceparent`).
 - Metrics scrapes limited to **waypoint + ingress**.
 
 **Non-Goals:**
@@ -54,13 +54,13 @@ Introduce `shared/observability/trace` (or equivalent module path) that configur
 
 **Alternatives considered:** OTEL span links (better semantics for long lag, weaker Explore UX); custom SMT instead of EventRouter (we already use EventRouter); skipping Connect OTEL (headers alone without Connect spans is weaker).
 
-### 4. Add OpenTelemetry SDK to `connect-debezium` image
+### 4. Prefer Strimzi bundled OpenTelemetry + tracing agent on Connect
 
-Bake OTEL API/SDK (and any Debezium-required tracing deps) into `infra/docker/connect-debezium.Dockerfile` / Connect runtime so EventRouter tracing can activate.
+Use the Strimzi Kafka base image’s OpenTelemetry jars and `tracing-agent`, enabled with KafkaConnect `spec.tracing.type: opentelemetry` and `OTEL_PROPAGATORS=tracecontext` / OTLP env toward VictoriaTraces. The custom `connect-debezium` image only adds the Debezium Postgres plugin.
 
-**Rationale:** Debezium tracing requires OTEL on the Connect classpath; Strimzi KafkaConnect image alone is insufficient.
+**Rationale:** Debezium EventRouter needs an initialized `GlobalOpenTelemetry` (Java agent). Strimzi already ships the agent and required instrumentation jars; baking a second incomplete OTEL set on `CLASSPATH` caused version skew and still never activated the agent.
 
-**Alternatives considered:** Init container copying jars (fragile); separate collector-only story without Connect spans (loses Debezium span in the waterfall).
+**Alternatives considered:** Manually downloading OTEL jars into `/opt/kafka/libs/otel` without the agent (failed to emit `traceparent`); OpenTelemetry Collector in front of VT (extra hop, not needed for v1).
 
 ### 5. Slim Istio scrapes to waypoint + ingress
 

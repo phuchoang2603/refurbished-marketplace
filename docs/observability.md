@@ -125,7 +125,7 @@ Browser → ingress → web ──gRPC──▶ domain services
                          │
                     outbox.tracingspancontext
                          │
-              Debezium EventRouter (+ OTEL on Connect)
+              Debezium EventRouter (+ Strimzi OTEL agent on Connect)
                          │  Kafka header traceparent
                          ▼
               consumers (child-of spans) → VictoriaTraces → Grafana Explore
@@ -133,10 +133,14 @@ Browser → ingress → web ──gRPC──▶ domain services
 
 **Joining rule:** one W3C `TraceId` across app spans and Istio L7 hops when apps propagate `traceparent`. Async hops continue via the outbox column → Kafka headers. Consumer spans use parent–child (not links) for Grafana waterfall UX.
 
+**Connect tracing:** KafkaConnect sets `spec.tracing.type: opentelemetry` (loads Strimzi `tracing-agent`) plus `OTEL_PROPAGATORS=tracecontext` and OTLP export to VictoriaTraces. EventRouter maps `tracingspancontext` → Kafka `traceparent`. Rebuild `connect-debezium` only when the Debezium plugin changes; enabling the agent is a chart/CR change.
+
+**Mesh tracing:** Marketplace chart renders Istio `Telemetry` `ecommerce-tracing` when `mesh.tracing.enabled` is true (local + staging).
+
 **Verify after deploy:**
 
 1. Confirm VT Service has port `4317` and apps have `OTEL_EXPORTER_OTLP_ENDPOINT`.
 2. Place a checkout order; in Grafana Explore select the **VictoriaTraces** Tempo datasource and search recent traces (TraceQL or Search) for service `web`.
-3. Confirm the TraceId includes web → orders → Debezium/connect → products (inventory) spans.
+3. Confirm the TraceId includes web → orders → Debezium/connect → products (inventory) spans. Kafka `orders.created` records should carry a `traceparent` header.
 4. Complete hosted-payment success/fail; confirm callback → payment → payment outbox path.
-5. Confirm mesh spans appear when Istio Telemetry `ecommerce-tracing` is enabled.
+5. Confirm mesh spans appear alongside app spans (Telemetry `ecommerce-tracing`).
