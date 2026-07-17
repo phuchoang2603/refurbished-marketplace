@@ -75,16 +75,41 @@ local_resource(
   labels=['argocd'],
 )
 
+local_resource(
+  'grafana-ui',
+  serve_cmd='kubectl -n monitoring port-forward svc/observability-grafana 3000:80',
+  resource_deps=['argocd-install'],
+  links=['http://localhost:3000'],
+  labels=['argocd'],
+)
+
 ### Marketplace Helm (Tilt-owned) ###
 
 k8s_kind('Cluster', pod_readiness='wait')
 
-k8s_yaml(helm(
+_mp_objects = helm(
   './infra/charts/refurbished-marketplace',
   name='refurbished-marketplace',
   namespace='ecommerce',
   values=['./infra/charts/refurbished-marketplace/values.yaml'],
-))
+)
+
+# Tilt must NOT own the destination Namespace. On refresh Tilt prunes+recreates it,
+# which cascade-deletes everything inside (CNPG databases → orphaned Debezium
+# offsets). Strip it from the Tilt-managed objects and create/label it out-of-band
+# via `kubectl apply`, which is idempotent and never deletes the namespace.
+_ns_objects, _mp_objects = filter_yaml(_mp_objects, kind='Namespace')
+k8s_yaml(_mp_objects)
+
+local_resource(
+  'ecommerce-namespace',
+  cmd=(
+    'kubectl create namespace ecommerce --dry-run=client -o yaml | kubectl apply -f - && ' +
+    'kubectl label namespace ecommerce ' +
+    'istio.io/dataplane-mode=ambient istio.io/use-waypoint=ecommerce-waypoint --overwrite'
+  ),
+  resource_deps=['argocd-install'],
+)
 
 k8s_resource(
   new_name='marketplace-secrets',
@@ -95,7 +120,7 @@ k8s_resource(
     'payment-app:externalsecret',
     'users-auth:externalsecret',
   ],
-  resource_deps=['argocd-operators-ready'],
+  resource_deps=['argocd-operators-ready', 'ecommerce-namespace'],
 )
 
 GO_WORKSPACE_ONLY = [
@@ -150,7 +175,7 @@ docker_build(
   dockerfile='./infra/docker/web.Dockerfile',
   only=GO_WORKSPACE_ONLY,
 )
-k8s_resource('web', port_forwards=['8080:8080'], resource_deps=['argocd-operators-ready'], labels=['web'])
+k8s_resource('web', port_forwards=['8080:8080'], resource_deps=['argocd-operators-ready', 'ecommerce-namespace'], labels=['web'])
 
 ### Users ###
 
@@ -200,7 +225,7 @@ k8s_resource('orders', port_forwards=['9093:9093'], resource_deps=['orders-db'],
 ### Cart ###
 
 go_service('cart', './services/cart/cmd/cart', 9094)
-k8s_resource('cart', port_forwards=['9094:9094'], resource_deps=['argocd-operators-ready'], labels=['cart'])
+k8s_resource('cart', port_forwards=['9094:9094'], resource_deps=['argocd-operators-ready', 'ecommerce-namespace'], labels=['cart'])
 
 ### Payment ###
 
@@ -218,4 +243,4 @@ k8s_resource('payment-migrate', resource_deps=['payment-db'], labels=['payment']
 k8s_resource('payment', port_forwards=['9096:9096'], resource_deps=['payment-db'], labels=['payment'])
 
 go_service('payment-gateway-simulator', './tools/payment-gateway-simulator', 8097)
-k8s_resource('payment-gateway-simulator', port_forwards=['8097:8097'], resource_deps=['argocd-operators-ready'], labels=['payment'])
+k8s_resource('payment-gateway-simulator', port_forwards=['8097:8097'], resource_deps=['argocd-operators-ready', 'ecommerce-namespace'], labels=['payment'])

@@ -1,19 +1,10 @@
----
-apiVersion: v1
-kind: Namespace
-metadata:
-  name: {{ .Release.Namespace }}
-  # Keep the Namespace in desired state even when mesh is disabled so Argo prune
-  # cannot delete the destination namespace (and cascade-delete workloads).
-  annotations:
-    argocd.argoproj.io/sync-options: Prune=false
-  labels:
-{{- if .Values.mesh.ambient.enabled }}
-    istio.io/dataplane-mode: ambient
-{{- end }}
-{{- if .Values.mesh.waypoint.enabled }}
-    istio.io/use-waypoint: {{ default "ecommerce-waypoint" .Values.mesh.waypoint.name | quote }}
-{{- end }}
+{{- /*
+The destination Namespace is intentionally NOT templated here. Owning the release
+namespace inside the release causes prune+recreate churn (Argo CreateNamespace /
+Tilt namespace management fight the manifest), which cascade-deletes workloads.
+The deployer owns it instead: Argo via syncPolicy.managedNamespaceMetadata, Tilt
+via an out-of-band `kubectl apply`. Both apply the ambient/waypoint labels below.
+*/}}
 {{- if .Values.mesh.waypoint.enabled }}
 ---
 apiVersion: gateway.networking.k8s.io/v1

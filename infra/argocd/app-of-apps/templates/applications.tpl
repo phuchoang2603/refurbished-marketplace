@@ -111,4 +111,11 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+    # Own the destination namespace's metadata here instead of templating a
+    # Namespace object in the chart (which caused prune+recreate churn and
+    # cascade-deleted the databases). Enrolls ecommerce into ambient mesh.
+    managedNamespaceMetadata:
+      labels:
+        istio.io/dataplane-mode: ambient
+        istio.io/use-waypoint: ecommerce-waypoint
 {{- end }}
