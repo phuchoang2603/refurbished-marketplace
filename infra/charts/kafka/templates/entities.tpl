@@ -51,6 +51,10 @@ metadata:
 spec:
   class: io.debezium.connector.postgresql.PostgresConnector
   tasksMax: 1
+  # Self-heal transient startup failures (e.g. DB not ready yet). Restarts the
+  # connector/task with exponential back-off, indefinitely by default.
+  autoRestart:
+    enabled: true
   config:
     # --- Database Connection ---
     database.hostname: {{ printf "%s.%s.svc" $entity.connector.databaseHost $appNamespace }}
