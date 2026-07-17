@@ -32,7 +32,7 @@ Guidelines:
 - **prd:** use unique, strong values. Do not reuse `dev` secrets.
 - `JWT_SECRET` is shared by `web` and `users` through `users-auth`.
 - `CLOUDFLARE_TUNNEL_TOKEN` is the Cloudflare Zero Trust tunnel token for in-cluster `cloudflared`. Use a **separate tunnel** per config:
-  - Doppler `dev` → local Colima (`shop.dev.phuchoang.sbs` / `pay.dev.phuchoang.sbs`)
+  - Doppler `dev` → local Colima (`shop-dev.phuchoang.sbs` / `pay-dev.phuchoang.sbs`)
   - Doppler `prd` → staging (`shop.phuchoang.sbs` / `pay.phuchoang.sbs`)
     Create each tunnel in the Cloudflare dashboard, then paste the token into the matching Doppler config.
 

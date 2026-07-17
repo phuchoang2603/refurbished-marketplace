@@ -42,14 +42,14 @@ Chart `values.yaml` enables ambient mesh and Istio ingress for:
 
 | Hostname                 | Backend                     |
 | ------------------------ | --------------------------- |
-| `shop.dev.phuchoang.sbs` | `web`                       |
-| `pay.dev.phuchoang.sbs`  | `payment-gateway-simulator` |
+| `shop-dev.phuchoang.sbs` | `web`                       |
+| `pay-dev.phuchoang.sbs`  | `payment-gateway-simulator` |
 
 1. Secrets: copy `infra/k8s/doppler-token.dev.secret.yaml.example` → `doppler-token.dev.secret.yaml` and paste the Doppler `dev` token.
 2. In Doppler `dev`, set `CLOUDFLARE_TUNNEL_TOKEN` for a dedicated local tunnel.
 3. In Cloudflare Zero Trust → that tunnel → Public Hostnames:
-   - `shop.dev.phuchoang.sbs` → `http://ecommerce-ingress-istio.ecommerce.svc.cluster.local:80`
-   - `pay.dev.phuchoang.sbs` → `http://ecommerce-ingress-istio.ecommerce.svc.cluster.local:80`
+   - `shop-dev.phuchoang.sbs` → `http://ecommerce-ingress-istio.ecommerce.svc.cluster.local:80`
+   - `pay-dev.phuchoang.sbs` → `http://ecommerce-ingress-istio.ecommerce.svc.cluster.local:80`
 4. Push this branch (Argo reads GitHub). Tilt applies `local-root` with the **current git branch**; child Applications inherit that revision via `$ARGOCD_APP_SOURCE_TARGET_REVISION`.
 5. Start Tilt:
 
@@ -57,7 +57,7 @@ Chart `values.yaml` enables ambient mesh and Istio ingress for:
 tilt up
 ```
 
-6. Open https://shop.dev.phuchoang.sbs (or use Tilt’s web port-forward on `localhost:8080` for debug).
+6. Open https://shop-dev.phuchoang.sbs (or use Tilt’s web port-forward on `localhost:8080` for debug).
 
 `templ-watch` / `tailwind-watch` run under Tilt; rebuilds of the `web` image pick up those assets via `docker_build`.
 

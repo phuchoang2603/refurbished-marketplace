@@ -57,5 +57,5 @@ Quick start:
 ```bash
 devenv shell
 tilt up
-# https://shop.dev.phuchoang.sbs
+# https://shop-dev.phuchoang.sbs
 ```

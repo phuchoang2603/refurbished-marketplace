@@ -15,7 +15,7 @@ Thanks for helping build this project. This guide is the entry point; detailed h
 devenv shell
 # one-time secrets + Cloudflare Public Hostnames — see docs/development/local-setup.md
 tilt up
-# browse https://shop.dev.phuchoang.sbs
+# browse https://shop-dev.phuchoang.sbs
 ```
 
 ## Development guides

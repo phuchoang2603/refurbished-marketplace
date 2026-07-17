@@ -45,6 +45,6 @@ body:
     attributes:
       label: Environment
       description: e.g. `tilt up` on Colima, staging, branch name, browser
-      placeholder: Colima tilt up, shop.dev.phuchoang.sbs
+      placeholder: Colima tilt up, shop-dev.phuchoang.sbs
     validations:
       required: false

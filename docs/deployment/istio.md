@@ -109,7 +109,7 @@ Marketplace Services render port names from `services.<name>.protocol`:
 
 1. Set `ingress.enabled: false` on the staging marketplace Application (or remove the `ingress:` block), restore a non-public `HOSTED_PAYMENT_BASE_URL` if needed, then sync.
 2. Optionally remove or disable `staging-cloudflare-tunnel`, and remove or repoint Cloudflare Public Hostnames.
-3. Local access uses Cloudflare Tunnel to `shop.dev.phuchoang.sbs` / `pay.dev.phuchoang.sbs` (see [local-setup](../development/local-setup.md)).
+3. Local access uses Cloudflare Tunnel to `shop-dev.phuchoang.sbs` / `pay-dev.phuchoang.sbs` (see [local-setup](../development/local-setup.md)).
 
 ### Disable mesh enrollment
 

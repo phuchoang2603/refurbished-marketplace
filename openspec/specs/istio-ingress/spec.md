@@ -23,7 +23,7 @@ The system SHALL provide GitOps-managed Kubernetes Gateway API resources that us
 #### Scenario: Chart defaults keep ingress on for local .dev hosts
 
 - **WHEN** the marketplace chart renders with default values
-- **THEN** ingress Gateway and HTTPRoute resources are rendered for `shop.dev.phuchoang.sbs` / `pay.dev.phuchoang.sbs`
+- **THEN** ingress Gateway and HTTPRoute resources are rendered for `shop-dev.phuchoang.sbs` / `pay-dev.phuchoang.sbs`
 
 ### Requirement: Browser traffic reaches web through Istio
 
