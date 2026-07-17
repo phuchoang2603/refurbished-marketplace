@@ -21,13 +21,15 @@ victoria-metrics-k8s-stack:
       - victoriametrics-logs-datasource
     persistence:
       enabled: false
+    # Traces Drilldown / TraceQL UI is memory-heavy; 192Mi OOMKilled (exit 137)
+    # on drilldown. Give it headroom.
     resources:
       requests:
-        cpu: 25m
-        memory: 64Mi
+        cpu: 50m
+        memory: 128Mi
       limits:
-        cpu: 200m
-        memory: 192Mi
+        cpu: 500m
+        memory: 512Mi
 
   victoria-metrics-operator:
     crds:
