@@ -41,6 +41,11 @@ spec:
     offset.storage.replication.factor: -1
     config.storage.replication.factor: -1
     status.storage.replication.factor: -1
+    # Let connectors override their producer client config. Needed so Debezium
+    # connectors can drop the Strimzi-injected TracingProducerInterceptor, which
+    # overwrites the traceparent header EventRouter restored from the outbox row
+    # (splitting the e2e TraceId at the Kafka hop).
+    connector.client.config.override.policy: All
   template:
     connectContainer:
       env:

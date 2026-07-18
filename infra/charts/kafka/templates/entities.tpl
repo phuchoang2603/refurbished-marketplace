@@ -84,6 +84,12 @@ spec:
     transforms.outbox.tracing.span.context.field: tracingspancontext
     transforms.outbox.tracing.operation.name: debezium-read
     transforms.outbox.tracing.with.context.field.only: "true"
+    # Strimzi's tracing support injects TracingProducerInterceptor into the
+    # worker producer, which starts a NEW root span and overwrites the
+    # traceparent header EventRouter restored from the outbox row — splitting
+    # the e2e trace at the Kafka hop. Drop the interceptor for outbox topics;
+    # EventRouter's header is authoritative.
+    producer.override.interceptor.classes: ""
     key.converter: org.apache.kafka.connect.storage.StringConverter
     transforms.outbox.table.expand.json.payload: "false"
     value.converter: org.apache.kafka.connect.converters.ByteArrayConverter
