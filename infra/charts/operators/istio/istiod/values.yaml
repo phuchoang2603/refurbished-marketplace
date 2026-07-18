@@ -11,11 +11,17 @@ istiod:
       cpu: 500m
       memory: 512Mi
   meshConfig:
+    # Prefer HTTP OTLP on VT's :10428. Envoy's gRPC OTEL exporter to :4317 was
+    # connecting but failing every request (rq_error, rq_success=0) from ambient
+    # waypoint/ingress — HTTP path is the documented VT ingest that works.
     extensionProviders:
       - name: otel-vt
         opentelemetry:
-          port: 4317
+          port: 10428
           service: vtsingle-vmks.monitoring.svc.cluster.local
+          http:
+            path: "/insert/opentelemetry/v1/traces"
+            timeout: 5s
   global:
     proxy:
       resources:

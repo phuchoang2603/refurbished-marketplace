@@ -23,3 +23,23 @@ spec:
       port: 15008
       protocol: HBONE
 {{- end }}
+{{- /*
+Waypoint/ingress Envoy OTEL exporters dial VictoriaTraces via an Istio outbound
+cluster. Without this, ambient may select ISTIO_MUTUAL and every OTLP export
+fails (rq_error, rq_success=0) against VT's plaintext gRPC (:4317).
+*/}}
+{{- if and .Values.mesh.tracing.enabled .Values.defaults.otel.endpoint }}
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: vtsingle-otlp-plain
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "6"
+spec:
+  host: vtsingle-vmks.monitoring.svc.cluster.local
+  trafficPolicy:
+    tls:
+      mode: DISABLE
+{{- end }}
