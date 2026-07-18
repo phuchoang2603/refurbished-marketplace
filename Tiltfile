@@ -85,8 +85,6 @@ local_resource(
 
 ### Marketplace Helm (Tilt-owned) ###
 
-k8s_kind('Cluster', pod_readiness='wait')
-
 _mp_objects = helm(
   './infra/charts/refurbished-marketplace',
   name='refurbished-marketplace',
@@ -99,6 +97,13 @@ _mp_objects = helm(
 # offsets). Strip it from the Tilt-managed objects and create/label it out-of-band
 # via `kubectl apply`, which is idempotent and never deletes the namespace.
 _ns_objects, _mp_objects = filter_yaml(_mp_objects, kind='Namespace')
+
+# Same for the CNPG database Clusters: if Tilt owns them, `tilt down` deletes
+# the Clusters, CNPG deletes their PVCs, and the next `tilt up` starts with
+# fresh WAL — invalidating Kafka Connect's stored Debezium offsets (manual
+# offset reset needed every cycle). Apply them out-of-band instead so databases
+# and their volumes survive tilt up/down.
+_db_objects, _mp_objects = filter_yaml(_mp_objects, api_version='postgresql.cnpg.io/v1', kind='Cluster')
 k8s_yaml(_mp_objects)
 
 local_resource(
@@ -110,6 +115,32 @@ local_resource(
   ),
   resource_deps=['argocd-install'],
 )
+
+local_resource(
+  'marketplace-databases',
+  cmd=(
+    'helm template refurbished-marketplace ./infra/charts/refurbished-marketplace ' +
+    '-n ecommerce -f ./infra/charts/refurbished-marketplace/values.yaml ' +
+    '-s templates/databases.tpl | kubectl apply --server-side --force-conflicts -f -'
+  ),
+  deps=[
+    'infra/charts/refurbished-marketplace/templates/databases.tpl',
+    'infra/charts/refurbished-marketplace/values.yaml',
+  ],
+  resource_deps=['argocd-operators-ready', 'ecommerce-namespace', 'marketplace-secrets'],
+  labels=['databases'],
+)
+
+# Waits for the out-of-band CNPG Cluster and port-forwards its primary.
+# Keeps the '<name>-db' resource names so downstream resource_deps still work.
+def cnpg_db(name, local_port, label):
+  local_resource(
+    name,
+    cmd='kubectl -n ecommerce wait --for=condition=Ready cluster/%s --timeout=10m' % name,
+    serve_cmd='kubectl -n ecommerce port-forward svc/%s-rw %d:5432' % (name, local_port),
+    resource_deps=['marketplace-databases'],
+    labels=[label],
+  )
 
 k8s_resource(
   new_name='marketplace-secrets',
@@ -182,13 +213,7 @@ k8s_resource('web', port_forwards=['8080:8080'], resource_deps=['argocd-operator
 goose_migrator('users', 'services/users/db/migrations')
 go_service('users', './services/users/cmd/users', 9091)
 
-k8s_resource(
-  'users-db',
-  extra_pod_selectors=[{'cnpg.io/cluster': 'users-db'}],
-  port_forwards=['5432:5432'],
-  resource_deps=['argocd-operators-ready', 'marketplace-secrets'],
-  labels=['users'],
-)
+cnpg_db('users-db', 5432, 'users')
 k8s_resource('users-migrate', resource_deps=['users-db'], labels=['users'])
 k8s_resource('users', port_forwards=['9091:9091'], resource_deps=['users-db'], labels=['users'])
 
@@ -197,13 +222,7 @@ k8s_resource('users', port_forwards=['9091:9091'], resource_deps=['users-db'], l
 goose_migrator('products', 'services/products/db/migrations')
 go_service('products', './services/products/cmd/products', 9092)
 
-k8s_resource(
-  'products-db',
-  extra_pod_selectors=[{'cnpg.io/cluster': 'products-db'}],
-  port_forwards=['5433:5432'],
-  resource_deps=['argocd-operators-ready', 'marketplace-secrets'],
-  labels=['products'],
-)
+cnpg_db('products-db', 5433, 'products')
 k8s_resource('products-migrate', resource_deps=['products-db'], labels=['products'])
 k8s_resource('products', port_forwards=['9092:9092'], resource_deps=['products-db'], labels=['products'])
 
@@ -212,13 +231,7 @@ k8s_resource('products', port_forwards=['9092:9092'], resource_deps=['products-d
 goose_migrator('orders', 'services/orders/db/migrations')
 go_service('orders', './services/orders/cmd/orders', 9093)
 
-k8s_resource(
-  'orders-db',
-  extra_pod_selectors=[{'cnpg.io/cluster': 'orders-db'}],
-  port_forwards=['5434:5432'],
-  resource_deps=['argocd-operators-ready', 'marketplace-secrets'],
-  labels=['orders'],
-)
+cnpg_db('orders-db', 5434, 'orders')
 k8s_resource('orders-migrate', resource_deps=['orders-db'], labels=['orders'])
 k8s_resource('orders', port_forwards=['9093:9093'], resource_deps=['orders-db'], labels=['orders'])
 
@@ -232,13 +245,7 @@ k8s_resource('cart', port_forwards=['9094:9094'], resource_deps=['argocd-operato
 goose_migrator('payment', 'services/payment/db/migrations')
 go_service('payment', './services/payment/cmd/payment', 9096)
 
-k8s_resource(
-  'payment-db',
-  extra_pod_selectors=[{'cnpg.io/cluster': 'payment-db'}],
-  port_forwards=['5436:5432'],
-  resource_deps=['argocd-operators-ready', 'marketplace-secrets'],
-  labels=['payment'],
-)
+cnpg_db('payment-db', 5436, 'payment')
 k8s_resource('payment-migrate', resource_deps=['payment-db'], labels=['payment'])
 k8s_resource('payment', port_forwards=['9096:9096'], resource_deps=['payment-db'], labels=['payment'])
 
