@@ -25,17 +25,17 @@
 
 - [x] 5.1 Rely on Strimzi Kafka image OpenTelemetry jars + enable Connect `tracing.type: opentelemetry` (agent); keep Debezium plugin in `connect-debezium` image.
 - [x] 5.2 Configure EventRouter tracing fields on orders/payment/inventory outbox connectors.
-- [ ] 5.3 Rebuild Connect image if needed, sync Kafka chart, and confirm connector tasks emit Kafka `traceparent`.
+- [x] 5.3 Rebuild Connect image if needed, sync Kafka chart, and confirm connector tasks emit Kafka `traceparent`.
 
 ## 6. Istio mesh tracing
 
 - [x] 6.1 Configure Istio OpenTelemetry extension provider toward VictoriaTraces.
 - [x] 6.2 Apply Telemetry resources for ecommerce ingress and waypoint with staging-friendly sampling.
-- [ ] 6.3 Verify mesh spans share the app TraceId when headers are propagated.
+- [x] 6.3 Verify mesh spans share the app TraceId when headers are propagated.
 
 ## 7. Verification and close-out
 
-- [ ] 7.1 Exercise staging checkout and confirm one connected TraceId through outbox → Debezium → inventory.
-- [ ] 7.2 Exercise hosted-payment success/fail callback TraceId through payment path.
+- [x] 7.1 Exercise staging checkout and confirm one connected TraceId through outbox → Debezium → inventory.
+- [x] 7.2 Exercise hosted-payment success/fail callback TraceId through payment path.
 - [x] 7.3 Document e2e tracing architecture, joining rules, and troubleshooting in `docs/observability.md`.
 - [x] 7.4 Link acceptance to GitHub issue #3 and run OpenSpec validation for this change.
