@@ -5,7 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log/slog"
+
+	sharedlog "refurbished-marketplace/shared/observe/log"
 
 	"refurbished-marketplace/services/products/internal/database"
 	"refurbished-marketplace/shared/messaging"
@@ -67,11 +68,11 @@ func (s *Service) HandleOrdersCreated(ctx context.Context, messageID string, val
 			if err := tx.Commit(); err != nil {
 				return err
 			}
-			slog.WarnContext(
+			sharedlog.WarnContext(
 				ctx, "inventory reservation failed",
-				"order_id", orderID.String(),
-				"merchant_id", merchantID.String(),
-				"err", err,
+				sharedlog.KeyOrderID, orderID.String(),
+				sharedlog.KeyMerchantID, merchantID.String(),
+				sharedlog.KeyErr, err,
 			)
 			return nil
 		}
@@ -86,10 +87,10 @@ func (s *Service) HandleOrdersCreated(ctx context.Context, messageID string, val
 		return err
 	}
 
-	slog.InfoContext(
+	sharedlog.InfoContext(
 		ctx, "inventory reserved",
-		"order_id", orderID.String(),
-		"merchant_id", merchantID.String(),
+		sharedlog.KeyOrderID, orderID.String(),
+		sharedlog.KeyMerchantID, merchantID.String(),
 		"total_cents", totalCents,
 		"item_count", len(items),
 	)
@@ -161,11 +162,11 @@ func (s *Service) HandlePaymentOutcome(ctx context.Context, messageID, topic str
 	if topic == messaging.EventTypePaymentSucceeded {
 		outcome = "committed"
 	}
-	slog.InfoContext(
+	sharedlog.InfoContext(
 		ctx, "inventory reservation settled",
-		"order_id", orderID.String(),
+		sharedlog.KeyOrderID, orderID.String(),
 		"topic", topic,
-		"outcome", outcome,
+		sharedlog.KeyOutcome, outcome,
 		"reservation_count", len(reservations),
 	)
 	return nil

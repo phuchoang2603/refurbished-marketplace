@@ -4,8 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"log/slog"
 	"time"
+
+	sharedlog "refurbished-marketplace/shared/observe/log"
 
 	"refurbished-marketplace/services/payment/internal/database"
 	"refurbished-marketplace/shared/err/dberr"
@@ -76,10 +77,10 @@ func (s *Service) CreateHostedPaymentSession(ctx context.Context, p CreateHosted
 	}
 
 	view := mapDBHostedPaymentSessionView(created)
-	slog.InfoContext(
+	sharedlog.InfoContext(
 		ctx, "hosted payment session created",
-		"order_id", view.OrderID,
-		"buyer_user_id", p.BuyerUserID.String(),
+		sharedlog.KeyOrderID, view.OrderID,
+		sharedlog.KeyBuyerUserID, p.BuyerUserID.String(),
 		"payment_session_id", view.PaymentSessionID,
 		"currency", view.Currency,
 	)

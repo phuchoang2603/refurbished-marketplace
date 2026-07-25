@@ -2,7 +2,8 @@ package clients
 
 import (
 	"fmt"
-	"log/slog"
+
+	sharedlog "refurbished-marketplace/shared/observe/log"
 )
 
 type Config struct {
@@ -82,6 +83,6 @@ func closeClient(client interface{ Close() error }) {
 		return
 	}
 	if err := client.Close(); err != nil {
-		slog.Error("close grpc client", "err", err)
+		sharedlog.Error("close grpc client", "err", err)
 	}
 }

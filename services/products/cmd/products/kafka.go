@@ -2,7 +2,8 @@ package main
 
 import (
 	"context"
-	"log/slog"
+
+	sharedlog "refurbished-marketplace/shared/observe/log"
 
 	"refurbished-marketplace/services/products/internal/service"
 	"refurbished-marketplace/shared/messaging"
@@ -24,11 +25,11 @@ func runReservationConsumer(ctx context.Context, svc *service.Service, bootstrap
 	}
 	defer func() {
 		if err := consumer.Close(); err != nil {
-			slog.Error("kafka consumer close", "err", err)
+			sharedlog.Error("kafka consumer close", "err", err)
 		}
 	}()
 
-	slog.Info(
+	sharedlog.Info(
 		"kafka consumer started",
 		"topics", "orders.created,payment.*",
 		"group", groupID,

@@ -30,12 +30,11 @@ New Go workspace module `refurbished-marketplace/shared/observe/log` with slog J
 
 Follow Go slog practices ([Getting started with slog](https://go.dev/blog/slog), Go 1.26 `log/slog` API):
 
-- `slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{…})` then `slog.SetDefault` so package-level `Info`/`Error`/`InfoContext` work.
-- Prefer `InfoContext` / `ErrorContext` / `LogAttrs` so context is available for TraceId extraction; use `slog.Attr` / `LogAttrs` on hot paths to cut allocations.
-- Attach stable attrs with `logger.With("service", name)` once at bootstrap — not per call.
-- Use `HandlerOptions.ReplaceAttr` for cross-cutting transforms (e.g. rename/omit keys, normalize `time`/`level` if VL parsing needs it). Keep `AddSource` off by default unless debugging.
-- Optional `slog.LevelVar` if we later need runtime level changes; v1 can stay Info+.
-- Redaction: prefer `LogValuer` on sensitive types and/or `ReplaceAttr` denylist — do not invent a full PII framework.
+- `Init` builds a JSON handler + trace injector and calls `slog.SetDefault` once at process start.
+- Call sites use **`shared/observe/log` helpers** (`InfoContext`, `WarnContext`, `Error`, `Default`, `With`) — not raw `log/slog` package functions — so redaction, TraceId injection, and field-key constants stay centralized.
+- Prefer `InfoContext` / `ErrorContext` / `LogAttrs` so context is available for TraceId extraction.
+- Attach stable attrs with `sharedlog.With(...)` / `Logger.With` for subsystem loggers; use exported key constants (`KeyOrderID`, …) for domain fields.
+- Redaction via `ReplaceAttr` denylist; optional `Attr*` helpers for consistent typed attrs.
 - Bridge leftovers: `slog.NewLogLogger(handler, level)` only if a dependency still needs `*log.Logger`.
 
 Correlation helpers (thin, in-module — no slog-context dependency for v1):

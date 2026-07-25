@@ -1,7 +1,6 @@
 package log
 
 import (
-	"log/slog"
 	"net/http"
 	"time"
 )
@@ -22,7 +21,7 @@ func HTTPAccess(next http.Handler) http.Handler {
 		start := time.Now()
 		rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
 		next.ServeHTTP(rec, r)
-		slog.InfoContext(
+		InfoContext(
 			r.Context(), "http request",
 			"method", r.Method,
 			"path", r.URL.Path,

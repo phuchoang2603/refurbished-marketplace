@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -33,7 +32,7 @@ func main() {
 	}
 	defer func() {
 		if err := shutdownTracing(context.Background()); err != nil {
-			slog.Error("tracing shutdown", "err", err)
+			sharedlog.Error("tracing shutdown", "err", err)
 		}
 	}()
 
@@ -43,7 +42,7 @@ func main() {
 	}
 	defer func() {
 		if err := rdb.Close(); err != nil {
-			slog.Error("close redis", "err", err)
+			sharedlog.Error("close redis", "err", err)
 		}
 	}()
 

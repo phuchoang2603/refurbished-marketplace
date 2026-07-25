@@ -163,7 +163,7 @@ Browser → ingress → web ──gRPC──▶ domain services
 
 ## Structured logging
 
-Marketplace services emit **JSON slog** lines to stdout (`shared/observe/log`, wired via `shared/runtime.InitLogging`). VLAgent scrapes those lines into VictoriaLogs.
+Marketplace services emit **JSON slog** lines to stdout via `shared/observe/log` (wired by `shared/runtime.InitLogging`). Call sites use that package’s helpers (`InfoContext`, `WarnContext`, `Error`, `With`, key constants) — not raw `log/slog` — so TraceId injection, redaction, and field names stay centralized. VLAgent scrapes those lines into VictoriaLogs.
 
 ### Field conventions
 

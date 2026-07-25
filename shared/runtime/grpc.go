@@ -2,10 +2,10 @@ package runtime
 
 import (
 	"context"
-	"log/slog"
 	"net"
 	"time"
 
+	sharedlog "refurbished-marketplace/shared/observe/log"
 	sharedtrace "refurbished-marketplace/shared/observe/trace"
 
 	"google.golang.org/grpc"
@@ -35,7 +35,7 @@ func ServeGRPC(ctx context.Context, cfg GRPCServerConfig) error {
 		server.GracefulStop()
 	}()
 
-	slog.Info("starting grpc service", "addr", cfg.Addr)
+	sharedlog.Info("starting grpc service", "addr", cfg.Addr)
 	return server.Serve(lis)
 }
 
@@ -48,11 +48,11 @@ func unaryAccessLog(
 	start := time.Now()
 	resp, err := handler(ctx, req)
 	st, _ := status.FromError(err)
-	slog.LogAttrs(
-		ctx, slog.LevelInfo, "grpc request",
-		slog.String("grpc_method", info.FullMethod),
-		slog.String("grpc_code", st.Code().String()),
-		slog.Int64("duration_ms", time.Since(start).Milliseconds()),
+	sharedlog.InfoContext(
+		ctx, "grpc request",
+		"grpc_method", info.FullMethod,
+		"grpc_code", st.Code().String(),
+		"duration_ms", time.Since(start).Milliseconds(),
 	)
 	return resp, err
 }

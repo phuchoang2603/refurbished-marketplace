@@ -2,7 +2,8 @@ package runtime
 
 import (
 	"context"
-	"log/slog"
+
+	sharedlog "refurbished-marketplace/shared/observe/log"
 
 	sharedtrace "refurbished-marketplace/shared/observe/trace"
 )
@@ -16,9 +17,9 @@ func InitTracing(ctx context.Context, serviceName string) (func(context.Context)
 		return nil, err
 	}
 	if cfg.Endpoint == "" {
-		slog.Info("tracing disabled (set OTEL_EXPORTER_OTLP_ENDPOINT to enable)")
+		sharedlog.Info("tracing disabled (set OTEL_EXPORTER_OTLP_ENDPOINT to enable)")
 	} else {
-		slog.Info("tracing enabled", "endpoint", cfg.Endpoint)
+		sharedlog.Info("tracing enabled", "endpoint", cfg.Endpoint)
 	}
 	return shutdown, nil
 }

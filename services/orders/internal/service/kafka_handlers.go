@@ -5,7 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"log/slog"
+
+	sharedlog "refurbished-marketplace/shared/observe/log"
 
 	"refurbished-marketplace/shared/messaging"
 	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
@@ -74,10 +75,10 @@ func (s *Service) applyKafkaOrderResult(ctx context.Context, messageID string, o
 		return err
 	}
 
-	slog.InfoContext(
+	sharedlog.InfoContext(
 		ctx, "order status updated from kafka",
-		"order_id", orderID.String(),
-		"status", status,
+		sharedlog.KeyOrderID, orderID.String(),
+		sharedlog.KeyStatus, status,
 		"message_id", messageID,
 	)
 	return nil

@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log/slog"
 	"os"
 	"os/signal"
 	"sync"
@@ -32,7 +31,7 @@ func main() {
 	}
 	defer func() {
 		if err := db.Close(); err != nil {
-			slog.Error("close db", "err", err)
+			sharedlog.Error("close db", "err", err)
 		}
 	}()
 
@@ -48,7 +47,7 @@ func main() {
 	}
 	defer func() {
 		if err := shutdownTracing(context.Background()); err != nil {
-			slog.Error("tracing shutdown", "err", err)
+			sharedlog.Error("tracing shutdown", "err", err)
 		}
 	}()
 
