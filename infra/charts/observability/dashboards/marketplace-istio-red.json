@@ -136,13 +136,13 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
-      "description": "p50 / p95 / p99 request duration from Istio histograms.",
+      "description": "Median (p50) request duration from Istio histograms.",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
           "custom": {
             "drawStyle": "line",
-            "fillOpacity": 0,
+            "fillOpacity": 10,
             "lineWidth": 1,
             "showPoints": "never"
           },
@@ -150,32 +150,78 @@
         },
         "overrides": []
       },
-      "gridPos": { "h": 9, "w": 24, "x": 0, "y": 20 },
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 20 },
       "id": 5,
       "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
           "editorMode": "code",
           "expr": "histogram_quantile(0.50, sum by (le, destination_app) (\n  rate(istio_request_duration_milliseconds_bucket{\n    destination_service_namespace=~\"$namespace\",\n    reporter=~\"source|waypoint\",\n    endpoint=\"http-envoy-prom\",\n    destination_app=~\"$destination_app\"\n  }[$__rate_interval])\n))",
-          "legendFormat": "{{destination_app}} p50",
+          "legendFormat": "{{destination_app}}",
           "refId": "A"
+        }
+      ],
+      "title": "Latency p50",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
+      "description": "p95 request duration from Istio histograms.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never"
+          },
+          "unit": "ms"
         },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 20 },
+      "id": 6,
+      "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, sum by (le, destination_app) (\n  rate(istio_request_duration_milliseconds_bucket{\n    destination_service_namespace=~\"$namespace\",\n    reporter=~\"source|waypoint\",\n    endpoint=\"http-envoy-prom\",\n    destination_app=~\"$destination_app\"\n  }[$__rate_interval])\n))",
-          "legendFormat": "{{destination_app}} p95",
-          "refId": "B"
+          "legendFormat": "{{destination_app}}",
+          "refId": "A"
+        }
+      ],
+      "title": "Latency p95",
+      "type": "timeseries"
+    },
+    {
+      "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
+      "description": "p99 request duration from Istio histograms.",
+      "fieldConfig": {
+        "defaults": {
+          "color": { "mode": "palette-classic" },
+          "custom": {
+            "drawStyle": "line",
+            "fillOpacity": 10,
+            "lineWidth": 1,
+            "showPoints": "never"
+          },
+          "unit": "ms"
         },
+        "overrides": []
+      },
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 20 },
+      "id": 7,
+      "targets": [
         {
           "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
           "editorMode": "code",
           "expr": "histogram_quantile(0.99, sum by (le, destination_app) (\n  rate(istio_request_duration_milliseconds_bucket{\n    destination_service_namespace=~\"$namespace\",\n    reporter=~\"source|waypoint\",\n    endpoint=\"http-envoy-prom\",\n    destination_app=~\"$destination_app\"\n  }[$__rate_interval])\n))",
-          "legendFormat": "{{destination_app}} p99",
-          "refId": "C"
+          "legendFormat": "{{destination_app}}",
+          "refId": "A"
         }
       ],
-      "title": "Request latency (p50 / p95 / p99)",
+      "title": "Latency p99",
       "type": "timeseries"
     }
   ],
@@ -223,6 +269,6 @@
   "timezone": "browser",
   "title": "Marketplace Istio RED",
   "uid": "marketplace-istio-red",
-  "version": 4,
+  "version": 5,
   "weekStart": ""
 }
