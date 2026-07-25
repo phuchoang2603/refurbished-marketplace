@@ -181,6 +181,13 @@ victoria-metrics-k8s-stack:
 dashboardSyncJob:
   enabled: false
 
+# Repo-owned Grafana dashboards (ConfigMaps → Grafana sidecar).
+# Independent of defaultDashboards / dashboardSyncJob so local Colima still
+# gets Marketplace Istio RED without pulling upstream K8s dashboards.
+customDashboards:
+  enabled: true
+  folder: Marketplace
+
 # Scrape Istio L7 proxies only (waypoint + ingress). Control-plane scrapes omitted.
 istioScrapes:
   enabled: true

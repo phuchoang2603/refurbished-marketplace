@@ -38,6 +38,16 @@ sum by (destination_app, request_protocol) (
 )
 ```
 
+### Marketplace Istio RED dashboard
+
+The wrapper chart ships a repo-owned Grafana dashboard **Marketplace Istio RED** (`infra/charts/observability/dashboards/marketplace-istio-red.json`) as a ConfigMap labeled `grafana_dashboard=1` (folder **Marketplace**). It graphs request rate, 5xx / gRPC error rate, and p50/p95/p99 latency from Istio L7 scrapes — no Go `/metrics` required.
+
+After Grafana is up (and sidecar has reloaded), open **Dashboards → Marketplace → Marketplace Istio RED**, or:
+
+```bash
+kubectl get configmap -n monitoring -l grafana_dashboard=1
+```
+
 ## Grafana Access
 
 Local and staging Argo CD both deploy the observability chart into `monitoring` (local uses chart `values.yaml`; staging uses `values-staging.yaml`).
