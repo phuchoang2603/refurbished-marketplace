@@ -160,3 +160,40 @@ Browser → ingress → web ──gRPC──▶ domain services
 3. Confirm the TraceId includes web → orders → Debezium/connect → products (inventory) spans. Kafka `orders.created` records should carry a `traceparent` header.
 4. Complete hosted-payment success/fail; confirm callback → payment → payment outbox path.
 5. Confirm mesh spans appear alongside app spans (Telemetry `ecommerce-tracing`).
+
+## Structured logging
+
+Marketplace services emit **JSON slog** lines to stdout (`shared/observe/log`, wired via `shared/runtime.InitLogging`). VLAgent scrapes those lines into VictoriaLogs.
+
+### Field conventions
+
+| Field                                   | When present                        |
+| --------------------------------------- | ----------------------------------- |
+| `service`                               | Always (bootstrap default)          |
+| `trace_id`                              | When logging with a valid OTEL span |
+| `span_id`                               | When logging with a valid OTEL span |
+| `method`/`path`/`status`/`duration_ms`  | HTTP access logs (web)              |
+| `grpc_method`/`grpc_code`/`duration_ms` | gRPC unary access logs              |
+| `topic`/`partition`/`offset`            | Kafka handler errors                |
+
+Sensitive keys (`password`, `token`, `card`, `cvv`, …) are redacted to `[redacted]` via `ReplaceAttr`. Do not log full payment gateway payloads.
+
+### LogSQL examples (VictoriaLogs)
+
+```logsql
+service:="web"
+```
+
+```logsql
+service:="orders" AND trace_id:="<hex-trace-id>"
+```
+
+Exact filter syntax can vary slightly with the Grafana VL plugin UI — prefer Explore’s builder, then copy the query.
+
+### Trace → logs
+
+The VictoriaTraces Tempo datasource (`uid: VictoriaTraces`) is provisioned with `tracesToLogsV2` pointing at VictoriaLogs (`uid: VictoriaLogs`, `filterByTraceID: true`).
+
+1. Open a span in Explore / Traces Drilldown.
+2. Use **Logs for this span** / Trace → logs.
+3. Confirm matching JSON lines include the same `trace_id`.

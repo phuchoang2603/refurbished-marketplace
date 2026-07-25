@@ -27,6 +27,7 @@ env:
     ./shared/err/dberr/...
     ./shared/err/grpcerr/...
     ./shared/messaging/...
+    ./shared/observe/log/...
     ./shared/observe/trace/...
     ./shared/proto/...
     ./shared/runtime/...
@@ -80,6 +81,7 @@ jobs:
               - 'shared/err/dberr/**'
               - 'shared/err/grpcerr/**'
               - 'shared/runtime/**'
+              - 'shared/observe/log/**'
               - 'shared/testutil/postgres/**'
             products:
               - 'services/products/**'
@@ -88,6 +90,7 @@ jobs:
               - 'shared/err/dberr/**'
               - 'shared/err/grpcerr/**'
               - 'shared/runtime/**'
+              - 'shared/observe/log/**'
               - 'shared/observe/trace/**'
               - 'shared/testutil/postgres/**'
               - 'shared/testutil/kafka/**'
@@ -98,6 +101,7 @@ jobs:
               - 'shared/err/dberr/**'
               - 'shared/err/grpcerr/**'
               - 'shared/runtime/**'
+              - 'shared/observe/log/**'
               - 'shared/observe/trace/**'
               - 'shared/testutil/postgres/**'
               - 'shared/testutil/kafka/**'
@@ -108,6 +112,7 @@ jobs:
               - 'shared/err/dberr/**'
               - 'shared/err/grpcerr/**'
               - 'shared/runtime/**'
+              - 'shared/observe/log/**'
               - 'shared/observe/trace/**'
               - 'shared/testutil/postgres/**'
               - 'shared/testutil/kafka/**'
@@ -116,12 +121,14 @@ jobs:
               - 'shared/proto/**'
               - 'shared/err/grpcerr/**'
               - 'shared/runtime/**'
+              - 'shared/observe/log/**'
               - 'shared/testutil/redis/**'
             web:
               - 'services/web/**'
               - 'shared/proto/**'
               - 'shared/auth/**'
               - 'shared/runtime/**'
+              - 'shared/observe/log/**'
               - 'shared/observe/trace/**'
             helm:
               - 'infra/charts/**'

@@ -32,6 +32,7 @@ Shared library layout:
 | `shared/messaging`     | Kafka helpers                             |
 | `shared/runtime`       | Service bootstrap (HTTP, gRPC, Postgres…) |
 | `shared/observe/trace` | OpenTelemetry tracing                     |
+| `shared/observe/log`   | JSON slog + TraceId correlation           |
 | `shared/err/dberr`     | DB error / null helpers                   |
 | `shared/err/grpcerr`   | gRPC status mapping                       |
 | `shared/testutil/*`    | Testcontainers helpers                    |

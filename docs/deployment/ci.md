@@ -35,6 +35,7 @@ Local development builds short image names with Tilt `docker_build`. Staging Arg
 | `shared/err/dberr/**`         | users, products, orders, payment            |
 | `shared/err/grpcerr/**`       | users, products, orders, cart, payment      |
 | `shared/runtime/**`           | users, products, orders, cart, payment, web |
+| `shared/observe/log/**`       | users, products, orders, cart, payment, web |
 | `shared/observe/trace/**`     | products, orders, payment, web              |
 | `shared/testutil/postgres/**` | users, products, orders, payment            |
 | `shared/testutil/kafka/**`    | products, orders, payment                   |

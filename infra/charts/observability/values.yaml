@@ -43,6 +43,16 @@ victoria-metrics-k8s-stack:
         access: proxy
         uid: VictoriaTraces
         url: http://vtsingle-vmks.monitoring.svc.cluster.local:10428/select/tempo
+        jsonData:
+          tracesToLogsV2:
+            datasourceUid: VictoriaLogs
+            spanStartTimeShift: "-5m"
+            spanEndTimeShift: "5m"
+            filterByTraceID: true
+            filterBySpanID: false
+            tags:
+              - key: service.name
+                value: service
 
   victoria-metrics-operator:
     crds:
