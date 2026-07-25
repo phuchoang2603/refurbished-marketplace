@@ -67,7 +67,7 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
-      "description": "Fraction of requests with HTTP 5xx (or Istio-mapped 5xx).",
+      "description": "Fraction of requests with HTTP 4xx/5xx (Istio response_code).",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -89,12 +89,12 @@
         {
           "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
           "editorMode": "code",
-          "expr": "sum by (destination_app) (\n  rate(istio_requests_total{\n    destination_service_namespace=~\"$namespace\",\n    reporter=~\"source|waypoint\",\n    endpoint=\"http-envoy-prom\",\n    destination_app=~\"$destination_app\",\n    response_code=~\"5..\"\n  }[$__rate_interval])\n)\n/\nclamp_min(\n  sum by (destination_app) (\n    rate(istio_requests_total{\n      destination_service_namespace=~\"$namespace\",\n      reporter=~\"source|waypoint\",\n      endpoint=\"http-envoy-prom\",\n      destination_app=~\"$destination_app\"\n    }[$__rate_interval])\n  ),\n  1e-9\n)",
+          "expr": "sum by (destination_app) (\n  rate(istio_requests_total{\n    destination_service_namespace=~\"$namespace\",\n    reporter=~\"source|waypoint\",\n    endpoint=\"http-envoy-prom\",\n    destination_app=~\"$destination_app\",\n    response_code=~\"[45]..\"\n  }[$__rate_interval])\n)\n/\nclamp_min(\n  sum by (destination_app) (\n    rate(istio_requests_total{\n      destination_service_namespace=~\"$namespace\",\n      reporter=~\"source|waypoint\",\n      endpoint=\"http-envoy-prom\",\n      destination_app=~\"$destination_app\"\n    }[$__rate_interval])\n  ),\n  1e-9\n)",
           "legendFormat": "{{destination_app}}",
           "refId": "A"
         }
       ],
-      "title": "Error ratio (5xx)",
+      "title": "Error ratio (4xx/5xx)",
       "type": "timeseries"
     },
     {
@@ -223,6 +223,6 @@
   "timezone": "browser",
   "title": "Marketplace Istio RED",
   "uid": "marketplace-istio-red",
-  "version": 3,
+  "version": 4,
   "weekStart": ""
 }
