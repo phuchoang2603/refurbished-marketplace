@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"refurbished-marketplace/services/users/internal/database"
-	shareddb "refurbished-marketplace/shared/db"
+	"refurbished-marketplace/shared/err/dberr"
 
 	sharedjwt "refurbished-marketplace/shared/auth/jwt"
 
@@ -89,7 +89,7 @@ func hashToken(token string) string {
 }
 
 func mapInvalidToken(err error) error {
-	return shareddb.MapErrNoRows(err, ErrInvalidToken)
+	return dberr.MapErrNoRows(err, ErrInvalidToken)
 }
 
 func loadRefreshSession(ctx context.Context, queries *database.Queries, refreshID uuid.UUID) (database.RefreshToken, error) {

@@ -24,9 +24,10 @@ env:
     ./services/payment/...
     ./services/web/...
     ./shared/auth/...
-    ./shared/db/...
-    ./shared/grpcerr/...
+    ./shared/err/dberr/...
+    ./shared/err/grpcerr/...
     ./shared/messaging/...
+    ./shared/observe/trace/...
     ./shared/proto/...
     ./shared/runtime/...
     ./shared/testutil/postgres/...
@@ -76,47 +77,52 @@ jobs:
               - 'services/users/**'
               - 'shared/proto/**'
               - 'shared/auth/**'
-              - 'shared/db/**'
-              - 'shared/grpcerr/**'
+              - 'shared/err/dberr/**'
+              - 'shared/err/grpcerr/**'
               - 'shared/runtime/**'
               - 'shared/testutil/postgres/**'
             products:
               - 'services/products/**'
               - 'shared/proto/**'
               - 'shared/messaging/**'
-              - 'shared/db/**'
-              - 'shared/grpcerr/**'
+              - 'shared/err/dberr/**'
+              - 'shared/err/grpcerr/**'
               - 'shared/runtime/**'
+              - 'shared/observe/trace/**'
               - 'shared/testutil/postgres/**'
               - 'shared/testutil/kafka/**'
             orders:
               - 'services/orders/**'
               - 'shared/proto/**'
               - 'shared/messaging/**'
-              - 'shared/db/**'
-              - 'shared/grpcerr/**'
+              - 'shared/err/dberr/**'
+              - 'shared/err/grpcerr/**'
               - 'shared/runtime/**'
+              - 'shared/observe/trace/**'
               - 'shared/testutil/postgres/**'
               - 'shared/testutil/kafka/**'
             payment:
               - 'services/payment/**'
               - 'shared/proto/**'
               - 'shared/messaging/**'
-              - 'shared/db/**'
-              - 'shared/grpcerr/**'
+              - 'shared/err/dberr/**'
+              - 'shared/err/grpcerr/**'
               - 'shared/runtime/**'
+              - 'shared/observe/trace/**'
               - 'shared/testutil/postgres/**'
               - 'shared/testutil/kafka/**'
             cart:
               - 'services/cart/**'
               - 'shared/proto/**'
-              - 'shared/grpcerr/**'
+              - 'shared/err/grpcerr/**'
               - 'shared/runtime/**'
               - 'shared/testutil/redis/**'
             web:
               - 'services/web/**'
               - 'shared/proto/**'
               - 'shared/auth/**'
+              - 'shared/runtime/**'
+              - 'shared/observe/trace/**'
             helm:
               - 'infra/charts/**'
 

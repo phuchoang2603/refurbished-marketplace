@@ -8,27 +8,27 @@ use (
 	./services/users
 	./services/web
 	./shared/auth
-	./shared/db
-	./shared/grpcerr
+	./shared/err/dberr
+	./shared/err/grpcerr
 	./shared/messaging
+	./shared/observe/trace
 	./shared/proto
 	./shared/runtime
 	./shared/testutil/kafka
 	./shared/testutil/postgres
 	./shared/testutil/redis
-	./shared/trace
 	./tools/payment-gateway-simulator
 )
 
 replace (
 	refurbished-marketplace/shared/auth v0.0.0 => ./shared/auth
-	refurbished-marketplace/shared/db v0.0.0 => ./shared/db
-	refurbished-marketplace/shared/grpcerr v0.0.0 => ./shared/grpcerr
+	refurbished-marketplace/shared/err/dberr v0.0.0 => ./shared/err/dberr
+	refurbished-marketplace/shared/err/grpcerr v0.0.0 => ./shared/err/grpcerr
 	refurbished-marketplace/shared/messaging v0.0.0 => ./shared/messaging
+	refurbished-marketplace/shared/observe/trace v0.0.0 => ./shared/observe/trace
 	refurbished-marketplace/shared/proto v0.0.0 => ./shared/proto
 	refurbished-marketplace/shared/runtime v0.0.0 => ./shared/runtime
 	refurbished-marketplace/shared/testutil/kafka v0.0.0 => ./shared/testutil/kafka
 	refurbished-marketplace/shared/testutil/postgres v0.0.0 => ./shared/testutil/postgres
 	refurbished-marketplace/shared/testutil/redis v0.0.0 => ./shared/testutil/redis
-	refurbished-marketplace/shared/trace v0.0.0 => ./shared/trace
 )

@@ -6,9 +6,9 @@ import (
 	"errors"
 
 	"refurbished-marketplace/services/payment/internal/database"
-	shareddb "refurbished-marketplace/shared/db"
+	"refurbished-marketplace/shared/err/dberr"
 	"refurbished-marketplace/shared/messaging"
-	sharedtrace "refurbished-marketplace/shared/trace"
+	sharedtrace "refurbished-marketplace/shared/observe/trace"
 
 	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
 
@@ -30,9 +30,9 @@ func (s *Service) ApplyGatewayWebhook(ctx context.Context, orderID uuid.UUID, pa
 
 	updatedIntent, err := s.queries.UpdateHostedPaymentSessionOutcome(ctx, database.UpdateHostedPaymentSessionOutcomeParams{
 		OrderID:          orderID,
-		PaymentSessionID: shareddb.OptionalNullString(paymentSessionID),
+		PaymentSessionID: dberr.OptionalNullString(paymentSessionID),
 		Status:           status,
-		FailureReason:    shareddb.OptionalNullString(failureReason),
+		FailureReason:    dberr.OptionalNullString(failureReason),
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

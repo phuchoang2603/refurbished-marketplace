@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"refurbished-marketplace/services/users/internal/database"
-	shareddb "refurbished-marketplace/shared/db"
+	"refurbished-marketplace/shared/err/dberr"
 )
 
 func normalizeEmail(email string) string {
@@ -26,13 +26,13 @@ func mapDBUser(u database.User) User {
 }
 
 func mapNotFound(err, notFoundErr error) error {
-	return shareddb.MapErrNoRows(err, notFoundErr)
+	return dberr.MapErrNoRows(err, notFoundErr)
 }
 
 func mapInvalidCredentials(err error) error {
-	return shareddb.MapErrNoRows(err, ErrInvalidCredentials)
+	return dberr.MapErrNoRows(err, ErrInvalidCredentials)
 }
 
 func isPostgresUniqueViolation(err error) bool {
-	return shareddb.IsUniqueViolation(err)
+	return dberr.IsUniqueViolation(err)
 }

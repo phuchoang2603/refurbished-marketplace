@@ -1,4 +1,4 @@
-module refurbished-marketplace/shared/trace
+module refurbished-marketplace/shared/observe/trace
 
 go 1.26.2
 

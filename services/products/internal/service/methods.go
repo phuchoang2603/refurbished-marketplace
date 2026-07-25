@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"refurbished-marketplace/services/products/internal/database"
-	shareddb "refurbished-marketplace/shared/db"
+	"refurbished-marketplace/shared/err/dberr"
 
 	"github.com/google/uuid"
 )
@@ -119,7 +119,7 @@ func (s *Service) GetInventoryByProductID(ctx context.Context, productID uuid.UU
 
 	inv, err := s.queries.GetInventoryByProductID(ctx, productID)
 	if err != nil {
-		return Inventory{}, shareddb.MapErrNoRows(err, ErrInventoryNotFound)
+		return Inventory{}, dberr.MapErrNoRows(err, ErrInventoryNotFound)
 	}
 
 	return mapDBInventory(inv), nil

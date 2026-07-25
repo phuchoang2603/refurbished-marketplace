@@ -4,7 +4,7 @@ import (
 	"strings"
 
 	"refurbished-marketplace/services/products/internal/database"
-	shareddb "refurbished-marketplace/shared/db"
+	"refurbished-marketplace/shared/err/dberr"
 
 	"github.com/google/uuid"
 )
@@ -53,7 +53,7 @@ func mapDBInventory(i database.Inventory) Inventory {
 }
 
 func mapProductNotFound(err error) error {
-	return shareddb.MapErrNoRows(err, ErrProductNotFound)
+	return dberr.MapErrNoRows(err, ErrProductNotFound)
 }
 
 func normalizeProductName(name string) string {

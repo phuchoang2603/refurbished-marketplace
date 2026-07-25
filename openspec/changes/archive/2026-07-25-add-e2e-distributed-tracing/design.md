@@ -27,7 +27,7 @@ Application tracing is incomplete: `services/web` applies `otelhttp` without a c
 
 ### 1. Shared Go OTEL bootstrap exports OTLP to VictoriaTraces
 
-Introduce `shared/observability/trace` (or equivalent module path) that configures a TracerProvider, W3C `TraceContext` + `Baggage` propagators, resource attributes (`service.name`), and OTLP HTTP/gRPC exporter aimed at VTSingle (or a thin collector in front if required by chart defaults).
+Introduce `shared/observe/trace` that configures a TracerProvider, W3C `TraceContext` + `Baggage` propagators, resource attributes (`service.name`), and OTLP HTTP/gRPC exporter aimed at VTSingle (or a thin collector in front if required by chart defaults).
 
 **Rationale:** One bootstrap avoids divergent exporters per service; VT already accepts OTLP/Jaeger-compatible ingest paths used by the stack.
 

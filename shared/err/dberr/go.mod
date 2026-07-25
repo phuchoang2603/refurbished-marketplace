@@ -1,4 +1,4 @@
-module refurbished-marketplace/shared/db
+module refurbished-marketplace/shared/err/dberr
 
 go 1.26.2
 

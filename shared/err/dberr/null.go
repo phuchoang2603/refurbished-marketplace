@@ -1,4 +1,4 @@
-package db
+package dberr
 
 import (
 	"database/sql"
