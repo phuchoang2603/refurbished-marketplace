@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"log/slog"
 
 	"refurbished-marketplace/services/payment/internal/database"
 	"refurbished-marketplace/shared/err/dberr"
@@ -25,6 +26,12 @@ func (s *Service) ApplyGatewayWebhook(ctx context.Context, orderID uuid.UUID, pa
 		return ErrSessionMismatch
 	}
 	if hostedPaymentSessionIsTerminal(intent.Status) {
+		slog.InfoContext(
+			ctx, "gateway webhook ignored; session already terminal",
+			"order_id", orderID.String(),
+			"payment_session_id", paymentSessionID,
+			"status", intent.Status,
+		)
 		return nil
 	}
 
@@ -105,5 +112,16 @@ func (s *Service) applyTerminalOutcome(ctx context.Context, transactionID uuid.U
 		return err
 	}
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	slog.InfoContext(
+		ctx, "payment terminal outcome applied",
+		"order_id", updated.OrderID.String(),
+		"payment_transaction_id", transactionID.String(),
+		"status", newStatus,
+		"event_type", eventType,
+	)
+	return nil
 }

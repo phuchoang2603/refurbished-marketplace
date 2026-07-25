@@ -8,15 +8,16 @@ Marketplace services still emit unstructured `log.Printf` lines with no `trace_i
 - Wire bootstrap through `shared/runtime` (same pattern as tracing); migrate production-path `log.Printf` / `log.Fatal*` call sites to slog.
 - **web:** replace chi `middleware.Logger` with slog request logging; **remove** unused `middleware.RequestID` (TraceId is the join key).
 - **gRPC** and **Kafka consumers:** structured access / handle logs with method or topic/partition/offset plus `trace_id` when a span is active.
+- **Domain hot paths (checkout):** structured Info/Warn with `order_id` and related IDs/outcomes on order create/status, inventory reserve/settle, and payment session/tx/webhook (no card/password payloads).
 - Grafana: configure VictoriaTraces (Tempo) **tracesToLogs** against VictoriaLogs; document field conventions and LogSQL examples in `docs/observability.md`.
 
-Non-goals: text log formats; dual RequestID scheme; domain fields on every line; k6 / load tooling; per-service Prometheus `/metrics`; further shared package moves (already done in #27).
+Non-goals: text log formats; dual RequestID scheme; domain fields on every CRUD line; k6 / load tooling; per-service Prometheus `/metrics`; further shared package moves (already done in #27).
 
 ## Capabilities
 
 ### New Capabilities
 
-- `structured-logging`: JSON slog bootstrap under `shared/observe/log`, OTEL correlation fields, web/gRPC/Kafka structured access logs, and Trace → logs documentation conventions.
+- `structured-logging`: JSON slog bootstrap under `shared/observe/log`, OTEL correlation fields, web/gRPC/Kafka structured access logs, checkout domain hot-path fields, and Trace → logs documentation conventions.
 
 ### Modified Capabilities
 

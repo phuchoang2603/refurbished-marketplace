@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"time"
 
 	"refurbished-marketplace/services/payment/internal/database"
@@ -74,7 +75,15 @@ func (s *Service) CreateHostedPaymentSession(ctx context.Context, p CreateHosted
 		return HostedPaymentSessionView{}, err
 	}
 
-	return mapDBHostedPaymentSessionView(created), nil
+	view := mapDBHostedPaymentSessionView(created)
+	slog.InfoContext(
+		ctx, "hosted payment session created",
+		"order_id", view.OrderID,
+		"buyer_user_id", p.BuyerUserID.String(),
+		"payment_session_id", view.PaymentSessionID,
+		"currency", view.Currency,
+	)
+	return view, nil
 }
 
 func (s *Service) GetHostedPaymentSessionByOrder(ctx context.Context, orderID uuid.UUID) (HostedPaymentSessionView, error) {

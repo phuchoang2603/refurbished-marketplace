@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"log/slog"
 	"time"
 
 	"refurbished-marketplace/services/orders/internal/database"
@@ -77,6 +78,14 @@ func (s *Service) CreateOrder(ctx context.Context, buyerUserID, merchantID uuid.
 		return Order{}, err
 	}
 
+	slog.InfoContext(
+		ctx, "order created",
+		"order_id", createdOrder.ID.String(),
+		"buyer_user_id", createdOrder.BuyerUserID.String(),
+		"merchant_id", createdOrder.MerchantID.String(),
+		"total_cents", createdOrder.TotalCents,
+		"item_count", len(createdOrder.Items),
+	)
 	return createdOrder, nil
 }
 

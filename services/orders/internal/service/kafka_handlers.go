@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"refurbished-marketplace/shared/messaging"
 	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
@@ -69,7 +70,17 @@ func (s *Service) applyKafkaOrderResult(ctx context.Context, messageID string, o
 		return err
 	}
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	slog.InfoContext(
+		ctx, "order status updated from kafka",
+		"order_id", orderID.String(),
+		"status", status,
+		"message_id", messageID,
+	)
+	return nil
 }
 
 func parsePaymentOutcomeOrderID(value []byte) (uuid.UUID, error) {

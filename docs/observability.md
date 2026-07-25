@@ -167,14 +167,16 @@ Marketplace services emit **JSON slog** lines to stdout (`shared/observe/log`, w
 
 ### Field conventions
 
-| Field                                   | When present                        |
-| --------------------------------------- | ----------------------------------- |
-| `service`                               | Always (bootstrap default)          |
-| `trace_id`                              | When logging with a valid OTEL span |
-| `span_id`                               | When logging with a valid OTEL span |
-| `method`/`path`/`status`/`duration_ms`  | HTTP access logs (web)              |
-| `grpc_method`/`grpc_code`/`duration_ms` | gRPC unary access logs              |
-| `topic`/`partition`/`offset`            | Kafka handler errors                |
+| Field                                        | When present                        |
+| -------------------------------------------- | ----------------------------------- |
+| `service`                                    | Always (bootstrap default)          |
+| `trace_id`                                   | When logging with a valid OTEL span |
+| `span_id`                                    | When logging with a valid OTEL span |
+| `method`/`path`/`status`/`duration_ms`       | HTTP access logs (web)              |
+| `grpc_method`/`grpc_code`/`duration_ms`      | gRPC unary access logs              |
+| `topic`/`partition`/`offset`                 | Kafka handler errors                |
+| `order_id` / `merchant_id` / `buyer_user_id` | Checkout hot-path domain logs       |
+| `status` / `outcome` / `event_type`          | Order/payment/reservation outcomes  |
 
 Sensitive keys (`password`, `token`, `card`, `cvv`, …) are redacted to `[redacted]` via `ReplaceAttr`. Do not log full payment gateway payloads.
 
@@ -186,6 +188,10 @@ service:="web"
 
 ```logsql
 service:="orders" AND trace_id:="<hex-trace-id>"
+```
+
+```logsql
+order_id:="<uuid>"
 ```
 
 Exact filter syntax can vary slightly with the Grafana VL plugin UI — prefer Explore’s builder, then copy the query.

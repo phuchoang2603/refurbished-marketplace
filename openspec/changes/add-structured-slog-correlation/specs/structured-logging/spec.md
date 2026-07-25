@@ -67,9 +67,28 @@ Structured logging helpers and access-log middleware SHALL NOT emit full payment
 
 ### Requirement: Logging documentation
 
-The repository SHALL document structured logging field conventions, VictoriaLogs LogSQL examples filtered by `service` and `trace_id`, and Trace → logs usage in `docs/observability.md`.
+The repository SHALL document structured logging field conventions, VictoriaLogs LogSQL examples filtered by `service`, `trace_id`, and checkout domain fields such as `order_id`, and Trace → logs usage in `docs/observability.md`.
 
 #### Scenario: Contributor finds logging guide
 
 - **WHEN** a contributor opens observability documentation after this change
-- **THEN** they can find the field table, a LogSQL example joining by `trace_id`, and Trace → logs steps
+- **THEN** they can find the field table (including domain hot-path fields), a LogSQL example joining by `trace_id` or `order_id`, and Trace → logs steps
+
+### Requirement: Checkout hot paths emit domain fields
+
+Orders, products (inventory), and payment services SHALL emit structured slog lines on checkout hot paths that include domain identifiers such as `order_id` (and related `merchant_id` / `buyer_user_id` / outcome fields when applicable), using context so `trace_id` is present when a span is active.
+
+#### Scenario: Order create logs order_id
+
+- **WHEN** CreateOrder commits successfully
+- **THEN** an Info log includes `order_id`, `buyer_user_id`, and `merchant_id`
+
+#### Scenario: Inventory reservation outcome is logged
+
+- **WHEN** products handles `orders.created` and reserves stock or emits reservation_failed
+- **THEN** a structured log includes `order_id` and indicates reserved vs failed
+
+#### Scenario: Payment terminal outcome is logged
+
+- **WHEN** payment applies a gateway webhook terminal success or failure
+- **THEN** a structured log includes `order_id` and the payment status / event type without card or raw gateway payloads

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log/slog"
 
 	"refurbished-marketplace/services/products/internal/database"
 	"refurbished-marketplace/shared/messaging"
@@ -63,7 +64,16 @@ func (s *Service) HandleOrdersCreated(ctx context.Context, messageID string, val
 			if outboxErr := createInventoryReservationFailedOutbox(ctx, q, orderID); outboxErr != nil {
 				return outboxErr
 			}
-			return tx.Commit()
+			if err := tx.Commit(); err != nil {
+				return err
+			}
+			slog.WarnContext(
+				ctx, "inventory reservation failed",
+				"order_id", orderID.String(),
+				"merchant_id", merchantID.String(),
+				"err", err,
+			)
+			return nil
 		}
 		return err
 	}
@@ -72,7 +82,18 @@ func (s *Service) HandleOrdersCreated(ctx context.Context, messageID string, val
 		return err
 	}
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	slog.InfoContext(
+		ctx, "inventory reserved",
+		"order_id", orderID.String(),
+		"merchant_id", merchantID.String(),
+		"total_cents", totalCents,
+		"item_count", len(items),
+	)
+	return nil
 }
 
 func (s *Service) HandlePaymentOutcome(ctx context.Context, messageID, topic string, value []byte) error {
@@ -132,5 +153,20 @@ func (s *Service) HandlePaymentOutcome(ctx context.Context, messageID, topic str
 		}
 	}
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	outcome := "released"
+	if topic == messaging.EventTypePaymentSucceeded {
+		outcome = "committed"
+	}
+	slog.InfoContext(
+		ctx, "inventory reservation settled",
+		"order_id", orderID.String(),
+		"topic", topic,
+		"outcome", outcome,
+		"reservation_count", len(reservations),
+	)
+	return nil
 }

@@ -16,6 +16,11 @@
 - [x] 3.1 Configure VictoriaTraces (`uid: VictoriaTraces`) `jsonData.tracesToLogsV2` → `datasourceUid: VictoriaLogs` with `filterByTraceID: true` in observability chart values (local + staging); fall back to VL customQuery if needed
 - [x] 3.2 Document field conventions, LogSQL examples, Trace → logs steps, and redaction notes in `docs/observability.md`
 
+## 3b. Domain hot-path fields
+
+- [x] 3.3 Emit structured domain logs on checkout hot paths (orders create/status, inventory reserve/settle, payment session/tx/webhook) with `order_id` and related IDs/outcomes
+- [x] 3.4 Update issue #2, OpenSpec structured-logging spec, and docs for domain fields
+
 ## 4. Verify
 
 - [ ] 4.1 `tilt up`: generate web + gRPC + checkout traffic; confirm JSON lines reach VictoriaLogs
