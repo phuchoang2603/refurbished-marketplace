@@ -3,6 +3,7 @@ package messaging
 import (
 	"context"
 	"fmt"
+	"log/slog"
 
 	sharedtrace "refurbished-marketplace/shared/observe/trace"
 
@@ -105,6 +106,13 @@ func (c *KafkaConsumer) Run(ctx context.Context) error {
 					if err != nil {
 						span.RecordError(err)
 						span.SetStatus(codes.Error, err.Error())
+						slog.ErrorContext(
+							msgCtx, "kafka message handler failed",
+							"topic", r.Topic,
+							"partition", r.Partition,
+							"offset", r.Offset,
+							"err", err,
+						)
 					}
 					span.End()
 					if err != nil {

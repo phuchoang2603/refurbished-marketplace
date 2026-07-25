@@ -2,7 +2,7 @@ package clients
 
 import (
 	"fmt"
-	"log"
+	"log/slog"
 )
 
 type Config struct {
@@ -82,6 +82,6 @@ func closeClient(client interface{ Close() error }) {
 		return
 	}
 	if err := client.Close(); err != nil {
-		log.Printf("close grpc client: %v", err)
+		slog.Error("close grpc client", "err", err)
 	}
 }

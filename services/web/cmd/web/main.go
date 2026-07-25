@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -12,13 +12,15 @@ import (
 	"refurbished-marketplace/services/web/internal/handlers"
 	sharedhandlers "refurbished-marketplace/services/web/internal/handlers/shared"
 	authconfig "refurbished-marketplace/shared/auth/config"
+	sharedlog "refurbished-marketplace/shared/observe/log"
 	"refurbished-marketplace/shared/runtime"
 )
 
 func main() {
+	runtime.InitLogging("web")
 	cfg := config.LoadConfig()
 	if err := config.ValidateConfig(cfg); err != nil {
-		log.Fatal(err)
+		sharedlog.Fatal("config", "err", err)
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -26,11 +28,11 @@ func main() {
 
 	shutdownTracing, err := runtime.InitTracing(ctx, "web")
 	if err != nil {
-		log.Fatal(err)
+		sharedlog.Fatal("init tracing", "err", err)
 	}
 	defer func() {
 		if err := shutdownTracing(context.Background()); err != nil {
-			log.Printf("tracing shutdown: %v", err)
+			slog.Error("tracing shutdown", "err", err)
 		}
 	}()
 
@@ -42,7 +44,7 @@ func main() {
 		PaymentAddr:  cfg.PaymentAddr,
 	})
 	if err != nil {
-		log.Fatal(err)
+		sharedlog.Fatal("clients", "err", err)
 	}
 	defer deps.Close()
 
@@ -65,6 +67,6 @@ func main() {
 		ServiceName: "web",
 		Handler:     newRouter(h),
 	}); err != nil {
-		log.Fatalf("http: %v", err)
+		sharedlog.Fatal("http serve", "err", err)
 	}
 }

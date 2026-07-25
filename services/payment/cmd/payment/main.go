@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"os"
 	"os/signal"
 	"sync"
@@ -10,6 +10,7 @@ import (
 
 	"refurbished-marketplace/services/payment/internal/grpcserver"
 	"refurbished-marketplace/services/payment/internal/service"
+	sharedlog "refurbished-marketplace/shared/observe/log"
 	"refurbished-marketplace/shared/runtime"
 
 	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
@@ -19,18 +20,19 @@ import (
 )
 
 func main() {
+	runtime.InitLogging("payment")
 	cfg := service.LoadConfig()
 	if err := service.ValidateConfig(cfg); err != nil {
-		log.Fatal(err)
+		sharedlog.Fatal("config", "err", err)
 	}
 
 	db, err := runtime.OpenPostgres(runtime.MustEnv("DB_URL"))
 	if err != nil {
-		log.Fatal(err)
+		sharedlog.Fatal("open postgres", "err", err)
 	}
 	defer func() {
 		if err := db.Close(); err != nil {
-			log.Printf("close db: %v", err)
+			slog.Error("close db", "err", err)
 		}
 	}()
 
@@ -42,11 +44,11 @@ func main() {
 
 	shutdownTracing, err := runtime.InitTracing(ctx, "payment")
 	if err != nil {
-		log.Fatal(err)
+		sharedlog.Fatal("init tracing", "err", err)
 	}
 	defer func() {
 		if err := shutdownTracing(context.Background()); err != nil {
-			log.Printf("tracing shutdown: %v", err)
+			slog.Error("tracing shutdown", "err", err)
 		}
 	}()
 
@@ -62,7 +64,7 @@ func main() {
 			paymentv1.RegisterPaymentServiceServer(server, grpcSvc)
 		},
 	}); err != nil {
-		log.Fatalf("grpc: %v", err)
+		sharedlog.Fatal("grpc serve", "err", err)
 	}
 	wg.Wait()
 }

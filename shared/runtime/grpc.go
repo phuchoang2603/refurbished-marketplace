@@ -2,13 +2,15 @@ package runtime
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"net"
+	"time"
 
 	sharedtrace "refurbished-marketplace/shared/observe/trace"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 )
 
 type GRPCServerConfig struct {
@@ -23,7 +25,7 @@ func ServeGRPC(ctx context.Context, cfg GRPCServerConfig) error {
 		return err
 	}
 
-	opts := sharedtrace.GRPCServerOptions()
+	opts := append(sharedtrace.GRPCServerOptions(), grpc.ChainUnaryInterceptor(unaryAccessLog))
 	server := grpc.NewServer(opts...)
 	cfg.Register(server)
 	reflection.Register(server)
@@ -33,6 +35,24 @@ func ServeGRPC(ctx context.Context, cfg GRPCServerConfig) error {
 		server.GracefulStop()
 	}()
 
-	log.Printf("starting %s grpc service on %s", cfg.ServiceName, cfg.Addr)
+	slog.Info("starting grpc service", "addr", cfg.Addr)
 	return server.Serve(lis)
+}
+
+func unaryAccessLog(
+	ctx context.Context,
+	req any,
+	info *grpc.UnaryServerInfo,
+	handler grpc.UnaryHandler,
+) (any, error) {
+	start := time.Now()
+	resp, err := handler(ctx, req)
+	st, _ := status.FromError(err)
+	slog.LogAttrs(
+		ctx, slog.LevelInfo, "grpc request",
+		slog.String("grpc_method", info.FullMethod),
+		slog.String("grpc_code", st.Code().String()),
+		slog.Int64("duration_ms", time.Since(start).Milliseconds()),
+	)
+	return resp, err
 }

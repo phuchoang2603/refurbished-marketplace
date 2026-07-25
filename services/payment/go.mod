@@ -11,6 +11,7 @@ require (
 	refurbished-marketplace/shared/err/grpcerr v0.0.0
 	refurbished-marketplace/shared/messaging v0.0.0
 	refurbished-marketplace/shared/proto v0.0.0
+	refurbished-marketplace/shared/observe/log v0.0.0
 	refurbished-marketplace/shared/runtime v0.0.0
 	refurbished-marketplace/shared/testutil/kafka v0.0.0
 	refurbished-marketplace/shared/testutil/postgres v0.0.0

@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 
 	"refurbished-marketplace/services/orders/internal/service"
 	"refurbished-marketplace/shared/messaging"
@@ -24,10 +24,14 @@ func runOrderResultConsumer(ctx context.Context, svc *service.Service, bootstrap
 	}
 	defer func() {
 		if err := consumer.Close(); err != nil {
-			log.Printf("kafka consumer close: %v", err)
+			slog.Error("kafka consumer close", "err", err)
 		}
 	}()
 
-	log.Printf("kafka consumer started (topics inventory/payment results group=%s)", groupID)
+	slog.Info(
+		"kafka consumer started",
+		"topics", "inventory/payment results",
+		"group", groupID,
+	)
 	return consumer.Run(ctx)
 }
