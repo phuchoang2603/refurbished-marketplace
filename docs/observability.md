@@ -34,8 +34,24 @@ Useful PromQL after marketplace traffic:
 
 ```promql
 sum by (destination_app, request_protocol) (
-  rate(istio_requests_total{destination_service_namespace="ecommerce"}[5m])
+  rate(istio_requests_total{
+    destination_service_namespace="ecommerce",
+    reporter=~"source|waypoint",
+    endpoint="http-envoy-prom"
+  }[5m])
 )
+```
+
+Ambient mesh emits `reporter="source"` (ingress) and `reporter="waypoint"` — not classic sidecar `reporter="destination"`. The Marketplace Istio RED dashboard filters accordingly. Prefer a single scrape endpoint (`http-envoy-prom`) in queries so dual-port scrapes do not double-count.
+
+### Marketplace Istio RED dashboard
+
+The wrapper chart ships a repo-owned Grafana dashboard **Marketplace Istio RED** (`infra/charts/observability/dashboards/marketplace-istio-red.json`) as a ConfigMap labeled `grafana_dashboard=1` (folder **Marketplace**). It graphs request rate, 5xx / gRPC error rate, and p50/p95/p99 latency from Istio L7 scrapes — no Go `/metrics` required.
+
+After Grafana is up (and sidecar has reloaded), open **Dashboards → Marketplace → Marketplace Istio RED**, or:
+
+```bash
+kubectl get configmap -n monitoring -l grafana_dashboard=1
 ```
 
 ## Grafana Access
