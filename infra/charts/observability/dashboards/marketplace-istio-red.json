@@ -12,7 +12,7 @@
       }
     ]
   },
-  "description": "Marketplace service RED from Istio L7 (waypoint + ingress) scrapes — rate, errors, and latency. No app /metrics required.",
+  "description": "Marketplace service RED from Istio ambient L7 (ingress source + waypoint). Filters reporter=~\"source|waypoint\" and endpoint=http-envoy-prom.",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 1,
@@ -29,7 +29,7 @@
     },
     {
       "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
-      "description": "Request rate by destination app (reporter=destination).",
+      "description": "Request rate by destination app (ambient: reporter=source|waypoint).",
       "fieldConfig": {
         "defaults": {
           "color": { "mode": "palette-classic" },
@@ -50,7 +50,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
           "editorMode": "code",
-          "expr": "sum by (destination_app) (\n  rate(istio_requests_total{\n    destination_service_namespace=~\"$namespace\",\n    reporter=\"destination\",\n    destination_app=~\"$destination_app\"\n  }[$__rate_interval])\n)",
+          "expr": "sum by (destination_app) (\n  rate(istio_requests_total{\n    destination_service_namespace=~\"$namespace\",\n    reporter=~\"source|waypoint\",\n    endpoint=\"http-envoy-prom\",\n    destination_app=~\"$destination_app\"\n  }[$__rate_interval])\n)",
           "legendFormat": "{{destination_app}}",
           "refId": "A"
         }
@@ -80,7 +80,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
           "editorMode": "code",
-          "expr": "sum by (destination_app, request_protocol) (\n  rate(istio_requests_total{\n    destination_service_namespace=~\"$namespace\",\n    reporter=\"destination\",\n    destination_app=~\"$destination_app\"\n  }[$__rate_interval])\n)",
+          "expr": "sum by (destination_app, request_protocol) (\n  rate(istio_requests_total{\n    destination_service_namespace=~\"$namespace\",\n    reporter=~\"source|waypoint\",\n    endpoint=\"http-envoy-prom\",\n    destination_app=~\"$destination_app\"\n  }[$__rate_interval])\n)",
           "legendFormat": "{{destination_app}} {{request_protocol}}",
           "refId": "A"
         }
@@ -119,7 +119,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
           "editorMode": "code",
-          "expr": "sum by (destination_app) (\n  rate(istio_requests_total{\n    destination_service_namespace=~\"$namespace\",\n    reporter=\"destination\",\n    destination_app=~\"$destination_app\",\n    response_code=~\"5..\"\n  }[$__rate_interval])\n)\n/\nclamp_min(\n  sum by (destination_app) (\n    rate(istio_requests_total{\n      destination_service_namespace=~\"$namespace\",\n      reporter=\"destination\",\n      destination_app=~\"$destination_app\"\n    }[$__rate_interval])\n  ),\n  1e-9\n)",
+          "expr": "sum by (destination_app) (\n  rate(istio_requests_total{\n    destination_service_namespace=~\"$namespace\",\n    reporter=~\"source|waypoint\",\n    endpoint=\"http-envoy-prom\",\n    destination_app=~\"$destination_app\",\n    response_code=~\"5..\"\n  }[$__rate_interval])\n)\n/\nclamp_min(\n  sum by (destination_app) (\n    rate(istio_requests_total{\n      destination_service_namespace=~\"$namespace\",\n      reporter=~\"source|waypoint\",\n      endpoint=\"http-envoy-prom\",\n      destination_app=~\"$destination_app\"\n    }[$__rate_interval])\n  ),\n  1e-9\n)",
           "legendFormat": "{{destination_app}}",
           "refId": "A"
         }
@@ -149,7 +149,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
           "editorMode": "code",
-          "expr": "sum by (destination_app, response_code) (\n  rate(istio_requests_total{\n    destination_service_namespace=~\"$namespace\",\n    reporter=\"destination\",\n    destination_app=~\"$destination_app\",\n    request_protocol=\"grpc\",\n    response_code!=\"0\",\n    response_code!=\"200\"\n  }[$__rate_interval])\n)",
+          "expr": "sum by (destination_app, response_code) (\n  rate(istio_requests_total{\n    destination_service_namespace=~\"$namespace\",\n    reporter=~\"source|waypoint\",\n    endpoint=\"http-envoy-prom\",\n    destination_app=~\"$destination_app\",\n    request_protocol=\"grpc\",\n    response_code!=\"0\",\n    response_code!=\"200\"\n  }[$__rate_interval])\n)",
           "legendFormat": "{{destination_app}} {{response_code}}",
           "refId": "A"
         }
@@ -186,21 +186,21 @@
         {
           "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.50, sum by (le, destination_app) (\n  rate(istio_request_duration_milliseconds_bucket{\n    destination_service_namespace=~\"$namespace\",\n    reporter=\"destination\",\n    destination_app=~\"$destination_app\"\n  }[$__rate_interval])\n))",
+          "expr": "histogram_quantile(0.50, sum by (le, destination_app) (\n  rate(istio_request_duration_milliseconds_bucket{\n    destination_service_namespace=~\"$namespace\",\n    reporter=~\"source|waypoint\",\n    endpoint=\"http-envoy-prom\",\n    destination_app=~\"$destination_app\"\n  }[$__rate_interval])\n))",
           "legendFormat": "{{destination_app}} p50",
           "refId": "A"
         },
         {
           "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum by (le, destination_app) (\n  rate(istio_request_duration_milliseconds_bucket{\n    destination_service_namespace=~\"$namespace\",\n    reporter=\"destination\",\n    destination_app=~\"$destination_app\"\n  }[$__rate_interval])\n))",
+          "expr": "histogram_quantile(0.95, sum by (le, destination_app) (\n  rate(istio_request_duration_milliseconds_bucket{\n    destination_service_namespace=~\"$namespace\",\n    reporter=~\"source|waypoint\",\n    endpoint=\"http-envoy-prom\",\n    destination_app=~\"$destination_app\"\n  }[$__rate_interval])\n))",
           "legendFormat": "{{destination_app}} p95",
           "refId": "B"
         },
         {
           "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum by (le, destination_app) (\n  rate(istio_request_duration_milliseconds_bucket{\n    destination_service_namespace=~\"$namespace\",\n    reporter=\"destination\",\n    destination_app=~\"$destination_app\"\n  }[$__rate_interval])\n))",
+          "expr": "histogram_quantile(0.99, sum by (le, destination_app) (\n  rate(istio_request_duration_milliseconds_bucket{\n    destination_service_namespace=~\"$namespace\",\n    reporter=~\"source|waypoint\",\n    endpoint=\"http-envoy-prom\",\n    destination_app=~\"$destination_app\"\n  }[$__rate_interval])\n))",
           "legendFormat": "{{destination_app}} p99",
           "refId": "C"
         }
@@ -211,7 +211,7 @@
   ],
   "refresh": "30s",
   "schemaVersion": 39,
-  "tags": ["marketplace", "istio", "red"],
+  "tags": ["marketplace", "istio", "red", "ambient"],
   "templating": {
     "list": [
       {
@@ -233,13 +233,13 @@
         "allValue": ".*",
         "current": { "selected": true, "text": "All", "value": "$__all" },
         "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
-        "definition": "label_values(istio_requests_total{destination_service_namespace=~\"$namespace\",reporter=\"destination\"}, destination_app)",
+        "definition": "label_values(istio_requests_total{destination_service_namespace=~\"$namespace\",reporter=~\"source|waypoint\",endpoint=\"http-envoy-prom\"}, destination_app)",
         "includeAll": true,
         "label": "Destination app",
         "multi": true,
         "name": "destination_app",
         "query": {
-          "query": "label_values(istio_requests_total{destination_service_namespace=~\"$namespace\",reporter=\"destination\"}, destination_app)",
+          "query": "label_values(istio_requests_total{destination_service_namespace=~\"$namespace\",reporter=~\"source|waypoint\",endpoint=\"http-envoy-prom\"}, destination_app)",
           "refId": "StandardVariableQuery"
         },
         "refresh": 2,
@@ -253,6 +253,6 @@
   "timezone": "browser",
   "title": "Marketplace Istio RED",
   "uid": "marketplace-istio-red",
-  "version": 1,
+  "version": 2,
   "weekStart": ""
 }
