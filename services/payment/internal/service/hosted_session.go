@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"refurbished-marketplace/services/payment/internal/database"
-	shareddb "refurbished-marketplace/shared/db"
+	"refurbished-marketplace/shared/err/dberr"
 
 	"github.com/google/uuid"
 )
@@ -65,10 +65,10 @@ func (s *Service) CreateHostedPaymentSession(ctx context.Context, p CreateHosted
 		Currency:         p.Currency,
 		ShippingAddress:  p.ShippingAddress,
 		Status:           HostedPaymentSessionStatusPending,
-		PaymentSessionID: shareddb.OptionalNullString(uuid.NewString()),
+		PaymentSessionID: dberr.OptionalNullString(uuid.NewString()),
 		ReturnUrl:        p.ReturnURL,
 		CancelUrl:        p.CancelURL,
-		ExpiresAt:        shareddb.OptionalNullTime(expiresAt),
+		ExpiresAt:        dberr.OptionalNullTime(expiresAt),
 	})
 	if err != nil {
 		return HostedPaymentSessionView{}, err

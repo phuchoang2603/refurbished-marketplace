@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"refurbished-marketplace/services/payment/internal/service"
-	"refurbished-marketplace/shared/grpcerr"
+	"refurbished-marketplace/shared/err/grpcerr"
 	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
 
 	"google.golang.org/grpc/codes"

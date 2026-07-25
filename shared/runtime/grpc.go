@@ -5,7 +5,7 @@ import (
 	"log"
 	"net"
 
-	sharedtrace "refurbished-marketplace/shared/trace"
+	sharedtrace "refurbished-marketplace/shared/observe/trace"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"

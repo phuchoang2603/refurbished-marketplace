@@ -4,7 +4,7 @@ import (
 	"context"
 	"log"
 
-	sharedtrace "refurbished-marketplace/shared/trace"
+	sharedtrace "refurbished-marketplace/shared/observe/trace"
 )
 
 // InitTracing configures the global OpenTelemetry provider.

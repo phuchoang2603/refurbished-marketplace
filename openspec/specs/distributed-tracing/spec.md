@@ -8,11 +8,11 @@ TBD - created by archiving change add-e2e-distributed-tracing. Update Purpose af
 
 ### Requirement: Shared OpenTelemetry bootstrap exports to VictoriaTraces
 
-The repository SHALL provide a shared Go OpenTelemetry bootstrap that configures a tracer provider, W3C Trace Context propagation, and OTLP export to the platform VictoriaTraces backend used by Grafana.
+The repository SHALL provide a shared Go OpenTelemetry bootstrap under `shared/observe/trace` that configures a tracer provider, W3C Trace Context propagation, and OTLP export to the platform VictoriaTraces backend used by Grafana.
 
 #### Scenario: Service starts with tracing configured
 
-- **WHEN** a marketplace service enables the shared tracing bootstrap with a VictoriaTraces OTLP endpoint
+- **WHEN** a marketplace service enables the `shared/observe/trace` bootstrap with a VictoriaTraces OTLP endpoint
 - **THEN** spans created by that service are exportable to VictoriaTraces for Grafana Explore
 
 #### Scenario: W3C is the propagation format

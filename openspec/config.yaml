@@ -20,6 +20,8 @@ context: |
   - Keep SQL and migrations service-local under services/<service>/db/
   - Keep tests under services/<service>/tests/
   - Keep protobuf contracts under shared/proto/<domain>/v1/
+  - Keep observability helpers under shared/observe/ (trace today; log later)
+  - Keep shared error helpers under shared/err/ (dberr, grpcerr)
   - Keep docs/ for stable architecture notes, Mermaid diagrams, ADR-style decisions, and service ownership notes
   - Keep operator/app Helm charts under infra/charts/; shared Argo app-of-apps under infra/argocd/app-of-apps/ with thin roots under infra/argocd/{local,staging}/
 

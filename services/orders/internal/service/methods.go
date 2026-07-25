@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"refurbished-marketplace/services/orders/internal/database"
-	shareddb "refurbished-marketplace/shared/db"
+	"refurbished-marketplace/shared/err/dberr"
 
 	"github.com/google/uuid"
 )
@@ -87,7 +87,7 @@ func (s *Service) GetOrderByID(ctx context.Context, id uuid.UUID) (Order, error)
 
 	got, err := s.queries.GetOrderByID(ctx, id)
 	if err != nil {
-		return Order{}, shareddb.MapErrNoRows(err, ErrOrderNotFound)
+		return Order{}, dberr.MapErrNoRows(err, ErrOrderNotFound)
 	}
 
 	orders, err := loadOrdersWithItems(ctx, s.queries, []Order{mapDBOrder(got)})
@@ -127,7 +127,7 @@ func (s *Service) UpdateOrderStatus(ctx context.Context, id uuid.UUID, status st
 
 	got, err := s.queries.GetOrderByID(ctx, id)
 	if err != nil {
-		return Order{}, shareddb.MapErrNoRows(err, ErrOrderNotFound)
+		return Order{}, dberr.MapErrNoRows(err, ErrOrderNotFound)
 	}
 
 	orders, err := loadOrdersWithItems(ctx, s.queries, []Order{mapDBOrder(got)})
@@ -155,7 +155,7 @@ func (s *Service) updateOrderStatusWithQueries(ctx context.Context, q *database.
 
 	_, err = q.UpdateOrderStatus(ctx, database.UpdateOrderStatusParams{ID: id, Status: normalizedStatus})
 	if err != nil {
-		return shareddb.MapErrNoRows(err, ErrOrderNotFound)
+		return dberr.MapErrNoRows(err, ErrOrderNotFound)
 	}
 	return nil
 }

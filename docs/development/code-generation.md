@@ -23,6 +23,19 @@ The repo uses a root [`go.work`](../../go.work) file for local development and c
 - **`use`**: every service, shared library, and tool module in the monorepo
 - **`replace`**: maps local `refurbished-marketplace/...` imports to `./shared/...` paths (defined in `go.work`, not in individual `go.mod` files)
 
+Shared library layout:
+
+| Path                   | Role                                      |
+| ---------------------- | ----------------------------------------- |
+| `shared/proto`         | gRPC / protobuf contracts                 |
+| `shared/auth`          | JWT and auth config                       |
+| `shared/messaging`     | Kafka helpers                             |
+| `shared/runtime`       | Service bootstrap (HTTP, gRPC, Postgres…) |
+| `shared/observe/trace` | OpenTelemetry tracing                     |
+| `shared/err/dberr`     | DB error / null helpers                   |
+| `shared/err/grpcerr`   | gRPC status mapping                       |
+| `shared/testutil/*`    | Testcontainers helpers                    |
+
 Run `tidy` (alias for `go work sync`) after changing `go.mod` files. Do not run `go mod tidy` inside a service directory without the workspace — it cannot resolve local modules on its own.
 
 Build from the repo root:

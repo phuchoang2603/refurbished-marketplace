@@ -100,6 +100,10 @@ The CI workflow SHALL expand path filters so changes under shared modules trigge
 - `shared/proto/**` → users, products, orders, cart, payment, web
 - `shared/auth/**` → users, web
 - `shared/messaging/**` → products, orders, payment
+- `shared/err/dberr/**` → users, products, orders, payment
+- `shared/err/grpcerr/**` → users, products, orders, cart, payment
+- `shared/runtime/**` → users, products, orders, cart, payment, web
+- `shared/observe/trace/**` → products, orders, payment, web
 - `shared/testutil/postgres/**` → users, products, orders, payment
 - `shared/testutil/kafka/**` → products, orders, payment
 - `shared/testutil/redis/**` → cart
@@ -114,9 +118,14 @@ The CI workflow SHALL expand path filters so changes under shared modules trigge
 - **WHEN** a pull request modifies files under `shared/messaging/**`
 - **THEN** CI runs tests for products, orders, and payment and does not run tests for cart solely due to that change
 
+#### Scenario: Shared observe/trace change
+
+- **WHEN** a pull request modifies files under `shared/observe/trace/**`
+- **THEN** CI runs tests for products, orders, payment, and web
+
 ### Requirement: Web service tests included
 
-The CI workflow SHALL include `services/web` in selective testing when web paths change or when shared fan-out selects web (proto or auth changes).
+The CI workflow SHALL include `services/web` in selective testing when web paths change or when shared fan-out selects web (proto, auth, runtime, or observe/trace changes).
 
 #### Scenario: Web-only change
 

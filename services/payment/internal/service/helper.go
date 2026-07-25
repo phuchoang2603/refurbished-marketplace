@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"refurbished-marketplace/services/payment/internal/database"
-	shareddb "refurbished-marketplace/shared/db"
+	"refurbished-marketplace/shared/err/dberr"
 
 	"github.com/google/uuid"
 )
@@ -56,7 +56,7 @@ func mapDBHostedPaymentSessionView(intent database.PaymentIntent) HostedPaymentS
 func loadPaymentTransaction(ctx context.Context, q *database.Queries, id uuid.UUID) (database.PaymentTransaction, error) {
 	row, err := q.GetPaymentTransactionByID(ctx, id)
 	if err != nil {
-		return database.PaymentTransaction{}, shareddb.MapErrNoRows(err, ErrTransactionNotFound)
+		return database.PaymentTransaction{}, dberr.MapErrNoRows(err, ErrTransactionNotFound)
 	}
 	return row, nil
 }
@@ -64,7 +64,7 @@ func loadPaymentTransaction(ctx context.Context, q *database.Queries, id uuid.UU
 func loadPaymentIntentByOrderID(ctx context.Context, q *database.Queries, orderID uuid.UUID) (database.PaymentIntent, error) {
 	row, err := q.GetPaymentIntentByOrderID(ctx, orderID)
 	if err != nil {
-		return database.PaymentIntent{}, shareddb.MapErrNoRows(err, ErrIntentNotFound)
+		return database.PaymentIntent{}, dberr.MapErrNoRows(err, ErrIntentNotFound)
 	}
 	return row, nil
 }
@@ -98,7 +98,7 @@ func hostedPaymentSessionMapsToSuccess(status string) bool {
 }
 
 func isPostgresUniqueViolation(err error) bool {
-	return shareddb.IsUniqueViolation(err)
+	return dberr.IsUniqueViolation(err)
 }
 
 func defaultPaymentCurrency(currency string) string {

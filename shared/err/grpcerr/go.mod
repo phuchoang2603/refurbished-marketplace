@@ -1,4 +1,4 @@
-module refurbished-marketplace/shared/grpcerr
+module refurbished-marketplace/shared/err/grpcerr
 
 go 1.26.2
 

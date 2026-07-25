@@ -28,7 +28,7 @@ Control-plane targets (istiod, ztunnel, istio-cni) are intentionally not scraped
 | gRPC (preferred) | `vtsingle-vmks.monitoring.svc.cluster.local:4317` (insecure TLS in staging)              |
 | HTTP fallback    | `http://vtsingle-vmks.monitoring.svc.cluster.local:10428/insert/opentelemetry/v1/traces` |
 
-Set service env `OTEL_EXPORTER_OTLP_ENDPOINT=vtsingle-vmks.monitoring.svc.cluster.local:4317` (gRPC) or use the HTTP URL with the shared bootstrap’s HTTP mode.
+Set service env `OTEL_EXPORTER_OTLP_ENDPOINT=vtsingle-vmks.monitoring.svc.cluster.local:4317` (gRPC) or use the HTTP URL with the `shared/observe/trace` bootstrap’s HTTP mode.
 
 Useful PromQL after marketplace traffic:
 
@@ -134,7 +134,7 @@ ArgoCD does not run Helm pre-delete hooks, so removal should not rely on the cha
 
 ## Distributed tracing (e2e)
 
-Marketplace services and Istio export OTLP **directly** to VictoriaTraces (no collector).
+App tracing bootstrap lives in `shared/observe/trace` (wired through `shared/runtime`). Marketplace services and Istio export OTLP **directly** to VictoriaTraces (no collector).
 
 ```
 Browser → ingress → web ──gRPC──▶ domain services

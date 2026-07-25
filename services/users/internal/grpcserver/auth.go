@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"refurbished-marketplace/services/users/internal/service"
-	"refurbished-marketplace/shared/grpcerr"
+	"refurbished-marketplace/shared/err/grpcerr"
 	usersv1 "refurbished-marketplace/shared/proto/users/v1"
 
 	"google.golang.org/grpc/codes"

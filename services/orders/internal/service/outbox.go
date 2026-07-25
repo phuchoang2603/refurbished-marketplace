@@ -5,7 +5,7 @@ import (
 
 	"refurbished-marketplace/services/orders/internal/database"
 	"refurbished-marketplace/shared/messaging"
-	sharedtrace "refurbished-marketplace/shared/trace"
+	sharedtrace "refurbished-marketplace/shared/observe/trace"
 
 	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
 

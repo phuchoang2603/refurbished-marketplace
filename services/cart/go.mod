@@ -7,7 +7,7 @@ require (
 	github.com/redis/go-redis/v9 v9.18.0
 	google.golang.org/grpc v1.80.0
 	google.golang.org/protobuf v1.36.11
-	refurbished-marketplace/shared/grpcerr v0.0.0
+	refurbished-marketplace/shared/err/grpcerr v0.0.0
 	refurbished-marketplace/shared/proto v0.0.0
 	refurbished-marketplace/shared/runtime v0.0.0
 	refurbished-marketplace/shared/testutil/redis v0.0.0
