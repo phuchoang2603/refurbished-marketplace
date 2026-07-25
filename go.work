@@ -16,6 +16,7 @@ use (
 	./shared/testutil/kafka
 	./shared/testutil/postgres
 	./shared/testutil/redis
+	./shared/trace
 	./tools/payment-gateway-simulator
 )
 
@@ -29,4 +30,5 @@ replace (
 	refurbished-marketplace/shared/testutil/kafka v0.0.0 => ./shared/testutil/kafka
 	refurbished-marketplace/shared/testutil/postgres v0.0.0 => ./shared/testutil/postgres
 	refurbished-marketplace/shared/testutil/redis v0.0.0 => ./shared/testutil/redis
+	refurbished-marketplace/shared/trace v0.0.0 => ./shared/trace
 )

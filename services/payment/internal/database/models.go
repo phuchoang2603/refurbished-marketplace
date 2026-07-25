@@ -34,13 +34,14 @@ type PaymentIntent struct {
 }
 
 type PaymentOutbox struct {
-	ID              uuid.UUID
-	AggregateID     uuid.UUID
-	EventType       string
-	Payload         []byte
-	PublishAttempts int32
-	CreatedAt       time.Time
-	PublishedAt     sql.NullTime
+	ID                 uuid.UUID
+	AggregateID        uuid.UUID
+	EventType          string
+	Payload            []byte
+	PublishAttempts    int32
+	CreatedAt          time.Time
+	PublishedAt        sql.NullTime
+	Tracingspancontext string
 }
 
 type PaymentTransaction struct {

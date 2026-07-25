@@ -6,6 +6,7 @@ require (
 	github.com/redis/go-redis/v9 v9.18.0
 	google.golang.org/grpc v1.80.0
 	refurbished-marketplace/shared/messaging v0.0.0
+	refurbished-marketplace/shared/trace v0.0.0
 )
 
 require (

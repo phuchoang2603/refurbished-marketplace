@@ -12,17 +12,20 @@ import (
 )
 
 const createPaymentOutbox = `-- name: CreatePaymentOutbox :one
-INSERT INTO payment_outbox (id, aggregate_id, event_type, payload)
-VALUES ($1, $2, $3, $4)
+INSERT INTO payment_outbox (
+    id, aggregate_id, event_type, payload, tracingspancontext
+)
+VALUES ($1, $2, $3, $4, $5)
 RETURNING
-    payment_outbox.id, payment_outbox.aggregate_id, payment_outbox.event_type, payment_outbox.payload, payment_outbox.publish_attempts, payment_outbox.created_at, payment_outbox.published_at
+    payment_outbox.id, payment_outbox.aggregate_id, payment_outbox.event_type, payment_outbox.payload, payment_outbox.publish_attempts, payment_outbox.created_at, payment_outbox.published_at, payment_outbox.tracingspancontext
 `
 
 type CreatePaymentOutboxParams struct {
-	ID          uuid.UUID
-	AggregateID uuid.UUID
-	EventType   string
-	Payload     []byte
+	ID                 uuid.UUID
+	AggregateID        uuid.UUID
+	EventType          string
+	Payload            []byte
+	Tracingspancontext string
 }
 
 func (q *Queries) CreatePaymentOutbox(ctx context.Context, arg CreatePaymentOutboxParams) (PaymentOutbox, error) {
@@ -31,6 +34,7 @@ func (q *Queries) CreatePaymentOutbox(ctx context.Context, arg CreatePaymentOutb
 		arg.AggregateID,
 		arg.EventType,
 		arg.Payload,
+		arg.Tracingspancontext,
 	)
 	var i PaymentOutbox
 	err := row.Scan(
@@ -41,6 +45,7 @@ func (q *Queries) CreatePaymentOutbox(ctx context.Context, arg CreatePaymentOutb
 		&i.PublishAttempts,
 		&i.CreatedAt,
 		&i.PublishedAt,
+		&i.Tracingspancontext,
 	)
 	return i, err
 }

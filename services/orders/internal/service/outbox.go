@@ -5,6 +5,7 @@ import (
 
 	"refurbished-marketplace/services/orders/internal/database"
 	"refurbished-marketplace/shared/messaging"
+	sharedtrace "refurbished-marketplace/shared/trace"
 
 	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
 
@@ -33,10 +34,11 @@ func createOrderOutbox(ctx context.Context, queries *database.Queries, order Ord
 	}
 
 	_, err = queries.CreateOrderOutbox(ctx, database.CreateOrderOutboxParams{
-		ID:          uuid.New(),
-		AggregateID: order.ID,
-		EventType:   messaging.EventTypeOrderCreated,
-		Payload:     payloadBytes,
+		ID:                 uuid.New(),
+		AggregateID:        order.ID,
+		EventType:          messaging.EventTypeOrderCreated,
+		Payload:            payloadBytes,
+		Tracingspancontext: sharedtrace.SerializeContext(ctx),
 	})
 	return err
 }

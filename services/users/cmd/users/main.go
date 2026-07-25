@@ -41,6 +41,16 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	shutdownTracing, err := runtime.InitTracing(ctx, "users")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		if err := shutdownTracing(context.Background()); err != nil {
+			log.Printf("tracing shutdown: %v", err)
+		}
+	}()
+
 	if err := runtime.ServeGRPC(ctx, runtime.GRPCServerConfig{
 		Addr:        addr,
 		ServiceName: "users",

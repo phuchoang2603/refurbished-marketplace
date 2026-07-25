@@ -11,6 +11,9 @@ mesh:
   waypoint:
     enabled: true
     name: ecommerce-waypoint
+  tracing:
+    enabled: true
+    samplingPercentage: 100
 
 # North-south edge via Kubernetes Gateway API (gatewayClassName: istio).
 # Local uses Cloudflare Tunnel → ClusterIP Gateway (same path as staging).
@@ -24,6 +27,9 @@ ingress:
 # Default container resources (overridable per service).
 # Sized for Colima 4 CPU / 8 GiB; staging overlays via values-staging.yaml.
 defaults:
+  otel:
+    # Local Colima / staging both use in-cluster VictoriaTraces OTLP gRPC.
+    endpoint: vtsingle-vmks.monitoring.svc.cluster.local:4317
   resources:
     requests:
       cpu: 10m

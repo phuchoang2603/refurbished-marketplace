@@ -13,6 +13,7 @@ func runInventoryReservedConsumer(ctx context.Context, svc *service.Service, boo
 		BootstrapServers: bootstrap,
 		GroupID:          groupID,
 		Topics:           []string{messaging.EventTypeInventoryReserved},
+		TracerName:       "payment",
 	}, svc.KafkaInventoryReservedHandler())
 	if err != nil {
 		return err

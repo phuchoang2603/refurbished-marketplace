@@ -40,6 +40,16 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	shutdownTracing, err := runtime.InitTracing(ctx, "products")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer func() {
+		if err := shutdownTracing(context.Background()); err != nil {
+			log.Printf("tracing shutdown: %v", err)
+		}
+	}()
+
 	var wg sync.WaitGroup
 	runtime.StartKafkaConsumer(ctx, &wg, func(ctx context.Context, brokers []string) error {
 		return runReservationConsumer(ctx, svc, brokers, cfg.KafkaGroupID)

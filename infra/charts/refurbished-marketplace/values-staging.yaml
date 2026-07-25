@@ -4,6 +4,8 @@ global:
   imageTag: main
 
 defaults:
+  otel:
+    endpoint: vtsingle-vmks.monitoring.svc.cluster.local:4317
   resources:
     requests:
       cpu: 25m
@@ -39,6 +41,11 @@ defaults:
     limits:
       cpu: 500m
       memory: 512Mi
+
+mesh:
+  tracing:
+    enabled: true
+    samplingPercentage: 100
 
 ingress:
   enabled: true
