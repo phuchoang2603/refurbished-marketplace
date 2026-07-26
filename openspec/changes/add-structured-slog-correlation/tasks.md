@@ -23,6 +23,6 @@
 
 ## 4. Verify
 
-- [ ] 4.1 `tilt up`: generate web + gRPC + checkout traffic; confirm JSON lines reach VictoriaLogs
-- [ ] 4.2 In Grafana Explore (VL), filter by `service` and a known checkout `trace_id` from VictoriaTraces
-- [ ] 4.3 From a span, use Trace → logs and land on matching log lines; spot-check payment/callback paths for no full sensitive payloads
+- [x] 4.1 `tilt up`: generate web + gRPC + checkout traffic; confirm JSON lines reach VictoriaLogs
+- [x] 4.2 In Grafana Explore (VL), filter by `service` and a known checkout `trace_id` from VictoriaTraces
+- [x] 4.3 From a span, use Trace → logs and land on matching log lines; spot-check payment/callback paths for no full sensitive payloads

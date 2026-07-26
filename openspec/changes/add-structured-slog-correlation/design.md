@@ -12,15 +12,17 @@ Issue [#2](https://github.com/phuchoang2603/refurbished-marketplace/issues/2) cl
 - Consistent structured access logs for web HTTP, gRPC unary, and Kafka consumer handle/error paths.
 - Grafana Trace → logs from VictoriaTraces (Tempo) to VictoriaLogs using `trace_id`.
 - Document field conventions and LogSQL examples in `docs/observability.md`.
+- Checkout hot-path domain fields (`order_id`, related IDs/outcomes) on orders / products / payment slog lines.
 
 **Non-Goals:**
 
 - Text / multi-format log handlers.
 - Chi RequestID or any second request-id scheme.
 - Logging full payment/card/password payloads.
-- Domain IDs on every log line (optional later).
+- Domain IDs on every log line (only checkout hot paths).
 - Per-service Prometheus `/metrics` or k6 tooling.
-- Changing VLAgent scrape namespaces or VL retention.
+- Changing VL retention (local remains the VL minimum `1d`; wipe PVC for a local clean slate).
+- Scraping Kafka / operators / Istio Envoy (`istio-proxy`) into VL for day-to-day app debug — those stay on traces/metrics/`kubectl logs`.
 
 ## Decisions
 
@@ -92,15 +94,21 @@ Extend the VictoriaTraces entry in `infra/charts/observability` `defaultDatasour
       datasourceUid: VictoriaLogs
       spanStartTimeShift: "-5m"
       spanEndTimeShift: "5m"
+      # TraceId-only: do not also filter by service.name→service, so Trace → logs
+      # returns all marketplace JSON lines for the TraceId across services.
       filterByTraceID: true
       filterBySpanID: false
-      # If auto filterByTraceID is insufficient for VL LogSQL, enable customQuery
-      # with a VL query using $${__trace.traceId} (escape $$ under Helm/Grafana).
 ```
 
 Keep local `values.yaml` and `values-staging.yaml` aligned. Document LogSQL examples in `docs/observability.md` (exact VL filter syntax verified during apply against Explore).
 
-**Alternatives considered:** custom Grafana app plugin; docs-only without tracesToLogs UI (worse DX).
+**Alternatives considered:** `tracesToLogsV2.tags` mapping `service.name` → `service` (over-filters Trace → logs to one service); custom Grafana app plugin; docs-only without tracesToLogs UI (worse DX).
+
+### Decision: VLAgent scrape scope for usable Explore
+
+Local and staging VLAgent `excludeFilter` keeps `ecommerce` apps (+ in-ns CNPG) and drops `istio-proxy` / `wait-for-db` noise. Kafka Connect remains on OTEL traces (`connect-debezium`), not VL text. Mesh L7 stays on metrics + traces.
+
+**Alternatives considered:** scrape `ecommerce`+`kafka` (Explore drowned by Connect/Java `unknown` levels); cluster-wide scrape on staging (same problem at larger scale).
 
 ### Decision: Docs live in `docs/observability.md`
 
@@ -124,5 +132,4 @@ Add a Structured logging section: field table, Trace → logs steps, redaction n
 
 ## Open Questions
 
-- Exact VictoriaLogs **LogSQL** expression for `customQuery` if `filterByTraceID: true` alone is insufficient with `victoriametrics-logs-datasource` — verify in Explore during apply (UID mapping is known: `VictoriaLogs`).
-- Whether to map span tag `service.name` → log field `service` via `tracesToLogsV2.tags` once app logs consistently emit `service`.
+- Exact VictoriaLogs **LogSQL** expression for `customQuery` if `filterByTraceID: true` alone is insufficient with `victoriametrics-logs-datasource` — verify in Explore during apply (UID mapping is known: `VictoriaLogs`). Closed for v1: TraceId-only `filterByTraceID` is sufficient; do not add `service.name` → `service` tags.
