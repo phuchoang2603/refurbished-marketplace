@@ -13,6 +13,7 @@ require (
 	google.golang.org/grpc v1.80.0
 	google.golang.org/protobuf v1.36.11
 	refurbished-marketplace/shared/auth v0.0.0
+	refurbished-marketplace/shared/observe/log v0.0.0
 	refurbished-marketplace/shared/proto v0.0.0
 	refurbished-marketplace/shared/runtime v0.0.0
 )

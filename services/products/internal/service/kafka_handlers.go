@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 
+	sharedlog "refurbished-marketplace/shared/observe/log"
+
 	"refurbished-marketplace/services/products/internal/database"
 	"refurbished-marketplace/shared/messaging"
 	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
@@ -63,7 +65,16 @@ func (s *Service) HandleOrdersCreated(ctx context.Context, messageID string, val
 			if outboxErr := createInventoryReservationFailedOutbox(ctx, q, orderID); outboxErr != nil {
 				return outboxErr
 			}
-			return tx.Commit()
+			if err := tx.Commit(); err != nil {
+				return err
+			}
+			sharedlog.WarnContext(
+				ctx, "inventory reservation failed",
+				sharedlog.KeyOrderID, orderID.String(),
+				sharedlog.KeyMerchantID, merchantID.String(),
+				sharedlog.KeyErr, err,
+			)
+			return nil
 		}
 		return err
 	}
@@ -72,7 +83,18 @@ func (s *Service) HandleOrdersCreated(ctx context.Context, messageID string, val
 		return err
 	}
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	sharedlog.InfoContext(
+		ctx, "inventory reserved",
+		sharedlog.KeyOrderID, orderID.String(),
+		sharedlog.KeyMerchantID, merchantID.String(),
+		"total_cents", totalCents,
+		"item_count", len(items),
+	)
+	return nil
 }
 
 func (s *Service) HandlePaymentOutcome(ctx context.Context, messageID, topic string, value []byte) error {
@@ -132,5 +154,20 @@ func (s *Service) HandlePaymentOutcome(ctx context.Context, messageID, topic str
 		}
 	}
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return err
+	}
+
+	outcome := "released"
+	if topic == messaging.EventTypePaymentSucceeded {
+		outcome = "committed"
+	}
+	sharedlog.InfoContext(
+		ctx, "inventory reservation settled",
+		sharedlog.KeyOrderID, orderID.String(),
+		"topic", topic,
+		sharedlog.KeyOutcome, outcome,
+		"reservation_count", len(reservations),
+	)
+	return nil
 }

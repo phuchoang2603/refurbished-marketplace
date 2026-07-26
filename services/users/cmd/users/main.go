@@ -2,13 +2,13 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"refurbished-marketplace/services/users/internal/grpcserver"
 	"refurbished-marketplace/services/users/internal/service"
+	sharedlog "refurbished-marketplace/shared/observe/log"
 	"refurbished-marketplace/shared/runtime"
 
 	usersv1 "refurbished-marketplace/shared/proto/users/v1"
@@ -18,21 +18,22 @@ import (
 )
 
 func main() {
+	runtime.InitLogging("users")
 	addr := runtime.EnvOr("GRPC_ADDR", ":9091")
 
 	db, err := runtime.OpenPostgres(runtime.MustEnv("DB_URL"))
 	if err != nil {
-		log.Fatal(err)
+		sharedlog.Fatal("open postgres", "err", err)
 	}
 	defer func() {
 		if err := db.Close(); err != nil {
-			log.Printf("close db: %v", err)
+			sharedlog.Error("close db", "err", err)
 		}
 	}()
 
 	cfg := service.DefaultConfig(os.Getenv("JWT_SECRET"))
 	if err := service.ValidateConfig(cfg); err != nil {
-		log.Fatalf("auth config: %v", err)
+		sharedlog.Fatal("auth config", "err", err)
 	}
 
 	svc := service.New(db, cfg)
@@ -43,11 +44,11 @@ func main() {
 
 	shutdownTracing, err := runtime.InitTracing(ctx, "users")
 	if err != nil {
-		log.Fatal(err)
+		sharedlog.Fatal("init tracing", "err", err)
 	}
 	defer func() {
 		if err := shutdownTracing(context.Background()); err != nil {
-			log.Printf("tracing shutdown: %v", err)
+			sharedlog.Error("tracing shutdown", "err", err)
 		}
 	}()
 
@@ -58,6 +59,6 @@ func main() {
 			usersv1.RegisterUsersServiceServer(server, grpcSvc)
 		},
 	}); err != nil {
-		log.Fatalf("grpc: %v", err)
+		sharedlog.Fatal("grpc serve", "err", err)
 	}
 }

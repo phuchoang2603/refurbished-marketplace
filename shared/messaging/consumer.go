@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	sharedlog "refurbished-marketplace/shared/observe/log"
+
 	sharedtrace "refurbished-marketplace/shared/observe/trace"
 
 	"github.com/twmb/franz-go/pkg/kgo"
@@ -105,6 +107,13 @@ func (c *KafkaConsumer) Run(ctx context.Context) error {
 					if err != nil {
 						span.RecordError(err)
 						span.SetStatus(codes.Error, err.Error())
+						sharedlog.ErrorContext(
+							msgCtx, "kafka message handler failed",
+							"topic", r.Topic,
+							"partition", r.Partition,
+							"offset", r.Offset,
+							"err", err,
+						)
 					}
 					span.End()
 					if err != nil {

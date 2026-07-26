@@ -160,3 +160,65 @@ Browser → ingress → web ──gRPC──▶ domain services
 3. Confirm the TraceId includes web → orders → Debezium/connect → products (inventory) spans. Kafka `orders.created` records should carry a `traceparent` header.
 4. Complete hosted-payment success/fail; confirm callback → payment → payment outbox path.
 5. Confirm mesh spans appear alongside app spans (Telemetry `ecommerce-tracing`).
+
+## Structured logging
+
+Marketplace services emit **JSON slog** lines to stdout via `shared/observe/log` (wired by `shared/runtime.InitLogging`). Call sites use that package’s helpers — prefer `InfoContext` / `WarnContext` / `ErrorContext` on request paths so `trace_id` / `span_id` are injected; use `Key*` constants with key/value pairs (or `Attr*` with `LogAttrs`). Do not use raw `log/slog`. VLAgent scrapes those lines into VictoriaLogs.
+
+VLAgent scrapes the `ecommerce` namespace (apps + CNPG DB pods) and skips `istio-proxy` / `wait-for-db` containers — mesh stays on metrics and traces. Kafka Connect remains visible via traces (`connect-debezium`); use `kubectl logs` for broker/Connect/Envoy text if needed.
+
+HTTP/gRPC access logs put the useful bits in `msg` (e.g. `GET /orders/... 200`, `ListOrdersByBuyer OK`) while keeping structured attrs for filters. Log `level` is emitted lowercase (`info`, `error`, …) so Grafana Explore does not mark marketplace JSON as `unknown`.
+
+### Field conventions
+
+| Field                                        | When present                        |
+| -------------------------------------------- | ----------------------------------- |
+| `service`                                    | Always (bootstrap default)          |
+| `trace_id`                                   | When logging with a valid OTEL span |
+| `span_id`                                    | When logging with a valid OTEL span |
+| `method`/`path`/`status`/`duration_ms`       | HTTP access logs (web)              |
+| `grpc_method`/`grpc_code`/`duration_ms`      | gRPC unary access logs              |
+| `topic`/`partition`/`offset`                 | Kafka handler errors                |
+| `order_id` / `merchant_id` / `buyer_user_id` | Checkout hot-path domain logs       |
+| `status` / `outcome` / `event_type`          | Order/payment/reservation outcomes  |
+
+Sensitive attribute keys (`password`, `token`, `api_key`, `bearer`, `access_token`, `card`, `cvv`, …) are redacted to `[redacted]` via `ReplaceAttr`. Redaction does not rewrite free-text `msg` — never put secrets in the message string. Do not log full payment gateway payloads.
+
+### LogSQL examples (VictoriaLogs)
+
+```logsql
+service:="web"
+```
+
+```logsql
+service:="orders" AND trace_id:="<hex-trace-id>"
+```
+
+```logsql
+order_id:="<uuid>"
+```
+
+Exact filter syntax can vary slightly with the Grafana VL plugin UI — prefer Explore’s builder, then copy the query.
+
+### Debug a checkout
+
+Logs Drilldown does not work with VictoriaLogs — use **Explore**.
+
+1. **Traces:** Explore → **VictoriaTraces** → search service `web` → open a TraceId. Expect mesh (`ecommerce-ingress` / `ecommerce-waypoint`) + apps + `connect-debezium` on the async hop.
+2. **App logs for that TraceId:** Trace → logs (Tempo `tracesToLogsV2` filters by `trace_id` only). You should see marketplace JSON lines across services for that TraceId.
+3. **App logs in Explore** (same time range as the trace):
+
+```logsql
+kubernetes.pod_namespace:="ecommerce"
+  AND service:in(web,orders,payment,products,cart,users)
+```
+
+4. **Optional drills:** `order_id:="<uuid>"` on app JSON; for the Kafka hop use TraceId spans (`connect-debezium`) rather than Connect pod logs (not scraped into VL).
+
+### Trace → logs
+
+The VictoriaTraces Tempo datasource (`uid: VictoriaTraces`) is provisioned with `tracesToLogsV2` pointing at VictoriaLogs (`uid: VictoriaLogs`, `filterByTraceID: true`, no `service.name` tag filter).
+
+1. Open a span in Explore / Traces Drilldown.
+2. Use **Logs for this span** / Trace → logs.
+3. Confirm matching JSON lines include the same `trace_id` (all marketplace services that logged for that TraceId).

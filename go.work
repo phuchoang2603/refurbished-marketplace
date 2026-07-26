@@ -11,6 +11,7 @@ use (
 	./shared/err/dberr
 	./shared/err/grpcerr
 	./shared/messaging
+	./shared/observe/log
 	./shared/observe/trace
 	./shared/proto
 	./shared/runtime
@@ -25,6 +26,7 @@ replace (
 	refurbished-marketplace/shared/err/dberr v0.0.0 => ./shared/err/dberr
 	refurbished-marketplace/shared/err/grpcerr v0.0.0 => ./shared/err/grpcerr
 	refurbished-marketplace/shared/messaging v0.0.0 => ./shared/messaging
+	refurbished-marketplace/shared/observe/log v0.0.0 => ./shared/observe/log
 	refurbished-marketplace/shared/observe/trace v0.0.0 => ./shared/observe/trace
 	refurbished-marketplace/shared/proto v0.0.0 => ./shared/proto
 	refurbished-marketplace/shared/runtime v0.0.0 => ./shared/runtime

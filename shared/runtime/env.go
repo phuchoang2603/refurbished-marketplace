@@ -1,8 +1,9 @@
 package runtime
 
 import (
-	"log"
 	"os"
+
+	sharedlog "refurbished-marketplace/shared/observe/log"
 )
 
 func EnvOr(key, fallback string) string {
@@ -15,7 +16,7 @@ func EnvOr(key, fallback string) string {
 func MustEnv(key string) string {
 	v := os.Getenv(key)
 	if v == "" {
-		log.Fatalf("%s is required", key)
+		sharedlog.Fatal("required env missing", "key", key)
 	}
 	return v
 }

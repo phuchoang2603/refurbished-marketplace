@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 
+	sharedlog "refurbished-marketplace/shared/observe/log"
+
 	"refurbished-marketplace/services/payment/internal/database"
 	"refurbished-marketplace/shared/messaging"
 
@@ -66,6 +68,15 @@ func (s *Service) KafkaInventoryReservedHandler() messaging.KafkaHandler {
 				return err
 			}
 		}
+
+		sharedlog.InfoContext(
+			ctx, "payment transaction initialized from inventory.reserved",
+			sharedlog.KeyOrderID, orderID.String(),
+			sharedlog.KeyMerchantID, merchantID.String(),
+			"payment_transaction_id", created.ID.String(),
+			"amount_cents", payload.GetTotalCents(),
+			"currency", intent.Currency,
+		)
 		return nil
 	}
 }

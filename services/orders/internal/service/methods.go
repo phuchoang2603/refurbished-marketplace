@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	sharedlog "refurbished-marketplace/shared/observe/log"
+
 	"refurbished-marketplace/services/orders/internal/database"
 	"refurbished-marketplace/shared/err/dberr"
 
@@ -77,6 +79,14 @@ func (s *Service) CreateOrder(ctx context.Context, buyerUserID, merchantID uuid.
 		return Order{}, err
 	}
 
+	sharedlog.InfoContext(
+		ctx, "order created",
+		sharedlog.KeyOrderID, createdOrder.ID.String(),
+		sharedlog.KeyBuyerUserID, createdOrder.BuyerUserID.String(),
+		sharedlog.KeyMerchantID, createdOrder.MerchantID.String(),
+		"total_cents", createdOrder.TotalCents,
+		"item_count", len(createdOrder.Items),
+	)
 	return createdOrder, nil
 }
 

@@ -2,13 +2,13 @@ package main
 
 import (
 	"context"
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
 
 	"refurbished-marketplace/services/cart/internal/grpcserver"
 	"refurbished-marketplace/services/cart/internal/service"
+	sharedlog "refurbished-marketplace/shared/observe/log"
 	"refurbished-marketplace/shared/runtime"
 
 	cartv1 "refurbished-marketplace/shared/proto/cart/v1"
@@ -17,9 +17,10 @@ import (
 )
 
 func main() {
+	runtime.InitLogging("cart")
 	cfg := service.LoadConfig()
 	if err := service.ValidateConfig(cfg); err != nil {
-		log.Fatal(err)
+		sharedlog.Fatal("config", "err", err)
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -27,21 +28,21 @@ func main() {
 
 	shutdownTracing, err := runtime.InitTracing(ctx, "cart")
 	if err != nil {
-		log.Fatal(err)
+		sharedlog.Fatal("init tracing", "err", err)
 	}
 	defer func() {
 		if err := shutdownTracing(context.Background()); err != nil {
-			log.Printf("tracing shutdown: %v", err)
+			sharedlog.Error("tracing shutdown", "err", err)
 		}
 	}()
 
 	rdb, err := runtime.OpenRedis(ctx, cfg.RedisAddr)
 	if err != nil {
-		log.Fatal(err)
+		sharedlog.Fatal("open redis", "err", err)
 	}
 	defer func() {
 		if err := rdb.Close(); err != nil {
-			log.Printf("close redis: %v", err)
+			sharedlog.Error("close redis", "err", err)
 		}
 	}()
 
@@ -55,6 +56,6 @@ func main() {
 			cartv1.RegisterCartServiceServer(server, grpcSvc)
 		},
 	}); err != nil {
-		log.Fatalf("grpc: %v", err)
+		sharedlog.Fatal("grpc serve", "err", err)
 	}
 }

@@ -2,7 +2,8 @@ package main
 
 import (
 	"context"
-	"log"
+
+	sharedlog "refurbished-marketplace/shared/observe/log"
 
 	"refurbished-marketplace/services/payment/internal/service"
 	"refurbished-marketplace/shared/messaging"
@@ -20,10 +21,14 @@ func runInventoryReservedConsumer(ctx context.Context, svc *service.Service, boo
 	}
 	defer func() {
 		if err := consumer.Close(); err != nil {
-			log.Printf("kafka consumer close: %v", err)
+			sharedlog.Error("kafka consumer close", "err", err)
 		}
 	}()
 
-	log.Printf("kafka consumer started (topic=%s group=%s)", messaging.EventTypeInventoryReserved, groupID)
+	sharedlog.Info(
+		"kafka consumer started",
+		"topic", messaging.EventTypeInventoryReserved,
+		"group", groupID,
+	)
 	return consumer.Run(ctx)
 }

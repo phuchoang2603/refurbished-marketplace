@@ -1,7 +1,7 @@
 # Chart defaults = local Colima, apps-only signals:
 # - metrics: Istio waypoint + ingress scrapes (ecommerce) → VMSingle
 # - traces: VTSingle OTLP for marketplace services
-# - logs: VLAgent filtered to ecommerce (+ kafka) → VLSingle
+# - logs: VLAgent filtered to ecommerce → VLSingle
 # No node-exporter, kube-state-metrics, Alertmanager, or default K8s dashboards.
 # Staging overlays values-staging.yaml for full platform stack.
 victoria-metrics-k8s-stack:
@@ -21,20 +21,77 @@ victoria-metrics-k8s-stack:
       - victoriametrics-logs-datasource
     persistence:
       enabled: false
-    # Traces Drilldown / TraceQL UI is memory-heavy; 192Mi OOMKilled (exit 137)
-    # on drilldown. Give it headroom.
+    # TraceQL / Traces Drilldown and VictoriaLogs Explore are memory-heavy;
+    # 512Mi OOMKilled (exit 137) on Logs Explore — give it headroom.
     resources:
       requests:
         cpu: 50m
-        memory: 128Mi
+        memory: 256Mi
       limits:
         cpu: 500m
-        memory: 512Mi
+        memory: 1Gi
 
   # Upstream hardcodes /select/jaeger for defaultDatasources.victoriatraces and
   # does not tpl-expand extra URLs. Provide Tempo explicitly for TraceQL /
   # Traces Drilldown (matches fullnameOverride vmks + monitoring namespace).
   defaultDatasources:
+    victorialogs:
+      datasources:
+        - name: VictoriaLogs (DS)
+          access: proxy
+          uid: VictoriaLogs
+          type: victoriametrics-logs-datasource
+          jsonData:
+            # Grafana only treats lowercase level tokens as known. Map slog's
+            # uppercase Level.String() values and common text tokens in _msg
+            # (CNPG/Postgres, leftover Java lines).
+            logLevelRules:
+              - field: level
+                operator: equals
+                value: INFO
+                level: info
+                enabled: true
+              - field: level
+                operator: equals
+                value: WARN
+                level: warning
+                enabled: true
+              - field: level
+                operator: equals
+                value: WARNING
+                level: warning
+                enabled: true
+              - field: level
+                operator: equals
+                value: ERROR
+                level: error
+                enabled: true
+              - field: level
+                operator: equals
+                value: DEBUG
+                level: debug
+                enabled: true
+              - field: _msg
+                operator: regex
+                value: "(?i)\\bERROR\\b"
+                level: error
+                enabled: true
+              - field: _msg
+                operator: regex
+                # Envoy/Istio use tab-separated "warning" / "warn" / "info".
+                value: "(?i)(?:\\t|\\s)(warn(?:ing)?)(?:\\t|\\s)"
+                level: warning
+                enabled: true
+              - field: _msg
+                operator: regex
+                value: "(?i)(?:\\t|\\s)(info|log)(?:\\t|\\s)"
+                level: info
+                enabled: true
+              - field: _msg
+                operator: regex
+                value: "(?i)(?:\\t|\\s)debug(?:\\t|\\s)"
+                level: debug
+                enabled: true
     victoriatraces:
       datasources: []
     extra:
@@ -43,6 +100,15 @@ victoria-metrics-k8s-stack:
         access: proxy
         uid: VictoriaTraces
         url: http://vtsingle-vmks.monitoring.svc.cluster.local:10428/select/tempo
+        jsonData:
+          tracesToLogsV2:
+            datasourceUid: VictoriaLogs
+            spanStartTimeShift: "-5m"
+            spanEndTimeShift: "5m"
+            # TraceId-only: do not also filter by service.name→service, so
+            # Trace → logs returns all marketplace JSON lines for the TraceId.
+            filterByTraceID: true
+            filterBySpanID: false
 
   victoria-metrics-operator:
     crds:
@@ -125,8 +191,9 @@ victoria-metrics-k8s-stack:
     spec:
       k8sCollector:
         enabled: true
-        # Skip every namespace except marketplace apps + Kafka Connect.
-        excludeFilter: "not kubernetes.pod_namespace:in(ecommerce, kafka)"
+        # Marketplace apps (+ CNPG in this ns). Skip mesh Envoy text (use
+        # metrics/traces) and wait-for-db init noise; Kafka stays on traces.
+        excludeFilter: "not kubernetes.pod_namespace:=ecommerce or kubernetes.container_name:in(istio-proxy, wait-for-db)"
       resources:
         requests:
           cpu: 25m

@@ -9,6 +9,7 @@ require (
 	google.golang.org/protobuf v1.36.11
 	refurbished-marketplace/shared/err/grpcerr v0.0.0
 	refurbished-marketplace/shared/proto v0.0.0
+	refurbished-marketplace/shared/observe/log v0.0.0
 	refurbished-marketplace/shared/runtime v0.0.0
 	refurbished-marketplace/shared/testutil/redis v0.0.0
 )

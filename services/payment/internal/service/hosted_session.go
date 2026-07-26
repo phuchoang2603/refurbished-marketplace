@@ -6,6 +6,8 @@ import (
 	"errors"
 	"time"
 
+	sharedlog "refurbished-marketplace/shared/observe/log"
+
 	"refurbished-marketplace/services/payment/internal/database"
 	"refurbished-marketplace/shared/err/dberr"
 
@@ -74,7 +76,15 @@ func (s *Service) CreateHostedPaymentSession(ctx context.Context, p CreateHosted
 		return HostedPaymentSessionView{}, err
 	}
 
-	return mapDBHostedPaymentSessionView(created), nil
+	view := mapDBHostedPaymentSessionView(created)
+	sharedlog.InfoContext(
+		ctx, "hosted payment session created",
+		sharedlog.KeyOrderID, view.OrderID,
+		sharedlog.KeyBuyerUserID, p.BuyerUserID.String(),
+		"payment_session_id", view.PaymentSessionID,
+		"currency", view.Currency,
+	)
+	return view, nil
 }
 
 func (s *Service) GetHostedPaymentSessionByOrder(ctx context.Context, orderID uuid.UUID) (HostedPaymentSessionView, error) {

@@ -2,9 +2,10 @@ package runtime
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"time"
+
+	sharedlog "refurbished-marketplace/shared/observe/log"
 )
 
 const defaultHTTPShutdownTimeout = 30 * time.Second
@@ -29,7 +30,7 @@ func ServeHTTP(ctx context.Context, cfg HTTPServerConfig) error {
 
 	errCh := make(chan error, 1)
 	go func() {
-		log.Printf("starting %s http service on %s", cfg.ServiceName, cfg.Addr)
+		sharedlog.Info("starting http service", "addr", cfg.Addr)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			errCh <- err
 		}
@@ -45,7 +46,7 @@ func ServeHTTP(ctx context.Context, cfg HTTPServerConfig) error {
 	defer cancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		log.Printf("server forced to shutdown: %v", err)
+		sharedlog.Error("server forced to shutdown", "err", err)
 	}
 	return nil
 }
