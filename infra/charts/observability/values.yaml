@@ -21,15 +21,15 @@ victoria-metrics-k8s-stack:
       - victoriametrics-logs-datasource
     persistence:
       enabled: false
-    # Traces Drilldown / TraceQL UI is memory-heavy; 192Mi OOMKilled (exit 137)
-    # on drilldown. Give it headroom.
+    # TraceQL / Traces Drilldown and VictoriaLogs Explore are memory-heavy;
+    # 512Mi OOMKilled (exit 137) on Logs Explore — give it headroom.
     resources:
       requests:
         cpu: 50m
-        memory: 128Mi
+        memory: 256Mi
       limits:
         cpu: 500m
-        memory: 512Mi
+        memory: 1Gi
 
   # Upstream hardcodes /select/jaeger for defaultDatasources.victoriatraces and
   # does not tpl-expand extra URLs. Provide Tempo explicitly for TraceQL /
