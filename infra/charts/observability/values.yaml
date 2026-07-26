@@ -1,7 +1,7 @@
 # Chart defaults = local Colima, apps-only signals:
 # - metrics: Istio waypoint + ingress scrapes (ecommerce) → VMSingle
 # - traces: VTSingle OTLP for marketplace services
-# - logs: VLAgent filtered to ecommerce (+ kafka) → VLSingle
+# - logs: VLAgent filtered to ecommerce → VLSingle
 # No node-exporter, kube-state-metrics, Alertmanager, or default K8s dashboards.
 # Staging overlays values-staging.yaml for full platform stack.
 victoria-metrics-k8s-stack:
@@ -164,9 +164,9 @@ victoria-metrics-k8s-stack:
     spec:
       k8sCollector:
         enabled: true
-        # Marketplace apps + Kafka Connect/brokers; drop Strimzi entity-operator
-        # reconcile spam that drowns Explore.
-        excludeFilter: 'not kubernetes.pod_namespace:in(ecommerce, kafka) or kubernetes.pod_name:~"entity-operator"'
+        # Marketplace apps (+ CNPG DB pods in this ns). Kafka Connect stays in
+        # traces; skip kafka/operators log flood.
+        excludeFilter: "not kubernetes.pod_namespace:=ecommerce"
       resources:
         requests:
           cpu: 25m

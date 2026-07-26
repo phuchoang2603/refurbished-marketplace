@@ -165,7 +165,7 @@ Browser → ingress → web ──gRPC──▶ domain services
 
 Marketplace services emit **JSON slog** lines to stdout via `shared/observe/log` (wired by `shared/runtime.InitLogging`). Call sites use that package’s helpers (`InfoContext`, `WarnContext`, `Error`, `With`, key constants) — not raw `log/slog` — so TraceId injection, redaction, and field names stay centralized. VLAgent scrapes those lines into VictoriaLogs.
 
-Local VLAgent keeps `ecommerce` plus Kafka Connect/brokers and drops Strimzi `entity-operator` reconcile spam (`excludeFilter` in `infra/charts/observability/values.yaml`). Staging scrapes cluster-wide but still excludes `entity-operator`.
+VLAgent scrapes only the `ecommerce` namespace (apps, mesh gateways in-ns, and CNPG DB pods). Kafka Connect remains visible via traces (`connect-debezium`); use `kubectl logs` in `kafka` if you need broker/Connect text logs.
 
 HTTP/gRPC access logs put the useful bits in `msg` (e.g. `GET /orders/... 200`, `ListOrdersByBuyer OK`) while keeping structured attrs for filters.
 
@@ -200,25 +200,20 @@ order_id:="<uuid>"
 
 Exact filter syntax can vary slightly with the Grafana VL plugin UI — prefer Explore’s builder, then copy the query.
 
-### Debug a checkout (apps + Kafka Connect)
+### Debug a checkout
 
 Logs Drilldown does not work with VictoriaLogs — use **Explore**.
 
 1. **Traces:** Explore → **VictoriaTraces** → search service `web` → open a TraceId. Expect mesh (`ecommerce-ingress` / `ecommerce-waypoint`) + apps + `connect-debezium` on the async hop.
 2. **App logs for that TraceId:** Trace → logs (Tempo `tracesToLogsV2` filters by `trace_id` only). You should see marketplace JSON lines across services for that TraceId.
-3. **Apps + Connect in one LogSQL window** (same time range as the trace):
+3. **App logs in Explore** (same time range as the trace):
 
 ```logsql
-kubernetes.pod_namespace:in(ecommerce, kafka)
-  AND (
-    service:in(web,orders,payment,products,cart,users)
-    OR kubernetes.pod_name:~"connect"
-  )
+kubernetes.pod_namespace:="ecommerce"
+  AND service:in(web,orders,payment,products,cart,users)
 ```
 
-4. **Optional drills:** `order_id:="<uuid>"` on app JSON; Connect `_msg` keywords / topic names for the Kafka hop (Connect Java lines have no `trace_id` field — correlate by time + pod, not Trace → logs).
-
-Grafana’s VictoriaLogs datasource maps Java `INFO` / `WARN` / `ERROR` tokens in `_msg` to levels so Connect/broker lines are not all `unknown`.
+4. **Optional drills:** `order_id:="<uuid>"` on app JSON; for the Kafka hop use TraceId spans (`connect-debezium`) rather than Connect pod logs (not scraped into VL).
 
 ### Trace → logs
 
