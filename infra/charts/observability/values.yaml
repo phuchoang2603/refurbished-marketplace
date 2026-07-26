@@ -42,9 +42,35 @@ victoria-metrics-k8s-stack:
           uid: VictoriaLogs
           type: victoriametrics-logs-datasource
           jsonData:
-            # Java / Strimzi lines lack a structured level field; map common
-            # log4j tokens in _msg so Explore is not all "unknown".
+            # Grafana only treats lowercase level tokens as known. Map slog's
+            # uppercase Level.String() values and common text tokens in _msg
+            # (CNPG/Postgres, leftover Java lines).
             logLevelRules:
+              - field: level
+                operator: equals
+                value: INFO
+                level: info
+                enabled: true
+              - field: level
+                operator: equals
+                value: WARN
+                level: warning
+                enabled: true
+              - field: level
+                operator: equals
+                value: WARNING
+                level: warning
+                enabled: true
+              - field: level
+                operator: equals
+                value: ERROR
+                level: error
+                enabled: true
+              - field: level
+                operator: equals
+                value: DEBUG
+                level: debug
+                enabled: true
               - field: _msg
                 operator: regex
                 value: "(?i)\\bERROR\\b"
@@ -57,7 +83,7 @@ victoria-metrics-k8s-stack:
                 enabled: true
               - field: _msg
                 operator: regex
-                value: "(?i)\\bINFO\\b"
+                value: "(?i)\\b(?:INFO|LOG)\\b"
                 level: info
                 enabled: true
               - field: _msg

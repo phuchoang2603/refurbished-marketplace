@@ -167,7 +167,7 @@ Marketplace services emit **JSON slog** lines to stdout via `shared/observe/log`
 
 VLAgent scrapes only the `ecommerce` namespace (apps, mesh gateways in-ns, and CNPG DB pods). Kafka Connect remains visible via traces (`connect-debezium`); use `kubectl logs` in `kafka` if you need broker/Connect text logs.
 
-HTTP/gRPC access logs put the useful bits in `msg` (e.g. `GET /orders/... 200`, `ListOrdersByBuyer OK`) while keeping structured attrs for filters.
+HTTP/gRPC access logs put the useful bits in `msg` (e.g. `GET /orders/... 200`, `ListOrdersByBuyer OK`) while keeping structured attrs for filters. Log `level` is emitted lowercase (`info`, `error`, …) so Grafana Explore does not mark marketplace JSON as `unknown`.
 
 ### Field conventions
 

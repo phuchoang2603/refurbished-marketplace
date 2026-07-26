@@ -26,7 +26,7 @@ const (
 // attribute and automatic trace_id / span_id injection on *Context calls.
 func Init(serviceName string) {
 	base := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{
-		ReplaceAttr: redactAttr,
+		ReplaceAttr: replaceAttr,
 	})
 	handler := &traceHandler{Handler: base.WithAttrs([]slog.Attr{
 		slog.String(KeyService, serviceName),
