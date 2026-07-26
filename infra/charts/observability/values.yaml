@@ -35,6 +35,36 @@ victoria-metrics-k8s-stack:
   # does not tpl-expand extra URLs. Provide Tempo explicitly for TraceQL /
   # Traces Drilldown (matches fullnameOverride vmks + monitoring namespace).
   defaultDatasources:
+    victorialogs:
+      datasources:
+        - name: VictoriaLogs (DS)
+          access: proxy
+          uid: VictoriaLogs
+          type: victoriametrics-logs-datasource
+          jsonData:
+            # Java / Strimzi lines lack a structured level field; map common
+            # log4j tokens in _msg so Explore is not all "unknown".
+            logLevelRules:
+              - field: _msg
+                operator: regex
+                value: "(?i)\\bERROR\\b"
+                level: error
+                enabled: true
+              - field: _msg
+                operator: regex
+                value: "(?i)\\bWARN(?:ING)?\\b"
+                level: warning
+                enabled: true
+              - field: _msg
+                operator: regex
+                value: "(?i)\\bINFO\\b"
+                level: info
+                enabled: true
+              - field: _msg
+                operator: regex
+                value: "(?i)\\bDEBUG\\b"
+                level: debug
+                enabled: true
     victoriatraces:
       datasources: []
     extra:
@@ -48,11 +78,10 @@ victoria-metrics-k8s-stack:
             datasourceUid: VictoriaLogs
             spanStartTimeShift: "-5m"
             spanEndTimeShift: "5m"
+            # TraceId-only: do not also filter by service.name→service, so
+            # Trace → logs returns all marketplace JSON lines for the TraceId.
             filterByTraceID: true
             filterBySpanID: false
-            tags:
-              - key: service.name
-                value: service
 
   victoria-metrics-operator:
     crds:
@@ -135,8 +164,9 @@ victoria-metrics-k8s-stack:
     spec:
       k8sCollector:
         enabled: true
-        # Skip every namespace except marketplace apps + Kafka Connect.
-        excludeFilter: "not kubernetes.pod_namespace:in(ecommerce, kafka)"
+        # Marketplace apps + Kafka Connect/brokers; drop Strimzi entity-operator
+        # reconcile spam that drowns Explore.
+        excludeFilter: 'not kubernetes.pod_namespace:in(ecommerce, kafka) or kubernetes.pod_name:~"entity-operator"'
       resources:
         requests:
           cpu: 25m

@@ -73,8 +73,8 @@ victoria-metrics-k8s-stack:
     spec:
       k8sCollector:
         enabled: true
-        # Collect cluster-wide on staging (clear local ecommerce/kafka filter).
-        excludeFilter: ""
+        # Cluster-wide on staging, but still drop Strimzi entity-operator noise.
+        excludeFilter: 'kubernetes.pod_name:~"entity-operator"'
 
   vtsingle:
     spec:

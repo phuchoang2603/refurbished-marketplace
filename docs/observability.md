@@ -165,6 +165,10 @@ Browser → ingress → web ──gRPC──▶ domain services
 
 Marketplace services emit **JSON slog** lines to stdout via `shared/observe/log` (wired by `shared/runtime.InitLogging`). Call sites use that package’s helpers (`InfoContext`, `WarnContext`, `Error`, `With`, key constants) — not raw `log/slog` — so TraceId injection, redaction, and field names stay centralized. VLAgent scrapes those lines into VictoriaLogs.
 
+Local VLAgent keeps `ecommerce` plus Kafka Connect/brokers and drops Strimzi `entity-operator` reconcile spam (`excludeFilter` in `infra/charts/observability/values.yaml`). Staging scrapes cluster-wide but still excludes `entity-operator`.
+
+HTTP/gRPC access logs put the useful bits in `msg` (e.g. `GET /orders/... 200`, `ListOrdersByBuyer OK`) while keeping structured attrs for filters.
+
 ### Field conventions
 
 | Field                                        | When present                        |
@@ -196,10 +200,30 @@ order_id:="<uuid>"
 
 Exact filter syntax can vary slightly with the Grafana VL plugin UI — prefer Explore’s builder, then copy the query.
 
+### Debug a checkout (apps + Kafka Connect)
+
+Logs Drilldown does not work with VictoriaLogs — use **Explore**.
+
+1. **Traces:** Explore → **VictoriaTraces** → search service `web` → open a TraceId. Expect mesh (`ecommerce-ingress` / `ecommerce-waypoint`) + apps + `connect-debezium` on the async hop.
+2. **App logs for that TraceId:** Trace → logs (Tempo `tracesToLogsV2` filters by `trace_id` only). You should see marketplace JSON lines across services for that TraceId.
+3. **Apps + Connect in one LogSQL window** (same time range as the trace):
+
+```logsql
+kubernetes.pod_namespace:in(ecommerce, kafka)
+  AND (
+    service:in(web,orders,payment,products,cart,users)
+    OR kubernetes.pod_name:~"connect"
+  )
+```
+
+4. **Optional drills:** `order_id:="<uuid>"` on app JSON; Connect `_msg` keywords / topic names for the Kafka hop (Connect Java lines have no `trace_id` field — correlate by time + pod, not Trace → logs).
+
+Grafana’s VictoriaLogs datasource maps Java `INFO` / `WARN` / `ERROR` tokens in `_msg` to levels so Connect/broker lines are not all `unknown`.
+
 ### Trace → logs
 
-The VictoriaTraces Tempo datasource (`uid: VictoriaTraces`) is provisioned with `tracesToLogsV2` pointing at VictoriaLogs (`uid: VictoriaLogs`, `filterByTraceID: true`).
+The VictoriaTraces Tempo datasource (`uid: VictoriaTraces`) is provisioned with `tracesToLogsV2` pointing at VictoriaLogs (`uid: VictoriaLogs`, `filterByTraceID: true`, no `service.name` tag filter).
 
 1. Open a span in Explore / Traces Drilldown.
 2. Use **Logs for this span** / Trace → logs.
-3. Confirm matching JSON lines include the same `trace_id`.
+3. Confirm matching JSON lines include the same `trace_id` (all marketplace services that logged for that TraceId).

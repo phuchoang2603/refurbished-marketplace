@@ -2,7 +2,9 @@ package runtime
 
 import (
 	"context"
+	"fmt"
 	"net"
+	"strings"
 	"time"
 
 	sharedlog "refurbished-marketplace/shared/observe/log"
@@ -48,8 +50,13 @@ func unaryAccessLog(
 	start := time.Now()
 	resp, err := handler(ctx, req)
 	st, _ := status.FromError(err)
+	method := info.FullMethod
+	if i := strings.LastIndex(method, "/"); i >= 0 && i+1 < len(method) {
+		method = method[i+1:]
+	}
 	sharedlog.InfoContext(
-		ctx, "grpc request",
+		ctx,
+		fmt.Sprintf("%s %s", method, st.Code().String()),
 		"grpc_method", info.FullMethod,
 		"grpc_code", st.Code().String(),
 		"duration_ms", time.Since(start).Milliseconds(),
