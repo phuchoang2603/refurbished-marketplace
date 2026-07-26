@@ -78,17 +78,18 @@ victoria-metrics-k8s-stack:
                 enabled: true
               - field: _msg
                 operator: regex
-                value: "(?i)\\bWARN(?:ING)?\\b"
+                # Envoy/Istio use tab-separated "warning" / "warn" / "info".
+                value: "(?i)(?:\\t|\\s)(warn(?:ing)?)(?:\\t|\\s)"
                 level: warning
                 enabled: true
               - field: _msg
                 operator: regex
-                value: "(?i)\\b(?:INFO|LOG)\\b"
+                value: "(?i)(?:\\t|\\s)(info|log)(?:\\t|\\s)"
                 level: info
                 enabled: true
               - field: _msg
                 operator: regex
-                value: "(?i)\\bDEBUG\\b"
+                value: "(?i)(?:\\t|\\s)debug(?:\\t|\\s)"
                 level: debug
                 enabled: true
     victoriatraces:
@@ -190,9 +191,9 @@ victoria-metrics-k8s-stack:
     spec:
       k8sCollector:
         enabled: true
-        # Marketplace apps (+ CNPG DB pods in this ns). Kafka Connect stays in
-        # traces; skip kafka/operators log flood.
-        excludeFilter: "not kubernetes.pod_namespace:=ecommerce"
+        # Marketplace apps (+ CNPG in this ns). Skip mesh Envoy text (use
+        # metrics/traces) and wait-for-db init noise; Kafka stays on traces.
+        excludeFilter: "not kubernetes.pod_namespace:=ecommerce or kubernetes.container_name:in(istio-proxy, wait-for-db)"
       resources:
         requests:
           cpu: 25m

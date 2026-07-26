@@ -73,8 +73,8 @@ victoria-metrics-k8s-stack:
     spec:
       k8sCollector:
         enabled: true
-        # Same as local: marketplace namespace only (apps + in-ns CNPG).
-        excludeFilter: "not kubernetes.pod_namespace:=ecommerce"
+        # Same as local: ecommerce apps + CNPG; exclude Envoy + wait-for-db.
+        excludeFilter: "not kubernetes.pod_namespace:=ecommerce or kubernetes.container_name:in(istio-proxy, wait-for-db)"
 
   vtsingle:
     spec:

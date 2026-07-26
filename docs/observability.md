@@ -165,7 +165,7 @@ Browser → ingress → web ──gRPC──▶ domain services
 
 Marketplace services emit **JSON slog** lines to stdout via `shared/observe/log` (wired by `shared/runtime.InitLogging`). Call sites use that package’s helpers (`InfoContext`, `WarnContext`, `Error`, `With`, key constants) — not raw `log/slog` — so TraceId injection, redaction, and field names stay centralized. VLAgent scrapes those lines into VictoriaLogs.
 
-VLAgent scrapes only the `ecommerce` namespace (apps, mesh gateways in-ns, and CNPG DB pods). Kafka Connect remains visible via traces (`connect-debezium`); use `kubectl logs` in `kafka` if you need broker/Connect text logs.
+VLAgent scrapes the `ecommerce` namespace (apps + CNPG DB pods) and skips `istio-proxy` / `wait-for-db` containers — mesh stays on metrics and traces. Kafka Connect remains visible via traces (`connect-debezium`); use `kubectl logs` for broker/Connect/Envoy text if needed.
 
 HTTP/gRPC access logs put the useful bits in `msg` (e.g. `GET /orders/... 200`, `ListOrdersByBuyer OK`) while keeping structured attrs for filters. Log `level` is emitted lowercase (`info`, `error`, …) so Grafana Explore does not mark marketplace JSON as `unknown`.
 
