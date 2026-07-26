@@ -28,7 +28,7 @@ The web service MUST own the public browser surface, authorization boundary, bro
 #### Scenario: A browser request enters the router
 
 - **WHEN** a browser request enters the web router
-- **THEN** the web service SHALL apply request-scoped OpenTelemetry middleware at the web edge so handlers execute with tracing context available on the request
+- **THEN** the web service SHALL apply request-scoped OpenTelemetry middleware at the web edge so handlers execute with tracing context available on the request, and SHALL emit a structured JSON access log for the request instead of chi's text request logger
 
 #### Scenario: A downstream service is unavailable for one feature
 
@@ -152,3 +152,17 @@ The web service SHALL export OpenTelemetry spans to VictoriaTraces and inject W3
 
 - **WHEN** web handles `POST /callbacks/hosted-payment`
 - **THEN** the request is traced and downstream payment gRPC work continues the same TraceId when instrumentation is enabled
+
+### Requirement: Web emits structured HTTP access logs
+
+The web service SHALL emit JSON slog access logs for browser and non-browser HTTP requests including method, path, status, duration, and `trace_id` when an OpenTelemetry span is active on the request. The web router SHALL NOT register chi `middleware.RequestID` or chi `middleware.Logger`.
+
+#### Scenario: Request completes with slog access log
+
+- **WHEN** an HTTP request completes through the web router
+- **THEN** a JSON access log line includes method, path, status, duration, and `trace_id` when tracing context is present
+
+#### Scenario: Chi RequestID and text Logger are absent
+
+- **WHEN** the web router middleware stack is configured
+- **THEN** it does not include `middleware.RequestID` or `middleware.Logger`
