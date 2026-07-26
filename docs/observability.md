@@ -163,7 +163,7 @@ Browser → ingress → web ──gRPC──▶ domain services
 
 ## Structured logging
 
-Marketplace services emit **JSON slog** lines to stdout via `shared/observe/log` (wired by `shared/runtime.InitLogging`). Call sites use that package’s helpers (`InfoContext`, `WarnContext`, `Error`, `With`, key constants) — not raw `log/slog` — so TraceId injection, redaction, and field names stay centralized. VLAgent scrapes those lines into VictoriaLogs.
+Marketplace services emit **JSON slog** lines to stdout via `shared/observe/log` (wired by `shared/runtime.InitLogging`). Call sites use that package’s helpers — prefer `InfoContext` / `WarnContext` / `ErrorContext` on request paths so `trace_id` / `span_id` are injected; use `Key*` constants with key/value pairs (or `Attr*` with `LogAttrs`). Do not use raw `log/slog`. VLAgent scrapes those lines into VictoriaLogs.
 
 VLAgent scrapes the `ecommerce` namespace (apps + CNPG DB pods) and skips `istio-proxy` / `wait-for-db` containers — mesh stays on metrics and traces. Kafka Connect remains visible via traces (`connect-debezium`); use `kubectl logs` for broker/Connect/Envoy text if needed.
 
@@ -182,7 +182,7 @@ HTTP/gRPC access logs put the useful bits in `msg` (e.g. `GET /orders/... 200`, 
 | `order_id` / `merchant_id` / `buyer_user_id` | Checkout hot-path domain logs       |
 | `status` / `outcome` / `event_type`          | Order/payment/reservation outcomes  |
 
-Sensitive keys (`password`, `token`, `card`, `cvv`, …) are redacted to `[redacted]` via `ReplaceAttr`. Do not log full payment gateway payloads.
+Sensitive attribute keys (`password`, `token`, `api_key`, `bearer`, `access_token`, `card`, `cvv`, …) are redacted to `[redacted]` via `ReplaceAttr`. Redaction does not rewrite free-text `msg` — never put secrets in the message string. Do not log full payment gateway payloads.
 
 ### LogSQL examples (VictoriaLogs)
 

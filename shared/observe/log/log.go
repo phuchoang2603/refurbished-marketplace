@@ -46,6 +46,9 @@ func With(args ...any) *slog.Logger {
 	return slog.Default().With(args...)
 }
 
+// Prefer *Context helpers (InfoContext, ErrorContext, …) on request/handler
+// paths so trace_id / span_id are injected from the active OTEL span. Plain
+// Info/Error are for bootstrap / process-lifetime logs with no span.
 func Info(msg string, args ...any) {
 	slog.Default().Info(msg, args...)
 }
@@ -86,7 +89,8 @@ func FatalContext(ctx context.Context, msg string, args ...any) {
 	os.Exit(1)
 }
 
-// Attr helpers keep domain field names consistent across services.
+// Attr helpers are for LogAttrs / typed slog.Attr call sites. Prefer Key*
+// constants with InfoContext key/value pairs for normal call sites.
 func AttrOrderID(id string) slog.Attr     { return slog.String(KeyOrderID, id) }
 func AttrMerchantID(id string) slog.Attr  { return slog.String(KeyMerchantID, id) }
 func AttrBuyerUserID(id string) slog.Attr { return slog.String(KeyBuyerUserID, id) }

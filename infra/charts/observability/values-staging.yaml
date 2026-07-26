@@ -1,3 +1,5 @@
+# Staging overlays resource/HA settings. Tempo Trace→logs (tracesToLogsV2)
+# lives in values.yaml and is inherited unless overridden here.
 victoria-metrics-k8s-stack:
   defaultDashboards:
     enabled: true

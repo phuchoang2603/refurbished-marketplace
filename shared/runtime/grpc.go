@@ -11,6 +11,7 @@ import (
 	sharedtrace "refurbished-marketplace/shared/observe/trace"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
 	"google.golang.org/grpc/status"
 )
@@ -54,12 +55,18 @@ func unaryAccessLog(
 	if i := strings.LastIndex(method, "/"); i >= 0 && i+1 < len(method) {
 		method = method[i+1:]
 	}
-	sharedlog.InfoContext(
-		ctx,
-		fmt.Sprintf("%s %s", method, st.Code().String()),
+	msg := fmt.Sprintf("%s %s", method, st.Code().String())
+	args := []any{
 		"grpc_method", info.FullMethod,
 		"grpc_code", st.Code().String(),
 		"duration_ms", time.Since(start).Milliseconds(),
-	)
+	}
+	// Access logs stay structured; non-OK codes use Warn so Explore level
+	// filters surface failures without treating every RPC as an Error.
+	if st.Code() != codes.OK {
+		sharedlog.WarnContext(ctx, msg, args...)
+	} else {
+		sharedlog.InfoContext(ctx, msg, args...)
+	}
 	return resp, err
 }
