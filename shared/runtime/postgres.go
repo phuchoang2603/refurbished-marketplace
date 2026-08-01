@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
+	"regexp"
+	"strings"
 
 	"github.com/XSAM/otelsql"
 	"go.opentelemetry.io/otel/attribute"
@@ -13,10 +15,14 @@ import (
 
 const maxDBQueryTextLen = 1024
 
+// sqlcNameRe matches `-- name: GetUserByEmail :one` that sqlc embeds in queries.
+var sqlcNameRe = regexp.MustCompile(`(?m)^--\s*name:\s*(\S+)`)
+
 // OpenPostgres opens an instrumented *sql.DB for Postgres.
 // The caller must import a postgres driver (e.g. github.com/lib/pq).
 // Query spans nest under the active request/consumer context; statement
-// text is truncated and bound args are never recorded.
+// text is truncated and bound args are never recorded. Span names prefer
+// the sqlc `-- name:` comment when present.
 func OpenPostgres(dbURL string) (*sql.DB, error) {
 	db, err := otelsql.Open(
 		"postgres", dbURL,
@@ -28,6 +34,7 @@ func OpenPostgres(dbURL string) (*sql.DB, error) {
 			OmitConnectorConnect: true,
 			OmitRows:             true,
 		}),
+		otelsql.WithSpanNameFormatter(dbSpanName),
 		otelsql.WithAttributesGetter(truncatedDBQueryAttrs),
 	)
 	if err != nil {
@@ -40,6 +47,27 @@ func OpenPostgres(dbURL string) (*sql.DB, error) {
 	return db, nil
 }
 
+func dbSpanName(_ context.Context, method otelsql.Method, query string) string {
+	if name := sqlcQueryName(query); name != "" {
+		return name
+	}
+	if q := strings.TrimSpace(query); q != "" {
+		// First SQL keyword keeps non-sqlc queries readable without full text.
+		if fields := strings.Fields(q); len(fields) > 0 {
+			return strings.ToUpper(fields[0])
+		}
+	}
+	return string(method)
+}
+
+func sqlcQueryName(query string) string {
+	m := sqlcNameRe.FindStringSubmatch(query)
+	if len(m) < 2 {
+		return ""
+	}
+	return m[1]
+}
+
 func truncatedDBQueryAttrs(_ context.Context, _ otelsql.Method, query string, args []driver.NamedValue) []attribute.KeyValue {
 	_ = args // never record bound parameter values
 	if query == "" {
@@ -49,5 +77,9 @@ func truncatedDBQueryAttrs(_ context.Context, _ otelsql.Method, query string, ar
 	if len(q) > maxDBQueryTextLen {
 		q = q[:maxDBQueryTextLen] + "…"
 	}
-	return []attribute.KeyValue{attribute.String("db.query.text", q)}
+	attrs := []attribute.KeyValue{attribute.String("db.query.text", q)}
+	if name := sqlcQueryName(query); name != "" {
+		attrs = append(attrs, attribute.String("db.operation.name", name))
+	}
+	return attrs
 }

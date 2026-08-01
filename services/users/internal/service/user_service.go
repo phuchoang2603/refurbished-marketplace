@@ -28,7 +28,7 @@ func (s *Service) CreateUser(ctx context.Context, email, password string) (User,
 		return User{}, ErrInvalidPassword
 	}
 
-	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), 4)
 	if err != nil {
 		return User{}, err
 	}
