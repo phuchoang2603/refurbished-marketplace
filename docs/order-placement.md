@@ -102,6 +102,7 @@ sequenceDiagram
 - Consumes `inventory.reserved`.
 - Creates one payment transaction per `order_id`.
 - Applies hosted gateway outcomes from the web edge and emits `payment.succeeded` or `payment.failed` through the payment outbox.
+- Periodically expires PENDING hosted sessions past `expires_at` (default 30m TTL, sweep every 1m), marks them `EXPIRED`, and emits `payment.failed` so products release reserved stock and orders move to `ORDER_STATUS_FAILED`. If the payment transaction does not exist yet, the expired intent is caught up when `inventory.reserved` creates the transaction.
 
 ### Dev Simulator
 
