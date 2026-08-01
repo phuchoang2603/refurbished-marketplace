@@ -28,7 +28,7 @@ The web service MUST own the public browser surface, authorization boundary, bro
 #### Scenario: A browser request enters the router
 
 - **WHEN** a browser request enters the web router
-- **THEN** the web service SHALL apply request-scoped OpenTelemetry middleware at the web edge so handlers execute with tracing context available on the request, and SHALL emit a structured JSON access log for the request instead of chi's text request logger
+- **THEN** the web service SHALL apply request-scoped OpenTelemetry middleware at the web edge so handlers execute with tracing context available on the request, name the HTTP server span using the HTTP method and matched chi route pattern (for example `GET /products/{id}`), set `http.route` to that pattern, and SHALL emit a structured JSON access log for the request instead of chi's text request logger
 
 #### Scenario: A downstream service is unavailable for one feature
 
@@ -141,7 +141,7 @@ The web service MUST preserve a non-browser callback path for hosted payment out
 
 ### Requirement: Web exports traces and injects gRPC context
 
-The web service SHALL export OpenTelemetry spans to VictoriaTraces and inject W3C trace context on outgoing gRPC calls used for browser and hosted-payment callback flows so downstream services continue the same TraceId.
+The web service SHALL export OpenTelemetry spans to VictoriaTraces and inject W3C trace context on outgoing gRPC calls used for browser and hosted-payment callback flows so downstream services continue the same TraceId. HTTP server span names SHALL use route patterns rather than the middleware operation string or service name alone.
 
 #### Scenario: Outgoing gRPC calls carry traceparent
 
@@ -151,7 +151,12 @@ The web service SHALL export OpenTelemetry spans to VictoriaTraces and inject W3
 #### Scenario: Hosted payment callback is traced
 
 - **WHEN** web handles `POST /callbacks/hosted-payment`
-- **THEN** the request is traced and downstream payment gRPC work continues the same TraceId when instrumentation is enabled
+- **THEN** the request produces a server span named with method and route pattern continuing into downstream payment gRPC work on the same TraceId when instrumentation is enabled
+
+#### Scenario: Span names avoid raw path cardinality
+
+- **WHEN** a traced request matches a parameterized chi route
+- **THEN** the HTTP server span name and `http.route` use the route pattern (with placeholders) rather than the raw URL path containing concrete IDs
 
 ### Requirement: Web emits structured HTTP access logs
 
