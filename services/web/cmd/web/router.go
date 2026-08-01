@@ -13,16 +13,12 @@ import (
 
 func newRouter(h *handlers.Handler) http.Handler {
 	router := chi.NewRouter()
-	// otelhttp starts the server span; WithSpanNameFormatter covers cases where
-	// r.Pattern is set, but chi often matches later — withHTTPRouteSpanName
-	// re-applies METHOD + route pattern and http.route after the handler runs.
-	// HTTPAccess runs inside that stack so logs can use the same pattern.
 	router.Use(
 		middleware.RealIP,
 		middleware.Recoverer,
 		middleware.Timeout(60*time.Second),
 		otelHTTPMiddleware(),
-		withHTTPRouteSpanName,
+		withHTTPRouteAttr, // http.route attr only; span name is From WithSpanNameFormatter
 		sharedlog.HTTPAccessWithPath(httpRoutePattern),
 	)
 	h.Register(router)
