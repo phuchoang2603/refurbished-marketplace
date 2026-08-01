@@ -2,7 +2,7 @@
 
 - [x] 1.1 Delete `mesh.tracing` chart values and Gateway Telemetry / DestinationRule / istiod `otel-vt` provider (no disabled toggle left behind)
 - [x] 1.2 Confirm marketplace + istiod Helm renders contain no `ecommerce-tracing`, `vtsingle-otlp-plain`, or `otel-vt`
-- [ ] 1.3 After deploy, verify Explore checkout TraceIds no longer include `ecommerce-ingress` / `ecommerce-waypoint` spans
+- [x] 1.3 After deploy, verify Explore checkout TraceIds no longer include `ecommerce-ingress` / `ecommerce-waypoint` spans
 
 ## 2. Web HTTP span naming
 
@@ -14,12 +14,12 @@
 - [x] 3.1 Add otelsql (or equivalent) dependency and wrap `*sql.DB` in `shared/runtime.OpenPostgres`
 - [x] 3.2 Ensure statement attributes are truncated and do not include bound parameter values
 - [x] 3.3 Run `tidy` / module sync for affected modules
-- [ ] 3.4 Verify a traced gRPC path shows DB child spans under the same TraceId in VictoriaTraces
+- [x] 3.4 Verify a traced gRPC path shows DB child spans under the same TraceId in VictoriaTraces
 
 ## 4. Shared Redis command spans
 
 - [x] 4.1 Enable go-redis OpenTelemetry instrumentation in `shared/runtime.OpenRedis`
-- [ ] 4.2 Verify a traced cart path shows Redis child spans under the same TraceId
+- [x] 4.2 Verify a traced cart path shows Redis child spans under the same TraceId
 
 ## 5. Documentation
 
