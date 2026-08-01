@@ -56,6 +56,14 @@ func main() {
 		return runInventoryReservedConsumer(ctx, svc, brokers, cfg.KafkaGroupID)
 	})
 
+	if cfg.SessionSweepInterval > 0 {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			svc.RunSessionExpiryLoop(ctx, cfg.SessionSweepInterval)
+		}()
+	}
+
 	if err := runtime.ServeGRPC(ctx, runtime.GRPCServerConfig{
 		Addr:        cfg.GRPCAddr,
 		ServiceName: "payment",
