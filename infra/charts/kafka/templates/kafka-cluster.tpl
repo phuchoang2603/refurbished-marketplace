@@ -60,5 +60,21 @@ spec:
     # Non-empty objects: bare `{}` becomes YAML/JSON null under Argo SSA and fails CRD validation.
     topicOperator:
       reconciliationIntervalMs: 120000
+{{- with .Values.entityOperator.topicOperator.jvmOptions }}
+      jvmOptions:
+{{ toYaml . | nindent 8 }}
+{{- end }}
+{{- with .Values.entityOperator.topicOperator.resources }}
+      resources:
+{{ toYaml . | nindent 8 }}
+{{- end }}
     userOperator:
       reconciliationIntervalMs: 120000
+{{- with .Values.entityOperator.userOperator.jvmOptions }}
+      jvmOptions:
+{{ toYaml . | nindent 8 }}
+{{- end }}
+{{- with .Values.entityOperator.userOperator.resources }}
+      resources:
+{{ toYaml . | nindent 8 }}
+{{- end }}

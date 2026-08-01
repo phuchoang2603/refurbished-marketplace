@@ -26,6 +26,33 @@ kafka:
     limits:
       cpu: 500m
       memory: 512Mi
+
+# Topic/user operators previously ran BestEffort (no requests) and got
+# starved on busy nodes — health probes never bound and Kafka stayed NotReady.
+entityOperator:
+  topicOperator:
+    jvmOptions:
+      "-Xms": 128m
+      "-Xmx": 128m
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 384Mi
+  userOperator:
+    jvmOptions:
+      "-Xms": 128m
+      "-Xmx": 128m
+    resources:
+      requests:
+        cpu: 50m
+        memory: 256Mi
+      limits:
+        cpu: 500m
+        memory: 384Mi
+
 connect:
   clusterName: ecommerce-connect-cluster
   image: connect-debezium
