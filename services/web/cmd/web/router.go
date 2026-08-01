@@ -9,7 +9,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 )
 
 func newRouter(h *handlers.Handler) http.Handler {
@@ -18,8 +17,9 @@ func newRouter(h *handlers.Handler) http.Handler {
 		middleware.RealIP,
 		middleware.Recoverer,
 		middleware.Timeout(60*time.Second),
-		otelhttp.NewMiddleware("web"),
-		sharedlog.HTTPAccess, // after otelhttp so request context carries the span
+		otelHTTPMiddleware(),
+		withHTTPRouteAttr, // http.route attr only; span name is From WithSpanNameFormatter
+		sharedlog.HTTPAccessWithPath(httpRoutePattern),
 	)
 	h.Register(router)
 	return router

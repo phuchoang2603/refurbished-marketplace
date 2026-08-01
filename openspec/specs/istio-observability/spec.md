@@ -61,27 +61,32 @@ The system SHALL expose Kubernetes Service ports with names that match the proto
 
 ### Requirement: Mesh telemetry visibility
 
-The system SHALL provide observable Istio telemetry for marketplace service-to-service traffic in staging.
+The system SHALL provide observable Istio telemetry for marketplace service-to-service traffic in staging via L7 **metrics** (and dashboards). Distributed tracing from ingress/waypoint proxies to VictoriaTraces is not part of the marketplace observe path.
 
 #### Scenario: Internal traffic appears in telemetry
 
 - **WHEN** a user exercises the primary marketplace flows in staging
-- **THEN** mesh telemetry shows traffic involving `web`, `users`, `products`, `orders`, `cart`, `payment`, and `payment-gateway-simulator` where applicable
+- **THEN** mesh **metrics** show traffic involving `web`, `users`, `products`, `orders`, `cart`, `payment`, and `payment-gateway-simulator` where applicable
 
 #### Scenario: gRPC traffic is distinguishable
 
 - **WHEN** the web service calls internal gRPC services during staging verification
 - **THEN** telemetry distinguishes gRPC service calls from opaque TCP traffic where Istio protocol support allows it
 
-#### Scenario: Grafana and VictoriaTraces are the target telemetry stack
+#### Scenario: Grafana and VictoriaMetrics are the mesh metrics visualization path
 
-- **WHEN** trace and dashboard verification is documented
-- **THEN** the documentation targets VictoriaTraces with Grafana as the long-term telemetry visualization path
+- **WHEN** mesh dashboard verification is documented
+- **THEN** the documentation targets Grafana with Istio L7 metrics (e.g. Marketplace Istio RED) rather than requiring proxy spans in VictoriaTraces
+
+#### Scenario: Mesh tracing resources are absent
+
+- **WHEN** the marketplace and istiod charts are deployed after this change
+- **THEN** they do not render a tracing Telemetry resource, VictoriaTraces OTEL extension provider, or mesh-tracing DestinationRule for ecommerce ingress/waypoint span export
 
 #### Scenario: Telemetry verification uses platform observability
 
-- **WHEN** Istio trace and dashboard verification runs in staging
-- **THEN** it uses the deployed `platform-observability` stack (`monitoring` namespace, Grafana / VictoriaTraces) rather than a temporary tracing UI
+- **WHEN** Istio metrics and dashboard verification runs in staging
+- **THEN** it uses the deployed `platform-observability` stack (`monitoring` namespace, Grafana / VictoriaMetrics) rather than a temporary tracing UI
 
 ### Requirement: Mesh enrollment rollback
 
@@ -91,27 +96,3 @@ The system SHALL document and support rollback from marketplace mesh enrollment 
 
 - **WHEN** mesh enrollment is removed or disabled for marketplace workloads
 - **THEN** the application returns to the previous Kubernetes Service-based communication path
-
-### Requirement: Mesh tracing exports OpenTelemetry spans to VictoriaTraces
-
-When marketplace Istio L7 proxies are configured for distributed tracing, the system SHALL export OpenTelemetry spans from the ingress Gateway and waypoint to VictoriaTraces using W3C Trace Context so proxy spans can share TraceIds with instrumented applications that propagate `traceparent`.
-
-#### Scenario: Extension provider targets VictoriaTraces
-
-- **WHEN** Istio mesh tracing is enabled for staging
-- **THEN** an OpenTelemetry extension provider (or equivalent) is configured to send spans to the platform VictoriaTraces OTLP endpoint
-
-#### Scenario: Waypoint and ingress Telemetry enable tracing
-
-- **WHEN** tracing Telemetry is applied for marketplace edge and east-west L7
-- **THEN** the ecommerce ingress Gateway and ecommerce waypoint emit spans for sampled requests
-
-#### Scenario: Joined TraceId requires app header propagation
-
-- **WHEN** an application forwards W3C `traceparent` on outbound calls through the mesh
-- **THEN** Istio proxy spans and application spans for that request share the same TraceId in VictoriaTraces
-
-#### Scenario: Ambient L4 is not the distributed tracing surface
-
-- **WHEN** workloads use ambient mode without relying on ztunnel for span trees
-- **THEN** distributed mesh tracing is expected from waypoint and ingress L7 proxies rather than ztunnel
