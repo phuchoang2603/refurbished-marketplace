@@ -19,7 +19,8 @@ func newRouter(h *handlers.Handler) http.Handler {
 		middleware.Recoverer,
 		middleware.Timeout(60*time.Second),
 		otelhttp.NewMiddleware("web"),
-		sharedlog.HTTPAccess, // after otelhttp so request context carries the span
+		withHTTPRouteSpanName, // inside otelhttp so name updates before span ends
+		sharedlog.HTTPAccess,  // after otelhttp so request context carries the span
 	)
 	h.Register(router)
 	return router
