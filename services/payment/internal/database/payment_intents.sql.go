@@ -75,6 +75,38 @@ func (q *Queries) CreateHostedPaymentSession(ctx context.Context, arg CreateHost
 	return i, err
 }
 
+const expireHostedPaymentSession = `-- name: ExpireHostedPaymentSession :one
+UPDATE payment_intents
+SET
+    status = 'EXPIRED',
+    failure_reason = 'session expired',
+    updated_at = NOW()
+WHERE order_id = $1
+  AND status = 'PENDING'
+RETURNING payment_intents.order_id, payment_intents.buyer_user_id, payment_intents.currency, payment_intents.billing_address, payment_intents.shipping_address, payment_intents.status, payment_intents.created_at, payment_intents.updated_at, payment_intents.payment_session_id, payment_intents.return_url, payment_intents.cancel_url, payment_intents.expires_at, payment_intents.failure_reason
+`
+
+func (q *Queries) ExpireHostedPaymentSession(ctx context.Context, orderID uuid.UUID) (PaymentIntent, error) {
+	row := q.db.QueryRowContext(ctx, expireHostedPaymentSession, orderID)
+	var i PaymentIntent
+	err := row.Scan(
+		&i.OrderID,
+		&i.BuyerUserID,
+		&i.Currency,
+		&i.BillingAddress,
+		&i.ShippingAddress,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.PaymentSessionID,
+		&i.ReturnUrl,
+		&i.CancelUrl,
+		&i.ExpiresAt,
+		&i.FailureReason,
+	)
+	return i, err
+}
+
 const getPaymentIntentByOrderID = `-- name: GetPaymentIntentByOrderID :one
 SELECT order_id, buyer_user_id, currency, billing_address, shipping_address, status, created_at, updated_at, payment_session_id, return_url, cancel_url, expires_at, failure_reason
 FROM payment_intents
@@ -100,6 +132,69 @@ func (q *Queries) GetPaymentIntentByOrderID(ctx context.Context, orderID uuid.UU
 		&i.FailureReason,
 	)
 	return i, err
+}
+
+const listExpiredPendingHostedSessions = `-- name: ListExpiredPendingHostedSessions :many
+SELECT order_id, buyer_user_id, currency, billing_address, shipping_address, status, created_at, updated_at, payment_session_id, return_url, cancel_url, expires_at, failure_reason
+FROM payment_intents
+WHERE status = 'PENDING'
+  AND expires_at IS NOT NULL
+  AND expires_at < NOW()
+ORDER BY expires_at
+LIMIT $1
+`
+
+func (q *Queries) ListExpiredPendingHostedSessions(ctx context.Context, limit int32) ([]PaymentIntent, error) {
+	rows, err := q.db.QueryContext(ctx, listExpiredPendingHostedSessions, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []PaymentIntent
+	for rows.Next() {
+		var i PaymentIntent
+		if err := rows.Scan(
+			&i.OrderID,
+			&i.BuyerUserID,
+			&i.Currency,
+			&i.BillingAddress,
+			&i.ShippingAddress,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.PaymentSessionID,
+			&i.ReturnUrl,
+			&i.CancelUrl,
+			&i.ExpiresAt,
+			&i.FailureReason,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const setPaymentIntentExpiresAt = `-- name: SetPaymentIntentExpiresAt :exec
+UPDATE payment_intents
+SET expires_at = $2
+WHERE order_id = $1
+`
+
+type SetPaymentIntentExpiresAtParams struct {
+	OrderID   uuid.UUID
+	ExpiresAt sql.NullTime
+}
+
+func (q *Queries) SetPaymentIntentExpiresAt(ctx context.Context, arg SetPaymentIntentExpiresAtParams) error {
+	_, err := q.db.ExecContext(ctx, setPaymentIntentExpiresAt, arg.OrderID, arg.ExpiresAt)
+	return err
 }
 
 const updateHostedPaymentSessionOutcome = `-- name: UpdateHostedPaymentSessionOutcome :one

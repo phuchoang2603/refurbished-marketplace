@@ -27,3 +27,29 @@ SET
     updated_at = NOW()
 WHERE order_id = $1 AND payment_session_id = $2
 RETURNING payment_intents.*;
+
+-- name: ListExpiredPendingHostedSessions :many
+SELECT *
+FROM payment_intents
+WHERE
+    status = 'PENDING'
+    AND expires_at IS NOT NULL
+    AND expires_at < NOW()
+ORDER BY expires_at
+LIMIT $1;
+
+-- name: ExpireHostedPaymentSession :one
+UPDATE payment_intents
+SET
+    status = 'EXPIRED',
+    failure_reason = 'session expired',
+    updated_at = NOW()
+WHERE
+    order_id = $1
+    AND status = 'PENDING'
+RETURNING payment_intents.*;
+
+-- name: SetPaymentIntentExpiresAt :exec
+UPDATE payment_intents
+SET expires_at = $2
+WHERE order_id = $1;
