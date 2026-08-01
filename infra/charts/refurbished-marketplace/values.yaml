@@ -11,9 +11,6 @@ mesh:
   waypoint:
     enabled: true
     name: ecommerce-waypoint
-  tracing:
-    enabled: true
-    samplingPercentage: 100
 
 # North-south edge via Kubernetes Gateway API (gatewayClassName: istio).
 # Local uses Cloudflare Tunnel → ClusterIP Gateway (same path as staging).

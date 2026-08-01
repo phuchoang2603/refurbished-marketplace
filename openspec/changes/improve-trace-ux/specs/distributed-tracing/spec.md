@@ -67,10 +67,10 @@ A staging checkout and hosted-payment callback SHALL produce a single connected 
 - **WHEN** an operator completes a hosted-payment success or failure callback in staging
 - **THEN** Grafana Explore shows one TraceId covering the callback → payment gRPC → payment outbox path as applicable
 
-#### Scenario: Mesh proxy services are absent from the default waterfall
+#### Scenario: Mesh proxy services are absent from the waterfall
 
-- **WHEN** an operator opens a checkout TraceId after mesh tracing is disabled
-- **THEN** the waterfall does not require `ecommerce-ingress` or `ecommerce-waypoint` spans to interpret the request path
+- **WHEN** an operator opens a checkout TraceId after mesh tracing resources are removed
+- **THEN** the waterfall does not include `ecommerce-ingress` or `ecommerce-waypoint` spans
 
 ### Requirement: Tracing documentation
 

@@ -42,11 +42,6 @@ defaults:
       cpu: 500m
       memory: 512Mi
 
-mesh:
-  tracing:
-    enabled: true
-    samplingPercentage: 100
-
 ingress:
   enabled: true
   name: ecommerce-ingress

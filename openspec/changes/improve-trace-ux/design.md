@@ -7,7 +7,7 @@ E2e distributed tracing already joins one W3C TraceId across HTTP → gRPC → o
 **Goals:**
 
 - Operation-centric Explore UX: readable HTTP / RPC / messaging parents with DB and Redis children.
-- Disable marketplace Istio mesh tracing (no proxy spans in the default waterfall).
+- Remove marketplace Istio mesh tracing (no proxy spans; no leftover toggle).
 - Keep ambient mesh + Istio L7 metrics / RED dashboard.
 - Instrument once at shared boundaries (`OpenPostgres`, `OpenRedis`, web middleware) so every gRPC method and Kafka handler gets coverage without per-method `span.Start`.
 
@@ -21,13 +21,13 @@ E2e distributed tracing already joins one W3C TraceId across HTTP → gRPC → o
 
 ## Decisions
 
-### 1. Turn off Istio mesh tracing (not just filter it)
+### 1. Remove Istio mesh tracing (no toggle)
 
-Set `mesh.tracing.enabled: false` (local + staging overlays as needed) so `templates/tracing.tpl` does not render `Telemetry` `ecommerce-tracing`. Leave istiod `extensionProviders` / `otel-vt` in place if harmless; unused when no Telemetry attaches.
+Delete marketplace Gateway Telemetry (`templates/tracing.tpl`), `mesh.tracing` chart values, the `vtsingle-otlp-plain` DestinationRule (mesh.tpl), and the istiod `otel-vt` `extensionProviders` entry. Do not leave an `enabled: false` flag.
 
-**Rationale:** Proxy spans confuse root naming and are unnecessary for app+DB deep-dives. Canary later relies on versioned metrics, not Envoy spans. Reversible by flipping the flag.
+**Rationale:** Proxy spans confuse root naming and are unnecessary for app+DB deep-dives. Canary later relies on versioned metrics, not Envoy spans. Dead config is worse than a clean cut.
 
-**Alternatives considered:** Keep exporting and demote via TraceQL only (still clutters service pickers); remove extension provider entirely (more churn, little gain).
+**Alternatives considered:** Keep exporting and demote via TraceQL only (still clutters service pickers); feature-flag off but keep Telemetry/provider templates (stale path).
 
 ### 2. HTTP span names = `METHOD` + chi route pattern
 
@@ -71,18 +71,18 @@ Update `docs/observability.md` so checkout verification expects app + Connect sp
 | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
 | otelsql span names are generic (`query` / statement keyword) | Rely on gRPC/Kafka/HTTP parents for readability; put SQL in attributes                      |
 | High span volume with 100% sampling + all SQL                | Accept in staging; truncate statements; revisit sampling before prod                        |
-| Losing proxy-only latency visibility                         | Keep Istio RED metrics; re-enable Telemetry if Envoy debugging is needed                    |
+| Losing proxy-only latency visibility                         | Keep Istio RED metrics; restore mesh tracing only as a new change if needed                 |
 | Chi route pattern empty if middleware order wrong            | Set/update span name after match (`chi.RouteContext` / otelchi-style)                       |
 | Test DBs also wrapped                                        | Prefer wrapping only production opener path; tests can stay uninstrumented or noop exporter |
 
 ## Migration Plan
 
-1. Disable mesh tracing in chart values; sync local/staging; confirm no new ingress/waypoint spans.
+1. Remove mesh tracing templates/values/provider; sync local/staging; confirm no ingress/waypoint spans and no leftover CRs.
 2. Ship web route-pattern naming; confirm Explore shows `METHOD /route`.
 3. Add otelsql to `OpenPostgres` + module tidy; verify SQL children under CreateOrder / consumers.
 4. Add Redis OTEL hook; verify cart path.
-5. Update docs and remove mesh-from-waterfall expectations.
-6. Rollback: re-enable `mesh.tracing.enabled`; revert opener wrappers / middleware (deps stay unused).
+5. Update docs for app-only waterfalls.
+6. Rollback of app instrumentation: revert opener wrappers / middleware (deps stay unused). Mesh tracing stay removed unless a follow-up change reintroduces it.
 
 ## Open Questions
 

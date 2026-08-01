@@ -4,7 +4,7 @@ Checkout TraceIds join correctly across web → gRPC → outbox → Kafka → co
 
 ## What Changes
 
-- **Disable Istio mesh tracing** for marketplace ingress/waypoint (no Gateway Telemetry spans to VictoriaTraces). Keep ambient mesh and Istio L7 **metrics** scrapes / RED dashboard.
+- **Remove Istio mesh tracing** (no Gateway Telemetry, no istiod `otel-vt` provider, no mesh-tracing DestinationRule). Keep ambient mesh and Istio L7 **metrics** scrapes / RED dashboard.
 - **Name web HTTP spans** as `METHOD` + chi **route pattern** (e.g. `POST /checkout`), with `http.route` set — never raw paths with IDs.
 - **Instrument all Postgres queries** via shared `OpenPostgres` (otelsql or equivalent) so sqlc calls emit child spans under existing gRPC/Kafka parents.
 - **Instrument Redis** via shared `OpenRedis` (go-redis OTEL hook) for cart paths.
@@ -21,11 +21,11 @@ Checkout TraceIds join correctly across web → gRPC → outbox → Kafka → co
 ### Modified Capabilities
 
 - `distributed-tracing`: Operation-centric span naming; shared DB/Redis instrumentation; docs and e2e expectations without mesh proxy spans as part of the default TraceId story.
-- `istio-observability`: Mesh tracing to VictoriaTraces is **off** by default; metrics-oriented mesh telemetry remains.
+- `istio-observability`: Mesh tracing to VictoriaTraces is **removed**; metrics-oriented mesh telemetry remains.
 - `web`: HTTP server spans use route-pattern names (not the otelhttp operation string / service name).
 
 ## Impact
 
-- **Code:** `services/web` router middleware; `shared/runtime` Postgres/Redis openers; possible small deps (`otelsql`, `redisotel`); chart values / `tracing.tpl` for mesh tracing disabled.
-- **Ops:** Grafana Explore defaults to app services only; Istio RED metrics unchanged.
-- **Non-goals:** Per-method domain spans; named sqlc wrappers instead of driver-level SQL spans; canary traffic splitting; re-enabling mesh traces (can revisit later if proxy-only debugging is needed); production sampling policy beyond current staging defaults.
+- **Code / charts:** Delete `tracing.tpl`, mesh-tracing DestinationRule, `mesh.tracing` values, istiod `otel-vt` provider; web route-span middleware; `OpenPostgres` / `OpenRedis` OTEL wrappers (`otelsql`, `redisotel`).
+- **Ops:** Grafana Explore is app + Connect only; Istio RED metrics unchanged. No disabled toggle left for mesh tracing.
+- **Non-goals:** Per-method domain spans; named sqlc wrappers instead of driver-level SQL spans; canary traffic splitting; restoring mesh proxy traces; production sampling policy beyond current staging defaults.

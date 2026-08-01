@@ -1,16 +1,20 @@
+## ADDED Requirements
+
+_(none)_
+
 ## REMOVED Requirements
 
 ### Requirement: Mesh tracing exports OpenTelemetry spans to VictoriaTraces
 
-**Reason:** Mesh proxy spans (`ecommerce-ingress`, `ecommerce-waypoint`) dominate Explore roots without helping app/DB deep-dives. Application OTEL already joins TraceIds across services; canary readiness later depends on versioned metrics, not Envoy spans.
+**Reason:** Mesh proxy spans (`ecommerce-ingress`, `ecommerce-waypoint`) dominated Explore roots without helping app/DB deep-dives. Application OTEL already joins TraceIds across services; canary readiness later depends on versioned metrics, not Envoy spans.
 
-**Migration:** Disable marketplace Gateway Telemetry tracing (`mesh.tracing.enabled` / `ecommerce-tracing`). Keep ambient enrollment and Istio L7 metrics scrapes. Re-enable Telemetry later only if proxy-only debugging is needed.
+**Migration:** Remove marketplace Gateway Telemetry (`ecommerce-tracing`), the `mesh.tracing` chart values, the `vtsingle-otlp-plain` DestinationRule, and the istiod `otel-vt` extension provider. Keep ambient enrollment and Istio L7 metrics scrapes.
 
 ## MODIFIED Requirements
 
 ### Requirement: Mesh telemetry visibility
 
-The system SHALL provide observable Istio telemetry for marketplace service-to-service traffic in staging via L7 **metrics** (and dashboards). Distributed **tracing** from ingress/waypoint proxies to VictoriaTraces is not part of the default marketplace observe path.
+The system SHALL provide observable Istio telemetry for marketplace service-to-service traffic in staging via L7 **metrics** (and dashboards). Distributed tracing from ingress/waypoint proxies to VictoriaTraces is not part of the marketplace observe path.
 
 #### Scenario: Internal traffic appears in telemetry
 
@@ -27,10 +31,10 @@ The system SHALL provide observable Istio telemetry for marketplace service-to-s
 - **WHEN** mesh dashboard verification is documented
 - **THEN** the documentation targets Grafana with Istio L7 metrics (e.g. Marketplace Istio RED) rather than requiring proxy spans in VictoriaTraces
 
-#### Scenario: Mesh tracing Telemetry is disabled by default
+#### Scenario: Mesh tracing resources are absent
 
-- **WHEN** the marketplace chart is deployed with default mesh tracing settings after this change
-- **THEN** it does not apply a tracing Telemetry resource that causes ecommerce ingress or ecommerce waypoint to export spans to VictoriaTraces
+- **WHEN** the marketplace and istiod charts are deployed after this change
+- **THEN** they do not render a tracing Telemetry resource, VictoriaTraces OTEL extension provider, or mesh-tracing DestinationRule for ecommerce ingress/waypoint span export
 
 #### Scenario: Telemetry verification uses platform observability
 
