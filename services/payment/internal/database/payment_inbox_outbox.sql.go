@@ -63,3 +63,42 @@ func (q *Queries) InsertPaymentInboxMessage(ctx context.Context, messageID strin
 	err := row.Scan(&column_1)
 	return column_1, err
 }
+
+const listPaymentOutboxByAggregateID = `-- name: ListPaymentOutboxByAggregateID :many
+SELECT id, aggregate_id, event_type, payload, publish_attempts, created_at, published_at, tracingspancontext
+FROM payment_outbox
+WHERE aggregate_id = $1
+ORDER BY created_at
+`
+
+func (q *Queries) ListPaymentOutboxByAggregateID(ctx context.Context, aggregateID uuid.UUID) ([]PaymentOutbox, error) {
+	rows, err := q.db.QueryContext(ctx, listPaymentOutboxByAggregateID, aggregateID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []PaymentOutbox
+	for rows.Next() {
+		var i PaymentOutbox
+		if err := rows.Scan(
+			&i.ID,
+			&i.AggregateID,
+			&i.EventType,
+			&i.Payload,
+			&i.PublishAttempts,
+			&i.CreatedAt,
+			&i.PublishedAt,
+			&i.Tracingspancontext,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}

@@ -65,3 +65,17 @@ The payment service MUST accept hosted gateway payment outcomes over its interna
 
 - **WHEN** the web edge forwards the same terminal callback again
 - **THEN** the payment service SHALL treat the repeat as idempotent and SHALL NOT emit duplicate terminal outcomes for downstream consumers
+
+### Requirement: Payment expires abandoned hosted sessions
+
+The payment service MUST periodically expire PENDING hosted payment sessions whose `expires_at` is in the past, mark them EXPIRED, and emit `payment.failed` when a payment transaction exists so downstream services can release reserved stock and fail the order. If no payment transaction exists yet, the service MUST still mark the session EXPIRED and SHALL emit the failure outcome when the transaction is later created from `inventory.reserved`.
+
+#### Scenario: Pending session past expires_at is swept
+
+- **WHEN** a hosted payment session remains PENDING after its `expires_at` timestamp
+- **THEN** the payment service SHALL mark the session EXPIRED and, when a payment transaction exists for that order, emit an order-level `payment.failed` outbox event
+
+#### Scenario: Session expires before payment transaction exists
+
+- **WHEN** a hosted payment session is marked EXPIRED before `inventory.reserved` creates the payment transaction
+- **THEN** creating that transaction SHALL apply the expired terminal outcome and emit `payment.failed`

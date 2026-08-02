@@ -11,3 +11,9 @@ INSERT INTO payment_outbox (
 VALUES ($1, $2, $3, $4, $5)
 RETURNING
     payment_outbox.*;
+
+-- name: ListPaymentOutboxByAggregateID :many
+SELECT *
+FROM payment_outbox
+WHERE aggregate_id = $1
+ORDER BY created_at;

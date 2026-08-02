@@ -44,6 +44,13 @@ func (s *Service) ApplyGatewayWebhook(ctx context.Context, orderID uuid.UUID, pa
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
+			current, loadErr := loadPaymentIntentByOrderID(ctx, s.queries, orderID)
+			if loadErr != nil {
+				return loadErr
+			}
+			if hostedPaymentSessionIsTerminal(current.Status) {
+				return nil
+			}
 			return ErrSessionMismatch
 		}
 		return err
@@ -65,11 +72,23 @@ func (s *Service) applyTerminalOutcome(ctx context.Context, transactionID uuid.U
 	if err != nil {
 		return err
 	}
-	q := s.queries.WithTx(tx)
 	defer func() {
 		_ = tx.Rollback()
 	}()
 
+	if err := s.applyTerminalOutcomeWithQueries(ctx, s.queries.WithTx(tx), transactionID, hostedStatus, failureReason); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func (s *Service) applyTerminalOutcomeWithQueries(
+	ctx context.Context,
+	q *database.Queries,
+	transactionID uuid.UUID,
+	hostedStatus string,
+	failureReason sql.NullString,
+) error {
 	newStatus := PaymentTxStatusFailed
 	if hostedPaymentSessionMapsToSuccess(hostedStatus) {
 		newStatus = PaymentTxStatusSucceeded
@@ -88,7 +107,7 @@ func (s *Service) applyTerminalOutcome(ctx context.Context, transactionID uuid.U
 				return loadErr
 			}
 			if paymentTransactionIsTerminal(row.Status) {
-				return tx.Commit()
+				return nil
 			}
 		}
 		return err
@@ -110,10 +129,6 @@ func (s *Service) applyTerminalOutcome(ctx context.Context, transactionID uuid.U
 		Payload:            payload,
 		Tracingspancontext: sharedtrace.SerializeContext(ctx),
 	}); err != nil {
-		return err
-	}
-
-	if err := tx.Commit(); err != nil {
 		return err
 	}
 
