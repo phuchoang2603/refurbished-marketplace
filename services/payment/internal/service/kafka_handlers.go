@@ -9,6 +9,7 @@ import (
 	sharedlog "refurbished-marketplace/shared/observe/log"
 
 	"refurbished-marketplace/services/payment/internal/database"
+	"refurbished-marketplace/shared/err/dberr"
 	"refurbished-marketplace/shared/messaging"
 
 	productsv1 "refurbished-marketplace/shared/proto/products/v1"
@@ -64,8 +65,8 @@ func (s *Service) KafkaInventoryReservedHandler() messaging.KafkaHandler {
 			)
 		}
 
-		// Re-read intent so a concurrent expiry sweep is observed; also repairs
-		// retries where the transaction already exists.
+		// Lock the intent row so we wait for an in-flight expiry sweep, then
+		// apply any terminal outcome. Also covers retries where the tx exists.
 		if err := s.ensureTerminalOutcomeForOrder(ctx, orderID); err != nil {
 			return err
 		}
@@ -79,24 +80,36 @@ func (s *Service) KafkaInventoryReservedHandler() messaging.KafkaHandler {
 }
 
 func (s *Service) ensureTerminalOutcomeForOrder(ctx context.Context, orderID uuid.UUID) error {
-	intent, err := loadPaymentIntentByOrderID(ctx, s.queries, orderID)
+	tx, err := s.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+	q := s.queries.WithTx(tx)
+
+	intent, err := q.GetPaymentIntentByOrderIDForUpdate(ctx, orderID)
+	if err != nil {
+		return dberr.MapErrNoRows(err, ErrIntentNotFound)
+	}
 	if !hostedPaymentSessionIsTerminal(intent.Status) {
-		return nil
+		return tx.Commit()
 	}
 
-	txRow, err := s.queries.GetPaymentTransactionByOrderID(ctx, orderID)
+	txRow, err := q.GetPaymentTransactionByOrderID(ctx, orderID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil
+			return tx.Commit()
 		}
 		return err
 	}
 	if paymentTransactionIsTerminal(txRow.Status) {
-		return nil
+		return tx.Commit()
 	}
 
-	return s.applyTerminalOutcome(ctx, txRow.ID, intent.Status, intent.FailureReason)
+	if err := s.applyTerminalOutcomeWithQueries(ctx, q, txRow.ID, intent.Status, intent.FailureReason); err != nil {
+		return err
+	}
+	return tx.Commit()
 }

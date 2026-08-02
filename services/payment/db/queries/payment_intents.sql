@@ -19,6 +19,12 @@ SELECT *
 FROM payment_intents
 WHERE order_id = $1;
 
+-- name: GetPaymentIntentByOrderIDForUpdate :one
+SELECT *
+FROM payment_intents
+WHERE order_id = $1
+FOR UPDATE;
+
 -- name: UpdateHostedPaymentSessionOutcome :one
 UPDATE payment_intents
 SET

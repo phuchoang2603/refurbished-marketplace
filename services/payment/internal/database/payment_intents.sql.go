@@ -135,6 +135,34 @@ func (q *Queries) GetPaymentIntentByOrderID(ctx context.Context, orderID uuid.UU
 	return i, err
 }
 
+const getPaymentIntentByOrderIDForUpdate = `-- name: GetPaymentIntentByOrderIDForUpdate :one
+SELECT order_id, buyer_user_id, currency, billing_address, shipping_address, status, created_at, updated_at, payment_session_id, return_url, cancel_url, expires_at, failure_reason
+FROM payment_intents
+WHERE order_id = $1
+FOR UPDATE
+`
+
+func (q *Queries) GetPaymentIntentByOrderIDForUpdate(ctx context.Context, orderID uuid.UUID) (PaymentIntent, error) {
+	row := q.db.QueryRowContext(ctx, getPaymentIntentByOrderIDForUpdate, orderID)
+	var i PaymentIntent
+	err := row.Scan(
+		&i.OrderID,
+		&i.BuyerUserID,
+		&i.Currency,
+		&i.BillingAddress,
+		&i.ShippingAddress,
+		&i.Status,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.PaymentSessionID,
+		&i.ReturnUrl,
+		&i.CancelUrl,
+		&i.ExpiresAt,
+		&i.FailureReason,
+	)
+	return i, err
+}
+
 const listExpiredPendingHostedSessions = `-- name: ListExpiredPendingHostedSessions :many
 SELECT order_id, buyer_user_id, currency, billing_address, shipping_address, status, created_at, updated_at, payment_session_id, return_url, cancel_url, expires_at, failure_reason
 FROM payment_intents
