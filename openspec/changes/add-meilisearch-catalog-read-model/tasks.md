@@ -1,11 +1,12 @@
-## 1. Phase 0 — Meilisearch GitOps deploy
+## 1. Phase 0 — Meilisearch companion in marketplace chart
 
-- [ ] 1.1 Add `infra/charts/meilisearch/` Helm wrapper (upstream Meilisearch chart, persistence, resource limits)
+- [ ] 1.1 Add Meilisearch companion templates to `infra/charts/refurbished-marketplace` (Deployment, Service, PVC; values-gated)
 - [ ] 1.2 Wire `MEILI_MASTER_KEY` via External Secrets / Doppler (no plaintext key in Git)
-- [ ] 1.3 Register Meilisearch child Application in `infra/argocd/app-of-apps` for local + staging values
-- [ ] 1.4 Ensure network path from `ecommerce` to Meilisearch (Istio/Service as needed)
-- [ ] 1.5 Document deploy, namespace, optional Tilt port-forward for search DX
-- [ ] 1.6 Verify Argo Healthy and Meilisearch health endpoint reachable from the cluster
+- [ ] 1.3 Set products env for Meilisearch URL (Service DNS) + API key secretRef
+- [ ] 1.4 Size resources for Colima vs staging; enable in local `values.yaml` and staging overlay as appropriate
+- [ ] 1.5 Document deploy topology (companion vs cart sidecar) and optional port-forward for search DX
+- [ ] 1.6 Verify with `tilt up` / staging sync: Meilisearch healthy and reachable from products network path
+- [ ] 1.7 (Optional) Extract cart Valkey into a generic `sidecars:` list only if it simplifies the chart without forcing Meili into that abstraction
 
 ## 2. Phase 1 — Catalog outbox and projection
 
@@ -31,6 +32,6 @@
 
 ## 4. Verification
 
-- [ ] 4.1 Phase 0: confirm Meilisearch Healthy in Argo on local and/or staging
+- [ ] 4.1 Phase 0: Meilisearch companion up via Tilt/Argo; products can reach Service DNS
 - [ ] 4.2 Phase 1: create product → document appears in Meilisearch; run rebuild and spot-check parity
 - [ ] 4.3 Phase 2: search by name substring; filter by merchant; verify web catalog + seller list

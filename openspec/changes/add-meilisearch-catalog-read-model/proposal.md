@@ -4,7 +4,7 @@ Storefront catalog listing is still a Postgres `ORDER BY created_at LIMIT/OFFSET
 
 ## What Changes
 
-- Deploy **Meilisearch** via Helm under `infra/` and register it in the Argo CD app-of-apps (local + staging)
+- Deploy **Meilisearch** as a PVC-backed companion `Deployment`/`Service` inside the `refurbished-marketplace` Helm chart (not a products sidecar; not a separate platform operator chart)
 - Add a **catalog outbox** (`products_outbox`) and Debezium → Kafka path so `CreateProduct` projects into Meilisearch
 - Add a **projector** that upserts/deletes Meilisearch documents from catalog events
 - Version Meilisearch **index settings** in-repo (searchable/filterable attributes)
@@ -29,11 +29,11 @@ Storefront catalog listing is still a Postgres `ORDER BY created_at LIMIT/OFFSET
 ### Modified Capabilities
 
 - `products`: `CreateProduct` MUST emit a catalog outbox event; list/search reads that are storefront-oriented MUST be served from the catalog search read model
-- `argocd-gitops`: App-of-apps MUST include a Meilisearch Application (Helm chart + secrets wiring)
+- `argocd-gitops`: Staging/local marketplace delivery MUST deploy the Meilisearch companion with the marketplace chart (Tilt locally, Argo marketplace Application remotely)
 - `web`: Public catalog and seller product list MUST use the Meilisearch-backed products search/list APIs (no client-side merchant filtering when the API can scope it)
 
 ## Impact
 
-- **Add:** `infra/charts/meilisearch/` (or equivalent Helm wrapper), app-of-apps entry, `products_outbox` migration/SQLC, Debezium entity, projector, Meilisearch client usage in products, index settings, docs
-- **Update:** `services/products` (create outbox, search/list gRPC), `shared/proto/products`, `services/web` catalog handlers, `infra/charts/kafka` Debezium config, `infra/argocd/app-of-apps`
+- **Add:** Meilisearch companion templates/values in `infra/charts/refurbished-marketplace/`, `products_outbox` migration/SQLC, Debezium entity, projector, Meilisearch client usage in products, index settings, docs
+- **Update:** `services/products` (create outbox, search/list gRPC), `shared/proto/products`, `services/web` catalog handlers, `infra/charts/kafka` Debezium config, marketplace chart env/secrets for Meili URL + key
 - **Issue:** Closes / implements [#7](https://github.com/phuchoang2603/refurbished-marketplace/issues/7) in phases (deploy → project → read/web)
