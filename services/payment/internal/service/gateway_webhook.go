@@ -44,18 +44,11 @@ func (s *Service) ApplyGatewayWebhook(ctx context.Context, orderID uuid.UUID, pa
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			// Lost a race to another terminal writer (e.g. session expiry sweep).
 			current, loadErr := loadPaymentIntentByOrderID(ctx, s.queries, orderID)
 			if loadErr != nil {
 				return loadErr
 			}
 			if hostedPaymentSessionIsTerminal(current.Status) {
-				sharedlog.InfoContext(
-					ctx, "gateway webhook ignored; session became terminal",
-					sharedlog.KeyOrderID, orderID.String(),
-					"payment_session_id", paymentSessionID,
-					sharedlog.KeyStatus, current.Status,
-				)
 				return nil
 			}
 			return ErrSessionMismatch
@@ -96,7 +89,10 @@ func (s *Service) applyTerminalOutcomeWithQueries(
 	hostedStatus string,
 	failureReason sql.NullString,
 ) error {
-	newStatus := terminalPaymentTxStatus(hostedStatus)
+	newStatus := PaymentTxStatusFailed
+	if hostedPaymentSessionMapsToSuccess(hostedStatus) {
+		newStatus = PaymentTxStatusSucceeded
+	}
 
 	updated, err := q.UpdatePaymentTransactionGatewayResult(ctx, database.UpdatePaymentTransactionGatewayResultParams{
 		ID:                   transactionID,
@@ -144,11 +140,4 @@ func (s *Service) applyTerminalOutcomeWithQueries(
 		sharedlog.KeyEventType, eventType,
 	)
 	return nil
-}
-
-func terminalPaymentTxStatus(hostedStatus string) string {
-	if hostedPaymentSessionMapsToSuccess(hostedStatus) {
-		return PaymentTxStatusSucceeded
-	}
-	return PaymentTxStatusFailed
 }

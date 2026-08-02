@@ -50,30 +50,31 @@ func (s *Service) KafkaInventoryReservedHandler() messaging.KafkaHandler {
 			Status:         PaymentTxStatusInitialized,
 			IdempotencyKey: "order:" + orderID.String(),
 		})
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) || isPostgresUniqueViolation(err) {
-				if err := s.ensureTerminalOutcomeForOrder(ctx, orderID); err != nil {
-					return err
-				}
-				return s.ackPaymentInbox(ctx, messageID)
-			}
+		if err != nil && !errors.Is(err, sql.ErrNoRows) && !isPostgresUniqueViolation(err) {
 			return err
 		}
+		if err == nil {
+			sharedlog.InfoContext(
+				ctx, "payment transaction initialized from inventory.reserved",
+				sharedlog.KeyOrderID, orderID.String(),
+				sharedlog.KeyMerchantID, merchantID.String(),
+				"payment_transaction_id", created.ID.String(),
+				"amount_cents", payload.GetTotalCents(),
+				"currency", intent.Currency,
+			)
+		}
 
-		// Re-read after create so a concurrent expiry sweep is observed.
+		// Re-read intent so a concurrent expiry sweep is observed; also repairs
+		// retries where the transaction already exists.
 		if err := s.ensureTerminalOutcomeForOrder(ctx, orderID); err != nil {
 			return err
 		}
 
-		sharedlog.InfoContext(
-			ctx, "payment transaction initialized from inventory.reserved",
-			sharedlog.KeyOrderID, orderID.String(),
-			sharedlog.KeyMerchantID, merchantID.String(),
-			"payment_transaction_id", created.ID.String(),
-			"amount_cents", payload.GetTotalCents(),
-			"currency", intent.Currency,
-		)
-		return s.ackPaymentInbox(ctx, messageID)
+		// Ack only after create + catch-up so Kafka retries remain durable.
+		if _, err := s.queries.InsertPaymentInboxMessage(ctx, messageID); err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return err
+		}
+		return nil
 	}
 }
 
@@ -98,14 +99,4 @@ func (s *Service) ensureTerminalOutcomeForOrder(ctx context.Context, orderID uui
 	}
 
 	return s.applyTerminalOutcome(ctx, txRow.ID, intent.Status, intent.FailureReason)
-}
-
-func (s *Service) ackPaymentInbox(ctx context.Context, messageID string) error {
-	if _, err := s.queries.InsertPaymentInboxMessage(ctx, messageID); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil
-		}
-		return err
-	}
-	return nil
 }

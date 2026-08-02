@@ -56,13 +56,3 @@ RETURNING payment_intents.*;
 UPDATE payment_intents
 SET expires_at = $2
 WHERE order_id = $1;
-
--- name: ListExpiredHostedSessionsNeedingTerminalApply :many
-SELECT pi.*
-FROM payment_intents AS pi
-INNER JOIN payment_transactions AS pt ON pt.order_id = pi.order_id
-WHERE
-    pi.status = 'EXPIRED'
-    AND pt.status NOT IN ('SUCCEEDED', 'FAILED')
-ORDER BY pi.updated_at
-LIMIT $1;

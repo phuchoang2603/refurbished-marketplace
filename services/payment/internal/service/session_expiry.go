@@ -14,8 +14,8 @@ import (
 const sessionExpiryBatchSize int32 = 100
 
 // ExpireDueSessions marks PENDING hosted sessions past expires_at as EXPIRED
-// and emits payment.failed when a payment transaction already exists. It also
-// repairs EXPIRED sessions that still have a non-terminal payment transaction.
+// and, when a payment transaction exists, emits payment.failed in the same DB
+// transaction. If no transaction exists yet, inventory.reserved catch-up applies it later.
 func (s *Service) ExpireDueSessions(ctx context.Context) error {
 	due, err := s.queries.ListExpiredPendingHostedSessions(ctx, sessionExpiryBatchSize)
 	if err != nil {
@@ -23,16 +23,6 @@ func (s *Service) ExpireDueSessions(ctx context.Context) error {
 	}
 	for _, intent := range due {
 		if err := s.expireOneSession(ctx, intent.OrderID); err != nil {
-			return err
-		}
-	}
-
-	repair, err := s.queries.ListExpiredHostedSessionsNeedingTerminalApply(ctx, sessionExpiryBatchSize)
-	if err != nil {
-		return err
-	}
-	for _, intent := range repair {
-		if err := s.applyExpiredSessionTerminalOutcome(ctx, intent.OrderID); err != nil {
 			return err
 		}
 	}
@@ -74,29 +64,6 @@ func (s *Service) expireOneSession(ctx context.Context, orderID uuid.UUID) error
 		return err
 	}
 	return tx.Commit()
-}
-
-func (s *Service) applyExpiredSessionTerminalOutcome(ctx context.Context, orderID uuid.UUID) error {
-	intent, err := loadPaymentIntentByOrderID(ctx, s.queries, orderID)
-	if err != nil {
-		return err
-	}
-	if intent.Status != HostedPaymentSessionStatusExpired {
-		return nil
-	}
-
-	txRow, err := s.queries.GetPaymentTransactionByOrderID(ctx, orderID)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil
-		}
-		return err
-	}
-	if paymentTransactionIsTerminal(txRow.Status) {
-		return nil
-	}
-
-	return s.applyTerminalOutcome(ctx, txRow.ID, intent.Status, intent.FailureReason)
 }
 
 // RunSessionExpiryLoop periodically expires due hosted payment sessions until ctx is cancelled.

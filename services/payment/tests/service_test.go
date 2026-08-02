@@ -299,58 +299,6 @@ func TestPaymentService_ExpireDueSessions(t *testing.T) {
 		}
 	})
 
-	t.Run("repairs expired intent with non-terminal transaction", func(t *testing.T) {
-		svc, queries := newPaymentFixture(t)
-		ctx := t.Context()
-
-		orderID := uuid.New()
-		_, err := svc.CreateHostedPaymentSession(ctx, service.CreateHostedPaymentSessionParams{
-			OrderID:         orderID,
-			BuyerUserID:     uuid.New(),
-			Currency:        "USD",
-			ShippingAddress: json.RawMessage(`{}`),
-			ReturnURL:       "/orders/" + orderID.String(),
-			CancelURL:       "/orders/" + orderID.String(),
-		})
-		if err != nil {
-			t.Fatalf("CreateHostedPaymentSession: %v", err)
-		}
-		_, err = queries.CreatePaymentTransaction(ctx, database.CreatePaymentTransactionParams{
-			ID:             uuid.New(),
-			OrderID:        orderID,
-			MerchantID:     uuid.New(),
-			AmountCents:    3000,
-			Currency:       "USD",
-			Status:         service.PaymentTxStatusInitialized,
-			IdempotencyKey: "order:" + orderID.String(),
-		})
-		if err != nil {
-			t.Fatalf("CreatePaymentTransaction: %v", err)
-		}
-		if _, err := queries.ExpireHostedPaymentSession(ctx, orderID); err != nil {
-			t.Fatalf("ExpireHostedPaymentSession: %v", err)
-		}
-
-		if err := svc.ExpireDueSessions(ctx); err != nil {
-			t.Fatalf("ExpireDueSessions repair: %v", err)
-		}
-
-		txRow, err := queries.GetPaymentTransactionByOrderID(ctx, orderID)
-		if err != nil {
-			t.Fatalf("GetPaymentTransactionByOrderID: %v", err)
-		}
-		if txRow.Status != service.PaymentTxStatusFailed {
-			t.Fatalf("transaction status: got %q want FAILED", txRow.Status)
-		}
-		outbox, err := queries.ListPaymentOutboxByAggregateID(ctx, orderID)
-		if err != nil {
-			t.Fatalf("ListPaymentOutboxByAggregateID: %v", err)
-		}
-		if len(outbox) != 1 || outbox[0].EventType != messaging.EventTypePaymentFailed {
-			t.Fatalf("outbox: got %+v want one payment.failed", outbox)
-		}
-	})
-
 	t.Run("gateway webhook cannot overwrite expired session", func(t *testing.T) {
 		svc, queries := newPaymentFixture(t)
 		ctx := t.Context()
