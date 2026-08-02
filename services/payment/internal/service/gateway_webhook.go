@@ -44,6 +44,20 @@ func (s *Service) ApplyGatewayWebhook(ctx context.Context, orderID uuid.UUID, pa
 	})
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
+			// Lost a race to another terminal writer (e.g. session expiry sweep).
+			current, loadErr := loadPaymentIntentByOrderID(ctx, s.queries, orderID)
+			if loadErr != nil {
+				return loadErr
+			}
+			if hostedPaymentSessionIsTerminal(current.Status) {
+				sharedlog.InfoContext(
+					ctx, "gateway webhook ignored; session became terminal",
+					sharedlog.KeyOrderID, orderID.String(),
+					"payment_session_id", paymentSessionID,
+					sharedlog.KeyStatus, current.Status,
+				)
+				return nil
+			}
 			return ErrSessionMismatch
 		}
 		return err
@@ -65,15 +79,24 @@ func (s *Service) applyTerminalOutcome(ctx context.Context, transactionID uuid.U
 	if err != nil {
 		return err
 	}
-	q := s.queries.WithTx(tx)
 	defer func() {
 		_ = tx.Rollback()
 	}()
 
-	newStatus := PaymentTxStatusFailed
-	if hostedPaymentSessionMapsToSuccess(hostedStatus) {
-		newStatus = PaymentTxStatusSucceeded
+	if err := s.applyTerminalOutcomeWithQueries(ctx, s.queries.WithTx(tx), transactionID, hostedStatus, failureReason); err != nil {
+		return err
 	}
+	return tx.Commit()
+}
+
+func (s *Service) applyTerminalOutcomeWithQueries(
+	ctx context.Context,
+	q *database.Queries,
+	transactionID uuid.UUID,
+	hostedStatus string,
+	failureReason sql.NullString,
+) error {
+	newStatus := terminalPaymentTxStatus(hostedStatus)
 
 	updated, err := q.UpdatePaymentTransactionGatewayResult(ctx, database.UpdatePaymentTransactionGatewayResultParams{
 		ID:                   transactionID,
@@ -88,7 +111,7 @@ func (s *Service) applyTerminalOutcome(ctx context.Context, transactionID uuid.U
 				return loadErr
 			}
 			if paymentTransactionIsTerminal(row.Status) {
-				return tx.Commit()
+				return nil
 			}
 		}
 		return err
@@ -113,10 +136,6 @@ func (s *Service) applyTerminalOutcome(ctx context.Context, transactionID uuid.U
 		return err
 	}
 
-	if err := tx.Commit(); err != nil {
-		return err
-	}
-
 	sharedlog.InfoContext(
 		ctx, "payment terminal outcome applied",
 		sharedlog.KeyOrderID, updated.OrderID.String(),
@@ -125,4 +144,11 @@ func (s *Service) applyTerminalOutcome(ctx context.Context, transactionID uuid.U
 		sharedlog.KeyEventType, eventType,
 	)
 	return nil
+}
+
+func terminalPaymentTxStatus(hostedStatus string) string {
+	if hostedPaymentSessionMapsToSuccess(hostedStatus) {
+		return PaymentTxStatusSucceeded
+	}
+	return PaymentTxStatusFailed
 }

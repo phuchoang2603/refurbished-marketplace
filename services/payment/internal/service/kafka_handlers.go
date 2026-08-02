@@ -31,13 +31,6 @@ func (s *Service) KafkaInventoryReservedHandler() messaging.KafkaHandler {
 			return errors.New("invalid inventory.reserved payload: missing order_id")
 		}
 
-		if _, err := s.queries.InsertPaymentInboxMessage(ctx, messageID); err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				return nil
-			}
-			return err
-		}
-
 		orderID, merchantID, err := parseOrderUUIDs(&payload)
 		if err != nil {
 			return err
@@ -59,14 +52,17 @@ func (s *Service) KafkaInventoryReservedHandler() messaging.KafkaHandler {
 		})
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) || isPostgresUniqueViolation(err) {
-				return nil
+				if err := s.ensureTerminalOutcomeForOrder(ctx, orderID); err != nil {
+					return err
+				}
+				return s.ackPaymentInbox(ctx, messageID)
 			}
 			return err
 		}
-		if hostedPaymentSessionIsTerminal(intent.Status) {
-			if err := s.applyTerminalOutcome(ctx, created.ID, intent.Status, intent.FailureReason); err != nil {
-				return err
-			}
+
+		// Re-read after create so a concurrent expiry sweep is observed.
+		if err := s.ensureTerminalOutcomeForOrder(ctx, orderID); err != nil {
+			return err
 		}
 
 		sharedlog.InfoContext(
@@ -77,6 +73,39 @@ func (s *Service) KafkaInventoryReservedHandler() messaging.KafkaHandler {
 			"amount_cents", payload.GetTotalCents(),
 			"currency", intent.Currency,
 		)
+		return s.ackPaymentInbox(ctx, messageID)
+	}
+}
+
+func (s *Service) ensureTerminalOutcomeForOrder(ctx context.Context, orderID uuid.UUID) error {
+	intent, err := loadPaymentIntentByOrderID(ctx, s.queries, orderID)
+	if err != nil {
+		return err
+	}
+	if !hostedPaymentSessionIsTerminal(intent.Status) {
 		return nil
 	}
+
+	txRow, err := s.queries.GetPaymentTransactionByOrderID(ctx, orderID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+		return err
+	}
+	if paymentTransactionIsTerminal(txRow.Status) {
+		return nil
+	}
+
+	return s.applyTerminalOutcome(ctx, txRow.ID, intent.Status, intent.FailureReason)
+}
+
+func (s *Service) ackPaymentInbox(ctx context.Context, messageID string) error {
+	if _, err := s.queries.InsertPaymentInboxMessage(ctx, messageID); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil
+		}
+		return err
+	}
+	return nil
 }

@@ -25,7 +25,10 @@ SET
     status = $3,
     failure_reason = $4,
     updated_at = NOW()
-WHERE order_id = $1 AND payment_session_id = $2
+WHERE
+    order_id = $1
+    AND payment_session_id = $2
+    AND status = 'PENDING'
 RETURNING payment_intents.*;
 
 -- name: ListExpiredPendingHostedSessions :many
@@ -53,3 +56,13 @@ RETURNING payment_intents.*;
 UPDATE payment_intents
 SET expires_at = $2
 WHERE order_id = $1;
+
+-- name: ListExpiredHostedSessionsNeedingTerminalApply :many
+SELECT pi.*
+FROM payment_intents AS pi
+INNER JOIN payment_transactions AS pt ON pt.order_id = pi.order_id
+WHERE
+    pi.status = 'EXPIRED'
+    AND pt.status NOT IN ('SUCCEEDED', 'FAILED')
+ORDER BY pi.updated_at
+LIMIT $1;

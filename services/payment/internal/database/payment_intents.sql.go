@@ -81,8 +81,9 @@ SET
     status = 'EXPIRED',
     failure_reason = 'session expired',
     updated_at = NOW()
-WHERE order_id = $1
-  AND status = 'PENDING'
+WHERE
+    order_id = $1
+    AND status = 'PENDING'
 RETURNING payment_intents.order_id, payment_intents.buyer_user_id, payment_intents.currency, payment_intents.billing_address, payment_intents.shipping_address, payment_intents.status, payment_intents.created_at, payment_intents.updated_at, payment_intents.payment_session_id, payment_intents.return_url, payment_intents.cancel_url, payment_intents.expires_at, payment_intents.failure_reason
 `
 
@@ -134,12 +135,61 @@ func (q *Queries) GetPaymentIntentByOrderID(ctx context.Context, orderID uuid.UU
 	return i, err
 }
 
+const listExpiredHostedSessionsNeedingTerminalApply = `-- name: ListExpiredHostedSessionsNeedingTerminalApply :many
+SELECT pi.order_id, pi.buyer_user_id, pi.currency, pi.billing_address, pi.shipping_address, pi.status, pi.created_at, pi.updated_at, pi.payment_session_id, pi.return_url, pi.cancel_url, pi.expires_at, pi.failure_reason
+FROM payment_intents AS pi
+INNER JOIN payment_transactions AS pt ON pt.order_id = pi.order_id
+WHERE
+    pi.status = 'EXPIRED'
+    AND pt.status NOT IN ('SUCCEEDED', 'FAILED')
+ORDER BY pi.updated_at
+LIMIT $1
+`
+
+func (q *Queries) ListExpiredHostedSessionsNeedingTerminalApply(ctx context.Context, limit int32) ([]PaymentIntent, error) {
+	rows, err := q.db.QueryContext(ctx, listExpiredHostedSessionsNeedingTerminalApply, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []PaymentIntent
+	for rows.Next() {
+		var i PaymentIntent
+		if err := rows.Scan(
+			&i.OrderID,
+			&i.BuyerUserID,
+			&i.Currency,
+			&i.BillingAddress,
+			&i.ShippingAddress,
+			&i.Status,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.PaymentSessionID,
+			&i.ReturnUrl,
+			&i.CancelUrl,
+			&i.ExpiresAt,
+			&i.FailureReason,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listExpiredPendingHostedSessions = `-- name: ListExpiredPendingHostedSessions :many
 SELECT order_id, buyer_user_id, currency, billing_address, shipping_address, status, created_at, updated_at, payment_session_id, return_url, cancel_url, expires_at, failure_reason
 FROM payment_intents
-WHERE status = 'PENDING'
-  AND expires_at IS NOT NULL
-  AND expires_at < NOW()
+WHERE
+    status = 'PENDING'
+    AND expires_at IS NOT NULL
+    AND expires_at < NOW()
 ORDER BY expires_at
 LIMIT $1
 `
@@ -203,7 +253,10 @@ SET
     status = $3,
     failure_reason = $4,
     updated_at = NOW()
-WHERE order_id = $1 AND payment_session_id = $2
+WHERE
+    order_id = $1
+    AND payment_session_id = $2
+    AND status = 'PENDING'
 RETURNING payment_intents.order_id, payment_intents.buyer_user_id, payment_intents.currency, payment_intents.billing_address, payment_intents.shipping_address, payment_intents.status, payment_intents.created_at, payment_intents.updated_at, payment_intents.payment_session_id, payment_intents.return_url, payment_intents.cancel_url, payment_intents.expires_at, payment_intents.failure_reason
 `
 
