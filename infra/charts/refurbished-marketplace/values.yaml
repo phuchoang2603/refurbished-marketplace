@@ -48,7 +48,8 @@ defaults:
     limits:
       cpu: 100m
       memory: 64Mi
-  redisResources:
+  # Ephemeral pod sidecars (e.g. cart Valkey). Per-sidecar resources override this.
+  sidecarResources:
     requests:
       cpu: 10m
       memory: 32Mi
@@ -161,6 +162,11 @@ services:
     protocol: grpc
     env:
       REDIS_ADDR: 127.0.0.1:6379
+    # Ephemeral localhost only — not for shared stores (CNPG, Meilisearch, …).
+    sidecars:
+      - name: redis
+        image: docker.io/valkey/valkey:7.2.5
+        port: 6379
 
   payment:
     enabled: true

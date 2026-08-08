@@ -6,7 +6,6 @@
 {{- end }}
 {{- $resources := default $.Values.defaults.resources $svc.resources }}
 {{- $initResources := default $.Values.defaults.initResources $svc.initResources }}
-{{- $redisResources := default $.Values.defaults.redisResources $svc.redisResources }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -42,13 +41,15 @@ spec:
 {{- end }}
 {{- end }}
       containers:
-{{- if eq $name "cart" }}
-        - name: redis
-          image: docker.io/valkey/valkey:7.2.5
+{{- range $sidecar := $svc.sidecars }}
+        - name: {{ $sidecar.name }}
+          image: {{ $sidecar.image }}
           imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+{{- with $sidecar.port }}
           ports:
-            - containerPort: 6379
-{{- with $redisResources }}
+            - containerPort: {{ . }}
+{{- end }}
+{{- with ($sidecar.resources | default $.Values.defaults.sidecarResources) }}
           resources:
 {{ toYaml . | nindent 12 }}
 {{- end }}

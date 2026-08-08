@@ -27,7 +27,7 @@ defaults:
     limits:
       cpu: 200m
       memory: 128Mi
-  redisResources:
+  sidecarResources:
     requests:
       cpu: 25m
       memory: 64Mi
