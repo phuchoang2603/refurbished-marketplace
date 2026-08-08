@@ -13,7 +13,7 @@ Delivery is phased so GitOps deploy can land before the CQRS cutover (#7 Phase 0
 - PostgreSQL remains source of truth for catalog and stock writes.
 - Meilisearch is the storefront catalog **read model** for list/search.
 - Reliable projection via outbox + Debezium + projector (same family as inventory).
-- GitOps-native Meilisearch deploy as a **shared companion** in the marketplace chart (Tilt local + Argo staging), not a per-pod sidecar.
+- GitOps-native Meilisearch deploy as an **app-of-apps** Helm Application (local + staging Argo), not a marketplace sidecar and not a marketplace-chart companion.
 - Clear rebuild path when the index drifts.
 
 **Non-Goals:**
@@ -33,22 +33,25 @@ Use the official `meilisearch/meilisearch` Helm chart as a single-node PVC-backe
 
 **Alternatives considered:** Elasticsearch (issue original — too heavy); Typesense (stronger OSS HA/curation — revisit if merchandising/HA becomes a requirement); ClickHouse (analytics-shaped, weaker storefront search DX).
 
-### 2. Marketplace-chart companion Deployment — not a cart-style sidecar
+### 2. App-of-apps Meilisearch chart — not sidecar, not marketplace companion
 
-Deploy Meilisearch as its own `Deployment` + `Service` + PVC inside `infra/charts/refurbished-marketplace` (stable DNS e.g. `meilisearch:7700`), alongside products. Do **not** run Meilisearch as a products pod sidecar the way cart runs Valkey.
+Deploy Meilisearch via a dedicated chart under `infra/charts/meilisearch/` (upstream official Helm chart) registered in `infra/argocd/app-of-apps` for local and staging. Products reaches it over stable in-cluster DNS. Do **not** run Meilisearch as a products pod sidecar; do **not** fold it into the marketplace chart as a companion Deployment.
 
-**Rationale:** Cart Redis is an **ephemeral, per-pod** cache (`127.0.0.1:6379`, no PVC, loss on restart is OK). The catalog index is a **shared, durable read model**: multiple products replicas must see one index; projector upserts must not fan out to N empty sidecars; pod restart must not imply full reindex. A companion Deployment matches that shape and still rides Tilt’s marketplace chart locally (better DX than a separate Argo-only platform chart).
+**Rationale:**
+
+- Catalog index is a **shared durable read model** (PVC): per-pod sidecars diverge and reindex-on-restart. Cart Valkey stays a localhost sidecar for **ephemeral** cache only (`services.<name>.sidecars` in the marketplace chart).
+- App-of-apps matches Kafka/observability-style platform services: own lifecycle, sync wave, enable/disable without rewriting marketplace service Deployments.
+- Keeps marketplace chart focused on ecommerce services; Meilisearch has different scaling/backup story than cart sidecar.
 
 **Alternatives considered:**
 
-| Option                                 | Why not (for v1)                                                                                                                                                                     |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Products sidecar (cart pattern)        | Divergent indexes per replica; no shared PVC story; reindex-on-restart; projector affinity mess                                                                                      |
-| “Universal sidecar” Helm abstraction   | Sidecar ≠ companion: one needs localhost+ephemeral, the other needs Service+PVC+shared lifetime. A generic `sidecars:` list is fine for Valkey-like cases; don’t force Meili into it |
-| Separate app-of-apps Meilisearch chart | Valid, but splits local DX (Argo Meili vs Tilt products) for little gain while products is the only client                                                                           |
-| Elasticsearch operator wave            | Rejected earlier for weight                                                                                                                                                          |
+| Option                                 | Why not                                                                                                                                       |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Products sidecar (cart pattern)        | Divergent indexes; no shared PVC; broken projector under multi-replica                                                                        |
+| Marketplace-chart companion Deployment | Couples Meili lifecycle to marketplace Tilt chart; blurs platform vs app boundary while app-of-apps already ships platform deps (Kafka, etc.) |
+| Elasticsearch operator wave            | Rejected for ops weight                                                                                                                       |
 
-**Optional chart cleanup (only if it pays for itself):** generalize `services.tpl` with a small `sidecars:` list for true sidecars (cart Valkey), and a separate top-level `meilisearch:` (or `companions:`) block for PVC-backed shared services. Do **not** invent a single abstraction that pretends those are the same.
+**Related:** Universal marketplace `sidecars:` is reserved for Valkey-like cases; Meilisearch stays out of that abstraction.
 
 ### 3. Catalog outbox + Debezium + in-process projector
 
@@ -74,11 +77,11 @@ Prefer an explicit `SearchProducts` (query string + filters + pagination). Store
 
 **Alternatives considered:** Only change `ListProducts` in place (simpler proto, muddier semantics).
 
-### 6. Secrets via External Secrets; same ecommerce namespace
+### 6. Secrets via External Secrets; dedicated namespace OK
 
-`MEILI_MASTER_KEY` from ESO/Doppler. Meilisearch lives in the marketplace release namespace (`ecommerce`) next to products. Products gets `MEILI_URL` / key via env + secretKeyRef.
+`MEILI_MASTER_KEY` from ESO/Doppler. Prefer a dedicated namespace (e.g. `meilisearch`) or shared platform namespace consistent with other app-of-apps platform services. Products gets `MEILI_URL` + key via env/secretRef from marketplace values.
 
-**Rationale:** Matches how cart reaches Redis (in-cluster), without inventing a second data namespace; still keep Victoria\* observability separate.
+**Rationale:** Platform search is not application business logic; secrets and network policy can follow the same patterns as Kafka reachability into `ecommerce`.
 
 ## Risks / Trade-offs
 
@@ -93,7 +96,7 @@ Prefer an explicit `SearchProducts` (query string + filters + pagination). Store
 
 ## Migration Plan
 
-1. **Phase 0:** Ship Meilisearch companion resources in the marketplace chart + secrets; verify health. No app traffic yet.
+1. **Phase 0:** Ship Meilisearch Helm chart + app-of-apps Application + secrets; verify health from products network path. No catalog traffic yet.
 2. **Phase 1:** Migrations + Debezium + projector + index settings; backfill/reindex existing products; create path projects forward.
 3. **Phase 2:** Expose `SearchProducts` / wire web; flip storefront list off Postgres.
 4. **Rollback:** Re-point list/search to Postgres queries; leave Meilisearch deployed idle; outbox/projector can pause without blocking writes.
@@ -102,5 +105,5 @@ Prefer an explicit `SearchProducts` (query string + filters + pagination). Store
 
 - Projector packaging: same `products` binary vs small `products-projector` deployable (default: same binary / loop beside Kafka consumers).
 - Whether Phase 1 MUST include reservation → `available_qty` updates or explicitly defer to a follow-up issue.
-- Meilisearch image tag + resource limits for Colima vs staging.
-- Whether to extract cart Valkey into a generic `sidecars:` list in the same PR as Meili companion templates, or keep the cart special-case until a second sidecar appears.
+- Meilisearch chart version pin, namespace, and resource limits for Colima vs staging.
+- Local DX: rely on Argo-managed Meili after `tilt up` installs Argo (same as Kafka), optional port-forward only for debugging.

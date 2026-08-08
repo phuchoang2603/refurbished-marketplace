@@ -4,7 +4,7 @@ Storefront catalog listing is still a Postgres `ORDER BY created_at LIMIT/OFFSET
 
 ## What Changes
 
-- Deploy **Meilisearch** as a PVC-backed companion `Deployment`/`Service` inside the `refurbished-marketplace` Helm chart (not a products sidecar; not a separate platform operator chart)
+- Deploy **Meilisearch** via app-of-apps (Helm chart under `infra/charts/meilisearch/`, local + staging Argo) — shared PVC-backed instance, not a products sidecar or marketplace-chart companion
 - Add a **catalog outbox** (`products_outbox`) and Debezium → Kafka path so `CreateProduct` projects into Meilisearch
 - Add a **projector** that upserts/deletes Meilisearch documents from catalog events
 - Version Meilisearch **index settings** in-repo (searchable/filterable attributes)
@@ -16,9 +16,9 @@ Storefront catalog listing is still a Postgres `ORDER BY created_at LIMIT/OFFSET
 
 - Elasticsearch, OpenSearch, ClickHouse, or Typesense as the catalog read model
 - Replacing PostgreSQL as source of truth for products/inventory
+- Running Meilisearch as a marketplace pod sidecar (cart Valkey pattern is for ephemeral localhost caches only)
 - Multi-node Meilisearch HA / Meilisearch Cloud (single-node self-hosted for local + staging v1)
 - Advanced merchandising (A/B ranking, synonyms packs) beyond basic ranking rules
-- Making Meilisearch required for every local microservice iteration (optional Tilt port-forward only when developing search)
 
 ## Capabilities
 
@@ -29,11 +29,11 @@ Storefront catalog listing is still a Postgres `ORDER BY created_at LIMIT/OFFSET
 ### Modified Capabilities
 
 - `products`: `CreateProduct` MUST emit a catalog outbox event; list/search reads that are storefront-oriented MUST be served from the catalog search read model
-- `argocd-gitops`: Staging/local marketplace delivery MUST deploy the Meilisearch companion with the marketplace chart (Tilt locally, Argo marketplace Application remotely)
+- `argocd-gitops`: App-of-apps MUST include a Meilisearch Application (Helm chart + secrets wiring) for local and staging
 - `web`: Public catalog and seller product list MUST use the Meilisearch-backed products search/list APIs (no client-side merchant filtering when the API can scope it)
 
 ## Impact
 
-- **Add:** Meilisearch companion templates/values in `infra/charts/refurbished-marketplace/`, `products_outbox` migration/SQLC, Debezium entity, projector, Meilisearch client usage in products, index settings, docs
-- **Update:** `services/products` (create outbox, search/list gRPC), `shared/proto/products`, `services/web` catalog handlers, `infra/charts/kafka` Debezium config, marketplace chart env/secrets for Meili URL + key
+- **Add:** `infra/charts/meilisearch/`, app-of-apps entry, `products_outbox` migration/SQLC, Debezium entity, projector, Meilisearch client usage in products, index settings, docs
+- **Update:** `services/products` (create outbox, search/list gRPC), `shared/proto/products`, `services/web` catalog handlers, `infra/charts/kafka` Debezium config, marketplace chart env for Meili URL + key, `infra/argocd/app-of-apps`
 - **Issue:** Closes / implements [#7](https://github.com/phuchoang2603/refurbished-marketplace/issues/7) in phases (deploy → project → read/web)
