@@ -6,7 +6,6 @@
 {{- end }}
 {{- $resources := default $.Values.defaults.resources $svc.resources }}
 {{- $initResources := default $.Values.defaults.initResources $svc.initResources }}
-{{- $defaultSidecarResources := default $.Values.defaults.redisResources $.Values.defaults.sidecarResources }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -43,32 +42,15 @@ spec:
 {{- end }}
       containers:
 {{- range $sidecar := $svc.sidecars }}
-        - name: {{ required (printf "services.%s.sidecars[].name is required" $name) $sidecar.name }}
-          image: {{ required (printf "services.%s.sidecars[].image is required" $name) $sidecar.image | quote }}
-          imagePullPolicy: {{ default $.Values.global.imagePullPolicy $sidecar.imagePullPolicy }}
-{{- with $sidecar.command }}
-          command:
-{{ toYaml . | nindent 12 }}
-{{- end }}
-{{- with $sidecar.args }}
-          args:
-{{ toYaml . | nindent 12 }}
-{{- end }}
-{{- with $sidecar.ports }}
+        - name: {{ $sidecar.name }}
+          image: {{ $sidecar.image }}
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+{{- with $sidecar.port }}
           ports:
-{{ toYaml . | nindent 12 }}
+            - containerPort: {{ . }}
 {{- end }}
-{{- with $sidecar.env }}
-          env:
-{{ toYaml . | nindent 12 }}
-{{- end }}
-{{- $sidecarResources := default $defaultSidecarResources $sidecar.resources }}
-{{- with $sidecarResources }}
+{{- with ($sidecar.resources | default $.Values.defaults.sidecarResources) }}
           resources:
-{{ toYaml . | nindent 12 }}
-{{- end }}
-{{- with $sidecar.volumeMounts }}
-          volumeMounts:
 {{ toYaml . | nindent 12 }}
 {{- end }}
 {{- end }}
@@ -113,10 +95,6 @@ spec:
             - name: {{ $key }}
               value: {{ $value | quote }}
 {{- end }}
-{{- end }}
-{{- with $svc.volumes }}
-      volumes:
-{{ toYaml . | nindent 8 }}
 {{- end }}
 ---
 apiVersion: v1

@@ -162,13 +162,11 @@ services:
     protocol: grpc
     env:
       REDIS_ADDR: 127.0.0.1:6379
-    # localhost sidecars only (ephemeral, lost on pod restart). Shared durable
-    # stores (CNPG, Meilisearch, etc.) stay as separate Deployments/Services.
+    # Ephemeral localhost only — not for shared stores (CNPG, Meilisearch, …).
     sidecars:
       - name: redis
         image: docker.io/valkey/valkey:7.2.5
-        ports:
-          - containerPort: 6379
+        port: 6379
 
   payment:
     enabled: true
