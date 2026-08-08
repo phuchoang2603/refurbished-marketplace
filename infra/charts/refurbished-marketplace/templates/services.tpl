@@ -6,7 +6,7 @@
 {{- end }}
 {{- $resources := default $.Values.defaults.resources $svc.resources }}
 {{- $initResources := default $.Values.defaults.initResources $svc.initResources }}
-{{- $redisResources := default $.Values.defaults.redisResources $svc.redisResources }}
+{{- $defaultSidecarResources := default $.Values.defaults.redisResources $.Values.defaults.sidecarResources }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -42,14 +42,33 @@ spec:
 {{- end }}
 {{- end }}
       containers:
-{{- if eq $name "cart" }}
-        - name: redis
-          image: docker.io/valkey/valkey:7.2.5
-          imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+{{- range $sidecar := $svc.sidecars }}
+        - name: {{ required (printf "services.%s.sidecars[].name is required" $name) $sidecar.name }}
+          image: {{ required (printf "services.%s.sidecars[].image is required" $name) $sidecar.image | quote }}
+          imagePullPolicy: {{ default $.Values.global.imagePullPolicy $sidecar.imagePullPolicy }}
+{{- with $sidecar.command }}
+          command:
+{{ toYaml . | nindent 12 }}
+{{- end }}
+{{- with $sidecar.args }}
+          args:
+{{ toYaml . | nindent 12 }}
+{{- end }}
+{{- with $sidecar.ports }}
           ports:
-            - containerPort: 6379
-{{- with $redisResources }}
+{{ toYaml . | nindent 12 }}
+{{- end }}
+{{- with $sidecar.env }}
+          env:
+{{ toYaml . | nindent 12 }}
+{{- end }}
+{{- $sidecarResources := default $defaultSidecarResources $sidecar.resources }}
+{{- with $sidecarResources }}
           resources:
+{{ toYaml . | nindent 12 }}
+{{- end }}
+{{- with $sidecar.volumeMounts }}
+          volumeMounts:
 {{ toYaml . | nindent 12 }}
 {{- end }}
 {{- end }}
@@ -94,6 +113,10 @@ spec:
             - name: {{ $key }}
               value: {{ $value | quote }}
 {{- end }}
+{{- end }}
+{{- with $svc.volumes }}
+      volumes:
+{{ toYaml . | nindent 8 }}
 {{- end }}
 ---
 apiVersion: v1
