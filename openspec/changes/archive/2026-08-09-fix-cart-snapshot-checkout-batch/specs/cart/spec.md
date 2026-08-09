@@ -35,17 +35,12 @@ The cart capability MUST store and return `merchant_id` alongside `product_id` a
 
 The cart service MUST support removing multiple product lines in a single operation so checkout can clear a merchant group without N sequential Redis document rewrites.
 
-#### Scenario: Several product IDs are removed together
+#### Scenario: Cart supports removing one or many product IDs
 
-- **WHEN** a caller invokes multi-remove with a valid cart identifier and a non-empty set of product identifiers
+- **WHEN** a caller invokes remove with a valid cart identifier and a non-empty set of product identifiers (one or more)
 - **THEN** the service SHALL load the cart once, remove every item whose product_id is in that set, persist once, and return the updated cart
 
 #### Scenario: Multi-remove includes product IDs not in the cart
 
-- **WHEN** a multi-remove request includes product identifiers that are not present on the cart
-- **THEN** the service SHALL ignore those identifiers and still succeed for the remaining removals (idempotent multi-remove)
-
-#### Scenario: Single-item remove remains available
-
-- **WHEN** a caller removes one product_id via the existing single-item remove API
-- **THEN** the service SHALL remove that line and return the updated cart as today
+- **WHEN** a remove request includes product identifiers that are not present on the cart
+- **THEN** the service SHALL ignore those identifiers and still succeed for the remaining removals (idempotent remove)

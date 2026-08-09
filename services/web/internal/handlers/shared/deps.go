@@ -33,7 +33,6 @@ type CartService interface {
 	GetCart(ctx context.Context, cartID string) (*cartv1.Cart, error)
 	AddCartItem(ctx context.Context, cartID, productID, merchantID, productName string, quantity int32, unitPriceCents int64) (*cartv1.Cart, error)
 	SetCartItemQuantity(ctx context.Context, cartID, productID, merchantID, productName string, quantity int32, unitPriceCents int64) (*cartv1.Cart, error)
-	RemoveCartItem(ctx context.Context, cartID, productID string) (*cartv1.Cart, error)
 	RemoveCartItems(ctx context.Context, cartID string, productIDs []string) (*cartv1.Cart, error)
 	ClearCart(ctx context.Context, cartID string) error
 }

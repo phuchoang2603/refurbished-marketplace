@@ -14,8 +14,7 @@ Catalog Meilisearch CQRS (#7) does **not** fix known-ID cart hydration. Issue [#
 - **Stamp snapshots at write time in web** after a single-SKU product read on Add/Set; cart service remains free of products dependency
 - **Cart page / cart fragments** render only from cart payloads (no per-line Products loop)
 - **Products `GetProductsByIDs`** batch RPC — Postgres authoritative, used for checkout re-validation only (not for casual cart paint)
-- **Cart `RemoveCartItems`** multi-id RPC — one Redis load/filter/save; checkout removes the merchant group’s product IDs in one call
-- Keep single-item `RemoveCartItem` for the UI remove button (may wrap multi internally)
+- **Cart `RemoveCartItems`** multi-id RPC — one Redis load/filter/save; UI remove and checkout both use it (one ID or many)
 
 ### Non-goals
 

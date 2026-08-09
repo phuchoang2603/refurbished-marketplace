@@ -84,7 +84,7 @@ func (s *Service) AddCartItem(ctx context.Context, cartID, productID, merchantID
 
 func (s *Service) SetCartItemQuantity(ctx context.Context, cartID, productID, merchantID, productName string, quantity int32, unitPriceCents int64) (Cart, error) {
 	if quantity <= 0 {
-		return s.RemoveCartItem(ctx, cartID, productID)
+		return s.RemoveCartItems(ctx, cartID, []string{productID})
 	}
 	if err := validateUUID(cartID, ErrInvalidCartID); err != nil {
 		return Cart{}, err
@@ -119,33 +119,6 @@ func (s *Service) SetCartItemQuantity(ctx context.Context, cartID, productID, me
 	} else {
 		cart.Items = append(cart.Items, item)
 	}
-	cart.UpdatedAt = time.Now().UTC()
-	if err := s.saveCart(ctx, cart); err != nil {
-		return Cart{}, err
-	}
-	return cart, nil
-}
-
-func (s *Service) RemoveCartItem(ctx context.Context, cartID, productID string) (Cart, error) {
-	if err := validateUUID(cartID, ErrInvalidCartID); err != nil {
-		return Cart{}, err
-	}
-	if err := validateUUID(productID, ErrInvalidProductID); err != nil {
-		return Cart{}, err
-	}
-
-	cart, ok, err := s.loadCart(ctx, cartID)
-	if err != nil {
-		return Cart{}, err
-	}
-	if !ok {
-		return Cart{}, ErrItemNotFound
-	}
-	idx := findCartItem(cart.Items, productID)
-	if idx < 0 {
-		return Cart{}, ErrItemNotFound
-	}
-	cart.Items = append(cart.Items[:idx], cart.Items[idx+1:]...)
 	cart.UpdatedAt = time.Now().UTC()
 	if err := s.saveCart(ctx, cart); err != nil {
 		return Cart{}, err

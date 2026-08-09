@@ -83,7 +83,7 @@ func (h *Handler) handleRemoveCartItem(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	cart, err := h.deps.Cart.RemoveCartItem(r.Context(), cartID, productID)
+	cart, err := h.deps.Cart.RemoveCartItems(r.Context(), cartID, []string{productID})
 	if err != nil {
 		shared.WriteGRPCError(w, r, err)
 		return

@@ -54,10 +54,6 @@ func (c *CartClient) SetCartItemQuantity(ctx context.Context, cartID, productID,
 	})
 }
 
-func (c *CartClient) RemoveCartItem(ctx context.Context, cartID, productID string) (*cartv1.Cart, error) {
-	return c.client.RemoveCartItem(ctx, &cartv1.RemoveCartItemRequest{CartId: cartID, ProductId: productID})
-}
-
 func (c *CartClient) RemoveCartItems(ctx context.Context, cartID string, productIDs []string) (*cartv1.Cart, error) {
 	return c.client.RemoveCartItems(ctx, &cartv1.RemoveCartItemsRequest{CartId: cartID, ProductIds: productIDs})
 }

@@ -44,7 +44,7 @@ func cartWriteMappings(err error) error {
 		grpcerr.Mapping{Err: service.ErrInvalidMerchantID, Code: codes.InvalidArgument},
 		grpcerr.Mapping{Err: service.ErrInvalidQuantity, Code: codes.InvalidArgument},
 		grpcerr.Mapping{Err: service.ErrInvalidSnapshot, Code: codes.InvalidArgument},
-		grpcerr.Mapping{Err: service.ErrItemNotFound, Code: codes.NotFound, Message: "cart item not found"},
+		grpcerr.Mapping{Err: service.ErrEmptyProductIDs, Code: codes.InvalidArgument},
 	)
 }
 
@@ -84,25 +84,6 @@ func (s *Server) SetCartItemQuantity(ctx context.Context, req *cartv1.SetCartIte
 	return mapCart(c), nil
 }
 
-func (s *Server) RemoveCartItem(ctx context.Context, req *cartv1.RemoveCartItemRequest) (*cartv1.Cart, error) {
-	if _, err := grpcerr.ParseUUID(req.GetCartId(), "cart id"); err != nil {
-		return nil, err
-	}
-	if _, err := grpcerr.ParseUUID(req.GetProductId(), "product id"); err != nil {
-		return nil, err
-	}
-	c, err := s.cart.RemoveCartItem(ctx, req.GetCartId(), req.GetProductId())
-	if err != nil {
-		return nil, grpcerr.Map(
-			err,
-			grpcerr.Mapping{Err: service.ErrInvalidCartID, Code: codes.InvalidArgument},
-			grpcerr.Mapping{Err: service.ErrInvalidProductID, Code: codes.InvalidArgument},
-			grpcerr.Mapping{Err: service.ErrItemNotFound, Code: codes.NotFound, Message: "cart item not found"},
-		)
-	}
-	return mapCart(c), nil
-}
-
 func (s *Server) RemoveCartItems(ctx context.Context, req *cartv1.RemoveCartItemsRequest) (*cartv1.Cart, error) {
 	if _, err := grpcerr.ParseUUID(req.GetCartId(), "cart id"); err != nil {
 		return nil, err
@@ -114,12 +95,7 @@ func (s *Server) RemoveCartItems(ctx context.Context, req *cartv1.RemoveCartItem
 	}
 	c, err := s.cart.RemoveCartItems(ctx, req.GetCartId(), req.GetProductIds())
 	if err != nil {
-		return nil, grpcerr.Map(
-			err,
-			grpcerr.Mapping{Err: service.ErrInvalidCartID, Code: codes.InvalidArgument},
-			grpcerr.Mapping{Err: service.ErrInvalidProductID, Code: codes.InvalidArgument},
-			grpcerr.Mapping{Err: service.ErrEmptyProductIDs, Code: codes.InvalidArgument},
-		)
+		return nil, cartWriteMappings(err)
 	}
 	return mapCart(c), nil
 }

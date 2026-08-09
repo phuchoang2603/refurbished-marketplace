@@ -117,7 +117,7 @@ func TestCartLifecycle(t *testing.T) {
 			t.Fatalf("add item: %v", err)
 		}
 
-		removed, err := svc.RemoveCartItem(ctx, cartID, itemID)
+		removed, err := svc.RemoveCartItems(ctx, cartID, []string{itemID})
 		if err != nil {
 			t.Fatalf("remove item: %v", err)
 		}
@@ -229,12 +229,16 @@ func TestCartValidation(t *testing.T) {
 		}
 	})
 
-	t.Run("missing item", func(t *testing.T) {
+	t.Run("missing product ids are ignored", func(t *testing.T) {
 		svc := newCartService(t)
 		ctx := context.Background()
 
-		if _, err := svc.RemoveCartItem(ctx, uuid.NewString(), uuid.NewString()); !errors.Is(err, service.ErrItemNotFound) {
-			t.Fatalf("expected ErrItemNotFound, got %v", err)
+		got, err := svc.RemoveCartItems(ctx, uuid.NewString(), []string{uuid.NewString()})
+		if err != nil {
+			t.Fatalf("remove unknown: %v", err)
+		}
+		if len(got.Items) != 0 {
+			t.Fatalf("expected empty cart, got %+v", got.Items)
 		}
 	})
 }

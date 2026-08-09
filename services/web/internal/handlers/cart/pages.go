@@ -17,7 +17,7 @@ import (
 const cartCookieName = "cart_id"
 
 func cartUnavailableView() sharedviews.UnavailableView {
-	return shared.NewUnavailableView("Cart", "cart", "Cart unavailable", "Your cart is saved, but some product details could not be loaded. Please try again in a moment.")
+	return shared.NewUnavailableView("Cart", "cart", "Cart unavailable", "We could not reach the cart right now. Your session cart may still be stored — please try again in a moment.")
 }
 
 type Handler struct{ deps *shared.Dependencies }

@@ -136,8 +136,7 @@ Semantics:
 - Save once; return cart
 - Empty `product_ids` → InvalidArgument
 - If result empty after removes, web still clears cart cookie when appropriate (existing behavior)
-
-Implement single `RemoveCartItem` via shared filter helper (or thin multi-id wrapper); behavior of single remove stays NotFound when the product line is absent.
+- **One remove API only:** no `RemoveCartItem`. UI and qty-zero call `RemoveCartItems` with a one-element `product_ids` list. Missing IDs always ignored.
 
 **Why multi-remove vs ClearCart for partial merchant checkout:** cart may still hold other merchants’ lines; ClearCart would wipe them. Multi by product_id is correct.
 

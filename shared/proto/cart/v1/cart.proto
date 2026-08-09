@@ -10,7 +10,6 @@ service CartService {
   rpc GetCart(GetCartRequest) returns (Cart);
   rpc AddCartItem(AddCartItemRequest) returns (Cart);
   rpc SetCartItemQuantity(SetCartItemQuantityRequest) returns (Cart);
-  rpc RemoveCartItem(RemoveCartItemRequest) returns (Cart);
   rpc RemoveCartItems(RemoveCartItemsRequest) returns (Cart);
   rpc ClearCart(ClearCartRequest) returns (Empty);
 }
@@ -50,11 +49,6 @@ message SetCartItemQuantityRequest {
   string merchant_id = 4;
   string product_name = 5;
   int64 unit_price_cents = 6;
-}
-
-message RemoveCartItemRequest {
-  string cart_id = 1;
-  string product_id = 2;
 }
 
 message RemoveCartItemsRequest {
