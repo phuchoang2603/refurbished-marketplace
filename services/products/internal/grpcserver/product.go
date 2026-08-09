@@ -7,6 +7,7 @@ import (
 	"refurbished-marketplace/shared/err/grpcerr"
 	productsv1 "refurbished-marketplace/shared/proto/products/v1"
 
+	"github.com/google/uuid"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
@@ -65,6 +66,32 @@ func (s *Server) GetProductByID(ctx context.Context, req *productsv1.GetProductB
 	}
 
 	return mapProduct(p), nil
+}
+
+func (s *Server) GetProductsByIDs(ctx context.Context, req *productsv1.GetProductsByIDsRequest) (*productsv1.GetProductsByIDsResponse, error) {
+	ids := make([]uuid.UUID, 0, len(req.GetIds()))
+	for _, raw := range req.GetIds() {
+		id, err := grpcerr.ParseUUID(raw, "id")
+		if err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+	}
+
+	products, err := s.svc.GetProductsByIDs(ctx, ids)
+	if err != nil {
+		return nil, grpcerr.Map(
+			err,
+			grpcerr.Mapping{Err: service.ErrInvalidBatchSize, Code: codes.InvalidArgument},
+			grpcerr.Mapping{Err: service.ErrInvalidProductID, Code: codes.InvalidArgument},
+		)
+	}
+
+	out := make([]*productsv1.Product, 0, len(products))
+	for _, p := range products {
+		out = append(out, mapProduct(p))
+	}
+	return &productsv1.GetProductsByIDsResponse{Products: out}, nil
 }
 
 func (s *Server) ListProducts(ctx context.Context, req *productsv1.ListProductsRequest) (*productsv1.ListProductsResponse, error) {
