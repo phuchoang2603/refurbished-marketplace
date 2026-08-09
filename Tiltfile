@@ -128,7 +128,6 @@ local_resource(
     'infra/charts/refurbished-marketplace/values.yaml',
   ],
   resource_deps=['argocd-operators-ready', 'ecommerce-namespace', 'marketplace-secrets'],
-  labels=['databases'],
 )
 
 # Waits for the out-of-band CNPG Cluster and port-forwards its primary.
