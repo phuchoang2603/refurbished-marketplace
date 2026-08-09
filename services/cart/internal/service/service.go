@@ -12,6 +12,8 @@ var (
 	ErrInvalidProductID  = errors.New("invalid product id")
 	ErrInvalidMerchantID = errors.New("invalid merchant id")
 	ErrInvalidQuantity   = errors.New("invalid quantity")
+	ErrInvalidSnapshot   = errors.New("invalid product snapshot")
+	ErrEmptyProductIDs   = errors.New("empty product ids")
 	ErrItemNotFound      = errors.New("cart item not found")
 )
 

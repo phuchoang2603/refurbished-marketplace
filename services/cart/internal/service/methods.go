@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strings"
 	"time"
 )
 
@@ -13,9 +14,11 @@ type Cart struct {
 }
 
 type CartItem struct {
-	ProductID  string
-	MerchantID string
-	Quantity   int32
+	ProductID      string
+	MerchantID     string
+	Quantity       int32
+	ProductName    string
+	UnitPriceCents int64
 }
 
 func (s *Service) GetCart(ctx context.Context, cartID string) (Cart, error) {
@@ -33,7 +36,7 @@ func (s *Service) GetCart(ctx context.Context, cartID string) (Cart, error) {
 	return cart, nil
 }
 
-func (s *Service) AddCartItem(ctx context.Context, cartID, productID, merchantID string, quantity int32) (Cart, error) {
+func (s *Service) AddCartItem(ctx context.Context, cartID, productID, merchantID, productName string, quantity int32, unitPriceCents int64) (Cart, error) {
 	if quantity <= 0 {
 		return Cart{}, ErrInvalidQuantity
 	}
@@ -44,6 +47,9 @@ func (s *Service) AddCartItem(ctx context.Context, cartID, productID, merchantID
 		return Cart{}, err
 	}
 	if err := validateUUID(merchantID, ErrInvalidMerchantID); err != nil {
+		return Cart{}, err
+	}
+	if err := validateSnapshot(productName, unitPriceCents); err != nil {
 		return Cart{}, err
 	}
 
@@ -58,8 +64,16 @@ func (s *Service) AddCartItem(ctx context.Context, cartID, productID, merchantID
 	if idx >= 0 {
 		cart.Items[idx].MerchantID = merchantID
 		cart.Items[idx].Quantity += quantity
+		cart.Items[idx].ProductName = productName
+		cart.Items[idx].UnitPriceCents = unitPriceCents
 	} else {
-		cart.Items = append(cart.Items, CartItem{ProductID: productID, MerchantID: merchantID, Quantity: quantity})
+		cart.Items = append(cart.Items, CartItem{
+			ProductID:      productID,
+			MerchantID:     merchantID,
+			Quantity:       quantity,
+			ProductName:    productName,
+			UnitPriceCents: unitPriceCents,
+		})
 	}
 	cart.UpdatedAt = time.Now().UTC()
 	if err := s.saveCart(ctx, cart); err != nil {
@@ -68,7 +82,7 @@ func (s *Service) AddCartItem(ctx context.Context, cartID, productID, merchantID
 	return cart, nil
 }
 
-func (s *Service) SetCartItemQuantity(ctx context.Context, cartID, productID, merchantID string, quantity int32) (Cart, error) {
+func (s *Service) SetCartItemQuantity(ctx context.Context, cartID, productID, merchantID, productName string, quantity int32, unitPriceCents int64) (Cart, error) {
 	if quantity <= 0 {
 		return s.RemoveCartItem(ctx, cartID, productID)
 	}
@@ -81,6 +95,9 @@ func (s *Service) SetCartItemQuantity(ctx context.Context, cartID, productID, me
 	if err := validateUUID(merchantID, ErrInvalidMerchantID); err != nil {
 		return Cart{}, err
 	}
+	if err := validateSnapshot(productName, unitPriceCents); err != nil {
+		return Cart{}, err
+	}
 
 	cart, ok, err := s.loadCart(ctx, cartID)
 	if err != nil {
@@ -90,7 +107,13 @@ func (s *Service) SetCartItemQuantity(ctx context.Context, cartID, productID, me
 		cart = newCart(cartID)
 	}
 	idx := findCartItem(cart.Items, productID)
-	item := CartItem{ProductID: productID, MerchantID: merchantID, Quantity: quantity}
+	item := CartItem{
+		ProductID:      productID,
+		MerchantID:     merchantID,
+		Quantity:       quantity,
+		ProductName:    productName,
+		UnitPriceCents: unitPriceCents,
+	}
 	if idx >= 0 {
 		cart.Items[idx] = item
 	} else {
@@ -130,9 +153,56 @@ func (s *Service) RemoveCartItem(ctx context.Context, cartID, productID string) 
 	return cart, nil
 }
 
+func (s *Service) RemoveCartItems(ctx context.Context, cartID string, productIDs []string) (Cart, error) {
+	if err := validateUUID(cartID, ErrInvalidCartID); err != nil {
+		return Cart{}, err
+	}
+	if len(productIDs) == 0 {
+		return Cart{}, ErrEmptyProductIDs
+	}
+	for _, productID := range productIDs {
+		if err := validateUUID(productID, ErrInvalidProductID); err != nil {
+			return Cart{}, err
+		}
+	}
+
+	cart, ok, err := s.loadCart(ctx, cartID)
+	if err != nil {
+		return Cart{}, err
+	}
+	if !ok {
+		return newCart(cartID), nil
+	}
+
+	remove := make(map[string]struct{}, len(productIDs))
+	for _, productID := range productIDs {
+		remove[productID] = struct{}{}
+	}
+	kept := make([]CartItem, 0, len(cart.Items))
+	for _, item := range cart.Items {
+		if _, drop := remove[item.ProductID]; drop {
+			continue
+		}
+		kept = append(kept, item)
+	}
+	cart.Items = kept
+	cart.UpdatedAt = time.Now().UTC()
+	if err := s.saveCart(ctx, cart); err != nil {
+		return Cart{}, err
+	}
+	return cart, nil
+}
+
 func (s *Service) ClearCart(ctx context.Context, cartID string) error {
 	if err := validateUUID(cartID, ErrInvalidCartID); err != nil {
 		return err
 	}
 	return s.deleteCart(ctx, cartID)
+}
+
+func validateSnapshot(productName string, unitPriceCents int64) error {
+	if strings.TrimSpace(productName) == "" || unitPriceCents <= 0 {
+		return ErrInvalidSnapshot
+	}
+	return nil
 }

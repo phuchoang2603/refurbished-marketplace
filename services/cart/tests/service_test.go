@@ -22,6 +22,11 @@ func newCartService(t *testing.T) *service.Service {
 	return service.New(testredis.SetupRedisContainer(t), testConfig())
 }
 
+const (
+	testProductName = "Test Phone"
+	testUnitPrice   = int64(1200)
+)
+
 func TestCartLifecycle(t *testing.T) {
 	svc := newCartService(t)
 	ctx := context.Background()
@@ -30,12 +35,15 @@ func TestCartLifecycle(t *testing.T) {
 		cartID := uuid.NewString()
 		itemID := uuid.NewString()
 		merchantID := uuid.NewString()
-		cart, err := svc.AddCartItem(ctx, cartID, itemID, merchantID, 2)
+		cart, err := svc.AddCartItem(ctx, cartID, itemID, merchantID, testProductName, 2, testUnitPrice)
 		if err != nil {
 			t.Fatalf("add item: %v", err)
 		}
 		if cart.CartID != cartID || len(cart.Items) != 1 || cart.Items[0].MerchantID != merchantID {
 			t.Fatalf("unexpected cart after add")
+		}
+		if cart.Items[0].ProductName != testProductName || cart.Items[0].UnitPriceCents != testUnitPrice {
+			t.Fatalf("unexpected snapshot after add: %+v", cart.Items[0])
 		}
 	})
 
@@ -43,7 +51,7 @@ func TestCartLifecycle(t *testing.T) {
 		cartID := uuid.NewString()
 		itemID := uuid.NewString()
 		merchantID := uuid.NewString()
-		_, err := svc.AddCartItem(ctx, cartID, itemID, merchantID, 2)
+		_, err := svc.AddCartItem(ctx, cartID, itemID, merchantID, testProductName, 2, testUnitPrice)
 		if err != nil {
 			t.Fatalf("add item: %v", err)
 		}
@@ -55,30 +63,56 @@ func TestCartLifecycle(t *testing.T) {
 		if got.CartID != cartID || len(got.Items) != 1 || got.Items[0].MerchantID != merchantID {
 			t.Fatalf("unexpected cart after get")
 		}
+		if got.Items[0].ProductName != testProductName || got.Items[0].UnitPriceCents != testUnitPrice {
+			t.Fatalf("unexpected snapshot after get: %+v", got.Items[0])
+		}
 	})
 
 	t.Run("set cart item quantity", func(t *testing.T) {
 		cartID := uuid.NewString()
 		itemID := uuid.NewString()
 		merchantID := uuid.NewString()
-		_, err := svc.AddCartItem(ctx, cartID, itemID, merchantID, 2)
+		_, err := svc.AddCartItem(ctx, cartID, itemID, merchantID, testProductName, 2, testUnitPrice)
 		if err != nil {
 			t.Fatalf("add item: %v", err)
 		}
 
-		updated, err := svc.SetCartItemQuantity(ctx, cartID, itemID, merchantID, 5)
+		updated, err := svc.SetCartItemQuantity(ctx, cartID, itemID, merchantID, "Updated Name", 5, 1500)
 		if err != nil {
 			t.Fatalf("set quantity: %v", err)
 		}
 		if updated.Items[0].Quantity != 5 || updated.Items[0].MerchantID != merchantID {
 			t.Fatalf("expected quantity 5, got %d", updated.Items[0].Quantity)
 		}
+		if updated.Items[0].ProductName != "Updated Name" || updated.Items[0].UnitPriceCents != 1500 {
+			t.Fatalf("expected refreshed snapshot, got %+v", updated.Items[0])
+		}
+	})
+
+	t.Run("add refreshes snapshot on existing line", func(t *testing.T) {
+		cartID := uuid.NewString()
+		itemID := uuid.NewString()
+		merchantID := uuid.NewString()
+		_, err := svc.AddCartItem(ctx, cartID, itemID, merchantID, testProductName, 1, testUnitPrice)
+		if err != nil {
+			t.Fatalf("add item: %v", err)
+		}
+		got, err := svc.AddCartItem(ctx, cartID, itemID, merchantID, "New Name", 1, 999)
+		if err != nil {
+			t.Fatalf("add again: %v", err)
+		}
+		if len(got.Items) != 1 || got.Items[0].Quantity != 2 {
+			t.Fatalf("expected qty 2, got %+v", got.Items)
+		}
+		if got.Items[0].ProductName != "New Name" || got.Items[0].UnitPriceCents != 999 {
+			t.Fatalf("expected refreshed snapshot, got %+v", got.Items[0])
+		}
 	})
 
 	t.Run("remove cart item", func(t *testing.T) {
 		cartID := uuid.NewString()
 		itemID := uuid.NewString()
-		_, err := svc.AddCartItem(ctx, cartID, itemID, uuid.NewString(), 2)
+		_, err := svc.AddCartItem(ctx, cartID, itemID, uuid.NewString(), testProductName, 2, testUnitPrice)
 		if err != nil {
 			t.Fatalf("add item: %v", err)
 		}
@@ -92,10 +126,30 @@ func TestCartLifecycle(t *testing.T) {
 		}
 	})
 
+	t.Run("remove cart items multi", func(t *testing.T) {
+		cartID := uuid.NewString()
+		id1 := uuid.NewString()
+		id2 := uuid.NewString()
+		id3 := uuid.NewString()
+		merchantID := uuid.NewString()
+		for _, id := range []string{id1, id2, id3} {
+			if _, err := svc.AddCartItem(ctx, cartID, id, merchantID, testProductName, 1, testUnitPrice); err != nil {
+				t.Fatalf("add item: %v", err)
+			}
+		}
+		updated, err := svc.RemoveCartItems(ctx, cartID, []string{id1, id3, uuid.NewString()})
+		if err != nil {
+			t.Fatalf("remove items: %v", err)
+		}
+		if len(updated.Items) != 1 || updated.Items[0].ProductID != id2 {
+			t.Fatalf("unexpected remaining items: %+v", updated.Items)
+		}
+	})
+
 	t.Run("clear cart", func(t *testing.T) {
 		cartID := uuid.NewString()
 		itemID := uuid.NewString()
-		_, err := svc.AddCartItem(ctx, cartID, itemID, uuid.NewString(), 2)
+		_, err := svc.AddCartItem(ctx, cartID, itemID, uuid.NewString(), testProductName, 2, testUnitPrice)
 		if err != nil {
 			t.Fatalf("add item: %v", err)
 		}
@@ -116,7 +170,7 @@ func TestCartValidation(t *testing.T) {
 		svc := newCartService(t)
 		ctx := context.Background()
 
-		if _, err := svc.AddCartItem(ctx, "", uuid.NewString(), uuid.NewString(), 1); !errors.Is(err, service.ErrInvalidCartID) {
+		if _, err := svc.AddCartItem(ctx, "", uuid.NewString(), uuid.NewString(), testProductName, 1, testUnitPrice); !errors.Is(err, service.ErrInvalidCartID) {
 			t.Fatalf("expected ErrInvalidCartID, got %v", err)
 		}
 	})
@@ -125,7 +179,7 @@ func TestCartValidation(t *testing.T) {
 		svc := newCartService(t)
 		ctx := context.Background()
 
-		if _, err := svc.AddCartItem(ctx, uuid.NewString(), "", uuid.NewString(), 1); !errors.Is(err, service.ErrInvalidProductID) {
+		if _, err := svc.AddCartItem(ctx, uuid.NewString(), "", uuid.NewString(), testProductName, 1, testUnitPrice); !errors.Is(err, service.ErrInvalidProductID) {
 			t.Fatalf("expected ErrInvalidProductID, got %v", err)
 		}
 	})
@@ -134,7 +188,7 @@ func TestCartValidation(t *testing.T) {
 		svc := newCartService(t)
 		ctx := context.Background()
 
-		if _, err := svc.AddCartItem(ctx, uuid.NewString(), uuid.NewString(), "", 1); !errors.Is(err, service.ErrInvalidMerchantID) {
+		if _, err := svc.AddCartItem(ctx, uuid.NewString(), uuid.NewString(), "", testProductName, 1, testUnitPrice); !errors.Is(err, service.ErrInvalidMerchantID) {
 			t.Fatalf("expected ErrInvalidMerchantID, got %v", err)
 		}
 	})
@@ -143,8 +197,35 @@ func TestCartValidation(t *testing.T) {
 		svc := newCartService(t)
 		ctx := context.Background()
 
-		if _, err := svc.AddCartItem(ctx, uuid.NewString(), uuid.NewString(), uuid.NewString(), 0); !errors.Is(err, service.ErrInvalidQuantity) {
+		if _, err := svc.AddCartItem(ctx, uuid.NewString(), uuid.NewString(), uuid.NewString(), testProductName, 0, testUnitPrice); !errors.Is(err, service.ErrInvalidQuantity) {
 			t.Fatalf("expected ErrInvalidQuantity, got %v", err)
+		}
+	})
+
+	t.Run("invalid snapshot name", func(t *testing.T) {
+		svc := newCartService(t)
+		ctx := context.Background()
+
+		if _, err := svc.AddCartItem(ctx, uuid.NewString(), uuid.NewString(), uuid.NewString(), "  ", 1, testUnitPrice); !errors.Is(err, service.ErrInvalidSnapshot) {
+			t.Fatalf("expected ErrInvalidSnapshot, got %v", err)
+		}
+	})
+
+	t.Run("invalid snapshot price", func(t *testing.T) {
+		svc := newCartService(t)
+		ctx := context.Background()
+
+		if _, err := svc.AddCartItem(ctx, uuid.NewString(), uuid.NewString(), uuid.NewString(), testProductName, 1, 0); !errors.Is(err, service.ErrInvalidSnapshot) {
+			t.Fatalf("expected ErrInvalidSnapshot, got %v", err)
+		}
+	})
+
+	t.Run("empty multi remove", func(t *testing.T) {
+		svc := newCartService(t)
+		ctx := context.Background()
+
+		if _, err := svc.RemoveCartItems(ctx, uuid.NewString(), nil); !errors.Is(err, service.ErrEmptyProductIDs) {
+			t.Fatalf("expected ErrEmptyProductIDs, got %v", err)
 		}
 	})
 
