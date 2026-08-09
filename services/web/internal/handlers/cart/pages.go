@@ -12,8 +12,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 const cartCookieName = "cart_id"
@@ -31,27 +29,24 @@ func (h *Handler) RegisterPages(r chi.Router) {
 }
 
 func (h *Handler) mapCartView(ctx context.Context, c *cartv1.Cart) (sharedviews.CartView, error) {
+	_ = ctx
 	items := make([]sharedviews.CartItemView, 0, len(c.GetItems()))
 	groups := make(map[string]*sharedviews.CartMerchantGroupView, len(c.GetItems()))
 	groupOrder := make([]string, 0, len(c.GetItems()))
 	var estimatedTotalCents int64
 	for _, item := range c.GetItems() {
-		view := sharedviews.CartItemView{ProductID: item.GetProductId(), MerchantID: item.GetMerchantId(), Quantity: item.GetQuantity()}
-		if h.deps.Products != nil {
-			product, err := h.deps.Products.GetProductByID(ctx, item.GetProductId())
-			if err != nil {
-				if shared.IsUnavailableError(err) {
-					return sharedviews.CartView{}, err
-				}
-				if st, ok := status.FromError(err); !ok || st.Code() != codes.NotFound {
-					return sharedviews.CartView{}, err
-				}
-			} else {
-				view.ProductName = product.GetName()
-				view.ProductPrice = product.GetPriceCents()
-				view.LineTotalCents = product.GetPriceCents() * int64(item.GetQuantity())
-				view.Available = true
-			}
+		view := sharedviews.CartItemView{
+			ProductID:  item.GetProductId(),
+			MerchantID: item.GetMerchantId(),
+			Quantity:   item.GetQuantity(),
+		}
+		name := strings.TrimSpace(item.GetProductName())
+		price := item.GetUnitPriceCents()
+		if name != "" && price > 0 {
+			view.ProductName = name
+			view.ProductPrice = price
+			view.LineTotalCents = price * int64(item.GetQuantity())
+			view.Available = true
 		}
 		estimatedTotalCents += view.LineTotalCents
 		items = append(items, view)
@@ -68,7 +63,14 @@ func (h *Handler) mapCartView(ctx context.Context, c *cartv1.Cart) (sharedviews.
 	for _, merchantID := range groupOrder {
 		merchantGroups = append(merchantGroups, *groups[merchantID])
 	}
-	return sharedviews.CartView{CartID: c.GetCartId(), Items: items, MerchantGroups: merchantGroups, EstimatedTotalCents: estimatedTotalCents, CreatedAt: shared.FormatTimestamp(c.GetCreatedAt()), UpdatedAt: shared.FormatTimestamp(c.GetUpdatedAt())}, nil
+	return sharedviews.CartView{
+		CartID:              c.GetCartId(),
+		Items:               items,
+		MerchantGroups:      merchantGroups,
+		EstimatedTotalCents: estimatedTotalCents,
+		CreatedAt:           shared.FormatTimestamp(c.GetCreatedAt()),
+		UpdatedAt:           shared.FormatTimestamp(c.GetUpdatedAt()),
+	}, nil
 }
 
 func cartIDFromRequest(r *http.Request) string {

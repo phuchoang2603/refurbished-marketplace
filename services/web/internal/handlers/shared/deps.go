@@ -19,6 +19,7 @@ type UsersService interface {
 type ProductsService interface {
 	CreateProduct(ctx context.Context, name, description string, priceCents int64, merchantID string, initialStock int32) (*productsv1.Product, error)
 	GetProductByID(ctx context.Context, id string) (*productsv1.Product, error)
+	GetProductsByIDs(ctx context.Context, ids []string) (*productsv1.GetProductsByIDsResponse, error)
 	ListProducts(ctx context.Context, limit, offset int32) (*productsv1.ListProductsResponse, error)
 }
 
@@ -30,9 +31,10 @@ type OrdersService interface {
 
 type CartService interface {
 	GetCart(ctx context.Context, cartID string) (*cartv1.Cart, error)
-	AddCartItem(ctx context.Context, cartID, productID, merchantID string, quantity int32) (*cartv1.Cart, error)
-	SetCartItemQuantity(ctx context.Context, cartID, productID, merchantID string, quantity int32) (*cartv1.Cart, error)
+	AddCartItem(ctx context.Context, cartID, productID, merchantID, productName string, quantity int32, unitPriceCents int64) (*cartv1.Cart, error)
+	SetCartItemQuantity(ctx context.Context, cartID, productID, merchantID, productName string, quantity int32, unitPriceCents int64) (*cartv1.Cart, error)
 	RemoveCartItem(ctx context.Context, cartID, productID string) (*cartv1.Cart, error)
+	RemoveCartItems(ctx context.Context, cartID string, productIDs []string) (*cartv1.Cart, error)
 	ClearCart(ctx context.Context, cartID string) error
 }
 

@@ -6,6 +6,7 @@ import (
 
 	shared "refurbished-marketplace/services/web/internal/handlers/shared"
 	cartviews "refurbished-marketplace/services/web/internal/views/cart"
+	productsv1 "refurbished-marketplace/shared/proto/products/v1"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -23,11 +24,17 @@ func (h *Handler) RegisterProtectedActions(r chi.Router) {
 func (h *Handler) handleAddCartItem(w http.ResponseWriter, r *http.Request) {
 	cartID := h.getOrCreateCartID(w, r)
 	productID, merchantID, quantity, err := shared.ProductQuantityMerchantFromForm(r)
-	if err != nil || strings.TrimSpace(productID) == "" || strings.TrimSpace(merchantID) == "" || quantity <= 0 {
+	productID = strings.TrimSpace(productID)
+	merchantID = strings.TrimSpace(merchantID)
+	if err != nil || productID == "" || merchantID == "" || quantity <= 0 {
 		shared.WriteBadRequest(w, r, "invalid request body")
 		return
 	}
-	_, err = h.deps.Cart.AddCartItem(r.Context(), cartID, strings.TrimSpace(productID), strings.TrimSpace(merchantID), quantity)
+	product, ok := h.loadCartProductStamp(w, r, productID, merchantID)
+	if !ok {
+		return
+	}
+	_, err = h.deps.Cart.AddCartItem(r.Context(), cartID, productID, merchantID, product.GetName(), quantity, product.GetPriceCents())
 	if err != nil {
 		shared.WriteGRPCError(w, r, err)
 		return
@@ -42,11 +49,22 @@ func (h *Handler) handleSetCartItemQuantity(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	_, merchantID, quantity, err := shared.ProductQuantityMerchantFromForm(r)
-	if err != nil || strings.TrimSpace(merchantID) == "" {
+	merchantID = strings.TrimSpace(merchantID)
+	if err != nil || merchantID == "" {
 		shared.WriteBadRequest(w, r, "invalid request body")
 		return
 	}
-	cart, err := h.deps.Cart.SetCartItemQuantity(r.Context(), cartID, productID, strings.TrimSpace(merchantID), quantity)
+	var productName string
+	var unitPriceCents int64
+	if quantity > 0 {
+		product, productOK := h.loadCartProductStamp(w, r, productID, merchantID)
+		if !productOK {
+			return
+		}
+		productName = product.GetName()
+		unitPriceCents = product.GetPriceCents()
+	}
+	cart, err := h.deps.Cart.SetCartItemQuantity(r.Context(), cartID, productID, merchantID, productName, quantity, unitPriceCents)
 	if err != nil {
 		shared.WriteGRPCError(w, r, err)
 		return
@@ -76,4 +94,21 @@ func (h *Handler) handleRemoveCartItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	shared.WriteFragment(w, r, http.StatusOK, "#cart", cartviews.CartSection(view))
+}
+
+func (h *Handler) loadCartProductStamp(w http.ResponseWriter, r *http.Request, productID, merchantID string) (*productsv1.Product, bool) {
+	if h.deps.Products == nil {
+		shared.WriteBadRequest(w, r, "products unavailable")
+		return nil, false
+	}
+	product, err := h.deps.Products.GetProductByID(r.Context(), productID)
+	if err != nil {
+		shared.WriteGRPCError(w, r, err)
+		return nil, false
+	}
+	if product == nil || product.GetMerchantId() != merchantID {
+		shared.WritePopup(w, r, http.StatusConflict, "Merchant mismatch", "This product no longer matches the selected merchant.")
+		return nil, false
+	}
+	return product, true
 }
