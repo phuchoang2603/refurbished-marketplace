@@ -97,6 +97,11 @@ The web service MUST keep checkout scoped to one merchant group per submit when 
 - **WHEN** a buyer submits checkout for a selected merchant group in the cart
 - **THEN** the web service SHALL create one order for only that merchant's items, leave items from other merchants in the cart, request a hosted payment session for the created order, and redirect the browser to the hosted payment URL
 
+#### Scenario: Merchant group exceeds products batch size at checkout
+
+- **WHEN** a buyer submits checkout for a merchant group with more distinct product lines than the products batch lookup limit (100)
+- **THEN** the web service SHALL reject checkout with a clear browser-facing error before calling products batch or creating an order
+
 ### Requirement: Web maps seller identity to merchant ownership in v1
 
 The web service MUST use the authenticated user's ID as the `merchant_id` value when creating seller-owned products until a separate merchant identity model exists.
@@ -186,6 +191,11 @@ The web service MUST obtain product name and unit price from the products servic
 - **WHEN** a browser sets quantity for an existing cart line (quantity greater than zero)
 - **THEN** the web service SHALL refresh the product snapshot from products and pass it into cart set-quantity
 
+#### Scenario: Cart becomes empty after remove or quantity zero
+
+- **WHEN** a cart mutation (remove or set quantity to zero) leaves the cart with no items
+- **THEN** the web service SHALL clear the browser `cart_id` cookie so the next cart action does not keep an empty cart document identity
+
 ### Requirement: Web renders cart from stored snapshots
 
 The web service MUST build cart HTML from cart item snapshot fields without issuing per-line product gets for cart page and cart fragment re-renders.
@@ -201,7 +211,7 @@ The web service MUST re-read selected merchant group products through a single b
 
 #### Scenario: Buyer checks out one merchant group
 
-- **WHEN** a buyer submits checkout for a merchant group containing one or more cart lines
+- **WHEN** a buyer submits checkout for a merchant group containing one or more cart lines within the products batch size limit
 - **THEN** the web service SHALL call products once with all selected product IDs for that group, SHALL fail closed if any selected product is missing or has a different merchant_id, SHALL create the order using batch-returned unit prices, and SHALL remove those product IDs from the cart with a single multi-remove call rather than N single removes
 
 #### Scenario: Product missing at checkout re-validation

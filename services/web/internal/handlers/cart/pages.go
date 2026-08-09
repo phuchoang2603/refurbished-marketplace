@@ -1,7 +1,6 @@
 package cart
 
 import (
-	"context"
 	"net/http"
 	"strings"
 
@@ -28,8 +27,7 @@ func (h *Handler) RegisterPages(r chi.Router) {
 	r.Get("/cart", h.handleGetCart)
 }
 
-func (h *Handler) mapCartView(ctx context.Context, c *cartv1.Cart) (sharedviews.CartView, error) {
-	_ = ctx
+func (h *Handler) mapCartView(c *cartv1.Cart) (sharedviews.CartView, error) {
 	items := make([]sharedviews.CartItemView, 0, len(c.GetItems()))
 	groups := make(map[string]*sharedviews.CartMerchantGroupView, len(c.GetItems()))
 	groupOrder := make([]string, 0, len(c.GetItems()))
@@ -93,6 +91,14 @@ func (h *Handler) clearCartCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{Name: cartCookieName, Value: "", Path: "/", HttpOnly: true, MaxAge: -1, SameSite: http.SameSiteLaxMode})
 }
 
+// clearCartCookieIfEmpty drops the cart_id cookie when Redis/cart state has no lines so the
+// browser does not keep pointing at an empty cart document after UI remove or checkout.
+func (h *Handler) clearCartCookieIfEmpty(w http.ResponseWriter, cart *cartv1.Cart) {
+	if cart != nil && len(cart.GetItems()) == 0 {
+		h.clearCartCookie(w)
+	}
+}
+
 func (h *Handler) handleGetCart(w http.ResponseWriter, r *http.Request) {
 	cartID := h.getOrCreateCartID(w, r)
 	cart, err := h.deps.Cart.GetCart(r.Context(), cartID)
@@ -104,7 +110,7 @@ func (h *Handler) handleGetCart(w http.ResponseWriter, r *http.Request) {
 		shared.WriteGRPCError(w, r, err)
 		return
 	}
-	view, err := h.mapCartView(r.Context(), cart)
+	view, err := h.mapCartView(cart)
 	if err != nil {
 		shared.WriteGRPCError(w, r, err)
 		return

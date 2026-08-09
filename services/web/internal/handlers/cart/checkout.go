@@ -10,6 +10,10 @@ import (
 	productsv1 "refurbished-marketplace/shared/proto/products/v1"
 )
 
+// maxCheckoutProductLines mirrors services/products GetProductsByIDs max (maxProductsByIDs = 100).
+// Enforced at the web edge so buyers get a clear message instead of an opaque InvalidArgument.
+const maxCheckoutProductLines = 100
+
 func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 	buyerUserID, ok := shared.RequireUserID(w, r)
 	if !ok {
@@ -110,6 +114,13 @@ func (h *Handler) buildCheckoutOrderItems(r *http.Request, cart *cartv1.Cart, me
 	if len(selected) == 0 {
 		return nil, nil, 0, nil
 	}
+	if len(selectedProductIDs) > maxCheckoutProductLines {
+		return nil, nil, 0, &checkoutError{
+			status:  http.StatusBadRequest,
+			title:   "Too many items",
+			message: "This merchant group has too many product lines for a single checkout (maximum 100). Remove some items and try again.",
+		}
+	}
 
 	if h.deps.Products == nil {
 		return nil, nil, 0, &checkoutError{
@@ -162,8 +173,6 @@ func (h *Handler) removeCheckedOutItems(w http.ResponseWriter, r *http.Request, 
 	if err != nil {
 		return err
 	}
-	if len(updatedCart.GetItems()) == 0 {
-		h.clearCartCookie(w)
-	}
+	h.clearCartCookieIfEmpty(w, updatedCart)
 	return nil
 }
