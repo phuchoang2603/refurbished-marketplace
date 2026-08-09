@@ -42,6 +42,10 @@ func (c *ProductsClient) GetProductByID(ctx context.Context, id string) (*produc
 	return c.client.GetProductByID(ctx, &productsv1.GetProductByIDRequest{Id: id})
 }
 
+func (c *ProductsClient) GetProductsByIDs(ctx context.Context, ids []string) (*productsv1.GetProductsByIDsResponse, error) {
+	return c.client.GetProductsByIDs(ctx, &productsv1.GetProductsByIDsRequest{Ids: ids})
+}
+
 func (c *ProductsClient) ListProducts(ctx context.Context, limit, offset int32) (*productsv1.ListProductsResponse, error) {
 	return c.client.ListProducts(ctx, &productsv1.ListProductsRequest{Limit: limit, Offset: offset})
 }

@@ -7,9 +7,10 @@ import (
 )
 
 type ProductsService struct {
-	CreateFn  func(context.Context, string, string, int64, string, int32) (*productsv1.Product, error)
-	GetByIDFn func(context.Context, string) (*productsv1.Product, error)
-	ListFn    func(context.Context, int32, int32) (*productsv1.ListProductsResponse, error)
+	CreateFn   func(context.Context, string, string, int64, string, int32) (*productsv1.Product, error)
+	GetByIDFn  func(context.Context, string) (*productsv1.Product, error)
+	GetByIDsFn func(context.Context, []string) (*productsv1.GetProductsByIDsResponse, error)
+	ListFn     func(context.Context, int32, int32) (*productsv1.ListProductsResponse, error)
 }
 
 func (f *ProductsService) CreateProduct(ctx context.Context, name, description string, priceCents int64, merchantID string, initialStock int32) (*productsv1.Product, error) {
@@ -24,6 +25,13 @@ func (f *ProductsService) GetProductByID(ctx context.Context, id string) (*produ
 		return f.GetByIDFn(ctx, id)
 	}
 	return nil, nil
+}
+
+func (f *ProductsService) GetProductsByIDs(ctx context.Context, ids []string) (*productsv1.GetProductsByIDsResponse, error) {
+	if f.GetByIDsFn != nil {
+		return f.GetByIDsFn(ctx, ids)
+	}
+	return &productsv1.GetProductsByIDsResponse{}, nil
 }
 
 func (f *ProductsService) ListProducts(ctx context.Context, limit, offset int32) (*productsv1.ListProductsResponse, error) {

@@ -1,7 +1,6 @@
 package cart
 
 import (
-	"context"
 	"net/http"
 	"strings"
 
@@ -12,14 +11,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 const cartCookieName = "cart_id"
 
 func cartUnavailableView() sharedviews.UnavailableView {
-	return shared.NewUnavailableView("Cart", "cart", "Cart unavailable", "Your cart is saved, but some product details could not be loaded. Please try again in a moment.")
+	return shared.NewUnavailableView("Cart", "cart", "Cart unavailable", "We could not reach the cart right now. Your session cart may still be stored — please try again in a moment.")
 }
 
 type Handler struct{ deps *shared.Dependencies }
@@ -30,28 +27,24 @@ func (h *Handler) RegisterPages(r chi.Router) {
 	r.Get("/cart", h.handleGetCart)
 }
 
-func (h *Handler) mapCartView(ctx context.Context, c *cartv1.Cart) (sharedviews.CartView, error) {
+func (h *Handler) mapCartView(c *cartv1.Cart) (sharedviews.CartView, error) {
 	items := make([]sharedviews.CartItemView, 0, len(c.GetItems()))
 	groups := make(map[string]*sharedviews.CartMerchantGroupView, len(c.GetItems()))
 	groupOrder := make([]string, 0, len(c.GetItems()))
 	var estimatedTotalCents int64
 	for _, item := range c.GetItems() {
-		view := sharedviews.CartItemView{ProductID: item.GetProductId(), MerchantID: item.GetMerchantId(), Quantity: item.GetQuantity()}
-		if h.deps.Products != nil {
-			product, err := h.deps.Products.GetProductByID(ctx, item.GetProductId())
-			if err != nil {
-				if shared.IsUnavailableError(err) {
-					return sharedviews.CartView{}, err
-				}
-				if st, ok := status.FromError(err); !ok || st.Code() != codes.NotFound {
-					return sharedviews.CartView{}, err
-				}
-			} else {
-				view.ProductName = product.GetName()
-				view.ProductPrice = product.GetPriceCents()
-				view.LineTotalCents = product.GetPriceCents() * int64(item.GetQuantity())
-				view.Available = true
-			}
+		view := sharedviews.CartItemView{
+			ProductID:  item.GetProductId(),
+			MerchantID: item.GetMerchantId(),
+			Quantity:   item.GetQuantity(),
+		}
+		name := strings.TrimSpace(item.GetProductName())
+		price := item.GetUnitPriceCents()
+		if name != "" && price > 0 {
+			view.ProductName = name
+			view.ProductPrice = price
+			view.LineTotalCents = price * int64(item.GetQuantity())
+			view.Available = true
 		}
 		estimatedTotalCents += view.LineTotalCents
 		items = append(items, view)
@@ -68,7 +61,14 @@ func (h *Handler) mapCartView(ctx context.Context, c *cartv1.Cart) (sharedviews.
 	for _, merchantID := range groupOrder {
 		merchantGroups = append(merchantGroups, *groups[merchantID])
 	}
-	return sharedviews.CartView{CartID: c.GetCartId(), Items: items, MerchantGroups: merchantGroups, EstimatedTotalCents: estimatedTotalCents, CreatedAt: shared.FormatTimestamp(c.GetCreatedAt()), UpdatedAt: shared.FormatTimestamp(c.GetUpdatedAt())}, nil
+	return sharedviews.CartView{
+		CartID:              c.GetCartId(),
+		Items:               items,
+		MerchantGroups:      merchantGroups,
+		EstimatedTotalCents: estimatedTotalCents,
+		CreatedAt:           shared.FormatTimestamp(c.GetCreatedAt()),
+		UpdatedAt:           shared.FormatTimestamp(c.GetUpdatedAt()),
+	}, nil
 }
 
 func cartIDFromRequest(r *http.Request) string {
@@ -91,6 +91,14 @@ func (h *Handler) clearCartCookie(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{Name: cartCookieName, Value: "", Path: "/", HttpOnly: true, MaxAge: -1, SameSite: http.SameSiteLaxMode})
 }
 
+// clearCartCookieIfEmpty drops the cart_id cookie when Redis/cart state has no lines so the
+// browser does not keep pointing at an empty cart document after UI remove or checkout.
+func (h *Handler) clearCartCookieIfEmpty(w http.ResponseWriter, cart *cartv1.Cart) {
+	if cart != nil && len(cart.GetItems()) == 0 {
+		h.clearCartCookie(w)
+	}
+}
+
 func (h *Handler) handleGetCart(w http.ResponseWriter, r *http.Request) {
 	cartID := h.getOrCreateCartID(w, r)
 	cart, err := h.deps.Cart.GetCart(r.Context(), cartID)
@@ -102,7 +110,7 @@ func (h *Handler) handleGetCart(w http.ResponseWriter, r *http.Request) {
 		shared.WriteGRPCError(w, r, err)
 		return
 	}
-	view, err := h.mapCartView(r.Context(), cart)
+	view, err := h.mapCartView(cart)
 	if err != nil {
 		shared.WriteGRPCError(w, r, err)
 		return

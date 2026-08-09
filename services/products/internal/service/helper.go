@@ -42,6 +42,27 @@ func mapDBProductRow(p database.GetProductByIDRow) Product {
 	return product
 }
 
+func mapDBProductsByIDsRow(p database.GetProductsByIDsRow) Product {
+	product := Product{
+		ID:          p.ID,
+		Name:        p.Name,
+		Description: p.Description,
+		PriceCents:  p.PriceCents,
+		MerchantID:  p.MerchantID,
+		CreatedAt:   p.CreatedAt,
+		UpdatedAt:   p.UpdatedAt,
+	}
+	if p.AvailableQty.Valid {
+		qty := p.AvailableQty.Int32
+		product.AvailableQty = &qty
+	}
+	if p.ReservedQty.Valid {
+		qty := p.ReservedQty.Int32
+		product.ReservedQty = &qty
+	}
+	return product
+}
+
 func mapDBInventory(i database.Inventory) Inventory {
 	return Inventory{
 		ProductID:    i.ProductID,

@@ -18,6 +18,7 @@ var (
 	ErrInvalidQuantity    = errors.New("invalid quantity")
 	ErrInventoryNotFound  = errors.New("inventory not found")
 	ErrInsufficientStock  = errors.New("insufficient stock")
+	ErrInvalidBatchSize   = errors.New("invalid product batch size")
 )
 
 const (

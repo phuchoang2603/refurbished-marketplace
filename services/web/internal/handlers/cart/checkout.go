@@ -7,7 +7,12 @@ import (
 	cartv1 "refurbished-marketplace/shared/proto/cart/v1"
 	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
 	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
+	productsv1 "refurbished-marketplace/shared/proto/products/v1"
 )
+
+// maxCheckoutProductLines mirrors services/products GetProductsByIDs max (maxProductsByIDs = 100).
+// Enforced at the web edge so buyers get a clear message instead of an opaque InvalidArgument.
+const maxCheckoutProductLines = 100
 
 func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 	buyerUserID, ok := shared.RequireUserID(w, r)
@@ -53,7 +58,7 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 		shared.WriteGRPCError(w, r, err)
 		return
 	}
-	if err := h.removeCheckedOutItems(w, r, cartID, cart, selectedProductIDs); err != nil {
+	if err := h.removeCheckedOutItems(w, r, cartID, selectedProductIDs); err != nil {
 		shared.WriteGRPCError(w, r, err)
 		return
 	}
@@ -97,16 +102,53 @@ func (e *checkoutError) Write(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) buildCheckoutOrderItems(r *http.Request, cart *cartv1.Cart, merchantID string) ([]*ordersv1.CreateOrderItem, []string, int64, error) {
-	items := make([]*ordersv1.CreateOrderItem, 0, len(cart.GetItems()))
+	selected := make([]*cartv1.CartItem, 0, len(cart.GetItems()))
 	selectedProductIDs := make([]string, 0, len(cart.GetItems()))
-	var totalCents int64
 	for _, item := range cart.GetItems() {
 		if item.GetMerchantId() != merchantID {
 			continue
 		}
-		product, err := h.deps.Products.GetProductByID(r.Context(), item.GetProductId())
-		if err != nil {
-			return nil, nil, 0, err
+		selected = append(selected, item)
+		selectedProductIDs = append(selectedProductIDs, item.GetProductId())
+	}
+	if len(selected) == 0 {
+		return nil, nil, 0, nil
+	}
+	if len(selectedProductIDs) > maxCheckoutProductLines {
+		return nil, nil, 0, &checkoutError{
+			status:  http.StatusBadRequest,
+			title:   "Too many items",
+			message: "This merchant group has too many product lines for a single checkout (maximum 100). Remove some items and try again.",
+		}
+	}
+
+	if h.deps.Products == nil {
+		return nil, nil, 0, &checkoutError{
+			status:  http.StatusServiceUnavailable,
+			title:   "Products unavailable",
+			message: "Product details could not be loaded for checkout.",
+		}
+	}
+
+	batch, err := h.deps.Products.GetProductsByIDs(r.Context(), selectedProductIDs)
+	if err != nil {
+		return nil, nil, 0, err
+	}
+	byID := make(map[string]*productsv1.Product, len(batch.GetProducts()))
+	for _, product := range batch.GetProducts() {
+		byID[product.GetId()] = product
+	}
+
+	items := make([]*ordersv1.CreateOrderItem, 0, len(selected))
+	var totalCents int64
+	for _, item := range selected {
+		product, ok := byID[item.GetProductId()]
+		if !ok {
+			return nil, nil, 0, &checkoutError{
+				status:  http.StatusConflict,
+				title:   "Product unavailable",
+				message: "One or more cart items are no longer available.",
+			}
 		}
 		if product.GetMerchantId() != merchantID {
 			return nil, nil, 0, &checkoutError{
@@ -115,29 +157,22 @@ func (h *Handler) buildCheckoutOrderItems(r *http.Request, cart *cartv1.Cart, me
 				message: "One or more cart items no longer match the selected merchant.",
 			}
 		}
-		lineTotal := product.PriceCents * int64(item.GetQuantity())
+		lineTotal := product.GetPriceCents() * int64(item.GetQuantity())
 		totalCents += lineTotal
 		items = append(items, &ordersv1.CreateOrderItem{
 			ProductId:      item.GetProductId(),
 			Quantity:       item.GetQuantity(),
-			UnitPriceCents: product.PriceCents,
+			UnitPriceCents: product.GetPriceCents(),
 		})
-		selectedProductIDs = append(selectedProductIDs, item.GetProductId())
 	}
 	return items, selectedProductIDs, totalCents, nil
 }
 
-func (h *Handler) removeCheckedOutItems(w http.ResponseWriter, r *http.Request, cartID string, cart *cartv1.Cart, selectedProductIDs []string) error {
-	remainingItems := len(cart.GetItems())
-	for _, productID := range selectedProductIDs {
-		updatedCart, err := h.deps.Cart.RemoveCartItem(r.Context(), cartID, productID)
-		if err != nil {
-			return err
-		}
-		remainingItems = len(updatedCart.GetItems())
+func (h *Handler) removeCheckedOutItems(w http.ResponseWriter, r *http.Request, cartID string, selectedProductIDs []string) error {
+	updatedCart, err := h.deps.Cart.RemoveCartItems(r.Context(), cartID, selectedProductIDs)
+	if err != nil {
+		return err
 	}
-	if remainingItems == 0 {
-		h.clearCartCookie(w)
-	}
+	h.clearCartCookieIfEmpty(w, updatedCart)
 	return nil
 }

@@ -7,11 +7,11 @@ import (
 )
 
 type CartService struct {
-	GetFn       func(context.Context, string) (*cartv1.Cart, error)
-	AddFn       func(context.Context, string, string, string, int32) (*cartv1.Cart, error)
-	SetQtyFn    func(context.Context, string, string, string, int32) (*cartv1.Cart, error)
-	RemoveFn    func(context.Context, string, string) (*cartv1.Cart, error)
-	ClearCartFn func(context.Context, string) error
+	GetFn        func(context.Context, string) (*cartv1.Cart, error)
+	AddFn        func(context.Context, string, string, string, string, int32, int64) (*cartv1.Cart, error)
+	SetQtyFn     func(context.Context, string, string, string, string, int32, int64) (*cartv1.Cart, error)
+	RemoveManyFn func(context.Context, string, []string) (*cartv1.Cart, error)
+	ClearCartFn  func(context.Context, string) error
 }
 
 func (f *CartService) GetCart(ctx context.Context, cartID string) (*cartv1.Cart, error) {
@@ -21,23 +21,23 @@ func (f *CartService) GetCart(ctx context.Context, cartID string) (*cartv1.Cart,
 	return &cartv1.Cart{}, nil
 }
 
-func (f *CartService) AddCartItem(ctx context.Context, cartID, productID, merchantID string, quantity int32) (*cartv1.Cart, error) {
+func (f *CartService) AddCartItem(ctx context.Context, cartID, productID, merchantID, productName string, quantity int32, unitPriceCents int64) (*cartv1.Cart, error) {
 	if f.AddFn != nil {
-		return f.AddFn(ctx, cartID, productID, merchantID, quantity)
+		return f.AddFn(ctx, cartID, productID, merchantID, productName, quantity, unitPriceCents)
 	}
 	return &cartv1.Cart{}, nil
 }
 
-func (f *CartService) SetCartItemQuantity(ctx context.Context, cartID, productID, merchantID string, quantity int32) (*cartv1.Cart, error) {
+func (f *CartService) SetCartItemQuantity(ctx context.Context, cartID, productID, merchantID, productName string, quantity int32, unitPriceCents int64) (*cartv1.Cart, error) {
 	if f.SetQtyFn != nil {
-		return f.SetQtyFn(ctx, cartID, productID, merchantID, quantity)
+		return f.SetQtyFn(ctx, cartID, productID, merchantID, productName, quantity, unitPriceCents)
 	}
 	return &cartv1.Cart{}, nil
 }
 
-func (f *CartService) RemoveCartItem(ctx context.Context, cartID, productID string) (*cartv1.Cart, error) {
-	if f.RemoveFn != nil {
-		return f.RemoveFn(ctx, cartID, productID)
+func (f *CartService) RemoveCartItems(ctx context.Context, cartID string, productIDs []string) (*cartv1.Cart, error) {
+	if f.RemoveManyFn != nil {
+		return f.RemoveManyFn(ctx, cartID, productIDs)
 	}
 	return &cartv1.Cart{}, nil
 }
