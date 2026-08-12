@@ -5,9 +5,9 @@ This document describes the current core contract between `cart`, `orders`, `inv
 ## Core Model
 
 - `cart` stores ephemeral cart state and requires web-supplied `merchant_id` on item writes.
-- `orders` accepts only merchant-scoped order creation requests.
+- `orders` accepts only merchant-scoped order creation requests and buyer-scoped checkout-intent idempotency keys.
 - `inventory` reserves stock per order before payment proceeds.
-- `payment` creates or reuses one hosted payment session per order and creates one payment transaction per order after reservation.
+- `payment` creates, reuses, or refreshes one hosted payment continuation per order and creates one payment transaction per order after reservation.
 
 ## Flow
 
@@ -26,16 +26,17 @@ sequenceDiagram
     WEB->>CRT: AddCartItem(merchant_id, qty)
     CRT-->>WEB: 200 OK
 
-    Note over WEB, ORD: Order Creation
-    WEB->>ORD: CreateOrder(merchant_id, total)
+    Note over WEB, ORD: Edge Reconciliation
+    WEB->>ORD: CreateOrder(merchant_id, total, checkout_intent_key)
     ORD->>ORD: Persist Order (Status: Pending)
     ORD->>K: Emit "orders.created"
     ORD-->>WEB: 201 Created
 
     Note over WEB, SIM: Hosted Payment Setup
     WEB->>PAY: CreateHostedPaymentSession(order_id, buyer, shipping, return URLs)
-    PAY->>PAY: Persist payment session(order_id)
+    PAY->>PAY: Persist or refresh payment session(order_id)
     PAY-->>WEB: payment session metadata
+    WEB->>CRT: RemoveCartItems(best effort, non-critical)
     WEB->>WEB: Build hosted payment URL
     WEB->>SIM: Redirect browser to hosted payment URL
     SIM->>WEB: POST hosted payment callback
@@ -69,8 +70,9 @@ sequenceDiagram
 
 ### Web
 
-- Orchestrates browser checkout, order creation, and hosted payment redirect.
+- Orchestrates browser checkout as a retry-safe reconciliation flow: ensure one order for the buyer's checkout intent, ensure one hosted payment continuation for that order, then redirect.
 - Builds the buyer-facing hosted payment URL from payment session metadata and gateway configuration.
+- Treats Redis cart cleanup as browser convenience state rather than a transactional prerequisite for durable checkout success.
 - Accepts hosted gateway callbacks and forwards terminal outcomes to `payment` over gRPC.
 
 ### Cart
@@ -82,6 +84,7 @@ sequenceDiagram
 ### Orders
 
 - Persists one order per merchant.
+- Uses buyer-scoped checkout-intent idempotency to return the same order on repeated creates for the same purchase attempt.
 - Stores `merchant_id` on the order record.
 - Stores order items with `product_id`, `quantity`, `unit_price_cents`, and `line_total_cents`.
 - Emits one `orders.created` outbox event per created order, including item lines.
@@ -98,7 +101,7 @@ sequenceDiagram
 ### Payment
 
 - Stores hosted payment session state by `order_id`.
-- Reuses `order_id` as the idempotency anchor for hosted session creation.
+- Reuses `order_id` as the idempotency anchor for hosted session creation and refreshes expired sessions for unpaid-order resume paths.
 - Consumes `inventory.reserved`.
 - Creates one payment transaction per `order_id`.
 - Applies hosted gateway outcomes from the web edge and emits `payment.succeeded` or `payment.failed` through the payment outbox.
