@@ -7,6 +7,8 @@ package database
 
 import (
 	"context"
+	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -15,32 +17,97 @@ const createOrder = `-- name: CreateOrder :one
 INSERT INTO orders (
     id,
     buyer_user_id,
+    checkout_intent_idempotency_key,
     merchant_id,
     status,
     total_cents
 )
-VALUES ($1, $2, $3, $4, $5)
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING
-    orders.id, orders.buyer_user_id, orders.status, orders.total_cents, orders.created_at, orders.updated_at, orders.merchant_id
+    orders.id,
+    orders.buyer_user_id,
+    orders.status,
+    orders.total_cents,
+    orders.created_at,
+    orders.updated_at,
+    orders.merchant_id
 `
 
 type CreateOrderParams struct {
-	ID          uuid.UUID
-	BuyerUserID uuid.UUID
-	MerchantID  uuid.UUID
-	Status      string
-	TotalCents  int64
+	ID                           uuid.UUID
+	BuyerUserID                  uuid.UUID
+	CheckoutIntentIdempotencyKey sql.NullString
+	MerchantID                   uuid.UUID
+	Status                       string
+	TotalCents                   int64
 }
 
-func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (Order, error) {
+type CreateOrderRow struct {
+	ID          uuid.UUID
+	BuyerUserID uuid.UUID
+	Status      string
+	TotalCents  int64
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	MerchantID  uuid.UUID
+}
+
+func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (CreateOrderRow, error) {
 	row := q.db.QueryRowContext(ctx, createOrder,
 		arg.ID,
 		arg.BuyerUserID,
+		arg.CheckoutIntentIdempotencyKey,
 		arg.MerchantID,
 		arg.Status,
 		arg.TotalCents,
 	)
-	var i Order
+	var i CreateOrderRow
+	err := row.Scan(
+		&i.ID,
+		&i.BuyerUserID,
+		&i.Status,
+		&i.TotalCents,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.MerchantID,
+	)
+	return i, err
+}
+
+const getOrderByBuyerAndCheckoutIntentKey = `-- name: GetOrderByBuyerAndCheckoutIntentKey :one
+SELECT
+    orders.id,
+    orders.buyer_user_id,
+    orders.status,
+    orders.total_cents,
+    orders.created_at,
+    orders.updated_at,
+    orders.merchant_id
+FROM orders
+WHERE
+    buyer_user_id = $1
+    AND checkout_intent_idempotency_key = $2
+LIMIT 1
+`
+
+type GetOrderByBuyerAndCheckoutIntentKeyParams struct {
+	BuyerUserID                  uuid.UUID
+	CheckoutIntentIdempotencyKey sql.NullString
+}
+
+type GetOrderByBuyerAndCheckoutIntentKeyRow struct {
+	ID          uuid.UUID
+	BuyerUserID uuid.UUID
+	Status      string
+	TotalCents  int64
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	MerchantID  uuid.UUID
+}
+
+func (q *Queries) GetOrderByBuyerAndCheckoutIntentKey(ctx context.Context, arg GetOrderByBuyerAndCheckoutIntentKeyParams) (GetOrderByBuyerAndCheckoutIntentKeyRow, error) {
+	row := q.db.QueryRowContext(ctx, getOrderByBuyerAndCheckoutIntentKey, arg.BuyerUserID, arg.CheckoutIntentIdempotencyKey)
+	var i GetOrderByBuyerAndCheckoutIntentKeyRow
 	err := row.Scan(
 		&i.ID,
 		&i.BuyerUserID,
@@ -54,15 +121,32 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (Order
 }
 
 const getOrderByID = `-- name: GetOrderByID :one
-SELECT id, buyer_user_id, status, total_cents, created_at, updated_at, merchant_id
+SELECT
+    orders.id,
+    orders.buyer_user_id,
+    orders.status,
+    orders.total_cents,
+    orders.created_at,
+    orders.updated_at,
+    orders.merchant_id
 FROM orders
 WHERE id = $1
 LIMIT 1
 `
 
-func (q *Queries) GetOrderByID(ctx context.Context, id uuid.UUID) (Order, error) {
+type GetOrderByIDRow struct {
+	ID          uuid.UUID
+	BuyerUserID uuid.UUID
+	Status      string
+	TotalCents  int64
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	MerchantID  uuid.UUID
+}
+
+func (q *Queries) GetOrderByID(ctx context.Context, id uuid.UUID) (GetOrderByIDRow, error) {
 	row := q.db.QueryRowContext(ctx, getOrderByID, id)
-	var i Order
+	var i GetOrderByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.BuyerUserID,
@@ -76,7 +160,14 @@ func (q *Queries) GetOrderByID(ctx context.Context, id uuid.UUID) (Order, error)
 }
 
 const listOrdersByBuyer = `-- name: ListOrdersByBuyer :many
-SELECT id, buyer_user_id, status, total_cents, created_at, updated_at, merchant_id
+SELECT
+    orders.id,
+    orders.buyer_user_id,
+    orders.status,
+    orders.total_cents,
+    orders.created_at,
+    orders.updated_at,
+    orders.merchant_id
 FROM orders
 WHERE buyer_user_id = $1
 ORDER BY created_at DESC
@@ -89,15 +180,25 @@ type ListOrdersByBuyerParams struct {
 	Offset      int32
 }
 
-func (q *Queries) ListOrdersByBuyer(ctx context.Context, arg ListOrdersByBuyerParams) ([]Order, error) {
+type ListOrdersByBuyerRow struct {
+	ID          uuid.UUID
+	BuyerUserID uuid.UUID
+	Status      string
+	TotalCents  int64
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	MerchantID  uuid.UUID
+}
+
+func (q *Queries) ListOrdersByBuyer(ctx context.Context, arg ListOrdersByBuyerParams) ([]ListOrdersByBuyerRow, error) {
 	rows, err := q.db.QueryContext(ctx, listOrdersByBuyer, arg.BuyerUserID, arg.Limit, arg.Offset)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Order
+	var items []ListOrdersByBuyerRow
 	for rows.Next() {
-		var i Order
+		var i ListOrdersByBuyerRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.BuyerUserID,
@@ -127,7 +228,13 @@ SET
     updated_at = NOW()
 WHERE id = $1
 RETURNING
-    orders.id, orders.buyer_user_id, orders.status, orders.total_cents, orders.created_at, orders.updated_at, orders.merchant_id
+    orders.id,
+    orders.buyer_user_id,
+    orders.status,
+    orders.total_cents,
+    orders.created_at,
+    orders.updated_at,
+    orders.merchant_id
 `
 
 type UpdateOrderStatusParams struct {
@@ -135,9 +242,19 @@ type UpdateOrderStatusParams struct {
 	Status string
 }
 
-func (q *Queries) UpdateOrderStatus(ctx context.Context, arg UpdateOrderStatusParams) (Order, error) {
+type UpdateOrderStatusRow struct {
+	ID          uuid.UUID
+	BuyerUserID uuid.UUID
+	Status      string
+	TotalCents  int64
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	MerchantID  uuid.UUID
+}
+
+func (q *Queries) UpdateOrderStatus(ctx context.Context, arg UpdateOrderStatusParams) (UpdateOrderStatusRow, error) {
 	row := q.db.QueryRowContext(ctx, updateOrderStatus, arg.ID, arg.Status)
-	var i Order
+	var i UpdateOrderStatusRow
 	err := row.Scan(
 		&i.ID,
 		&i.BuyerUserID,

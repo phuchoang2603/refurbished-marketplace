@@ -2,6 +2,7 @@ package tests
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -79,9 +80,12 @@ func TestCheckoutClearsCartCookieAndRedirectsToOrder(t *testing.T) {
 		},
 	}
 	ordersSvc := &fakes.OrdersService{
-		CreateFn: func(ctx context.Context, buyerUserID, merchantID string, items []*ordersv1.CreateOrderItem, totalCents int64) (*ordersv1.Order, error) {
+		CreateFn: func(ctx context.Context, buyerUserID, merchantID string, items []*ordersv1.CreateOrderItem, totalCents int64, checkoutIntentKey string) (*ordersv1.Order, error) {
 			if buyerUserID != "user-1" {
 				t.Fatalf("buyerUserID = %q, want user-1", buyerUserID)
+			}
+			if checkoutIntentKey != "intent-1" {
+				t.Fatalf("checkoutIntentKey = %q, want intent-1", checkoutIntentKey)
 			}
 			if len(items) != 2 {
 				t.Fatalf("items = %d, want 2", len(items))
@@ -112,7 +116,10 @@ func TestCheckoutClearsCartCookieAndRedirectsToOrder(t *testing.T) {
 		},
 	}
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPost, "/cart/checkout", strings.NewReader(url.Values{"merchant_id": {"merchant-1"}}.Encode()))
+	req := httptest.NewRequest(http.MethodPost, "/cart/checkout", strings.NewReader(url.Values{
+		"merchant_id":                     {"merchant-1"},
+		"checkout_intent_idempotency_key": {"intent-1"},
+	}.Encode()))
 	req.Host = "localhost:8080"
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.AddCookie(&http.Cookie{Name: auth.AccessCookieName, Value: signedAccessToken(t, "user-1")})
@@ -133,5 +140,59 @@ func TestCheckoutClearsCartCookieAndRedirectsToOrder(t *testing.T) {
 	}
 	if len(removed) != 2 || removed[0] != "prod-1" || removed[1] != "prod-2" {
 		t.Fatalf("removed = %v, want [prod-1 prod-2]", removed)
+	}
+}
+
+func TestCheckoutContinuesWhenCartCleanupFails(t *testing.T) {
+	cartSvc := &fakes.CartService{
+		GetFn: func(ctx context.Context, cartID string) (*cartv1.Cart, error) {
+			return &cartv1.Cart{
+				CartId: cartID,
+				Items: []*cartv1.CartItem{
+					{ProductId: "prod-1", Quantity: 1, MerchantId: "merchant-1", ProductName: "Phone", UnitPriceCents: 1000},
+				},
+			}, nil
+		},
+		RemoveManyFn: func(ctx context.Context, cartID string, productIDs []string) (*cartv1.Cart, error) {
+			return nil, errors.New("redis unavailable")
+		},
+	}
+	productsSvc := &fakes.ProductsService{
+		GetByIDsFn: func(ctx context.Context, ids []string) (*productsv1.GetProductsByIDsResponse, error) {
+			return &productsv1.GetProductsByIDsResponse{Products: []*productsv1.Product{
+				{Id: "prod-1", Name: "Phone", PriceCents: 1200, MerchantId: "merchant-1"},
+			}}, nil
+		},
+	}
+	ordersSvc := &fakes.OrdersService{
+		CreateFn: func(ctx context.Context, buyerUserID, merchantID string, items []*ordersv1.CreateOrderItem, totalCents int64, checkoutIntentKey string) (*ordersv1.Order, error) {
+			return &ordersv1.Order{Id: "order-1", BuyerUserId: buyerUserID, TotalCents: totalCents}, nil
+		},
+	}
+	paymentSvc := &fakes.PaymentService{
+		CreateSessionFn: func(ctx context.Context, req *paymentv1.CreateHostedPaymentSessionRequest) (*paymentv1.CreateHostedPaymentSessionResponse, error) {
+			return &paymentv1.CreateHostedPaymentSessionResponse{
+				OrderId:          "order-1",
+				PaymentSessionId: "sess-1",
+				ReturnUrl:        req.GetReturnUrl(),
+				CancelUrl:        req.GetCancelUrl(),
+			}, nil
+		},
+	}
+
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/cart/checkout", strings.NewReader(url.Values{
+		"merchant_id":                     {"merchant-1"},
+		"checkout_intent_idempotency_key": {"intent-1"},
+	}.Encode()))
+	req.Host = "localhost:8080"
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.AddCookie(&http.Cookie{Name: auth.AccessCookieName, Value: signedAccessToken(t, "user-1")})
+	req.AddCookie(&http.Cookie{Name: "cart_id", Value: "cart-1"})
+
+	newTestRouter(t, routerDeps{cart: cartSvc, products: productsSvc, orders: ordersSvc, payment: paymentSvc}).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusSeeOther)
 	}
 }

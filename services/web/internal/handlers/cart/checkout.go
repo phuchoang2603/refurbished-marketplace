@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	shared "refurbished-marketplace/services/web/internal/handlers/shared"
+	sharedlog "refurbished-marketplace/shared/observe/log"
 	cartv1 "refurbished-marketplace/shared/proto/cart/v1"
 	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
 	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
@@ -20,6 +21,11 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	merchantID, err := shared.MerchantIDFromForm(r)
+	if err != nil {
+		shared.WriteBadRequest(w, r, "invalid request body")
+		return
+	}
+	checkoutIntentKey, err := shared.CheckoutIntentKeyFromForm(r)
 	if err != nil {
 		shared.WriteBadRequest(w, r, "invalid request body")
 		return
@@ -53,12 +59,8 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	order, err := h.deps.Orders.CreateOrder(r.Context(), buyerUserID, merchantID, items, totalCents)
+	order, err := h.deps.Orders.CreateOrder(r.Context(), buyerUserID, merchantID, items, totalCents, checkoutIntentKey)
 	if err != nil {
-		shared.WriteGRPCError(w, r, err)
-		return
-	}
-	if err := h.removeCheckedOutItems(w, r, cartID, selectedProductIDs); err != nil {
 		shared.WriteGRPCError(w, r, err)
 		return
 	}
@@ -83,6 +85,16 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 	if hostedPaymentURL == "" {
 		shared.WriteBadRequest(w, r, "hosted payment unavailable")
 		return
+	}
+	if err := h.removeCheckedOutItems(w, r, cartID, selectedProductIDs); err != nil {
+		sharedlog.WarnContext(
+			r.Context(), "cart cleanup failed after checkout state ensured",
+			sharedlog.KeyOrderID, order.GetId(),
+			sharedlog.KeyBuyerUserID, buyerUserID,
+			sharedlog.KeyMerchantID, merchantID,
+			"cart_id", cartID,
+			"err", err,
+		)
 	}
 	shared.Redirect(w, r, hostedPaymentURL, http.StatusSeeOther)
 }

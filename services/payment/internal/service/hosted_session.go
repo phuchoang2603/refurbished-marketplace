@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"time"
@@ -54,6 +55,9 @@ func (s *Service) CreateHostedPaymentSession(ctx context.Context, p CreateHosted
 
 	intent, err := loadPaymentIntentByOrderID(ctx, s.queries, p.OrderID)
 	if err == nil {
+		if hostedPaymentSessionCanRefresh(intent) {
+			return s.refreshHostedPaymentSession(ctx, p)
+		}
 		return mapDBHostedPaymentSessionView(intent), nil
 	}
 	if !errors.Is(err, ErrIntentNotFound) {
@@ -79,6 +83,32 @@ func (s *Service) CreateHostedPaymentSession(ctx context.Context, p CreateHosted
 	view := mapDBHostedPaymentSessionView(created)
 	sharedlog.InfoContext(
 		ctx, "hosted payment session created",
+		sharedlog.KeyOrderID, view.OrderID,
+		sharedlog.KeyBuyerUserID, p.BuyerUserID.String(),
+		"payment_session_id", view.PaymentSessionID,
+		"currency", view.Currency,
+	)
+	return view, nil
+}
+
+func (s *Service) refreshHostedPaymentSession(ctx context.Context, p CreateHostedPaymentSessionParams) (HostedPaymentSessionView, error) {
+	expiresAt := time.Now().UTC().Add(30 * time.Minute)
+	refreshed, err := s.queries.RefreshHostedPaymentSession(ctx, database.RefreshHostedPaymentSessionParams{
+		OrderID:          p.OrderID,
+		Status:           HostedPaymentSessionStatusPending,
+		PaymentSessionID: dberr.OptionalNullString(uuid.NewString()),
+		ReturnUrl:        p.ReturnURL,
+		CancelUrl:        p.CancelURL,
+		ExpiresAt:        dberr.OptionalNullTime(expiresAt),
+		FailureReason:    sql.NullString{},
+	})
+	if err != nil {
+		return HostedPaymentSessionView{}, err
+	}
+
+	view := mapDBHostedPaymentSessionView(refreshed)
+	sharedlog.InfoContext(
+		ctx, "hosted payment session refreshed",
 		sharedlog.KeyOrderID, view.OrderID,
 		sharedlog.KeyBuyerUserID, p.BuyerUserID.String(),
 		"payment_session_id", view.PaymentSessionID,

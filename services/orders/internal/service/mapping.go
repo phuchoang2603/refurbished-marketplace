@@ -1,18 +1,22 @@
 package service
 
 import (
+	"time"
+
 	"refurbished-marketplace/services/orders/internal/database"
+
+	"github.com/google/uuid"
 )
 
-func mapDBOrder(i database.Order) Order {
+func mapOrderFields(id, buyerUserID, merchantID uuid.UUID, status string, totalCents int64, createdAt, updatedAt time.Time) Order {
 	return Order{
-		ID:          i.ID,
-		BuyerUserID: i.BuyerUserID,
-		MerchantID:  i.MerchantID,
-		Status:      i.Status,
-		TotalCents:  i.TotalCents,
-		CreatedAt:   i.CreatedAt,
-		UpdatedAt:   i.UpdatedAt,
+		ID:          id,
+		BuyerUserID: buyerUserID,
+		MerchantID:  merchantID,
+		Status:      status,
+		TotalCents:  totalCents,
+		CreatedAt:   createdAt,
+		UpdatedAt:   updatedAt,
 	}
 }
 

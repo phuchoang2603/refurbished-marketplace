@@ -12,13 +12,14 @@ import (
 )
 
 type Order struct {
-	ID          uuid.UUID
-	BuyerUserID uuid.UUID
-	Status      string
-	TotalCents  int64
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	MerchantID  uuid.UUID
+	ID                           uuid.UUID
+	BuyerUserID                  uuid.UUID
+	Status                       string
+	TotalCents                   int64
+	CreatedAt                    time.Time
+	UpdatedAt                    time.Time
+	MerchantID                   uuid.UUID
+	CheckoutIntentIdempotencyKey sql.NullString
 }
 
 type OrderItem struct {

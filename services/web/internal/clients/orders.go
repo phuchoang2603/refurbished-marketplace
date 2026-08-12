@@ -28,12 +28,13 @@ func (c *OrdersClient) Close() error {
 	return nil
 }
 
-func (c *OrdersClient) CreateOrder(ctx context.Context, buyerUserID, merchantID string, items []*ordersv1.CreateOrderItem, totalCents int64) (*ordersv1.Order, error) {
+func (c *OrdersClient) CreateOrder(ctx context.Context, buyerUserID, merchantID string, items []*ordersv1.CreateOrderItem, totalCents int64, checkoutIntentKey string) (*ordersv1.Order, error) {
 	return c.client.CreateOrder(ctx, &ordersv1.CreateOrderRequest{
-		BuyerUserId: buyerUserID,
-		MerchantId:  merchantID,
-		Items:       items,
-		TotalCents:  totalCents,
+		BuyerUserId:                  buyerUserID,
+		MerchantId:                   merchantID,
+		Items:                        items,
+		TotalCents:                   totalCents,
+		CheckoutIntentIdempotencyKey: checkoutIntentKey,
 	})
 }
 

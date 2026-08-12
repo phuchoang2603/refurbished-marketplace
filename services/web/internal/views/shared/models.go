@@ -87,9 +87,10 @@ type CartItemView struct {
 }
 
 type CartMerchantGroupView struct {
-	MerchantID    string
-	Items         []CartItemView
-	SubtotalCents int64
+	MerchantID        string
+	CheckoutIntentKey string
+	Items             []CartItemView
+	SubtotalCents     int64
 }
 
 type CartView struct {
@@ -117,6 +118,7 @@ type OrderView struct {
 	Status               string
 	PaymentStatus        string
 	PaymentFailureReason string
+	CanResumePayment     bool
 	TotalCents           int64
 	Items                []OrderItemView
 	CreatedAt            string

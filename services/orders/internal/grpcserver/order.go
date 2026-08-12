@@ -66,11 +66,13 @@ func (s *Server) CreateOrder(ctx context.Context, req *ordersv1.CreateOrderReque
 		items = append(items, service.OrderItemInput{ProductID: productID, Quantity: item.GetQuantity(), UnitPriceCents: item.GetUnitPriceCents()})
 	}
 
-	order, err := s.svc.CreateOrder(ctx, buyerID, merchantID, items, req.TotalCents)
+	order, err := s.svc.CreateOrder(ctx, buyerID, merchantID, items, req.TotalCents, req.GetCheckoutIntentIdempotencyKey())
 	if err != nil {
 		return nil, grpcerr.Map(
 			err,
 			grpcerr.Mapping{Err: service.ErrInvalidBuyerID, Code: codes.InvalidArgument},
+			grpcerr.Mapping{Err: service.ErrInvalidCheckoutIntent, Code: codes.InvalidArgument},
+			grpcerr.Mapping{Err: service.ErrCheckoutIntentConflict, Code: codes.AlreadyExists, Message: "checkout intent conflicts with an existing order"},
 			grpcerr.Mapping{Err: service.ErrInvalidMerchantID, Code: codes.InvalidArgument},
 			grpcerr.Mapping{Err: service.ErrInvalidProductID, Code: codes.InvalidArgument},
 			grpcerr.Mapping{Err: service.ErrInvalidQuantity, Code: codes.InvalidArgument},

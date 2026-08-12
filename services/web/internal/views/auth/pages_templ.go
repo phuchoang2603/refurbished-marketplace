@@ -294,7 +294,7 @@ func LoginSection(next string) templ.Component {
 					var templ_7745c5c3_Var13 templ.SafeURL
 					templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinURLErrs(sharedviews.RegisterURL(next))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/auth/pages.templ`, Line: 41, Col: 124}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/web/internal/views/auth/pages.templ`, Line: 41, Col: 124}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 					if templ_7745c5c3_Err != nil {
@@ -546,7 +546,7 @@ func RegisterSection(next string) templ.Component {
 					var templ_7745c5c3_Var24 templ.SafeURL
 					templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinURLErrs(sharedviews.LoginURL(next))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/auth/pages.templ`, Line: 69, Col: 118}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/web/internal/views/auth/pages.templ`, Line: 69, Col: 118}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 					if templ_7745c5c3_Err != nil {

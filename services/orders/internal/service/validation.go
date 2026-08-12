@@ -6,9 +6,12 @@ import (
 	"github.com/google/uuid"
 )
 
-func validateCreateOrderInput(buyerUserID, merchantID uuid.UUID, items []OrderItemInput, totalCents int64) error {
+func validateCreateOrderInput(buyerUserID, merchantID uuid.UUID, items []OrderItemInput, totalCents int64, checkoutIntentKey string) error {
 	if buyerUserID == uuid.Nil {
 		return ErrInvalidBuyerID
+	}
+	if strings.TrimSpace(checkoutIntentKey) == "" {
+		return ErrInvalidCheckoutIntent
 	}
 	if merchantID == uuid.Nil {
 		return ErrInvalidMerchantID
@@ -31,6 +34,10 @@ func validateCreateOrderInput(buyerUserID, merchantID uuid.UUID, items []OrderIt
 		}
 	}
 	return nil
+}
+
+func normalizeCheckoutIntentKey(v string) string {
+	return strings.TrimSpace(v)
 }
 
 func validateOrderStatus(status string) (string, error) {

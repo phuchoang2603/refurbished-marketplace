@@ -58,7 +58,7 @@ func Header(title string, subtitle string) templ.Component {
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/components/page/page.templ`, Line: 8, Col: 10}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/web/internal/views/components/page/page.templ`, Line: 8, Col: 10}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -90,7 +90,7 @@ func Header(title string, subtitle string) templ.Component {
 					var templ_7745c5c3_Var6 string
 					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(subtitle)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/components/page/page.templ`, Line: 12, Col: 14}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/web/internal/views/components/page/page.templ`, Line: 12, Col: 14}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 					if templ_7745c5c3_Err != nil {
@@ -141,7 +141,7 @@ func EmptyState(message string) templ.Component {
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(message)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/components/page/page.templ`, Line: 20, Col: 14}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/web/internal/views/components/page/page.templ`, Line: 20, Col: 14}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -183,7 +183,7 @@ func MetaLine(left string, right string) templ.Component {
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(left)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/components/page/page.templ`, Line: 26, Col: 15}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/web/internal/views/components/page/page.templ`, Line: 26, Col: 15}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -201,7 +201,7 @@ func MetaLine(left string, right string) templ.Component {
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(right)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/views/components/page/page.templ`, Line: 28, Col: 17}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `services/web/internal/views/components/page/page.templ`, Line: 28, Col: 17}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {

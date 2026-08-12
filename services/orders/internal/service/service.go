@@ -8,15 +8,17 @@ import (
 )
 
 var (
-	ErrInvalidBuyerID        = errors.New("invalid buyer user id")
-	ErrInvalidMerchantID     = errors.New("invalid merchant id")
-	ErrInvalidProductID      = errors.New("invalid product id")
-	ErrInvalidQuantity       = errors.New("invalid quantity")
-	ErrInvalidPagination     = errors.New("invalid pagination")
-	ErrInvalidTotalCents     = errors.New("invalid total cents")
-	ErrInvalidUnitPriceCents = errors.New("invalid unit price cents")
-	ErrOrderNotFound         = errors.New("order not found")
-	ErrInvalidStatus         = errors.New("invalid order status")
+	ErrInvalidBuyerID         = errors.New("invalid buyer user id")
+	ErrInvalidCheckoutIntent  = errors.New("invalid checkout intent idempotency key")
+	ErrCheckoutIntentConflict = errors.New("conflicting checkout intent idempotency key reuse")
+	ErrInvalidMerchantID      = errors.New("invalid merchant id")
+	ErrInvalidProductID       = errors.New("invalid product id")
+	ErrInvalidQuantity        = errors.New("invalid quantity")
+	ErrInvalidPagination      = errors.New("invalid pagination")
+	ErrInvalidTotalCents      = errors.New("invalid total cents")
+	ErrInvalidUnitPriceCents  = errors.New("invalid unit price cents")
+	ErrOrderNotFound          = errors.New("order not found")
+	ErrInvalidStatus          = errors.New("invalid order status")
 )
 
 const (

@@ -22,7 +22,7 @@ func TestKafkaPaymentResultHandler_EndToEnd(t *testing.T) {
 	buyerID := uuid.New()
 	productID := uuid.New()
 	merchantID := uuid.New()
-	created, err := svc.CreateOrder(ctx, buyerID, merchantID, []service.OrderItemInput{{ProductID: productID, Quantity: 1, UnitPriceCents: 1000}}, 1000)
+	created, err := svc.CreateOrder(ctx, buyerID, merchantID, []service.OrderItemInput{{ProductID: productID, Quantity: 1, UnitPriceCents: 1000}}, 1000, uuid.NewString())
 	if err != nil {
 		t.Fatalf("CreateOrder: %v", err)
 	}
@@ -62,7 +62,7 @@ func TestKafkaOrderResultHandler_Idempotent(t *testing.T) {
 	buyerID := uuid.New()
 	productID := uuid.New()
 	merchantID := uuid.New()
-	created, err := svc.CreateOrder(ctx, buyerID, merchantID, []service.OrderItemInput{{ProductID: productID, Quantity: 1, UnitPriceCents: 1000}}, 1000)
+	created, err := svc.CreateOrder(ctx, buyerID, merchantID, []service.OrderItemInput{{ProductID: productID, Quantity: 1, UnitPriceCents: 1000}}, 1000, uuid.NewString())
 	if err != nil {
 		t.Fatalf("CreateOrder: %v", err)
 	}
@@ -110,7 +110,7 @@ func TestKafkaInventoryReservationFailedHandler_EndToEnd(t *testing.T) {
 	buyerID := uuid.New()
 	productID := uuid.New()
 	merchantID := uuid.New()
-	created, err := svc.CreateOrder(ctx, buyerID, merchantID, []service.OrderItemInput{{ProductID: productID, Quantity: 1, UnitPriceCents: 1000}}, 1000)
+	created, err := svc.CreateOrder(ctx, buyerID, merchantID, []service.OrderItemInput{{ProductID: productID, Quantity: 1, UnitPriceCents: 1000}}, 1000, uuid.NewString())
 	if err != nil {
 		t.Fatalf("CreateOrder: %v", err)
 	}

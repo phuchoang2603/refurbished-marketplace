@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"refurbished-marketplace/services/payment/internal/database"
 	"refurbished-marketplace/shared/err/dberr"
@@ -95,6 +96,17 @@ func hostedPaymentSessionIsTerminal(status string) bool {
 
 func hostedPaymentSessionMapsToSuccess(status string) bool {
 	return status == HostedPaymentSessionStatusSucceeded
+}
+
+func hostedPaymentSessionCanRefresh(intent database.PaymentIntent) bool {
+	switch intent.Status {
+	case HostedPaymentSessionStatusExpired:
+		return true
+	case HostedPaymentSessionStatusPending:
+		return intent.ExpiresAt.Valid && intent.ExpiresAt.Time.Before(time.Now().UTC())
+	default:
+		return false
+	}
 }
 
 func isPostgresUniqueViolation(err error) bool {

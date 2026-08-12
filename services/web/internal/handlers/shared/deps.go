@@ -24,7 +24,7 @@ type ProductsService interface {
 }
 
 type OrdersService interface {
-	CreateOrder(ctx context.Context, buyerUserID, merchantID string, items []*ordersv1.CreateOrderItem, totalCents int64) (*ordersv1.Order, error)
+	CreateOrder(ctx context.Context, buyerUserID, merchantID string, items []*ordersv1.CreateOrderItem, totalCents int64, checkoutIntentKey string) (*ordersv1.Order, error)
 	GetOrderByID(ctx context.Context, id string) (*ordersv1.Order, error)
 	ListOrdersByBuyer(ctx context.Context, buyerUserID string, limit, offset int32) (*ordersv1.ListOrdersByBuyerResponse, error)
 }

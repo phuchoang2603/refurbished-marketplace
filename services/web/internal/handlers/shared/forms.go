@@ -71,6 +71,17 @@ func MerchantIDFromForm(r *http.Request) (string, error) {
 	return merchantID, nil
 }
 
+func CheckoutIntentKeyFromForm(r *http.Request) (string, error) {
+	if !parseForm(r) {
+		return "", ErrInvalidRequestBody
+	}
+	key := strings.TrimSpace(r.FormValue("checkout_intent_idempotency_key"))
+	if key == "" {
+		return "", ErrInvalidRequestBody
+	}
+	return key, nil
+}
+
 func parseForm(r *http.Request) bool {
 	return r.ParseForm() == nil
 }

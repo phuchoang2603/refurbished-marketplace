@@ -338,3 +338,105 @@ func TestPaymentService_ExpireDueSessions(t *testing.T) {
 		}
 	})
 }
+
+func TestPaymentService_CreateHostedPaymentSession(t *testing.T) {
+	t.Run("repeat request reuses pending session", func(t *testing.T) {
+		svc, _ := newPaymentFixture(t)
+		ctx := t.Context()
+
+		orderID := uuid.New()
+		params := service.CreateHostedPaymentSessionParams{
+			OrderID:         orderID,
+			BuyerUserID:     uuid.New(),
+			Currency:        "USD",
+			ShippingAddress: json.RawMessage(`{}`),
+			ReturnURL:       "/orders/" + orderID.String(),
+			CancelURL:       "/orders/" + orderID.String(),
+		}
+
+		first, err := svc.CreateHostedPaymentSession(ctx, params)
+		if err != nil {
+			t.Fatalf("first CreateHostedPaymentSession: %v", err)
+		}
+		second, err := svc.CreateHostedPaymentSession(ctx, params)
+		if err != nil {
+			t.Fatalf("second CreateHostedPaymentSession: %v", err)
+		}
+		if second.PaymentSessionID != first.PaymentSessionID {
+			t.Fatalf("payment session id: got %q want %q", second.PaymentSessionID, first.PaymentSessionID)
+		}
+	})
+
+	t.Run("expired session is refreshed for unpaid order", func(t *testing.T) {
+		svc, queries := newPaymentFixture(t)
+		ctx := t.Context()
+
+		orderID := uuid.New()
+		params := service.CreateHostedPaymentSessionParams{
+			OrderID:         orderID,
+			BuyerUserID:     uuid.New(),
+			Currency:        "USD",
+			ShippingAddress: json.RawMessage(`{}`),
+			ReturnURL:       "/orders/" + orderID.String(),
+			CancelURL:       "/orders/" + orderID.String(),
+		}
+
+		first, err := svc.CreateHostedPaymentSession(ctx, params)
+		if err != nil {
+			t.Fatalf("first CreateHostedPaymentSession: %v", err)
+		}
+		if _, err := queries.ExpireHostedPaymentSession(ctx, orderID); err != nil {
+			t.Fatalf("ExpireHostedPaymentSession: %v", err)
+		}
+
+		refreshed, err := svc.CreateHostedPaymentSession(ctx, params)
+		if err != nil {
+			t.Fatalf("refresh CreateHostedPaymentSession: %v", err)
+		}
+		if refreshed.PaymentSessionID == first.PaymentSessionID {
+			t.Fatalf("expected refreshed payment session id to change")
+		}
+		if refreshed.Status != service.HostedPaymentSessionStatusPending {
+			t.Fatalf("status: got %q want %q", refreshed.Status, service.HostedPaymentSessionStatusPending)
+		}
+	})
+
+	t.Run("succeeded session does not reopen checkout path", func(t *testing.T) {
+		svc, queries := newPaymentFixture(t)
+		ctx := t.Context()
+
+		orderID := uuid.New()
+		params := service.CreateHostedPaymentSessionParams{
+			OrderID:         orderID,
+			BuyerUserID:     uuid.New(),
+			Currency:        "USD",
+			ShippingAddress: json.RawMessage(`{}`),
+			ReturnURL:       "/orders/" + orderID.String(),
+			CancelURL:       "/orders/" + orderID.String(),
+		}
+
+		first, err := svc.CreateHostedPaymentSession(ctx, params)
+		if err != nil {
+			t.Fatalf("first CreateHostedPaymentSession: %v", err)
+		}
+		if _, err := queries.UpdateHostedPaymentSessionOutcome(ctx, database.UpdateHostedPaymentSessionOutcomeParams{
+			OrderID:          orderID,
+			PaymentSessionID: dberr.OptionalNullString(first.PaymentSessionID),
+			Status:           service.HostedPaymentSessionStatusSucceeded,
+			FailureReason:    dberr.OptionalNullString(""),
+		}); err != nil {
+			t.Fatalf("UpdateHostedPaymentSessionOutcome: %v", err)
+		}
+
+		second, err := svc.CreateHostedPaymentSession(ctx, params)
+		if err != nil {
+			t.Fatalf("second CreateHostedPaymentSession: %v", err)
+		}
+		if second.PaymentSessionID != first.PaymentSessionID {
+			t.Fatalf("payment session id: got %q want %q", second.PaymentSessionID, first.PaymentSessionID)
+		}
+		if second.Status != service.HostedPaymentSessionStatusSucceeded {
+			t.Fatalf("status: got %q want %q", second.Status, service.HostedPaymentSessionStatusSucceeded)
+		}
+	})
+}

@@ -2,7 +2,9 @@ package orders
 
 import templpkg "github.com/a-h/templ"
 import badge "refurbished-marketplace/services/web/internal/views/components/badge"
+import button "refurbished-marketplace/services/web/internal/views/components/button"
 import card "refurbished-marketplace/services/web/internal/views/components/card"
+import form "refurbished-marketplace/services/web/internal/views/components/form"
 import page "refurbished-marketplace/services/web/internal/views/components/page"
 import sharedviews "refurbished-marketplace/services/web/internal/views/shared"
 
@@ -59,6 +61,13 @@ templ OrderDetailSection(order sharedviews.OrderView) {
 				<p><strong>Payment status:</strong> @badge.Badge(order.PaymentStatus)</p>
 				if order.PaymentFailureReason != "" {
 					<p class="text-sm text-muted-foreground">{ order.PaymentFailureReason }</p>
+				}
+			}
+			if order.CanResumePayment {
+				@form.Form(form.FormArgs{Action: "/orders/" + order.ID + "/resume-payment", Class: "inline-flex"}) {
+					@button.Button(button.ButtonArgs{Type: "submit"}) {
+						Continue payment
+					}
 				}
 			}
 			<p class="text-4xl font-semibold tracking-tight sm:text-5xl">{ sharedviews.FormatCents(order.TotalCents) }</p>

@@ -38,6 +38,18 @@ func applyHostedPaymentState(view *sharedviews.OrderView, status, failureReason 
 	view.PaymentFailureReason = failureReason
 }
 
+func canResumePayment(order *ordersv1.Order, view sharedviews.OrderView) bool {
+	if order.GetStatus() != ordersv1.OrderStatus_ORDER_STATUS_PENDING {
+		return false
+	}
+	switch view.PaymentStatus {
+	case "", "PENDING", "EXPIRED":
+		return true
+	default:
+		return false
+	}
+}
+
 func hostedPaymentStatusLabel(status paymentv1.HostedPaymentSessionStatus) string {
 	switch status {
 	case paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_PENDING:
@@ -89,6 +101,7 @@ func (h *Handler) handleGetOrderByID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	view.CanResumePayment = canResumePayment(order, view)
 
 	shared.WriteHTML(w, r, http.StatusOK, orderviews.OrderDetailPage(view))
 }

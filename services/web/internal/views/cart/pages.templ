@@ -85,6 +85,7 @@ templ CartSection(cart sharedviews.CartView) {
 						<div class="flex justify-end">
 							@form.Form(form.FormArgs{Action: "/cart/checkout"}) {
 								<input type="hidden" name="merchant_id" value={ group.MerchantID }/>
+								<input type="hidden" name="checkout_intent_idempotency_key" value={ group.CheckoutIntentKey }/>
 								@button.Button(button.ButtonArgs{Type: "submit", Class: "w-full sm:w-fit"}) {
 									Continue to payment
 								}

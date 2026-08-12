@@ -136,6 +136,19 @@ RETURNING
     payment_intents.expires_at,
     payment_intents.failure_reason;
 
+-- name: RefreshHostedPaymentSession :one
+UPDATE payment_intents
+SET
+    status = $2,
+    payment_session_id = $3,
+    return_url = $4,
+    cancel_url = $5,
+    expires_at = $6,
+    failure_reason = $7,
+    updated_at = NOW()
+WHERE order_id = $1
+RETURNING payment_intents.*;
+
 -- name: SetPaymentIntentExpiresAt :exec
 UPDATE payment_intents
 SET expires_at = $2
