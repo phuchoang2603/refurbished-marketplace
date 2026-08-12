@@ -13,7 +13,7 @@ CREATE TABLE IF NOT EXISTS inventory_reservations (
     ),
     CONSTRAINT inventory_reservations_product_id_fk FOREIGN KEY (
         product_id
-    ) REFERENCES products (id) ON DELETE CASCADE
+    ) REFERENCES products(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS inventory_reservations_status_idx ON inventory_reservations (

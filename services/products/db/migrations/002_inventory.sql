@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS inventory (
     CONSTRAINT inventory_reserved_qty_non_negative CHECK (reserved_qty >= 0),
     CONSTRAINT inventory_product_id_fk FOREIGN KEY (
         product_id
-    ) REFERENCES products (id) ON DELETE CASCADE
+    ) REFERENCES products(id) ON DELETE CASCADE
 );
 
 -- +goose Down
