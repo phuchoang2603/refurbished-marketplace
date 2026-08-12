@@ -327,13 +327,14 @@ func (x *CreateOrderItem) GetUnitPriceCents() int64 {
 }
 
 type CreateOrderRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	BuyerUserId   string                 `protobuf:"bytes,1,opt,name=buyer_user_id,json=buyerUserId,proto3" json:"buyer_user_id,omitempty"`
-	Items         []*CreateOrderItem     `protobuf:"bytes,2,rep,name=items,proto3" json:"items,omitempty"`
-	TotalCents    int64                  `protobuf:"varint,3,opt,name=total_cents,json=totalCents,proto3" json:"total_cents,omitempty"`
-	MerchantId    string                 `protobuf:"bytes,4,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state                        protoimpl.MessageState `protogen:"open.v1"`
+	BuyerUserId                  string                 `protobuf:"bytes,1,opt,name=buyer_user_id,json=buyerUserId,proto3" json:"buyer_user_id,omitempty"`
+	Items                        []*CreateOrderItem     `protobuf:"bytes,2,rep,name=items,proto3" json:"items,omitempty"`
+	TotalCents                   int64                  `protobuf:"varint,3,opt,name=total_cents,json=totalCents,proto3" json:"total_cents,omitempty"`
+	MerchantId                   string                 `protobuf:"bytes,4,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
+	CheckoutIntentIdempotencyKey string                 `protobuf:"bytes,5,opt,name=checkout_intent_idempotency_key,json=checkoutIntentIdempotencyKey,proto3" json:"checkout_intent_idempotency_key,omitempty"`
+	unknownFields                protoimpl.UnknownFields
+	sizeCache                    protoimpl.SizeCache
 }
 
 func (x *CreateOrderRequest) Reset() {
@@ -390,6 +391,13 @@ func (x *CreateOrderRequest) GetTotalCents() int64 {
 func (x *CreateOrderRequest) GetMerchantId() string {
 	if x != nil {
 		return x.MerchantId
+	}
+	return ""
+}
+
+func (x *CreateOrderRequest) GetCheckoutIntentIdempotencyKey() string {
+	if x != nil {
+		return x.CheckoutIntentIdempotencyKey
 	}
 	return ""
 }
@@ -626,14 +634,15 @@ const file_shared_proto_orders_v1_orders_proto_rawDesc = "" +
 	"\n" +
 	"product_id\x18\x01 \x01(\tR\tproductId\x12\x1a\n" +
 	"\bquantity\x18\x03 \x01(\x05R\bquantity\x12(\n" +
-	"\x10unit_price_cents\x18\x04 \x01(\x03R\x0eunitPriceCents\"\xac\x01\n" +
+	"\x10unit_price_cents\x18\x04 \x01(\x03R\x0eunitPriceCents\"\xf3\x01\n" +
 	"\x12CreateOrderRequest\x12\"\n" +
 	"\rbuyer_user_id\x18\x01 \x01(\tR\vbuyerUserId\x120\n" +
 	"\x05items\x18\x02 \x03(\v2\x1a.orders.v1.CreateOrderItemR\x05items\x12\x1f\n" +
 	"\vtotal_cents\x18\x03 \x01(\x03R\n" +
 	"totalCents\x12\x1f\n" +
 	"\vmerchant_id\x18\x04 \x01(\tR\n" +
-	"merchantId\"%\n" +
+	"merchantId\x12E\n" +
+	"\x1fcheckout_intent_idempotency_key\x18\x05 \x01(\tR\x1ccheckoutIntentIdempotencyKey\"%\n" +
 	"\x13GetOrderByIDRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"l\n" +
 	"\x18ListOrdersByBuyerRequest\x12\"\n" +

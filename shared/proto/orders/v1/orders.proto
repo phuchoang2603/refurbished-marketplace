@@ -52,6 +52,7 @@ message CreateOrderRequest {
   repeated CreateOrderItem items = 2;
   int64 total_cents = 3;
   string merchant_id = 4;
+  string checkout_intent_idempotency_key = 5;
 }
 
 message GetOrderByIDRequest {
