@@ -14,7 +14,13 @@ VALUES (
     $5
 )
 RETURNING
-    products.*;
+    products.id,
+    products.name,
+    products.description,
+    products.price_cents,
+    products.merchant_id,
+    products.created_at,
+    products.updated_at;
 
 -- name: GetProductByID :one
 SELECT
@@ -37,7 +43,14 @@ WHERE
     products.id = ANY($1::uuid []);
 
 -- name: ListProducts :many
-SELECT *
+SELECT
+    products.id,
+    products.name,
+    products.description,
+    products.price_cents,
+    products.merchant_id,
+    products.created_at,
+    products.updated_at
 FROM products
 ORDER BY
     created_at DESC, id DESC

@@ -17,7 +17,14 @@ INSERT INTO payment_outbox (
 )
 VALUES ($1, $2, $3, $4, $5)
 RETURNING
-    payment_outbox.id, payment_outbox.aggregate_id, payment_outbox.event_type, payment_outbox.payload, payment_outbox.publish_attempts, payment_outbox.created_at, payment_outbox.published_at, payment_outbox.tracingspancontext
+    payment_outbox.id,
+    payment_outbox.aggregate_id,
+    payment_outbox.event_type,
+    payment_outbox.payload,
+    payment_outbox.publish_attempts,
+    payment_outbox.created_at,
+    payment_outbox.published_at,
+    payment_outbox.tracingspancontext
 `
 
 type CreatePaymentOutboxParams struct {
@@ -65,7 +72,15 @@ func (q *Queries) InsertPaymentInboxMessage(ctx context.Context, messageID strin
 }
 
 const listPaymentOutboxByAggregateID = `-- name: ListPaymentOutboxByAggregateID :many
-SELECT id, aggregate_id, event_type, payload, publish_attempts, created_at, published_at, tracingspancontext
+SELECT
+    payment_outbox.id,
+    payment_outbox.aggregate_id,
+    payment_outbox.event_type,
+    payment_outbox.payload,
+    payment_outbox.publish_attempts,
+    payment_outbox.created_at,
+    payment_outbox.published_at,
+    payment_outbox.tracingspancontext
 FROM payment_outbox
 WHERE aggregate_id = $1
 ORDER BY created_at
