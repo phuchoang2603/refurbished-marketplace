@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	shared "refurbished-marketplace/services/web/internal/handlers/shared"
-	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
+	shared "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
+	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
 
 	"github.com/go-chi/chi/v5"
 	"google.golang.org/grpc/codes"

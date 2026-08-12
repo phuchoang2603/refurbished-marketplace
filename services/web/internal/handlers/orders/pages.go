@@ -3,11 +3,11 @@ package orders
 import (
 	"net/http"
 
-	shared "refurbished-marketplace/services/web/internal/handlers/shared"
-	orderviews "refurbished-marketplace/services/web/internal/views/orders"
-	sharedviews "refurbished-marketplace/services/web/internal/views/shared"
-	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
-	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
+	shared "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
+	orderviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/orders"
+	sharedviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/shared"
+	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
+	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
 
 	"github.com/go-chi/chi/v5"
 )

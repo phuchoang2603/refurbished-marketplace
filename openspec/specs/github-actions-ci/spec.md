@@ -63,12 +63,12 @@ The CI workflow SHALL run `govulncheck` for service modules selected by the same
 
 ### Requirement: Go toolchain version
 
-The repository CI and Go module toolchain SHALL use Go **1.26.2**.
+The repository CI and Go module toolchain SHALL use Go **1.26.5**.
 
 #### Scenario: CI Go version
 
 - **WHEN** CI installs Go for lint or test jobs
-- **THEN** it uses Go 1.26.2
+- **THEN** it uses Go 1.26.5
 
 ### Requirement: golangci-lint configuration
 

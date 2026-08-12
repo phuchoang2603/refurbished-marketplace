@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	sharedlog "refurbished-marketplace/shared/observe/log"
-	sharedtrace "refurbished-marketplace/shared/observe/trace"
+	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
+	sharedtrace "github.com/phuchoang2603/refurbished-marketplace/shared/observe/trace"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"

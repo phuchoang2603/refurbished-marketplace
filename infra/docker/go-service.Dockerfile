@@ -16,7 +16,7 @@
 #   payment                   ./services/payment/cmd/payment                 payment                   9096
 #   payment-gateway-simulator ./tools/payment-gateway-simulator              payment-gateway-simulator 8097
 
-FROM golang:1.26.2-alpine AS builder
+FROM golang:1.26.5-alpine AS builder
 
 ARG BUILD_PKG
 ARG BUILD_BIN

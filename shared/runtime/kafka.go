@@ -6,9 +6,9 @@ import (
 	"os"
 	"sync"
 
-	sharedlog "refurbished-marketplace/shared/observe/log"
+	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
 
-	"refurbished-marketplace/shared/messaging"
+	"github.com/phuchoang2603/refurbished-marketplace/shared/messaging"
 )
 
 func StartKafkaConsumer(ctx context.Context, wg *sync.WaitGroup, run func(ctx context.Context, brokers []string) error) {

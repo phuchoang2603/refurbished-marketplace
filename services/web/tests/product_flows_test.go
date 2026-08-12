@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"refurbished-marketplace/services/web/internal/auth"
-	"refurbished-marketplace/services/web/tests/fakes"
-	productsv1 "refurbished-marketplace/shared/proto/products/v1"
+	"github.com/phuchoang2603/refurbished-marketplace/services/web/internal/auth"
+	"github.com/phuchoang2603/refurbished-marketplace/services/web/tests/fakes"
+	productsv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

@@ -3,9 +3,9 @@ package grpcserver
 import (
 	"context"
 
-	"refurbished-marketplace/services/users/internal/service"
-	"refurbished-marketplace/shared/err/grpcerr"
-	usersv1 "refurbished-marketplace/shared/proto/users/v1"
+	"github.com/phuchoang2603/refurbished-marketplace/services/users/internal/service"
+	"github.com/phuchoang2603/refurbished-marketplace/shared/err/grpcerr"
+	usersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/users/v1"
 
 	"google.golang.org/grpc/codes"
 )

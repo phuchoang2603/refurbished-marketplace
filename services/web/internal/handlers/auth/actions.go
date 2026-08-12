@@ -3,8 +3,8 @@ package auth
 import (
 	"net/http"
 
-	webAuth "refurbished-marketplace/services/web/internal/auth"
-	shared "refurbished-marketplace/services/web/internal/handlers/shared"
+	webAuth "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/auth"
+	shared "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
 
 	"github.com/go-chi/chi/v5"
 )

@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"strings"
 
-	shared "refurbished-marketplace/services/web/internal/handlers/shared"
-	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
+	shared "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
+	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
 
 	"github.com/go-chi/chi/v5"
 )

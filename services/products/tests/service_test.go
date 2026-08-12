@@ -4,8 +4,8 @@ import (
 	"errors"
 	"testing"
 
-	"refurbished-marketplace/services/products/internal/service"
-	testpostgres "refurbished-marketplace/shared/testutil/postgres"
+	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/service"
+	testpostgres "github.com/phuchoang2603/refurbished-marketplace/shared/testutil/postgres"
 
 	"github.com/google/uuid"
 )

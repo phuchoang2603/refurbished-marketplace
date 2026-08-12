@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE TABLE IF NOT EXISTS payment_transactions (
     id UUID PRIMARY KEY,
-    order_id UUID NOT NULL REFERENCES payment_intents (
+    order_id UUID NOT NULL REFERENCES payment_intents(
         order_id
     ) ON DELETE CASCADE,
     order_item_id UUID NOT NULL,

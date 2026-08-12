@@ -1,7 +1,7 @@
 package clients
 
 import (
-	sharedtrace "refurbished-marketplace/shared/observe/trace"
+	sharedtrace "github.com/phuchoang2603/refurbished-marketplace/shared/observe/trace"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"

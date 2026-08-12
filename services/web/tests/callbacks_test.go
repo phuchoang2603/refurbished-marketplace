@@ -8,8 +8,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"refurbished-marketplace/services/web/tests/fakes"
-	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
+	"github.com/phuchoang2603/refurbished-marketplace/services/web/tests/fakes"
+	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

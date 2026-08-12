@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"refurbished-marketplace/services/payment/internal/database"
-	"refurbished-marketplace/services/payment/internal/service"
-	"refurbished-marketplace/shared/err/dberr"
-	"refurbished-marketplace/shared/messaging"
-	testpostgres "refurbished-marketplace/shared/testutil/postgres"
+	"github.com/phuchoang2603/refurbished-marketplace/services/payment/internal/database"
+	"github.com/phuchoang2603/refurbished-marketplace/services/payment/internal/service"
+	"github.com/phuchoang2603/refurbished-marketplace/shared/err/dberr"
+	"github.com/phuchoang2603/refurbished-marketplace/shared/messaging"
+	testpostgres "github.com/phuchoang2603/refurbished-marketplace/shared/testutil/postgres"
 
 	"github.com/google/uuid"
 )

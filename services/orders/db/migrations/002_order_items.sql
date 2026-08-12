@@ -1,7 +1,7 @@
 -- +goose Up
 CREATE TABLE IF NOT EXISTS order_items (
     id UUID PRIMARY KEY,
-    order_id UUID NOT NULL REFERENCES orders (id) ON DELETE CASCADE,
+    order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
     product_id UUID NOT NULL,
     quantity INTEGER NOT NULL,
     unit_price_cents BIGINT NOT NULL,

@@ -7,10 +7,10 @@ import (
 	"errors"
 	"time"
 
-	"refurbished-marketplace/services/users/internal/database"
-	"refurbished-marketplace/shared/err/dberr"
+	"github.com/phuchoang2603/refurbished-marketplace/services/users/internal/database"
+	"github.com/phuchoang2603/refurbished-marketplace/shared/err/dberr"
 
-	sharedjwt "refurbished-marketplace/shared/auth/jwt"
+	sharedjwt "github.com/phuchoang2603/refurbished-marketplace/shared/auth/jwt"
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"

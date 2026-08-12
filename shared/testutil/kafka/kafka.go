@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"refurbished-marketplace/shared/messaging"
+	"github.com/phuchoang2603/refurbished-marketplace/shared/messaging"
 
 	kafkamodule "github.com/testcontainers/testcontainers-go/modules/kafka"
 	"github.com/twmb/franz-go/pkg/kgo"

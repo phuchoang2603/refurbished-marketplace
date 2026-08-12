@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"refurbished-marketplace/services/payment/internal/database"
-	"refurbished-marketplace/shared/err/dberr"
+	"github.com/phuchoang2603/refurbished-marketplace/services/payment/internal/database"
+	"github.com/phuchoang2603/refurbished-marketplace/shared/err/dberr"
 
 	"github.com/google/uuid"
 )

@@ -3,11 +3,11 @@ package shared
 import (
 	"context"
 
-	cartv1 "refurbished-marketplace/shared/proto/cart/v1"
-	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
-	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
-	productsv1 "refurbished-marketplace/shared/proto/products/v1"
-	usersv1 "refurbished-marketplace/shared/proto/users/v1"
+	cartv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/cart/v1"
+	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
+	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
+	productsv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1"
+	usersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/users/v1"
 )
 
 type UsersService interface {

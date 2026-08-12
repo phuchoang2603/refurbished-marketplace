@@ -4,8 +4,8 @@ import (
 	"net/http"
 	"time"
 
-	"refurbished-marketplace/services/web/internal/handlers"
-	sharedlog "refurbished-marketplace/shared/observe/log"
+	"github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers"
+	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"

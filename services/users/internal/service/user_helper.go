@@ -3,8 +3,8 @@ package service
 import (
 	"strings"
 
-	"refurbished-marketplace/services/users/internal/database"
-	"refurbished-marketplace/shared/err/dberr"
+	"github.com/phuchoang2603/refurbished-marketplace/services/users/internal/database"
+	"github.com/phuchoang2603/refurbished-marketplace/shared/err/dberr"
 )
 
 func normalizeEmail(email string) string {

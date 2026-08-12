@@ -3,7 +3,7 @@ package clients
 import (
 	"context"
 
-	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
+	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
 
 	"google.golang.org/grpc"
 )

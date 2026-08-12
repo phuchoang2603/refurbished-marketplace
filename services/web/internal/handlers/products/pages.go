@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"strings"
 
-	webAuth "refurbished-marketplace/services/web/internal/auth"
-	shared "refurbished-marketplace/services/web/internal/handlers/shared"
-	productviews "refurbished-marketplace/services/web/internal/views/products"
-	sharedviews "refurbished-marketplace/services/web/internal/views/shared"
+	webAuth "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/auth"
+	shared "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
+	productviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/products"
+	sharedviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/shared"
 
 	"github.com/go-chi/chi/v5"
 	"google.golang.org/protobuf/types/known/timestamppb"

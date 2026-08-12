@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 
-	"refurbished-marketplace/services/users/internal/database"
+	"github.com/phuchoang2603/refurbished-marketplace/services/users/internal/database"
 )
 
 var (

@@ -3,11 +3,11 @@ package cart
 import (
 	"net/http"
 
-	shared "refurbished-marketplace/services/web/internal/handlers/shared"
-	cartv1 "refurbished-marketplace/shared/proto/cart/v1"
-	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
-	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
-	productsv1 "refurbished-marketplace/shared/proto/products/v1"
+	shared "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
+	cartv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/cart/v1"
+	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
+	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
+	productsv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1"
 )
 
 // maxCheckoutProductLines mirrors services/products GetProductsByIDs max (maxProductsByIDs = 100).

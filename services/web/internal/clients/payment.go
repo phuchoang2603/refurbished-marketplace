@@ -3,7 +3,7 @@ package clients
 import (
 	"context"
 
-	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
+	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
 
 	"google.golang.org/grpc"
 )

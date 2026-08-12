@@ -1,7 +1,7 @@
 package service
 
 import (
-	"refurbished-marketplace/services/orders/internal/database"
+	"github.com/phuchoang2603/refurbished-marketplace/services/orders/internal/database"
 )
 
 func mapDBOrder(i database.Order) Order {

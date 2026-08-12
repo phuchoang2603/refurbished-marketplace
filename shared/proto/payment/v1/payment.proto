@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package payment.v1;
 
-option go_package = "refurbished-marketplace/shared/proto/payment/v1;paymentv1";
+option go_package = "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1;paymentv1";
 
 service PaymentService {
   // Called by the web edge after order creation so payment can create or reuse

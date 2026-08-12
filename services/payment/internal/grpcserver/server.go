@@ -1,8 +1,8 @@
 package grpcserver
 
 import (
-	"refurbished-marketplace/services/payment/internal/service"
-	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
+	"github.com/phuchoang2603/refurbished-marketplace/services/payment/internal/service"
+	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
 )
 
 type Server struct {

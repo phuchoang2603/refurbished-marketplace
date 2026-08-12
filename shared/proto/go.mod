@@ -1,17 +1,17 @@
-module refurbished-marketplace/shared/proto
+module github.com/phuchoang2603/refurbished-marketplace/shared/proto
 
-go 1.26.2
+go 1.26.5
 
 require (
-	google.golang.org/grpc v1.80.0
-	google.golang.org/protobuf v1.36.11
+	google.golang.org/grpc v1.83.0
+	google.golang.org/protobuf v1.36.12
 )
 
 require (
-	go.opentelemetry.io/otel v1.44.0 // indirect
-	go.opentelemetry.io/otel/sdk/metric v1.44.0 // indirect
-	golang.org/x/net v0.53.0 // indirect
+	go.opentelemetry.io/otel v1.45.0 // indirect
+	go.opentelemetry.io/otel/sdk/metric v1.45.0 // indirect
+	golang.org/x/net v0.57.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect
-	golang.org/x/text v0.37.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20260414002931-afd174a4e478 // indirect
+	golang.org/x/text v0.41.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20260810153831-ec0a7760b754 // indirect
 )

@@ -1,10 +1,10 @@
 package orders
 
 import templpkg "github.com/a-h/templ"
-import badge "refurbished-marketplace/services/web/internal/views/components/badge"
-import card "refurbished-marketplace/services/web/internal/views/components/card"
-import page "refurbished-marketplace/services/web/internal/views/components/page"
-import sharedviews "refurbished-marketplace/services/web/internal/views/shared"
+import badge "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/components/badge"
+import card "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/components/card"
+import page "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/components/page"
+import sharedviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/shared"
 
 templ OrdersPage(orders []sharedviews.OrderView) {
 	@sharedviews.AppShell("Orders", sharedviews.DefaultNav, OrderListSection(orders))

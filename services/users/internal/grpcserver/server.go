@@ -1,8 +1,8 @@
 package grpcserver
 
 import (
-	"refurbished-marketplace/services/users/internal/service"
-	usersv1 "refurbished-marketplace/shared/proto/users/v1"
+	"github.com/phuchoang2603/refurbished-marketplace/services/users/internal/service"
+	usersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/users/v1"
 )
 
 type Server struct {

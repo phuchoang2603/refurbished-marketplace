@@ -3,7 +3,7 @@ package fakes
 import (
 	"context"
 
-	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
+	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
 )
 
 type PaymentService struct {

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package cart.v1;
 
-option go_package = "refurbished-marketplace/shared/proto/cart/v1;cartv1";
+option go_package = "github.com/phuchoang2603/refurbished-marketplace/shared/proto/cart/v1;cartv1";
 
 import "google/protobuf/timestamp.proto";
 

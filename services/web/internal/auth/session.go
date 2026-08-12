@@ -3,8 +3,8 @@ package auth
 import (
 	"net/http"
 
-	authconfig "refurbished-marketplace/shared/auth/config"
-	sharedjwt "refurbished-marketplace/shared/auth/jwt"
+	authconfig "github.com/phuchoang2603/refurbished-marketplace/shared/auth/config"
+	sharedjwt "github.com/phuchoang2603/refurbished-marketplace/shared/auth/jwt"
 )
 
 func AccessUserIDFromRequest(cfg authconfig.Config, r *http.Request) (string, bool) {

@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/a-h/templ"
+	dialog "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/components/dialog"
+	sharedviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/shared"
 	"github.com/starfederation/datastar-go/datastar"
-	dialog "refurbished-marketplace/services/web/internal/views/components/dialog"
-	sharedviews "refurbished-marketplace/services/web/internal/views/shared"
 )
 
 func WriteHTML(w http.ResponseWriter, r *http.Request, status int, component templ.Component) {

@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package orders.v1;
 
-option go_package = "refurbished-marketplace/shared/proto/orders/v1;ordersv1";
+option go_package = "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1;ordersv1";
 
 // Emitted on orders.created (outbox -> Kafka).
 message OrderCreated {

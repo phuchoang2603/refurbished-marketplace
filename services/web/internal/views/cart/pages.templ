@@ -1,13 +1,13 @@
 package cart
 
 import templpkg "github.com/a-h/templ"
-import button "refurbished-marketplace/services/web/internal/views/components/button"
-import badge "refurbished-marketplace/services/web/internal/views/components/badge"
-import card "refurbished-marketplace/services/web/internal/views/components/card"
-import form "refurbished-marketplace/services/web/internal/views/components/form"
-import input "refurbished-marketplace/services/web/internal/views/components/input"
-import page "refurbished-marketplace/services/web/internal/views/components/page"
-import sharedviews "refurbished-marketplace/services/web/internal/views/shared"
+import button "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/components/button"
+import badge "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/components/badge"
+import card "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/components/card"
+import form "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/components/form"
+import input "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/components/input"
+import page "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/components/page"
+import sharedviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/shared"
 
 templ CartPage(cart sharedviews.CartView) {
 	@sharedviews.AppShell("Cart", sharedviews.DefaultNav, CartSection(cart))

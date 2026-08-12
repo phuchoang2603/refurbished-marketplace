@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"refurbished-marketplace/services/products/internal/database"
-	"refurbished-marketplace/shared/messaging"
-	sharedtrace "refurbished-marketplace/shared/observe/trace"
-	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
-	productsv1 "refurbished-marketplace/shared/proto/products/v1"
+	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/database"
+	"github.com/phuchoang2603/refurbished-marketplace/shared/messaging"
+	sharedtrace "github.com/phuchoang2603/refurbished-marketplace/shared/observe/trace"
+	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
+	productsv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"

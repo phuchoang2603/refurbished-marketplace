@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
-	"refurbished-marketplace/services/web/internal/handlers"
-	shared "refurbished-marketplace/services/web/internal/handlers/shared"
-	"refurbished-marketplace/services/web/tests/fakes"
-	authconfig "refurbished-marketplace/shared/auth/config"
+	"github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers"
+	shared "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
+	"github.com/phuchoang2603/refurbished-marketplace/services/web/tests/fakes"
+	authconfig "github.com/phuchoang2603/refurbished-marketplace/shared/auth/config"
 
 	"github.com/go-chi/chi/v5"
 	jwtlib "github.com/golang-jwt/jwt/v5"

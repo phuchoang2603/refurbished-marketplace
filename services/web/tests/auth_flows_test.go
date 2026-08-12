@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"refurbished-marketplace/services/web/internal/auth"
-	"refurbished-marketplace/services/web/tests/fakes"
-	usersv1 "refurbished-marketplace/shared/proto/users/v1"
+	"github.com/phuchoang2603/refurbished-marketplace/services/web/internal/auth"
+	"github.com/phuchoang2603/refurbished-marketplace/services/web/tests/fakes"
+	usersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/users/v1"
 )
 
 func TestLoginSetsCookiesAndRedirects(t *testing.T) {

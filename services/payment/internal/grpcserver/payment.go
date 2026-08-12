@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"strings"
 
-	"refurbished-marketplace/services/payment/internal/service"
-	"refurbished-marketplace/shared/err/grpcerr"
-	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
+	"github.com/phuchoang2603/refurbished-marketplace/services/payment/internal/service"
+	"github.com/phuchoang2603/refurbished-marketplace/shared/err/grpcerr"
+	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

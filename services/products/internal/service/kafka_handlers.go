@@ -6,12 +6,12 @@ import (
 	"errors"
 	"fmt"
 
-	sharedlog "refurbished-marketplace/shared/observe/log"
+	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
 
-	"refurbished-marketplace/services/products/internal/database"
-	"refurbished-marketplace/shared/messaging"
-	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
-	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
+	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/database"
+	"github.com/phuchoang2603/refurbished-marketplace/shared/messaging"
+	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
+	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
 
 	"github.com/google/uuid"
 )

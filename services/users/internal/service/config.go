@@ -5,7 +5,7 @@ import (
 	"strings"
 	"time"
 
-	authconfig "refurbished-marketplace/shared/auth/config"
+	authconfig "github.com/phuchoang2603/refurbished-marketplace/shared/auth/config"
 )
 
 type Config struct {

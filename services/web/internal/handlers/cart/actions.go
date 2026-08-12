@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"strings"
 
-	shared "refurbished-marketplace/services/web/internal/handlers/shared"
-	cartviews "refurbished-marketplace/services/web/internal/views/cart"
-	productsv1 "refurbished-marketplace/shared/proto/products/v1"
+	shared "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
+	cartviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/cart"
+	productsv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1"
 
 	"github.com/go-chi/chi/v5"
 )

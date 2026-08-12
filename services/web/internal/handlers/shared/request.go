@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	webAuth "refurbished-marketplace/services/web/internal/auth"
+	webAuth "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/auth"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/starfederation/datastar-go/datastar"

@@ -6,10 +6,10 @@ import (
 	"errors"
 	"time"
 
-	sharedlog "refurbished-marketplace/shared/observe/log"
+	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
 
-	"refurbished-marketplace/services/payment/internal/database"
-	"refurbished-marketplace/shared/err/dberr"
+	"github.com/phuchoang2603/refurbished-marketplace/services/payment/internal/database"
+	"github.com/phuchoang2603/refurbished-marketplace/shared/err/dberr"
 
 	"github.com/google/uuid"
 )

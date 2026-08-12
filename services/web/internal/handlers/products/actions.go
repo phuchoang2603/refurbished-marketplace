@@ -3,7 +3,7 @@ package products
 import (
 	"net/http"
 
-	shared "refurbished-marketplace/services/web/internal/handlers/shared"
+	shared "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
 
 	"github.com/go-chi/chi/v5"
 )

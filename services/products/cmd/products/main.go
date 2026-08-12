@@ -7,12 +7,12 @@ import (
 	"sync"
 	"syscall"
 
-	"refurbished-marketplace/services/products/internal/grpcserver"
-	"refurbished-marketplace/services/products/internal/service"
-	sharedlog "refurbished-marketplace/shared/observe/log"
-	"refurbished-marketplace/shared/runtime"
+	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/grpcserver"
+	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/service"
+	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
+	"github.com/phuchoang2603/refurbished-marketplace/shared/runtime"
 
-	productsv1 "refurbished-marketplace/shared/proto/products/v1"
+	productsv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1"
 
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"

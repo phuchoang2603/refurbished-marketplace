@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"refurbished-marketplace/services/users/internal/database"
+	"github.com/phuchoang2603/refurbished-marketplace/services/users/internal/database"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"

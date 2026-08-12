@@ -8,12 +8,12 @@ import (
 	"strings"
 	"testing"
 
-	"refurbished-marketplace/services/web/internal/auth"
-	"refurbished-marketplace/services/web/tests/fakes"
-	cartv1 "refurbished-marketplace/shared/proto/cart/v1"
-	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
-	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
-	productsv1 "refurbished-marketplace/shared/proto/products/v1"
+	"github.com/phuchoang2603/refurbished-marketplace/services/web/internal/auth"
+	"github.com/phuchoang2603/refurbished-marketplace/services/web/tests/fakes"
+	cartv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/cart/v1"
+	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
+	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
+	productsv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1"
 )
 
 func TestAddCartItemRedirectsToCart(t *testing.T) {

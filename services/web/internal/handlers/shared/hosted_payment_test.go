@@ -5,8 +5,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	shared "refurbished-marketplace/services/web/internal/handlers/shared"
-	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
+	shared "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
+	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
 )
 
 func TestRequestBaseURLUsesForwardedProto(t *testing.T) {

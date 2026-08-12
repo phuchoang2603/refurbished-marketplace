@@ -3,7 +3,7 @@ package runtime
 import (
 	"os"
 
-	sharedlog "refurbished-marketplace/shared/observe/log"
+	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
 )
 
 func EnvOr(key, fallback string) string {

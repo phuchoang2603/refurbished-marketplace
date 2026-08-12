@@ -3,10 +3,10 @@ package main
 import (
 	"context"
 
-	sharedlog "refurbished-marketplace/shared/observe/log"
+	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
 
-	"refurbished-marketplace/services/orders/internal/service"
-	"refurbished-marketplace/shared/messaging"
+	"github.com/phuchoang2603/refurbished-marketplace/services/orders/internal/service"
+	"github.com/phuchoang2603/refurbished-marketplace/shared/messaging"
 )
 
 func runOrderResultConsumer(ctx context.Context, svc *service.Service, bootstrap []string, groupID string) error {

@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	sharedlog "refurbished-marketplace/shared/observe/log"
+	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
 )
 
 const defaultHTTPShutdownTimeout = 30 * time.Second

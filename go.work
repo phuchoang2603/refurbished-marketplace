@@ -1,4 +1,4 @@
-go 1.26.2
+go 1.26.5
 
 use (
 	./services/cart
@@ -22,15 +22,15 @@ use (
 )
 
 replace (
-	refurbished-marketplace/shared/auth v0.0.0 => ./shared/auth
-	refurbished-marketplace/shared/err/dberr v0.0.0 => ./shared/err/dberr
-	refurbished-marketplace/shared/err/grpcerr v0.0.0 => ./shared/err/grpcerr
-	refurbished-marketplace/shared/messaging v0.0.0 => ./shared/messaging
-	refurbished-marketplace/shared/observe/log v0.0.0 => ./shared/observe/log
-	refurbished-marketplace/shared/observe/trace v0.0.0 => ./shared/observe/trace
-	refurbished-marketplace/shared/proto v0.0.0 => ./shared/proto
-	refurbished-marketplace/shared/runtime v0.0.0 => ./shared/runtime
-	refurbished-marketplace/shared/testutil/kafka v0.0.0 => ./shared/testutil/kafka
-	refurbished-marketplace/shared/testutil/postgres v0.0.0 => ./shared/testutil/postgres
-	refurbished-marketplace/shared/testutil/redis v0.0.0 => ./shared/testutil/redis
+	github.com/phuchoang2603/refurbished-marketplace/shared/auth v0.0.0 => ./shared/auth
+	github.com/phuchoang2603/refurbished-marketplace/shared/err/dberr v0.0.0 => ./shared/err/dberr
+	github.com/phuchoang2603/refurbished-marketplace/shared/err/grpcerr v0.0.0 => ./shared/err/grpcerr
+	github.com/phuchoang2603/refurbished-marketplace/shared/messaging v0.0.0 => ./shared/messaging
+	github.com/phuchoang2603/refurbished-marketplace/shared/observe/log v0.0.0 => ./shared/observe/log
+	github.com/phuchoang2603/refurbished-marketplace/shared/observe/trace v0.0.0 => ./shared/observe/trace
+	github.com/phuchoang2603/refurbished-marketplace/shared/proto v0.0.0 => ./shared/proto
+	github.com/phuchoang2603/refurbished-marketplace/shared/runtime v0.0.0 => ./shared/runtime
+	github.com/phuchoang2603/refurbished-marketplace/shared/testutil/kafka v0.0.0 => ./shared/testutil/kafka
+	github.com/phuchoang2603/refurbished-marketplace/shared/testutil/postgres v0.0.0 => ./shared/testutil/postgres
+	github.com/phuchoang2603/refurbished-marketplace/shared/testutil/redis v0.0.0 => ./shared/testutil/redis
 )

@@ -3,7 +3,7 @@ package fakes
 import (
 	"context"
 
-	cartv1 "refurbished-marketplace/shared/proto/cart/v1"
+	cartv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/cart/v1"
 )
 
 type CartService struct {

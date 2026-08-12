@@ -6,12 +6,12 @@ import (
 	"os/signal"
 	"syscall"
 
-	"refurbished-marketplace/services/users/internal/grpcserver"
-	"refurbished-marketplace/services/users/internal/service"
-	sharedlog "refurbished-marketplace/shared/observe/log"
-	"refurbished-marketplace/shared/runtime"
+	"github.com/phuchoang2603/refurbished-marketplace/services/users/internal/grpcserver"
+	"github.com/phuchoang2603/refurbished-marketplace/services/users/internal/service"
+	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
+	"github.com/phuchoang2603/refurbished-marketplace/shared/runtime"
 
-	usersv1 "refurbished-marketplace/shared/proto/users/v1"
+	usersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/users/v1"
 
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"

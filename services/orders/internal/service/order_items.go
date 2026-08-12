@@ -3,7 +3,7 @@ package service
 import (
 	"context"
 
-	"refurbished-marketplace/services/orders/internal/database"
+	"github.com/phuchoang2603/refurbished-marketplace/services/orders/internal/database"
 
 	"github.com/google/uuid"
 )

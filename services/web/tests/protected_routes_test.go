@@ -6,9 +6,9 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"refurbished-marketplace/services/web/internal/auth"
-	"refurbished-marketplace/services/web/tests/fakes"
-	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
+	"github.com/phuchoang2603/refurbished-marketplace/services/web/internal/auth"
+	"github.com/phuchoang2603/refurbished-marketplace/services/web/tests/fakes"
+	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
 )
 
 func TestProtectedGetShowsUnauthorizedPopup(t *testing.T) {

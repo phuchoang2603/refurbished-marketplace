@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"refurbished-marketplace/services/cart/internal/service"
+	"github.com/phuchoang2603/refurbished-marketplace/services/cart/internal/service"
 
-	testredis "refurbished-marketplace/shared/testutil/redis"
+	testredis "github.com/phuchoang2603/refurbished-marketplace/shared/testutil/redis"
 
 	"github.com/google/uuid"
 )

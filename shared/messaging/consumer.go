@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	sharedlog "refurbished-marketplace/shared/observe/log"
+	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
 
-	sharedtrace "refurbished-marketplace/shared/observe/trace"
+	sharedtrace "github.com/phuchoang2603/refurbished-marketplace/shared/observe/trace"
 
 	"github.com/twmb/franz-go/pkg/kgo"
 	"go.opentelemetry.io/otel/attribute"

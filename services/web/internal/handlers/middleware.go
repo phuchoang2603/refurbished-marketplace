@@ -3,9 +3,9 @@ package handlers
 import (
 	"net/http"
 
-	webAuth "refurbished-marketplace/services/web/internal/auth"
-	shared "refurbished-marketplace/services/web/internal/handlers/shared"
-	sharedviews "refurbished-marketplace/services/web/internal/views/shared"
+	webAuth "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/auth"
+	shared "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
+	sharedviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/shared"
 )
 
 func (h *Handler) authUserFromRequest(r *http.Request) (string, sharedviews.AuthState, bool) {

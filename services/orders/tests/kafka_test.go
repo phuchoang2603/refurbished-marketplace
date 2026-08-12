@@ -5,11 +5,11 @@ import (
 	"testing"
 	"time"
 
-	"refurbished-marketplace/services/orders/internal/service"
-	"refurbished-marketplace/shared/messaging"
-	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
-	productsv1 "refurbished-marketplace/shared/proto/products/v1"
-	testkafka "refurbished-marketplace/shared/testutil/kafka"
+	"github.com/phuchoang2603/refurbished-marketplace/services/orders/internal/service"
+	"github.com/phuchoang2603/refurbished-marketplace/shared/messaging"
+	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
+	productsv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1"
+	testkafka "github.com/phuchoang2603/refurbished-marketplace/shared/testutil/kafka"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"

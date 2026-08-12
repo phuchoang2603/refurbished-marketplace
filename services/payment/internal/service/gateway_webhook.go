@@ -5,14 +5,14 @@ import (
 	"database/sql"
 	"errors"
 
-	sharedlog "refurbished-marketplace/shared/observe/log"
+	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
 
-	"refurbished-marketplace/services/payment/internal/database"
-	"refurbished-marketplace/shared/err/dberr"
-	"refurbished-marketplace/shared/messaging"
-	sharedtrace "refurbished-marketplace/shared/observe/trace"
+	"github.com/phuchoang2603/refurbished-marketplace/services/payment/internal/database"
+	"github.com/phuchoang2603/refurbished-marketplace/shared/err/dberr"
+	"github.com/phuchoang2603/refurbished-marketplace/shared/messaging"
+	sharedtrace "github.com/phuchoang2603/refurbished-marketplace/shared/observe/trace"
 
-	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
+	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"

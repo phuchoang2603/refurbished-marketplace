@@ -1,7 +1,7 @@
 package runtime
 
 import (
-	sharedlog "refurbished-marketplace/shared/observe/log"
+	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
 )
 
 // InitLogging configures JSON slog for the process. Call before other bootstrap logs.

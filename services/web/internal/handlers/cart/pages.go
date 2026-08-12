@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"strings"
 
-	shared "refurbished-marketplace/services/web/internal/handlers/shared"
-	cartviews "refurbished-marketplace/services/web/internal/views/cart"
-	sharedviews "refurbished-marketplace/services/web/internal/views/shared"
-	cartv1 "refurbished-marketplace/shared/proto/cart/v1"
+	shared "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
+	cartviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/cart"
+	sharedviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/shared"
+	cartv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/cart/v1"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"

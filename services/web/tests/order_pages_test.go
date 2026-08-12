@@ -9,11 +9,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/phuchoang2603/refurbished-marketplace/services/web/internal/auth"
+	"github.com/phuchoang2603/refurbished-marketplace/services/web/tests/fakes"
+	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
+	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
-	"refurbished-marketplace/services/web/internal/auth"
-	"refurbished-marketplace/services/web/tests/fakes"
-	ordersv1 "refurbished-marketplace/shared/proto/orders/v1"
-	paymentv1 "refurbished-marketplace/shared/proto/payment/v1"
 )
 
 func TestOrderPageShowsHostedPaymentStatus(t *testing.T) {

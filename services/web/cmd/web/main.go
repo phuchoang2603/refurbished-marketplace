@@ -6,13 +6,13 @@ import (
 	"os/signal"
 	"syscall"
 
-	webclients "refurbished-marketplace/services/web/internal/clients"
-	"refurbished-marketplace/services/web/internal/config"
-	"refurbished-marketplace/services/web/internal/handlers"
-	sharedhandlers "refurbished-marketplace/services/web/internal/handlers/shared"
-	authconfig "refurbished-marketplace/shared/auth/config"
-	sharedlog "refurbished-marketplace/shared/observe/log"
-	"refurbished-marketplace/shared/runtime"
+	webclients "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/clients"
+	"github.com/phuchoang2603/refurbished-marketplace/services/web/internal/config"
+	"github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers"
+	sharedhandlers "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
+	authconfig "github.com/phuchoang2603/refurbished-marketplace/shared/auth/config"
+	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
+	"github.com/phuchoang2603/refurbished-marketplace/shared/runtime"
 )
 
 func main() {

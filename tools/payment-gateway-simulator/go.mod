@@ -1,3 +1,3 @@
-module refurbished-marketplace/tools/payment-gateway-simulator
+module github.com/phuchoang2603/refurbished-marketplace/tools/payment-gateway-simulator
 
-go 1.26.2
+go 1.26.5

@@ -1,13 +1,13 @@
 package handlers
 
 import (
-	authhandlers "refurbished-marketplace/services/web/internal/handlers/auth"
-	carthandlers "refurbished-marketplace/services/web/internal/handlers/cart"
-	orderhandlers "refurbished-marketplace/services/web/internal/handlers/orders"
-	producthandlers "refurbished-marketplace/services/web/internal/handlers/products"
-	shared "refurbished-marketplace/services/web/internal/handlers/shared"
+	authhandlers "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/auth"
+	carthandlers "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/cart"
+	orderhandlers "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/orders"
+	producthandlers "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/products"
+	shared "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
 
-	authconfig "refurbished-marketplace/shared/auth/config"
+	authconfig "github.com/phuchoang2603/refurbished-marketplace/shared/auth/config"
 
 	"github.com/go-chi/chi/v5"
 )

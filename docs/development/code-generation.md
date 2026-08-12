@@ -21,7 +21,7 @@ Formatting is handled by devenv/git hooks via `treefmt` (`gofumpt`, `sqruff`, et
 The repo uses a root [`go.work`](../../go.work) file for local development and container builds.
 
 - **`use`**: every service, shared library, and tool module in the monorepo
-- **`replace`**: maps local `refurbished-marketplace/...` imports to `./shared/...` paths (defined in `go.work`, not in individual `go.mod` files)
+- **`replace`**: maps local `github.com/phuchoang2603/refurbished-marketplace/shared/...` modules to relative `./shared/...` paths in each consuming `go.mod` (and again in `go.work` for workspace builds)
 
 Shared library layout:
 
@@ -37,7 +37,7 @@ Shared library layout:
 | `shared/err/grpcerr`   | gRPC status mapping                       |
 | `shared/testutil/*`    | Testcontainers helpers                    |
 
-Run `tidy` (alias for `go work sync`) after changing `go.mod` files. Do not run `go mod tidy` inside a service directory without the workspace — it cannot resolve local modules on its own.
+Run `tidy` (alias for `go work sync`) after changing `go.mod` files. `go get` and `go mod tidy` inside a module directory work because each `go.mod` has `replace` directives for local shared modules.
 
 Build from the repo root:
 
