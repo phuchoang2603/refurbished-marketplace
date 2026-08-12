@@ -16,7 +16,15 @@ INSERT INTO inventory_outbox (
     id, aggregate_id, event_type, payload, tracingspancontext
 )
 VALUES ($1, $2, $3, $4, $5)
-RETURNING inventory_outbox.id, inventory_outbox.aggregate_id, inventory_outbox.event_type, inventory_outbox.payload, inventory_outbox.publish_attempts, inventory_outbox.created_at, inventory_outbox.published_at, inventory_outbox.tracingspancontext
+RETURNING
+    inventory_outbox.id,
+    inventory_outbox.aggregate_id,
+    inventory_outbox.event_type,
+    inventory_outbox.payload,
+    inventory_outbox.publish_attempts,
+    inventory_outbox.created_at,
+    inventory_outbox.published_at,
+    inventory_outbox.tracingspancontext
 `
 
 type CreateInventoryOutboxParams struct {

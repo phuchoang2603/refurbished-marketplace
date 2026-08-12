@@ -27,7 +27,20 @@ INSERT INTO payment_intents (
     failure_reason
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-RETURNING payment_intents.order_id, payment_intents.buyer_user_id, payment_intents.currency, payment_intents.billing_address, payment_intents.shipping_address, payment_intents.status, payment_intents.created_at, payment_intents.updated_at, payment_intents.payment_session_id, payment_intents.return_url, payment_intents.cancel_url, payment_intents.expires_at, payment_intents.failure_reason
+RETURNING
+    payment_intents.order_id,
+    payment_intents.buyer_user_id,
+    payment_intents.currency,
+    payment_intents.billing_address,
+    payment_intents.shipping_address,
+    payment_intents.status,
+    payment_intents.created_at,
+    payment_intents.updated_at,
+    payment_intents.payment_session_id,
+    payment_intents.return_url,
+    payment_intents.cancel_url,
+    payment_intents.expires_at,
+    payment_intents.failure_reason
 `
 
 type CreateHostedPaymentSessionParams struct {
@@ -84,7 +97,20 @@ SET
 WHERE
     order_id = $1
     AND status = 'PENDING'
-RETURNING payment_intents.order_id, payment_intents.buyer_user_id, payment_intents.currency, payment_intents.billing_address, payment_intents.shipping_address, payment_intents.status, payment_intents.created_at, payment_intents.updated_at, payment_intents.payment_session_id, payment_intents.return_url, payment_intents.cancel_url, payment_intents.expires_at, payment_intents.failure_reason
+RETURNING
+    payment_intents.order_id,
+    payment_intents.buyer_user_id,
+    payment_intents.currency,
+    payment_intents.billing_address,
+    payment_intents.shipping_address,
+    payment_intents.status,
+    payment_intents.created_at,
+    payment_intents.updated_at,
+    payment_intents.payment_session_id,
+    payment_intents.return_url,
+    payment_intents.cancel_url,
+    payment_intents.expires_at,
+    payment_intents.failure_reason
 `
 
 func (q *Queries) ExpireHostedPaymentSession(ctx context.Context, orderID uuid.UUID) (PaymentIntent, error) {
@@ -109,7 +135,20 @@ func (q *Queries) ExpireHostedPaymentSession(ctx context.Context, orderID uuid.U
 }
 
 const getPaymentIntentByOrderID = `-- name: GetPaymentIntentByOrderID :one
-SELECT order_id, buyer_user_id, currency, billing_address, shipping_address, status, created_at, updated_at, payment_session_id, return_url, cancel_url, expires_at, failure_reason
+SELECT
+    payment_intents.order_id,
+    payment_intents.buyer_user_id,
+    payment_intents.currency,
+    payment_intents.billing_address,
+    payment_intents.shipping_address,
+    payment_intents.status,
+    payment_intents.created_at,
+    payment_intents.updated_at,
+    payment_intents.payment_session_id,
+    payment_intents.return_url,
+    payment_intents.cancel_url,
+    payment_intents.expires_at,
+    payment_intents.failure_reason
 FROM payment_intents
 WHERE order_id = $1
 `
@@ -136,7 +175,20 @@ func (q *Queries) GetPaymentIntentByOrderID(ctx context.Context, orderID uuid.UU
 }
 
 const getPaymentIntentByOrderIDForUpdate = `-- name: GetPaymentIntentByOrderIDForUpdate :one
-SELECT order_id, buyer_user_id, currency, billing_address, shipping_address, status, created_at, updated_at, payment_session_id, return_url, cancel_url, expires_at, failure_reason
+SELECT
+    payment_intents.order_id,
+    payment_intents.buyer_user_id,
+    payment_intents.currency,
+    payment_intents.billing_address,
+    payment_intents.shipping_address,
+    payment_intents.status,
+    payment_intents.created_at,
+    payment_intents.updated_at,
+    payment_intents.payment_session_id,
+    payment_intents.return_url,
+    payment_intents.cancel_url,
+    payment_intents.expires_at,
+    payment_intents.failure_reason
 FROM payment_intents
 WHERE order_id = $1
 FOR UPDATE
@@ -164,7 +216,20 @@ func (q *Queries) GetPaymentIntentByOrderIDForUpdate(ctx context.Context, orderI
 }
 
 const listExpiredPendingHostedSessions = `-- name: ListExpiredPendingHostedSessions :many
-SELECT order_id, buyer_user_id, currency, billing_address, shipping_address, status, created_at, updated_at, payment_session_id, return_url, cancel_url, expires_at, failure_reason
+SELECT
+    payment_intents.order_id,
+    payment_intents.buyer_user_id,
+    payment_intents.currency,
+    payment_intents.billing_address,
+    payment_intents.shipping_address,
+    payment_intents.status,
+    payment_intents.created_at,
+    payment_intents.updated_at,
+    payment_intents.payment_session_id,
+    payment_intents.return_url,
+    payment_intents.cancel_url,
+    payment_intents.expires_at,
+    payment_intents.failure_reason
 FROM payment_intents
 WHERE
     status = 'PENDING'
@@ -237,7 +302,20 @@ WHERE
     order_id = $1
     AND payment_session_id = $2
     AND status = 'PENDING'
-RETURNING payment_intents.order_id, payment_intents.buyer_user_id, payment_intents.currency, payment_intents.billing_address, payment_intents.shipping_address, payment_intents.status, payment_intents.created_at, payment_intents.updated_at, payment_intents.payment_session_id, payment_intents.return_url, payment_intents.cancel_url, payment_intents.expires_at, payment_intents.failure_reason
+RETURNING
+    payment_intents.order_id,
+    payment_intents.buyer_user_id,
+    payment_intents.currency,
+    payment_intents.billing_address,
+    payment_intents.shipping_address,
+    payment_intents.status,
+    payment_intents.created_at,
+    payment_intents.updated_at,
+    payment_intents.payment_session_id,
+    payment_intents.return_url,
+    payment_intents.cancel_url,
+    payment_intents.expires_at,
+    payment_intents.failure_reason
 `
 
 type UpdateHostedPaymentSessionOutcomeParams struct {

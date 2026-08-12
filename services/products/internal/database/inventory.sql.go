@@ -20,7 +20,12 @@ SET
 WHERE
     product_id = $2
     AND reserved_qty >= $1
-RETURNING inventory.product_id, inventory.available_qty, inventory.reserved_qty, inventory.created_at, inventory.updated_at
+RETURNING
+    inventory.product_id,
+    inventory.available_qty,
+    inventory.reserved_qty,
+    inventory.created_at,
+    inventory.updated_at
 `
 
 type CommitInventoryReservedStockParams struct {
@@ -44,7 +49,12 @@ func (q *Queries) CommitInventoryReservedStock(ctx context.Context, arg CommitIn
 const createInventory = `-- name: CreateInventory :one
 INSERT INTO inventory (product_id, available_qty, reserved_qty)
 VALUES ($1, $2, 0)
-RETURNING inventory.product_id, inventory.available_qty, inventory.reserved_qty, inventory.created_at, inventory.updated_at
+RETURNING
+    inventory.product_id,
+    inventory.available_qty,
+    inventory.reserved_qty,
+    inventory.created_at,
+    inventory.updated_at
 `
 
 type CreateInventoryParams struct {
@@ -66,7 +76,12 @@ func (q *Queries) CreateInventory(ctx context.Context, arg CreateInventoryParams
 }
 
 const getInventoriesByProductIDsForUpdate = `-- name: GetInventoriesByProductIDsForUpdate :many
-SELECT product_id, available_qty, reserved_qty, created_at, updated_at
+SELECT
+    inventory.product_id,
+    inventory.available_qty,
+    inventory.reserved_qty,
+    inventory.created_at,
+    inventory.updated_at
 FROM inventory
 WHERE product_id = ANY($1::uuid [])
 FOR UPDATE
@@ -102,7 +117,12 @@ func (q *Queries) GetInventoriesByProductIDsForUpdate(ctx context.Context, dolla
 }
 
 const getInventoryByProductID = `-- name: GetInventoryByProductID :one
-SELECT product_id, available_qty, reserved_qty, created_at, updated_at
+SELECT
+    inventory.product_id,
+    inventory.available_qty,
+    inventory.reserved_qty,
+    inventory.created_at,
+    inventory.updated_at
 FROM inventory
 WHERE product_id = $1
 `
@@ -129,7 +149,12 @@ SET
 WHERE
     product_id = $2
     AND reserved_qty >= $1
-RETURNING inventory.product_id, inventory.available_qty, inventory.reserved_qty, inventory.created_at, inventory.updated_at
+RETURNING
+    inventory.product_id,
+    inventory.available_qty,
+    inventory.reserved_qty,
+    inventory.created_at,
+    inventory.updated_at
 `
 
 type ReleaseInventoryReservedStockParams struct {
@@ -157,7 +182,12 @@ SET
     reserved_qty = reserved_qty + $1,
     updated_at = NOW()
 WHERE product_id = $2
-RETURNING inventory.product_id, inventory.available_qty, inventory.reserved_qty, inventory.created_at, inventory.updated_at
+RETURNING
+    inventory.product_id,
+    inventory.available_qty,
+    inventory.reserved_qty,
+    inventory.created_at,
+    inventory.updated_at
 `
 
 type ReserveInventoryStockParams struct {

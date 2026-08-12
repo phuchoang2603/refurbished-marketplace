@@ -30,7 +30,13 @@ VALUES (
     $5
 )
 RETURNING
-    products.id, products.name, products.description, products.price_cents, products.merchant_id, products.created_at, products.updated_at
+    products.id,
+    products.name,
+    products.description,
+    products.price_cents,
+    products.merchant_id,
+    products.created_at,
+    products.updated_at
 `
 
 type CreateProductParams struct {
@@ -159,7 +165,14 @@ func (q *Queries) GetProductsByIDs(ctx context.Context, dollar_1 []uuid.UUID) ([
 }
 
 const listProducts = `-- name: ListProducts :many
-SELECT id, name, description, price_cents, merchant_id, created_at, updated_at
+SELECT
+    products.id,
+    products.name,
+    products.description,
+    products.price_cents,
+    products.merchant_id,
+    products.created_at,
+    products.updated_at
 FROM products
 ORDER BY
     created_at DESC, id DESC

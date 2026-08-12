@@ -14,7 +14,13 @@ import (
 const createInventoryReservation = `-- name: CreateInventoryReservation :one
 INSERT INTO inventory_reservations (order_id, product_id, quantity, status)
 VALUES ($1, $2, $3, $4)
-RETURNING inventory_reservations.order_id, inventory_reservations.product_id, inventory_reservations.quantity, inventory_reservations.status, inventory_reservations.created_at, inventory_reservations.updated_at
+RETURNING
+    inventory_reservations.order_id,
+    inventory_reservations.product_id,
+    inventory_reservations.quantity,
+    inventory_reservations.status,
+    inventory_reservations.created_at,
+    inventory_reservations.updated_at
 `
 
 type CreateInventoryReservationParams struct {
@@ -44,7 +50,13 @@ func (q *Queries) CreateInventoryReservation(ctx context.Context, arg CreateInve
 }
 
 const listActiveInventoryReservationsByOrderID = `-- name: ListActiveInventoryReservationsByOrderID :many
-SELECT order_id, product_id, quantity, status, created_at, updated_at
+SELECT
+    inventory_reservations.order_id,
+    inventory_reservations.product_id,
+    inventory_reservations.quantity,
+    inventory_reservations.status,
+    inventory_reservations.created_at,
+    inventory_reservations.updated_at
 FROM inventory_reservations
 WHERE order_id = $1 AND status = 'RESERVED'
 ORDER BY product_id
@@ -90,7 +102,13 @@ WHERE
     order_id = $1
     AND product_id = $2
     AND status = 'RESERVED'
-RETURNING inventory_reservations.order_id, inventory_reservations.product_id, inventory_reservations.quantity, inventory_reservations.status, inventory_reservations.created_at, inventory_reservations.updated_at
+RETURNING
+    inventory_reservations.order_id,
+    inventory_reservations.product_id,
+    inventory_reservations.quantity,
+    inventory_reservations.status,
+    inventory_reservations.created_at,
+    inventory_reservations.updated_at
 `
 
 type MarkInventoryReservationCommittedParams struct {
@@ -121,7 +139,13 @@ WHERE
     order_id = $1
     AND product_id = $2
     AND status = 'RESERVED'
-RETURNING inventory_reservations.order_id, inventory_reservations.product_id, inventory_reservations.quantity, inventory_reservations.status, inventory_reservations.created_at, inventory_reservations.updated_at
+RETURNING
+    inventory_reservations.order_id,
+    inventory_reservations.product_id,
+    inventory_reservations.quantity,
+    inventory_reservations.status,
+    inventory_reservations.created_at,
+    inventory_reservations.updated_at
 `
 
 type MarkInventoryReservationReleasedParams struct {
