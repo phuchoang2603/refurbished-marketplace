@@ -1,48 +1,31 @@
 # Lộ trình đúng
 
-Ba lớp, làm lần lượt. **Không** cài theo README [UniMERNet](https://github.com/opendatalab/UniMERNet) trên Colab (`transformers==4.42.4` không chạy được Python 3.13).
+Ba lớp, làm lần lượt. **Không** cài theo README UniMERNet trên Colab (`transformers==4.42.4` không chạy Python 3.13).
 
 ```
 1. BẮT BUỘC  .docx → convert.py (CPU) → markup.txt + sidecar/ + manifest.json
-2. TÙY CHỌN  MathType WMF → UniMERNet → $latex$     (Colab GPU, vá transformers 5)
+2. TÙY CHỌN  MathType WMF → UniMERNet → $latex$     (Colab GPU)
 3. TÙY CHỌN  hình vẽ → Unlimited-OCR                 (T4 dễ OOM, mặc định tắt)
 ```
 
-| Bước | Khi nào làm | Kết quả Azota |
+| Bước | Khi nào | Kết quả Azota |
 | --- | --- | --- |
 | 1 | luôn | `[!m:$mathml_N$]`, `[!m:$mathtype_N$]`, `[img:$img_N$]`, `*D.` |
-| 2 | chỉ khi cần `$\\alpha$` thay placeholder MathType | `[!m:$mathtype_N$]` → `$latex$` |
+| 2 | chỉ khi cần `$latex$` thay MathType | `[!m:$mathtype_N$]` → `$latex$` |
 | 3 | chỉ khi còn VRAM sau bước 2 | OCR chữ trong hình |
 
-**Dừng ở bước 1** nếu Azota nhận placeholder. Đề mẫu đã đủ 69 mathml + 16 mathtype + 8 img **không GPU**.
-
-```
-Đề .docx ──► convert.py (CPU) ──► markup.txt + sidecar/ + manifest.json
-                                      │
-                                      │  TÙY CHỌN, GPU Colab T4
-                                      ▼
-                              UniMERNet (công thức WMF)
-                              Unlimited-OCR (chỉ hình, nếu còn VRAM)
-```
+**Dừng ở bước 1** nếu Azota nhận placeholder. Đề mẫu: 69 mathml + 16 mathtype + 8 img, **không GPU**.
 
 ---
 
-## Phần A — làm xong đề (không Colab)
-
-Trên máy có Python 3.10+:
+## Phần A — máy bạn, không Colab
 
 ```bash
 cd tools/docx-to-azota
 python3 convert.py "ĐỀ VẬT LÍ LẦN 3_VER 2 (2).docx" -o azota_out
 ```
 
-Hoặc dùng file mẫu trong repo:
-
-```bash
-python3 convert.py samples/de-vat-li-lan-3.docx -o azota_out
-```
-
-Mở thư mục `azota_out/`:
+Hoặc file mẫu: `python3 convert.py samples/de-vat-li-lan-3.docx -o azota_out`
 
 | File | Dùng để |
 | --- | --- |
@@ -50,42 +33,53 @@ Mở thư mục `azota_out/`:
 | `sidecar/` | `mathml_*.xml`, `mathtype_*.wmf`, `img_*.png` |
 | `manifest.json` | map id → file nguồn |
 
-**Dừng ở đây** nếu Azota nhận `[!m:$mathml_1$]` / `[!m:$mathtype_1$]` / `[img:$img_1$]`. Không cần GPU.
-
 ---
 
-## Phần B — Colab (chỉ khi cần LaTeX / OCR hình)
+## Phần B — Colab, làm lại từ đầu
 
-### B.0 Chuẩn bị (click, chưa code)
+### B.0 Xóa runtime cũ (bắt buộc nếu đã fail pip)
 
-1. Vào [Google Colab](https://colab.research.google.com/).
-2. File → New notebook.
+1. Runtime → **Disconnect and delete runtime**.
+2. File → **New notebook** (notebook trắng).
 3. Runtime → Change runtime type → **T4 GPU** → Save.
-4. Mỗi ô dưới đây: dán vào **một cell** → `Shift+Enter`. Đợi xong mới sang ô tiếp. **Không** Run all.
+4. Dán **từng ô** → `Shift+Enter`. Đợi xong mới sang ô tiếp. **Không** Run all.
+
+**Cấm** (sẽ hỏng runtime):
+
+```text
+pip install unimernet[full]
+pip install tokenizers
+pip install transformers==4.42.4
+```
 
 ---
 
-### Ô 1 — kiểm tra GPU
+### Ô 1 — GPU
 
 ```python
 !nvidia-smi -L
 ```
 
-Phải thấy `Tesla T4` (hoặc GPU khác). Nếu in `CPU only` thì quay lại B.0.
+Phải thấy `Tesla T4` (hoặc GPU khác). Nếu `CPU only` → quay B.0.
 
 ---
 
-### Ô 2 — lấy converter
+### Ô 2 — clone code (branch có patch transformers 5)
 
 ```python
+import shutil
+from pathlib import Path
+for p in ("/content/repo", "/content/docx-to-azota", "/content/refurbished-marketplace"):
+    shutil.rmtree(p, ignore_errors=True)
 REPO = "https://github.com/phuchoang2603/refurbished-marketplace.git"
 BRANCH = "cursor/docx-to-azota-pipeline-4d56"
 !git clone -b {BRANCH} --depth 1 {REPO} /content/repo
+print("cloned")
 ```
 
 ---
 
-### Ô 3 — đưa code vào PYTHONPATH
+### Ô 3 — PYTHONPATH
 
 ```python
 import sys, shutil
@@ -99,7 +93,7 @@ Phải in `OK True`.
 
 ---
 
-### Ô 4 — import
+### Ô 4 — import converter
 
 ```python
 from convert import convert_docx, apply_unimernet_latex
@@ -112,7 +106,7 @@ print("import OK")
 
 ---
 
-### Ô 5 — nhận GPU profile
+### Ô 5 — profile GPU
 
 ```python
 NAME, PROFILE = detect_profile()
@@ -121,11 +115,11 @@ OUT = "/content/azota_out"
 print(NAME, PROFILE)
 ```
 
-T4 sẽ in `t4` và `unimernet: tiny`.
+T4 in `t4` và `unimernet: tiny`.
 
 ---
 
-### Ô 6 — cài thư viện CPU + ImageMagick (WMF → PNG)
+### Ô 6 — ImageMagick (WMF → PNG)
 
 ```python
 !pip -q install pillow pymupdf huggingface_hub
@@ -133,82 +127,13 @@ T4 sẽ in `t4` và `unimernet: tiny`.
 !pip -q install Wand
 ```
 
-Ô này **đã chạy xong** nếu bạn thấy `Setting up imagemagick` — không cần chạy lại.
+Đợi đến `Setting up imagemagick`. **Không** cài UniMERNet trong ô này.
 
 ---
 
-### Nếu vừa thấy `Building wheel for tokenizers` — đọc trước
+### Ô 7 — UniMERNet (`--no-deps` + vá transformers 5)
 
-Đó **không** phải thiếu ImageMagick (Ô 6 đã xong). Colab Python **3.12/3.13** không có wheel `tokenizers` 0.19 nên pip cố compile Rust và fail.
-
-**Cấm** — hai lệnh này sẽ fail lại cùng một lỗi:
-
-```text
-pip install unimernet[full]
-pip install "tokenizers>=0.19.1,<0.20" "transformers==4.42.4"
-```
-
-**Làm đúng (3 bước):**
-
-1. Menu **Runtime → Restart session** (giữ ImageMagick). **Không** Disconnect runtime.
-2. Chạy lại Ô 3–5 (PYTHONPATH + import). **Không** chạy lại Ô 6.
-3. Dán **một** ô dưới đây. Không thêm bất kỳ `pip install tokenizers` nào.
-
-```python
-import sys, torch, numpy, tokenizers, transformers
-print(sys.version.split()[0], "torch", torch.__version__, "numpy", numpy.__version__)
-print("giữ sẵn tokenizers", tokenizers.__version__, "transformers", transformers.__version__)
-!sed -i 's/rights="none" pattern="WMF"/rights="read|write" pattern="WMF"/' /etc/ImageMagick-6/policy.xml || true
-!pip install -q unimernet --no-deps
-!pip install -q --only-binary=:all: omegaconf timm iopath fairscale ftfy albumentations rapidfuzz webdataset Wand
-import unimernet
-print("unimernet OK", unimernet.__file__)
-```
-
-Kỳ vọng in `unimernet OK /usr/local/...`. Nếu `import torch` lỗi sau Restart: **Runtime → Disconnect and delete runtime**, rồi làm lại từ Ô 1 (ImageMagick phải cài lại).
-
-### Nếu vừa thấy `apply_chunking_to_forward` hoặc `find_pruneable_heads_and_indices`
-
-`unimernet --no-deps` **đã cài**. UniMERNet import helper đã **xóa** ở `transformers` 5.x. Vá **cả** `modeling_utils` lẫn `pytorch_utils` (encoder lấy hàm từ `pytorch_utils`). **Không** pip-install transformers. Dán ô này:
-
-```python
-import sys, torch
-for k in list(sys.modules):
-    if k == "unimernet" or k.startswith("unimernet."):
-        del sys.modules[k]
-
-import transformers.modeling_utils as mu
-import transformers.pytorch_utils as pu
-from transformers.pytorch_utils import apply_chunking_to_forward, prune_linear_layer
-
-def find_pruneable_heads_and_indices(heads, n_heads, head_size, already_pruned_heads):
-    mask = torch.ones(n_heads, head_size)
-    heads = set(heads) - already_pruned_heads
-    for head in heads:
-        head = head - sum(1 if h < head else 0 for h in already_pruned_heads)
-        mask[head] = 0
-    mask = mask.view(-1).contiguous().eq(1)
-    index = torch.arange(len(mask))[mask].long()
-    return heads, index
-
-for mod in (mu, pu):
-    mod.apply_chunking_to_forward = apply_chunking_to_forward
-    mod.prune_linear_layer = prune_linear_layer
-    mod.find_pruneable_heads_and_indices = find_pruneable_heads_and_indices
-
-import unimernet
-print("unimernet OK", unimernet.__file__)
-```
-
-Hoặc clone branch mới: `from compat_transformers import import_unimernet; print(import_unimernet().__file__)`.
-
-**Muốn Azota ngay, bỏ UniMERNet:** nhảy Ô 8–9 (`convert_docx`). Placeholder `[!m:$mathtype_N$]` vẫn hợp lệ.
-
----
-
-### Ô 7 — cài UniMERNet (không dùng `[full]`)
-
-Dán ô này (sau khi clone branch mới nhất có `install_colab.py`):
+Ô này gọi `install_unimernet_colab()`: giữ torch/tokenizers/transformers của Colab, `pip install unimernet --no-deps`, rồi gắn `find_pruneable_heads_and_indices` vào `pytorch_utils`.
 
 ```python
 from install_colab import allow_wmf_in_imagemagick, install_unimernet_colab
@@ -216,9 +141,18 @@ allow_wmf_in_imagemagick()
 install_unimernet_colab()
 ```
 
+Kỳ vọng:
+
+```text
+keep Colab wheels: python 3.13 tokenizers 0.22.x transformers 5.x
+unimernet OK /usr/local/lib/python3.13/dist-packages/unimernet/__init__.py
+```
+
+Nếu vẫn `Building wheel for tokenizers` → bạn đã cài `[full]` hoặc `tokenizers`. Quay B.0.
+
 ---
 
-### Ô 8 — upload đề `.docx`
+### Ô 8 — upload `.docx`
 
 ```python
 from google.colab import files
@@ -227,11 +161,11 @@ DOCX = "/content/" + next(iter(uploaded))
 print(DOCX)
 ```
 
-Cửa sổ chọn file hiện ra → chọn `ĐỀ VẬT LÍ LẦN 3_VER 2 (2).docx`.
+Chọn `ĐỀ VẬT LÍ LẦN 3_VER 2 (2).docx`.
 
 ---
 
-### Ô 9 — Bước 1: extract Azota (CPU, ~0.2s) — **bắt buộc**
+### Ô 9 — Bước 1: extract Azota (CPU) — bắt buộc
 
 ```python
 with timer.step("Bước 1", "OOXML"):
@@ -241,7 +175,7 @@ print(man["counts"])
 
 Kỳ vọng khoảng: `mathml 69`, `mathtype 16`, `img 8`.
 
-**Đã có ` /content/azota_out/markup.txt `.** Có thể tải về và dừng, không cần Ô 10–16.
+Đã có `/content/azota_out/markup.txt`. **Có thể nhảy Ô 17 tải về và dừng.** Ô 10–16 chỉ khi cần `$latex$`.
 
 ---
 
@@ -253,7 +187,7 @@ print("\n".join(open(OUT + "/markup.txt", encoding="utf-8").read().splitlines()[
 
 ---
 
-### Ô 11 — Bước 2: WMF → PNG (chỉ công thức MathType)
+### Ô 11 — Bước 2: WMF → PNG (chỉ MathType)
 
 ```python
 from pathlib import Path
@@ -269,9 +203,11 @@ with timer.step("Bước 2", "raster WMF"):
 print(len(jobs), "ảnh công thức")
 ```
 
+Kỳ vọng `16 ảnh công thức`.
+
 ---
 
-### Ô 12 — tải checkpoint UniMERNet-tiny (ô này lâu)
+### Ô 12 — tải UniMERNet-tiny (ô lâu)
 
 ```python
 with timer.step("Bước 3-load", "download tiny"):
@@ -282,7 +218,7 @@ print("device =", device)
 
 ---
 
-### Ô 13 — Bước 3: nhận dạng LaTeX (batch)
+### Ô 13 — Bước 3: nhận dạng LaTeX
 
 ```python
 with timer.step("Bước 3", "UniMERNet batch"):
@@ -305,20 +241,9 @@ with timer.step("Bước 4", "inject LaTeX"):
 timer.print_summary()
 ```
 
-In ra dạng:
-
-```
-⏱ THỜI GIAN:
-Bước 1: 0.2s (OOXML)
-Bước 2: …s (raster WMF)
-Bước 3: …s (UniMERNet batch)
-Bước 4: 0.1s (inject LaTeX)
-TỔNG : …
-```
-
 ---
 
-### Ô 15 — giải phóng GPU (bắt buộc trước khi OCR)
+### Ô 15 — unload GPU
 
 ```python
 free_cuda(model, vis)
@@ -328,19 +253,12 @@ print("đã unload UniMERNet")
 
 ---
 
-### Ô 16 — Unlimited-OCR hình vẽ (TÙY CHỌN, dễ OOM trên T4)
-
-Mặc định **bỏ qua**. Chỉ chạy nếu Ô 13 xong mà `nvidia-smi` còn >8GB trống.
+### Ô 16 — Unlimited-OCR hình (mặc định tắt)
 
 ```python
-PROFILE = dict(PROFILE) if "PROFILE" in dir() else {}
-# Bật tay:
 RUN_OCR_HINH = False
-```
-
-```python
 if RUN_OCR_HINH:
-    !pip -q install -U transformers==4.57.1 einops addict easydict
+    !pip -q install -U einops addict easydict
     from vision import load_unlimited_ocr, unlimited_ocr_one, strip_unlimited_ocr_det
     figs = vision_jobs_from_manifest(man, OUT, kinds=("img",))
     ocr_m, ocr_t = load_unlimited_ocr()
@@ -356,7 +274,7 @@ else:
 
 ---
 
-### Ô 17 — tải kết quả về máy
+### Ô 17 — tải zip về máy
 
 ```python
 from google.colab import files
@@ -370,14 +288,12 @@ Giải nén: `markup.txt` + `sidecar/` + `manifest.json`.
 
 ## Không làm
 
-- Không `pip install unimernet[full]` và không `pip install tokenizers` / `transformers==4.42.4` trên Colab (Python 3.12/3.13, compile Rust fail).
-- Không OCR cả 5 trang PDF khi đã có `.docx` (chậm ~57s/trang, dễ OOM).
-- Không `Run all` khi đang đo thời gian.
+- Không `pip install unimernet[full]`, `tokenizers`, `transformers==4.42.4`.
+- Không OCR cả trang PDF khi đã có `.docx`.
+- Không `Run all`.
 - Không load UniMERNet và Unlimited-OCR cùng lúc trên T4.
 
 ## Notebook sẵn
 
-Cùng nội dung trên, đã tách cell sẵn:
-
-- `colab_optimized.ipynb` — chạy thật trên T4  
+- `colab_optimized.ipynb` — T4
 - `colab_docx_to_azota.ipynb` — đo từng bước / PDF
