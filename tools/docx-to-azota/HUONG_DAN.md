@@ -124,13 +124,21 @@ T4 sẽ in `t4` và `unimernet: tiny`.
 !pip -q install Wand
 ```
 
+Ô này **đã chạy xong** nếu bạn thấy `Setting up imagemagick` — không cần chạy lại.
+
 ---
 
-### Ô 7 — cài UniMERNet (ô này lâu ~1–3 phút)
+### Ô 7 — cài UniMERNet (không dùng `[full]`)
+
+`pip install unimernet[full]` trên Colab sẽ **fail** (`Failed building wheel for tokenizers`, thiếu Rust). Dán ô này:
 
 ```python
-!pip -q install -U "unimernet[full]"
+from install_colab import allow_wmf_in_imagemagick, install_unimernet_colab
+allow_wmf_in_imagemagick()
+install_unimernet_colab()
 ```
+
+Phải in `unimernet OK ...`. Sau đó sang Ô 8 (upload docx).
 
 ---
 

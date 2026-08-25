@@ -5,11 +5,4 @@
 # pillow>=10.0.0
 # Wand (ImageMagick) or LibreOffice are used if present.
 
-# GPU overlays — install on Colab, not required for convert.py
-# torch
-# transformers>=4.57.1
-# unimernet[full]
-# pymupdf
-# einops
-# addict
-# easydict
+# GPU overlays — install on Colab via install_colab.py (NOT unimernet[full])
