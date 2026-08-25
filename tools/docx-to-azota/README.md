@@ -2,6 +2,8 @@
 
 Chuyển đề thi Word (`.docx`) sang **cú pháp Azota phẳng theo dòng**, giữ nguyên công thức / ảnh / bảng dưới dạng placeholder + file sidecar.
 
+**Quy trình đúng (có cần Colab không?): xem [`HUONG_DAN.md`](HUONG_DAN.md).** Tóm tắt: CPU `convert.py` là bắt buộc; Colab GPU chỉ khi cần UniMERNet/OCR.
+
 Mẫu chuẩn đã chạy thành công: `samples/de-vat-li-lan-3.docx`
 (`ĐỀ VẬT LÍ LẦN 3_VER 2 (2).docx`).
 
