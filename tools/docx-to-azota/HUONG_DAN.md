@@ -37,6 +37,15 @@ Hoặc file mẫu: `python3 convert.py samples/de-vat-li-lan-3.docx -o azota_out
 
 ## Phần B — Colab, làm lại từ đầu
 
+**Cách đúng:** Runtime → Disconnect and delete runtime → upload `tools/docx-to-azota/colab_start_here.ipynb` → T4 → `Shift+Enter` từng ô.
+
+Không dùng `Untitled1.ipynb` (clone 2 lần, thiếu ImageMagick, `pip --only-binary` fail trên Python 3.13).
+
+File notebook: https://github.com/phuchoang2603/refurbished-marketplace/blob/cursor/docx-to-azota-pipeline-4d56/tools/docx-to-azota/colab_start_here.ipynb
+
+Raw (Colab File → Upload):  
+https://raw.githubusercontent.com/phuchoang2603/refurbished-marketplace/cursor/docx-to-azota-pipeline-4d56/tools/docx-to-azota/colab_start_here.ipynb
+
 ### B.0 Xóa runtime cũ (bắt buộc nếu đã fail pip)
 
 1. Runtime → **Disconnect and delete runtime**.

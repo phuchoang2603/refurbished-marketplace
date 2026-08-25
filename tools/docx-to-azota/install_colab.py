@@ -11,11 +11,12 @@ Rust) and exits with "Building wheel for tokenizers ... did not run
 successfully".
 
 Keep Colab's existing torch / numpy / tokenizers / transformers wheels.
-Install unimernet with --no-deps, then binary-only extras.
+Install unimernet with --no-deps, then extras (not [full], not tokenizers).
+Do not use ``--only-binary=:all:`` for extras: fairscale/iopath/Wand often
+have no cp313 wheel and that flag aborts the whole install.
 
-After install, patch transformers 5.x so UniMERNet's Qformer can import
-``apply_chunking_to_forward`` (moved to pytorch_utils / removed from
-modeling_utils).
+Then patch transformers 5.x (pytorch_utils helpers + decoder ONNX stub)
+before ``import unimernet``.
 """
 
 from __future__ import annotations
@@ -76,18 +77,19 @@ def install_unimernet_colab() -> None:
             "pip",
             "install",
             "-q",
-            "--only-binary=:all:",
             "omegaconf",
             "timm",
-            "iopath",
-            "fairscale",
             "ftfy",
             "albumentations",
             "rapidfuzz",
             "webdataset",
-            "Wand",
         ]
     )
+    for pkg in ("iopath", "fairscale", "Wand"):
+        try:
+            _run([py, "-m", "pip", "install", "-q", pkg])
+        except subprocess.CalledProcessError:
+            print("skip extra", pkg, flush=True)
     from compat_transformers import import_unimernet
 
     unimernet = import_unimernet()
