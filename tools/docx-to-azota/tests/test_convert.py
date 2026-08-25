@@ -268,6 +268,14 @@ def test_install_colab_never_pins_tokenizers():
     assert "transformers==4.42.4" in FORBIDDEN_PIP
 
 
+def test_onnx_stub_symbols_in_source():
+    src = (Path(__file__).resolve().parent.parent / "compat_transformers.py").read_text(encoding="utf-8")
+    assert "def install_transformers_onnx_stub" in src
+    assert "transformers.onnx" in src
+    assert "OnnxSeq2SeqConfigWithPast" in src
+    assert "install_transformers_onnx_stub()" in src
+
+
 def test_step_timer():
     from eval_timer import StepTimer
 

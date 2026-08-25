@@ -7,7 +7,8 @@ UniMERNet still imports helpers that moved or were removed:
 
 On transformers >= 4.56 chunking/prune live in ``pytorch_utils``.
 On transformers 5.x ``find_pruneable_heads_and_indices`` was removed entirely.
-We re-attach a copy onto both modules before ``import unimernet``.
+Transformers 5 also deleted ``transformers.onnx``; UniMERNet's decoder
+config still imports it for unused ONNX export classes. We inject a stub.
 """
 
 from __future__ import annotations
@@ -87,8 +88,69 @@ def _first_available(*getters):
     return None
 
 
+def install_transformers_onnx_stub() -> None:
+    """UniMERNet decoder config imports transformers.onnx, removed in v5.
+
+    Inference never uses MBartOnnxConfig; a no-op stub is enough to import.
+    """
+    try:
+        import transformers.onnx  # noqa: F401
+
+        return
+    except ModuleNotFoundError:
+        pass
+
+    import types
+
+    import transformers
+
+    class OnnxConfig:
+        default_fixed_batch = 2
+        default_fixed_sequence = 8
+
+        def __init__(self, *args, **kwargs):
+            self.task = kwargs.get("task", "default")
+            self.use_past = False
+            self._config = kwargs.get("config")
+
+        @property
+        def outputs(self):
+            return {}
+
+        def fill_with_past_key_values_(self, *args, **kwargs):
+            return None
+
+        def _flatten_past_key_values_(self, flattened_output, name, idx, t):
+            return flattened_output
+
+    class OnnxConfigWithPast(OnnxConfig):
+        pass
+
+    class OnnxSeq2SeqConfigWithPast(OnnxConfigWithPast):
+        pass
+
+    def compute_effective_axis_dimension(dimension, fixed_dimension=2, num_token_to_add=0):
+        if dimension is None or dimension <= 0:
+            return fixed_dimension + num_token_to_add
+        return dimension + num_token_to_add
+
+    onnx = types.ModuleType("transformers.onnx")
+    onnx.OnnxConfig = OnnxConfig
+    onnx.OnnxConfigWithPast = OnnxConfigWithPast
+    onnx.OnnxSeq2SeqConfigWithPast = OnnxSeq2SeqConfigWithPast
+
+    onnx_utils = types.ModuleType("transformers.onnx.utils")
+    onnx_utils.compute_effective_axis_dimension = compute_effective_axis_dimension
+    onnx.utils = onnx_utils
+
+    sys.modules["transformers.onnx"] = onnx
+    sys.modules["transformers.onnx.utils"] = onnx_utils
+    transformers.onnx = onnx
+
+
 def patch_transformers_for_unimernet() -> None:
     """Re-attach missing helpers on both modeling_utils and pytorch_utils."""
+    install_transformers_onnx_stub()
     import transformers.modeling_utils as modeling_utils
     import transformers.pytorch_utils as pytorch_utils
     import transformers.utils as tf_utils
