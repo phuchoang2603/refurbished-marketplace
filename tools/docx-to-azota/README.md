@@ -128,7 +128,7 @@ Với đề `.docx` (ĐỀ VẬT LÍ LẦN 3):
 | 16 công thức MathType | **UniMERNet-tiny batch** | ~441MB, vài giây |
 | 8 hình vẽ | `[img:$img_N$]` giữ nguyên; Unlimited-OCR chỉ khi còn VRAM | tắt mặc định trên T4 |
 
-Colab: **không** `pip install unimernet[full]` hay `tokenizers` 0.19 (Python 3.12/3.13, thiếu wheel, compile Rust fail). Dùng `install_colab.py` (`unimernet --no-deps` + `compat_transformers` cho transformers 5.x). Nếu vừa thấy `Building wheel for tokenizers` hoặc `apply_chunking_to_forward`: xem `HUONG_DAN.md` mục phục hồi.
+Colab: upload `colab_start_here.ipynb` sau khi **Disconnect and delete runtime**. Phần A extract Azota không cài UniMERNet. Không dùng Untitled1 / `unimernet[full]` / `tokenizers`.
 
 Mở `colab_optimized.ipynb` → Runtime GPU T4 → `Shift+Enter`:
 

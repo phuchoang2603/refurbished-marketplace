@@ -237,9 +237,15 @@ def patch_transformers_for_unimernet() -> None:
 def _unimernet_package_file(*relative: str):
     """Locate a file under the installed unimernet package without importing it."""
     import site
+    import glob as _glob
     from pathlib import Path
 
     roots: list[Path] = []
+    for pattern in (
+        "/usr/local/lib/python*/dist-packages",
+        "/usr/lib/python*/dist-packages",
+    ):
+        roots.extend(Path(p) for p in _glob.glob(pattern))
     try:
         roots.extend(Path(p) for p in site.getsitepackages())
     except Exception:
@@ -278,14 +284,8 @@ def rewrite_installed_decoder_onnx() -> str | None:
 
 def rewrite_installed_qformer() -> str | None:
     """Rewrite site-packages UniMERNet Qformer.py so a later Restart still imports."""
-    import importlib.util
-    from pathlib import Path
-
-    spec = importlib.util.find_spec("unimernet")
-    if spec is None or not spec.origin:
-        return None
-    qformer = Path(spec.origin).resolve().parent / "models" / "blip2_models" / "Qformer.py"
-    if not qformer.exists():
+    qformer = _unimernet_package_file("models", "blip2_models", "Qformer.py")
+    if qformer is None:
         return None
     original = qformer.read_text(encoding="utf-8")
     updated = rewrite_qformer_imports(original)
