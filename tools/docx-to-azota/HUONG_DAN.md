@@ -128,26 +128,46 @@ T4 sẽ in `t4` và `unimernet: tiny`.
 
 ---
 
-### Ô 7 — cài UniMERNet (không dùng `[full]`)
+### Nếu vừa thấy `Building wheel for tokenizers` — đọc trước
 
-`pip install unimernet[full]` trên Colab sẽ **fail** (`Failed building wheel for tokenizers`, thiếu Rust). Dán ô này:
+Đó **không** phải thiếu ImageMagick (Ô 6 đã xong). Colab Python **3.12** không có wheel `tokenizers` 0.19 nên pip cố compile Rust và fail.
 
-```python
-from install_colab import allow_wmf_in_imagemagick, install_unimernet_colab
-allow_wmf_in_imagemagick()
-install_unimernet_colab()
+**Cấm** — hai lệnh này sẽ fail lại cùng một lỗi:
+
+```text
+pip install unimernet[full]
+pip install "tokenizers>=0.19.1,<0.20" "transformers==4.42.4"
 ```
 
-Nếu notebook clone **trước khi có file này**, dán nguyên ô dưới (không cài tokenizers/transformers):
+**Làm đúng (3 bước):**
+
+1. Menu **Runtime → Restart session** (giữ ImageMagick). **Không** Disconnect runtime.
+2. Chạy lại Ô 3–5 (PYTHONPATH + import). **Không** chạy lại Ô 6.
+3. Dán **một** ô dưới đây. Không thêm bất kỳ `pip install tokenizers` nào.
 
 ```python
-import tokenizers, transformers
-print("giữ sẵn", tokenizers.__version__, transformers.__version__)
+import sys, torch, numpy, tokenizers, transformers
+print(sys.version.split()[0], "torch", torch.__version__, "numpy", numpy.__version__)
+print("giữ sẵn tokenizers", tokenizers.__version__, "transformers", transformers.__version__)
 !sed -i 's/rights="none" pattern="WMF"/rights="read|write" pattern="WMF"/' /etc/ImageMagick-6/policy.xml || true
 !pip install -q unimernet --no-deps
 !pip install -q --only-binary=:all: omegaconf timm iopath fairscale ftfy albumentations rapidfuzz webdataset Wand
 import unimernet
 print("unimernet OK", unimernet.__file__)
+```
+
+Kỳ vọng in `unimernet OK /usr/local/...`. Nếu `import torch` lỗi sau Restart: **Runtime → Disconnect and delete runtime**, rồi làm lại từ Ô 1 (ImageMagick phải cài lại).
+
+---
+
+### Ô 7 — cài UniMERNet (không dùng `[full]`)
+
+Dán ô này (sau khi clone branch mới nhất có `install_colab.py`):
+
+```python
+from install_colab import allow_wmf_in_imagemagick, install_unimernet_colab
+allow_wmf_in_imagemagick()
+install_unimernet_colab()
 ```
 
 ---
@@ -304,6 +324,7 @@ Giải nén: `markup.txt` + `sidecar/` + `manifest.json`.
 
 ## Không làm
 
+- Không `pip install unimernet[full]` và không `pip install tokenizers` / `transformers==4.42.4` trên Colab (Python 3.12, compile Rust fail).
 - Không OCR cả 5 trang PDF khi đã có `.docx` (chậm ~57s/trang, dễ OOM).
 - Không `Run all` khi đang đo thời gian.
 - Không load UniMERNet và Unlimited-OCR cùng lúc trên T4.

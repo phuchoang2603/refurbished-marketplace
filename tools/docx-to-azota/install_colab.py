@@ -1,9 +1,17 @@
 """Colab-safe UniMERNet install.
 
-Do NOT use `pip install unimernet[full]` on Colab: it pins transformers==4.42.4
-which tries to compile `tokenizers` from source (needs Rust) and fails.
+Do NOT pip-install any of these on Colab — they fail on Python 3.12:
 
-Keep Colab's torch. Install tokenizers from a wheel, then unimernet --no-deps.
+    pip install unimernet[full]
+    pip install "tokenizers>=0.19.1,<0.20" "transformers==4.42.4"
+
+UniMERNet pins transformers==4.42.4 → tokenizers 0.19.x. Colab's Python 3.12
+has no prebuilt tokenizers 0.19 wheels, so pip compiles from source (needs
+Rust) and exits with "Building wheel for tokenizers ... did not run
+successfully".
+
+Keep Colab's existing torch / numpy / tokenizers / transformers wheels.
+Install unimernet with --no-deps, then binary-only extras.
 """
 
 from __future__ import annotations
@@ -12,16 +20,12 @@ import subprocess
 import sys
 
 
-"""Colab-safe UniMERNet install.
-
-Never pip-install tokenizers/transformers on Colab: those pins compile
-Rust tokenizers from source and fail. Use the wheels Colab already has.
-"""
-
-from __future__ import annotations
-
-import subprocess
-import sys
+FORBIDDEN_PIP = (
+    "unimernet[full]",
+    "tokenizers>=",
+    "tokenizers==0.19",
+    "transformers==4.42.4",
+)
 
 
 def _run(cmd: list[str]) -> None:
@@ -29,11 +33,36 @@ def _run(cmd: list[str]) -> None:
     subprocess.check_call(cmd)
 
 
+def assert_torch_healthy() -> None:
+    """Fail fast if a previous source-build of numpy/tokenizers broke the runtime."""
+    try:
+        import numpy as np
+        import torch
+
+        _ = (torch.zeros(1) + float(np.array([1.0]))).item()
+    except Exception as exc:
+        raise SystemExit(
+            "numpy/torch is broken after a failed pip build. In Colab: "
+            "Runtime → Restart session (keep ImageMagick), then run "
+            "install_unimernet_colab() only — never pip-install tokenizers."
+        ) from exc
+
+
 def install_unimernet_colab() -> None:
     import tokenizers
     import transformers
 
-    print("keep Colab tokenizers", tokenizers.__version__, "transformers", transformers.__version__)
+    assert_torch_healthy()
+    print(
+        "keep Colab wheels:",
+        "python",
+        f"{sys.version_info.major}.{sys.version_info.minor}",
+        "tokenizers",
+        tokenizers.__version__,
+        "transformers",
+        transformers.__version__,
+        flush=True,
+    )
     py = sys.executable
     _run([py, "-m", "pip", "install", "-q", "unimernet", "--no-deps"])
     _run(
@@ -57,7 +86,7 @@ def install_unimernet_colab() -> None:
     )
     import unimernet
 
-    print("unimernet OK", unimernet.__file__)
+    print("unimernet OK", unimernet.__file__, flush=True)
 
 
 def allow_wmf_in_imagemagick() -> None:

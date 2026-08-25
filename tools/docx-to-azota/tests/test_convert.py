@@ -236,6 +236,18 @@ def test_colab_opt_helpers(tmp_path: Path):
     assert jobs[0][0] == "mathtype_1"
 
 
+def test_install_colab_never_pins_tokenizers():
+    src = (Path(__file__).resolve().parent.parent / "install_colab.py").read_text(encoding="utf-8")
+    assert '[py, "-m", "pip", "install", "-q", "unimernet", "--no-deps"]' in src
+    install_fn = src.split("def install_unimernet_colab")[1].split("def allow_wmf")[0]
+    assert "tokenizers>=" not in install_fn
+    assert "unimernet[full]" not in install_fn
+    from install_colab import FORBIDDEN_PIP
+
+    assert "unimernet[full]" in FORBIDDEN_PIP
+    assert "transformers==4.42.4" in FORBIDDEN_PIP
+
+
 def test_step_timer():
     from eval_timer import StepTimer
 
