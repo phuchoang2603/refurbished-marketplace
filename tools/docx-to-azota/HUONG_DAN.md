@@ -138,7 +138,17 @@ allow_wmf_in_imagemagick()
 install_unimernet_colab()
 ```
 
-Phải in `unimernet OK ...`. Sau đó sang Ô 8 (upload docx).
+Nếu notebook clone **trước khi có file này**, dán nguyên ô dưới (không cài tokenizers/transformers):
+
+```python
+import tokenizers, transformers
+print("giữ sẵn", tokenizers.__version__, transformers.__version__)
+!sed -i 's/rights="none" pattern="WMF"/rights="read|write" pattern="WMF"/' /etc/ImageMagick-6/policy.xml || true
+!pip install -q unimernet --no-deps
+!pip install -q --only-binary=:all: omegaconf timm iopath fairscale ftfy albumentations rapidfuzz webdataset Wand
+import unimernet
+print("unimernet OK", unimernet.__file__)
+```
 
 ---
 

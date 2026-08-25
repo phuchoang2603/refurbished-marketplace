@@ -12,25 +12,29 @@ import subprocess
 import sys
 
 
+"""Colab-safe UniMERNet install.
+
+Never pip-install tokenizers/transformers on Colab: those pins compile
+Rust tokenizers from source and fail. Use the wheels Colab already has.
+"""
+
+from __future__ import annotations
+
+import subprocess
+import sys
+
+
 def _run(cmd: list[str]) -> None:
     print("+", " ".join(cmd), flush=True)
     subprocess.check_call(cmd)
 
 
 def install_unimernet_colab() -> None:
+    import tokenizers
+    import transformers
+
+    print("keep Colab tokenizers", tokenizers.__version__, "transformers", transformers.__version__)
     py = sys.executable
-    # Wheel first — never build tokenizers from source.
-    _run(
-        [
-            py,
-            "-m",
-            "pip",
-            "install",
-            "-q",
-            "tokenizers>=0.19.1,<0.20",
-            "transformers==4.42.4",
-        ]
-    )
     _run([py, "-m", "pip", "install", "-q", "unimernet", "--no-deps"])
     _run(
         [
@@ -39,15 +43,15 @@ def install_unimernet_colab() -> None:
             "pip",
             "install",
             "-q",
-            "omegaconf>=2.3.0",
-            "timm>=0.9.16,<0.10",
-            "iopath>=0.1.9,<0.2",
-            "fairscale>=0.4.13,<0.5",
-            "ftfy>=6.2.0",
-            "albumentations>=1.4.4,<2",
-            "rapidfuzz>=3.8.1,<4",
-            "evaluate>=0.4.1,<0.5",
-            "webdataset>=0.2.86,<0.3",
+            "--only-binary=:all:",
+            "omegaconf",
+            "timm",
+            "iopath",
+            "fairscale",
+            "ftfy",
+            "albumentations",
+            "rapidfuzz",
+            "webdataset",
             "Wand",
         ]
     )
