@@ -268,7 +268,19 @@ def test_install_colab_never_pins_tokenizers():
     assert "transformers==4.42.4" in FORBIDDEN_PIP
 
 
-def test_onnx_stub_symbols_in_source():
+def test_rewrite_decoder_onnx_imports():
+    from compat_transformers import rewrite_decoder_onnx_imports
+
+    src = (
+        "from transformers import PreTrainedTokenizer\n"
+        "from transformers.onnx import OnnxConfig, OnnxConfigWithPast, OnnxSeq2SeqConfigWithPast\n"
+        "from transformers.onnx.utils import compute_effective_axis_dimension\n"
+        "from transformers.utils import TensorType\n"
+    )
+    out = rewrite_decoder_onnx_imports(src)
+    assert "azota_onnx_stub" in out
+    assert "from transformers.onnx import" in out
+    assert rewrite_decoder_onnx_imports(out) == out
     src = (Path(__file__).resolve().parent.parent / "compat_transformers.py").read_text(encoding="utf-8")
     assert "def install_transformers_onnx_stub" in src
     assert "transformers.onnx" in src

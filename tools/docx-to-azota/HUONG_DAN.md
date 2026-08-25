@@ -131,9 +131,7 @@ T4 in `t4` và `unimernet: tiny`.
 
 ---
 
-### Ô 7 — UniMERNet (`--no-deps` + vá transformers 5)
-
-Ô này gọi `install_unimernet_colab()`: giữ torch/tokenizers/transformers của Colab, `pip install unimernet --no-deps`, vá `pytorch_utils`, và stub `transformers.onnx` (đã xóa ở v5).
+### Ô 7 — UniMERNet (`--no-deps` + vá file decoder, không dùng `[full]`)
 
 ```python
 from install_colab import allow_wmf_in_imagemagick, install_unimernet_colab
@@ -141,26 +139,9 @@ allow_wmf_in_imagemagick()
 install_unimernet_colab()
 ```
 
-Kỳ vọng:
+Kỳ vọng `unimernet OK /usr/local/...`. Hàm này vá `configuration_unimernet_decoder.py` (bỏ `transformers.onnx`) rồi mới import.
 
-```text
-keep Colab wheels: python 3.13 tokenizers 0.22.x transformers 5.x
-unimernet OK /usr/local/lib/python3.13/dist-packages/unimernet/__init__.py
-```
-
-Nếu vẫn `Building wheel for tokenizers` → bạn đã cài `[full]` hoặc `tokenizers`. Quay B.0.
-
-Nếu `No module named 'transformers.onnx'` (clone cũ, UniMERNet đã pip xong): chạy lại Ô 2–3 rồi:
-
-```python
-import importlib
-import compat_transformers
-importlib.reload(compat_transformers)
-from compat_transformers import import_unimernet
-print("unimernet OK", import_unimernet().__file__)
-```
-
-Không pip thêm, không Restart.
+Nếu clone trên Colab cũ hơn commit vá ONNX: **đừng** gọi lại `install_unimernet_colab()`. Dán ô trong chat (patch file decoder + `import unimernet`).
 
 ---
 

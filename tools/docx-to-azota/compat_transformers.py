@@ -65,6 +65,54 @@ def find_pruneable_heads_and_indices(
     return heads_set, index
 
 
+ONNX_IMPORT_RE = re.compile(
+    r"from transformers\.onnx import OnnxConfig, OnnxConfigWithPast, OnnxSeq2SeqConfigWithPast\s*"
+    r"from transformers\.onnx\.utils import compute_effective_axis_dimension"
+)
+
+ONNX_IMPORT_REPLACEMENT = '''try:
+    from transformers.onnx import OnnxConfig, OnnxConfigWithPast, OnnxSeq2SeqConfigWithPast
+    from transformers.onnx.utils import compute_effective_axis_dimension
+except Exception:  # azota_onnx_stub — transformers 5 removed this module
+    class OnnxConfig:
+        default_fixed_batch = 2
+        default_fixed_sequence = 8
+
+        def __init__(self, *args, **kwargs):
+            self.task = kwargs.get("task", "default")
+            self.use_past = False
+            self._config = kwargs.get("config")
+
+        @property
+        def outputs(self):
+            return {}
+
+        def fill_with_past_key_values_(self, *args, **kwargs):
+            return None
+
+        def _flatten_past_key_values_(self, flattened_output, name, idx, t):
+            return flattened_output
+
+    class OnnxConfigWithPast(OnnxConfig):
+        pass
+
+    class OnnxSeq2SeqConfigWithPast(OnnxConfigWithPast):
+        pass
+
+    def compute_effective_axis_dimension(dimension, fixed_dimension=2, num_token_to_add=0):
+        if dimension is None or dimension <= 0:
+            return fixed_dimension + num_token_to_add
+        return dimension + num_token_to_add
+'''
+
+
+def rewrite_decoder_onnx_imports(source: str) -> str:
+    if "azota_onnx_stub" in source:
+        return source
+    updated, n = ONNX_IMPORT_RE.subn(ONNX_IMPORT_REPLACEMENT, source, count=1)
+    return updated if n else source
+
+
 def rewrite_qformer_imports(source: str) -> str:
     if "from transformers.pytorch_utils import apply_chunking_to_forward" in source:
         return source
@@ -94,10 +142,10 @@ def install_transformers_onnx_stub() -> None:
     Inference never uses MBartOnnxConfig; a no-op stub is enough to import.
     """
     try:
-        import transformers.onnx  # noqa: F401
+        from transformers.onnx import OnnxConfig  # noqa: F401
 
         return
-    except ModuleNotFoundError:
+    except Exception:
         pass
 
     import types
@@ -186,6 +234,48 @@ def patch_transformers_for_unimernet() -> None:
             pass
 
 
+def _unimernet_package_file(*relative: str):
+    """Locate a file under the installed unimernet package without importing it."""
+    import site
+    from pathlib import Path
+
+    roots: list[Path] = []
+    try:
+        roots.extend(Path(p) for p in site.getsitepackages())
+    except Exception:
+        pass
+    try:
+        roots.append(Path(site.getusersitepackages()))
+    except Exception:
+        pass
+    roots.append(Path("/usr/local/lib/python3.13/dist-packages"))
+    roots.append(Path("/usr/local/lib/python3.12/dist-packages"))
+    for root in roots:
+        candidate = root.joinpath("unimernet", *relative)
+        if candidate.exists():
+            return candidate
+    import importlib.util
+
+    spec = importlib.util.find_spec("unimernet")
+    if spec is None or not spec.origin:
+        return None
+    candidate = Path(spec.origin).resolve().parent.joinpath(*relative)
+    return candidate if candidate.exists() else None
+
+
+def rewrite_installed_decoder_onnx() -> str | None:
+    """Make UniMERNet decoder config importable without transformers.onnx."""
+    decoder = _unimernet_package_file("models", "unimernet", "configuration_unimernet_decoder.py")
+    if decoder is None:
+        return None
+    original = decoder.read_text(encoding="utf-8")
+    updated = rewrite_decoder_onnx_imports(original)
+    if updated != original:
+        decoder.write_text(updated, encoding="utf-8")
+        print("patched", decoder)
+    return str(decoder)
+
+
 def rewrite_installed_qformer() -> str | None:
     """Rewrite site-packages UniMERNet Qformer.py so a later Restart still imports."""
     import importlib.util
@@ -208,6 +298,7 @@ def rewrite_installed_qformer() -> str | None:
 def import_unimernet():
     """Patch transformers, drop a failed half-import, then import UniMERNet."""
     patch_transformers_for_unimernet()
+    rewrite_installed_decoder_onnx()
     rewrite_installed_qformer()
     purge_unimernet_modules()
     import unimernet
