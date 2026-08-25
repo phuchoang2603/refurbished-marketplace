@@ -1,16 +1,13 @@
 """Make UniMERNet importable on Colab's transformers 5.x.
 
-UniMERNet (Qformer.py) still does:
+UniMERNet still imports helpers that moved or were removed:
 
-    from transformers.modeling_utils import (
-        PreTrainedModel,
-        apply_chunking_to_forward,
-        find_pruneable_heads_and_indices,
-        prune_linear_layer,
-    )
+* Qformer.py: ``from transformers.modeling_utils import apply_chunking_to_forward, ...``
+* modeling_unimernet_encoder.py: ``from transformers.pytorch_utils import find_pruneable_heads_and_indices``
 
-On transformers >= 4.56 those helpers live in ``pytorch_utils``. On
-transformers 5.x, ``find_pruneable_heads_and_indices`` was removed entirely.
+On transformers >= 4.56 chunking/prune live in ``pytorch_utils``.
+On transformers 5.x ``find_pruneable_heads_and_indices`` was removed entirely.
+We re-attach a copy onto both modules before ``import unimernet``.
 """
 
 from __future__ import annotations
@@ -79,32 +76,52 @@ def purge_unimernet_modules() -> None:
             del sys.modules[name]
 
 
+def _first_available(*getters):
+    for getter in getters:
+        try:
+            value = getter()
+        except Exception:
+            value = None
+        if value is not None:
+            return value
+    return None
+
+
 def patch_transformers_for_unimernet() -> None:
-    """Re-export missing helpers on ``transformers.modeling_utils``."""
+    """Re-attach missing helpers on both modeling_utils and pytorch_utils."""
     import transformers.modeling_utils as modeling_utils
+    import transformers.pytorch_utils as pytorch_utils
+    import transformers.utils as tf_utils
 
-    try:
-        from transformers.pytorch_utils import apply_chunking_to_forward as _chunk
-    except ImportError:
-        _chunk = getattr(modeling_utils, "apply_chunking_to_forward", None)
-    try:
-        from transformers.pytorch_utils import prune_linear_layer as _prune
-    except ImportError:
-        _prune = getattr(modeling_utils, "prune_linear_layer", None)
-    try:
-        from transformers.pytorch_utils import find_pruneable_heads_and_indices as _heads
-    except ImportError:
-        _heads = getattr(modeling_utils, "find_pruneable_heads_and_indices", None)
-        if _heads is None:
-            _heads = find_pruneable_heads_and_indices
+    chunk = _first_available(
+        lambda: getattr(pytorch_utils, "apply_chunking_to_forward", None),
+        lambda: getattr(modeling_utils, "apply_chunking_to_forward", None),
+    )
+    prune = _first_available(
+        lambda: getattr(pytorch_utils, "prune_linear_layer", None),
+        lambda: getattr(modeling_utils, "prune_linear_layer", None),
+    )
+    heads = _first_available(
+        lambda: getattr(pytorch_utils, "find_pruneable_heads_and_indices", None),
+        lambda: getattr(modeling_utils, "find_pruneable_heads_and_indices", None),
+        lambda: find_pruneable_heads_and_indices,
+    )
 
-    for name, fn in (
-        ("apply_chunking_to_forward", _chunk),
-        ("prune_linear_layer", _prune),
-        ("find_pruneable_heads_and_indices", _heads),
-    ):
-        if fn is not None:
-            setattr(modeling_utils, name, fn)
+    for mod in (modeling_utils, pytorch_utils):
+        if chunk is not None:
+            setattr(mod, "apply_chunking_to_forward", chunk)
+        if prune is not None:
+            setattr(mod, "prune_linear_layer", prune)
+        if heads is not None:
+            setattr(mod, "find_pruneable_heads_and_indices", heads)
+
+    if not hasattr(tf_utils, "torch_int"):
+        try:
+            from transformers.utils.generic import torch_int
+
+            tf_utils.torch_int = torch_int
+        except Exception:
+            pass
 
 
 def rewrite_installed_qformer() -> str | None:

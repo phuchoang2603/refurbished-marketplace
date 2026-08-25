@@ -236,7 +236,10 @@ def test_colab_opt_helpers(tmp_path: Path):
     assert jobs[0][0] == "mathtype_1"
 
 
-def test_rewrite_qformer_imports():
+def test_patch_targets_pytorch_utils():
+    src = (Path(__file__).resolve().parent.parent / "compat_transformers.py").read_text(encoding="utf-8")
+    assert "import transformers.pytorch_utils as pytorch_utils" in src
+    assert 'setattr(mod, "find_pruneable_heads_and_indices", heads)' in src
     from compat_transformers import rewrite_qformer_imports
 
     src = """

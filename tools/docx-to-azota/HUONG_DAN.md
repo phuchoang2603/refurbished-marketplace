@@ -1,11 +1,20 @@
-# Quy trình đúng: có cần Colab không?
+# Lộ trình đúng
 
-**Không bắt buộc.** Đề `.docx` (ĐỀ VẬT LÍ LẦN 3) chạy **máy bạn, CPU, không GPU** đã ra đủ 3 file Azota.
+Ba lớp, làm lần lượt. **Không** cài theo README [UniMERNet](https://github.com/opendatalab/UniMERNet) trên Colab (`transformers==4.42.4` không chạy được Python 3.13).
 
-Colab chỉ cần khi bạn muốn thêm:
+```
+1. BẮT BUỘC  .docx → convert.py (CPU) → markup.txt + sidecar/ + manifest.json
+2. TÙY CHỌN  MathType WMF → UniMERNet → $latex$     (Colab GPU, vá transformers 5)
+3. TÙY CHỌN  hình vẽ → Unlimited-OCR                 (T4 dễ OOM, mặc định tắt)
+```
 
-- UniMERNet: ảnh MathType → `$latex$`
-- Unlimited-OCR: chữ trong hình vẽ / file PDF scan
+| Bước | Khi nào làm | Kết quả Azota |
+| --- | --- | --- |
+| 1 | luôn | `[!m:$mathml_N$]`, `[!m:$mathtype_N$]`, `[img:$img_N$]`, `*D.` |
+| 2 | chỉ khi cần `$\\alpha$` thay placeholder MathType | `[!m:$mathtype_N$]` → `$latex$` |
+| 3 | chỉ khi còn VRAM sau bước 2 | OCR chữ trong hình |
+
+**Dừng ở bước 1** nếu Azota nhận placeholder. Đề mẫu đã đủ 69 mathml + 16 mathtype + 8 img **không GPU**.
 
 ```
 Đề .docx ──► convert.py (CPU) ──► markup.txt + sidecar/ + manifest.json
@@ -158,9 +167,9 @@ print("unimernet OK", unimernet.__file__)
 
 Kỳ vọng in `unimernet OK /usr/local/...`. Nếu `import torch` lỗi sau Restart: **Runtime → Disconnect and delete runtime**, rồi làm lại từ Ô 1 (ImageMagick phải cài lại).
 
-### Nếu vừa thấy `cannot import name 'apply_chunking_to_forward'`
+### Nếu vừa thấy `apply_chunking_to_forward` hoặc `find_pruneable_heads_and_indices`
 
-`unimernet --no-deps` **đã cài xong**. Lỗi này là UniMERNet (transformers 4.42) vs Colab `transformers` 5.x. **Không** pip-install lại tokenizers/transformers. Dán ô này:
+`unimernet --no-deps` **đã cài**. UniMERNet import helper đã **xóa** ở `transformers` 5.x. Vá **cả** `modeling_utils` lẫn `pytorch_utils` (encoder lấy hàm từ `pytorch_utils`). **Không** pip-install transformers. Dán ô này:
 
 ```python
 import sys, torch
@@ -169,6 +178,7 @@ for k in list(sys.modules):
         del sys.modules[k]
 
 import transformers.modeling_utils as mu
+import transformers.pytorch_utils as pu
 from transformers.pytorch_utils import apply_chunking_to_forward, prune_linear_layer
 
 def find_pruneable_heads_and_indices(heads, n_heads, head_size, already_pruned_heads):
@@ -181,15 +191,18 @@ def find_pruneable_heads_and_indices(heads, n_heads, head_size, already_pruned_h
     index = torch.arange(len(mask))[mask].long()
     return heads, index
 
-mu.apply_chunking_to_forward = apply_chunking_to_forward
-mu.prune_linear_layer = prune_linear_layer
-mu.find_pruneable_heads_and_indices = find_pruneable_heads_and_indices
+for mod in (mu, pu):
+    mod.apply_chunking_to_forward = apply_chunking_to_forward
+    mod.prune_linear_layer = prune_linear_layer
+    mod.find_pruneable_heads_and_indices = find_pruneable_heads_and_indices
 
 import unimernet
 print("unimernet OK", unimernet.__file__)
 ```
 
-Nếu đã clone branch mới: `from compat_transformers import import_unimernet; import_unimernet()`.
+Hoặc clone branch mới: `from compat_transformers import import_unimernet; print(import_unimernet().__file__)`.
+
+**Muốn Azota ngay, bỏ UniMERNet:** nhảy Ô 8–9 (`convert_docx`). Placeholder `[!m:$mathtype_N$]` vẫn hợp lệ.
 
 ---
 
