@@ -215,6 +215,27 @@ D. 4.
     assert (sidecar / "img_1.png").exists()
 
 
+def test_colab_opt_helpers(tmp_path: Path):
+    from colab_opt import inject_latex_into_markup, vision_jobs_from_manifest, detect_profile
+
+    name, profile = detect_profile()
+    assert name in {"cpu", "t4", "a100", "l4"}
+    assert "unimernet" in profile
+    markup = "He [!m:$mathtype_1$] va [!m:$mathml_1$]"
+    out = inject_latex_into_markup(markup, {"mathtype_1": r"\alpha + \beta"})
+    assert r"$\alpha + \beta$" in out
+    assert "[!m:$mathml_1$]" in out
+    img = tmp_path / "sidecar"
+    img.mkdir()
+    f = img / "mathtype_1.wmf"
+    f.write_bytes(b"x")
+    jobs = vision_jobs_from_manifest(
+        {"assets": [{"id": "mathtype_1", "kind": "mathtype", "sidecar": "sidecar/mathtype_1.wmf"}]},
+        tmp_path,
+    )
+    assert jobs[0][0] == "mathtype_1"
+
+
 def test_step_timer():
     from eval_timer import StepTimer
 

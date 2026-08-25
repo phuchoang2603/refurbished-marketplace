@@ -1,0 +1,36 @@
+model:
+  arch: unimernet
+  model_type: unimernet
+  model_config:
+    model_name: MODEL_DIR
+    max_seq_len: 1536
+  load_pretrained: True
+  pretrained: MODEL_DIR/unimernet_tiny.pth
+  tokenizer_config:
+    path: MODEL_DIR
+
+datasets:
+  formula_rec_eval:
+    vis_processor:
+      eval:
+        name: "formula_image_eval"
+        image_size:
+          - 192
+          - 672
+
+run:
+  runner: runner_iter
+  task: unimernet_train
+  batch_size_train: 8
+  batch_size_eval: 8
+  num_workers: 0
+  seed: 42
+  output_dir: "./output/unimernet"
+  evaluate: True
+  test_splits: ["eval"]
+  device: "cuda"
+  world_size: 1
+  dist_url: "env://"
+  distributed: False
+  generate_cfg:
+    temperature: 0.0

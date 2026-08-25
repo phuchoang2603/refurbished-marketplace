@@ -105,7 +105,42 @@ Kết quả mẫu (file này):
 | `*A.`–`*D.` (Phần I) | 18/18 |
 | `→ Đáp án:` (Phần III) | 6/6 |
 
-## Google Colab — chạy từng cell để đánh giá
+## Google Colab — chạy được + tối ưu (UniMERNet + Unlimited-OCR)
+
+Có **hai notebook**:
+
+| File | Khi nào dùng |
+| --- | --- |
+| `colab_optimized.ipynb` | **Chạy thật trên T4** — auto-profile, batch UniMERNet, không OCR cả trang |
+| `colab_docx_to_azota.ipynb` | Đánh giá từng cell / PDF từng trang |
+
+### Vì sao không OCR 5 trang trên Colab T4
+
+Log cũ ~**57s/trang × 5 = 286s**, Unlimited-OCR 3B dễ **OOM** nếu load cùng UniMERNet.
+
+Với đề `.docx` (ĐỀ VẬT LÍ LẦN 3):
+
+| Việc | Công cụ | T4 |
+| --- | --- | --- |
+| Chữ, OMML, `*D.`, bảng | OOXML walker | ~0.2s, 0 VRAM |
+| 16 công thức MathType | **UniMERNet-tiny batch** | ~441MB, vài giây |
+| 8 hình vẽ | `[img:$img_N$]` giữ nguyên; Unlimited-OCR chỉ khi còn VRAM | tắt mặc định trên T4 |
+
+Mở `colab_optimized.ipynb` → Runtime GPU T4 → `Shift+Enter`:
+
+1. `detect_profile()` chọn tiny / batch=8 / fp16
+2. `prepare_unimernet_checkpoint("tiny")` tải HuggingFace
+3. Raster **chỉ** WMF MathType, `unimernet_batch`
+4. `free_cuda()` rồi mới (tuỳ chọn) OCR hình
+5. `inject_latex_into_markup` → `$\\alpha$` thay `[!m:$mathtype_N$]`
+
+Bật OCR hình trên T4 (nếu bước 3 còn VRAM):
+
+```python
+PROFILE["ocr_figures"] = True
+```
+
+A100: profile tự bật `ocr_pages` + UniMERNet-small.
 
 Mở `colab_docx_to_azota.ipynb`. Runtime **T4** cho Bước 1–3a; **A100** nếu bật Unlimited-OCR.
 

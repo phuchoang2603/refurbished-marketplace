@@ -93,7 +93,7 @@ def rasterize_formula_image(src: Path, dest_png: Path, dpi: int = 300) -> Path |
     return None
 
 
-def load_unimernet(cfg_path: str | Path | None = None, device: str | None = None):
+def load_unimernet(cfg_path: str | Path | None = None, device: str | None = None, fp16: bool = True):
     """Load UniMERNet once so Colab can infer image-by-image."""
     import argparse
 
@@ -113,17 +113,20 @@ def load_unimernet(cfg_path: str | Path | None = None, device: str | None = None
             pkg / "configs" / "demo.yaml",
             Path("UniMERNet/configs/demo.yaml"),
             Path("/content/UniMERNet/configs/demo.yaml"),
+            Path("/content/models/unimernet_tiny_colab.yaml"),
         ]
     )
     found = next((p for p in cfg_candidates if p.exists()), None)
     if found is None:
-        raise FileNotFoundError("Cannot find UniMERNet configs/demo.yaml")
+        raise FileNotFoundError("Cannot find UniMERNet yaml — run prepare_unimernet_checkpoint()")
     args = argparse.Namespace(cfg_path=str(found), options=None)
     cfg = Config(args)
     task = tasks.setup_task(cfg)
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
     model = task.build_model(cfg).to(device).eval()
+    if fp16 and device == "cuda":
+        model = model.half()
     vis_processor = load_processor(
         "formula_image_eval",
         cfg.config.datasets.formula_rec_eval.vis_processor.eval,
@@ -132,12 +135,42 @@ def load_unimernet(cfg_path: str | Path | None = None, device: str | None = None
 
 
 def unimernet_one(model, vis_processor, device, image_path: str | Path) -> str:
+    import torch
     from PIL import Image
 
     raw = Image.open(image_path).convert("RGB")
     image = vis_processor(raw).unsqueeze(0).to(device)
-    output = model.generate({"image": image})
+    if next(model.parameters()).dtype == torch.float16:
+        image = image.half()
+    with torch.inference_mode():
+        output = model.generate({"image": image})
     return output["pred_str"][0]
+
+
+def unimernet_batch(
+    model,
+    vis_processor,
+    device,
+    jobs: list[tuple[str, Path]],
+    batch_size: int = 8,
+) -> dict[str, str]:
+    """Batched UniMERNet — main T4 speedup vs one-image-at-a-time."""
+    import torch
+    from PIL import Image
+
+    preds: dict[str, str] = {}
+    use_half = next(model.parameters()).dtype == torch.float16
+    for i in range(0, len(jobs), batch_size):
+        chunk = jobs[i : i + batch_size]
+        tensors = [vis_processor(Image.open(p).convert("RGB")) for _, p in chunk]
+        batch = torch.stack(tensors).to(device)
+        if use_half:
+            batch = batch.half()
+        with torch.inference_mode():
+            output = model.generate({"image": batch})
+        for (aid, _), latex in zip(chunk, output["pred_str"]):
+            preds[aid] = latex
+    return preds
 
 
 def run_unimernet(
@@ -179,6 +212,7 @@ def unlimited_ocr_one(
     output_path: str,
     gundam: bool = True,
     prompt: str = "<image>document parsing.",
+    max_length: int = 4096,
 ) -> str:
     Path(output_path).mkdir(parents=True, exist_ok=True)
     model.infer(
@@ -189,7 +223,7 @@ def unlimited_ocr_one(
         base_size=1024,
         image_size=640 if gundam else 1024,
         crop_mode=gundam,
-        max_length=32768,
+        max_length=max_length,
         no_repeat_ngram_size=35,
         ngram_window=128,
         save_results=True,
