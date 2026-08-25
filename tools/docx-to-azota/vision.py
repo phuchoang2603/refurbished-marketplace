@@ -99,6 +99,9 @@ def load_unimernet(cfg_path: str | Path | None = None, device: str | None = None
 
     import torch
 
+    from compat_transformers import patch_transformers_for_unimernet
+
+    patch_transformers_for_unimernet()
     from unimernet.common.config import Config
     import unimernet.tasks as tasks
     from unimernet.processors import load_processor

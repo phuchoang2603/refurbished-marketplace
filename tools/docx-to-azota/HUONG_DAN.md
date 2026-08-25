@@ -130,7 +130,7 @@ T4 sẽ in `t4` và `unimernet: tiny`.
 
 ### Nếu vừa thấy `Building wheel for tokenizers` — đọc trước
 
-Đó **không** phải thiếu ImageMagick (Ô 6 đã xong). Colab Python **3.12** không có wheel `tokenizers` 0.19 nên pip cố compile Rust và fail.
+Đó **không** phải thiếu ImageMagick (Ô 6 đã xong). Colab Python **3.12/3.13** không có wheel `tokenizers` 0.19 nên pip cố compile Rust và fail.
 
 **Cấm** — hai lệnh này sẽ fail lại cùng một lỗi:
 
@@ -157,6 +157,39 @@ print("unimernet OK", unimernet.__file__)
 ```
 
 Kỳ vọng in `unimernet OK /usr/local/...`. Nếu `import torch` lỗi sau Restart: **Runtime → Disconnect and delete runtime**, rồi làm lại từ Ô 1 (ImageMagick phải cài lại).
+
+### Nếu vừa thấy `cannot import name 'apply_chunking_to_forward'`
+
+`unimernet --no-deps` **đã cài xong**. Lỗi này là UniMERNet (transformers 4.42) vs Colab `transformers` 5.x. **Không** pip-install lại tokenizers/transformers. Dán ô này:
+
+```python
+import sys, torch
+for k in list(sys.modules):
+    if k == "unimernet" or k.startswith("unimernet."):
+        del sys.modules[k]
+
+import transformers.modeling_utils as mu
+from transformers.pytorch_utils import apply_chunking_to_forward, prune_linear_layer
+
+def find_pruneable_heads_and_indices(heads, n_heads, head_size, already_pruned_heads):
+    mask = torch.ones(n_heads, head_size)
+    heads = set(heads) - already_pruned_heads
+    for head in heads:
+        head = head - sum(1 if h < head else 0 for h in already_pruned_heads)
+        mask[head] = 0
+    mask = mask.view(-1).contiguous().eq(1)
+    index = torch.arange(len(mask))[mask].long()
+    return heads, index
+
+mu.apply_chunking_to_forward = apply_chunking_to_forward
+mu.prune_linear_layer = prune_linear_layer
+mu.find_pruneable_heads_and_indices = find_pruneable_heads_and_indices
+
+import unimernet
+print("unimernet OK", unimernet.__file__)
+```
+
+Nếu đã clone branch mới: `from compat_transformers import import_unimernet; import_unimernet()`.
 
 ---
 
@@ -324,7 +357,7 @@ Giải nén: `markup.txt` + `sidecar/` + `manifest.json`.
 
 ## Không làm
 
-- Không `pip install unimernet[full]` và không `pip install tokenizers` / `transformers==4.42.4` trên Colab (Python 3.12, compile Rust fail).
+- Không `pip install unimernet[full]` và không `pip install tokenizers` / `transformers==4.42.4` trên Colab (Python 3.12/3.13, compile Rust fail).
 - Không OCR cả 5 trang PDF khi đã có `.docx` (chậm ~57s/trang, dễ OOM).
 - Không `Run all` khi đang đo thời gian.
 - Không load UniMERNet và Unlimited-OCR cùng lúc trên T4.

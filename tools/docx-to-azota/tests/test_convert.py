@@ -236,6 +236,23 @@ def test_colab_opt_helpers(tmp_path: Path):
     assert jobs[0][0] == "mathtype_1"
 
 
+def test_rewrite_qformer_imports():
+    from compat_transformers import rewrite_qformer_imports
+
+    src = """
+from transformers.modeling_utils import (
+    PreTrainedModel,
+    apply_chunking_to_forward,
+    find_pruneable_heads_and_indices,
+    prune_linear_layer,
+)
+"""
+    out = rewrite_qformer_imports(src)
+    assert "from transformers.pytorch_utils import apply_chunking_to_forward" in out
+    assert "from transformers.modeling_utils import PreTrainedModel" in out
+    assert rewrite_qformer_imports(out) == out
+
+
 def test_install_colab_never_pins_tokenizers():
     src = (Path(__file__).resolve().parent.parent / "install_colab.py").read_text(encoding="utf-8")
     assert '[py, "-m", "pip", "install", "-q", "unimernet", "--no-deps"]' in src

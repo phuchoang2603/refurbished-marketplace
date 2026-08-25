@@ -1,17 +1,21 @@
 """Colab-safe UniMERNet install.
 
-Do NOT pip-install any of these on Colab — they fail on Python 3.12:
+Do NOT pip-install any of these on Colab — they fail on Python 3.12/3.13:
 
     pip install unimernet[full]
     pip install "tokenizers>=0.19.1,<0.20" "transformers==4.42.4"
 
-UniMERNet pins transformers==4.42.4 → tokenizers 0.19.x. Colab's Python 3.12
+UniMERNet pins transformers==4.42.4 → tokenizers 0.19.x. Colab's Python 3.12/3.13
 has no prebuilt tokenizers 0.19 wheels, so pip compiles from source (needs
 Rust) and exits with "Building wheel for tokenizers ... did not run
 successfully".
 
 Keep Colab's existing torch / numpy / tokenizers / transformers wheels.
 Install unimernet with --no-deps, then binary-only extras.
+
+After install, patch transformers 5.x so UniMERNet's Qformer can import
+``apply_chunking_to_forward`` (moved to pytorch_utils / removed from
+modeling_utils).
 """
 
 from __future__ import annotations
@@ -84,8 +88,9 @@ def install_unimernet_colab() -> None:
             "Wand",
         ]
     )
-    import unimernet
+    from compat_transformers import import_unimernet
 
+    unimernet = import_unimernet()
     print("unimernet OK", unimernet.__file__, flush=True)
 
 
