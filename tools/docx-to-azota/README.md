@@ -105,25 +105,34 @@ Kết quả mẫu (file này):
 | `*A.`–`*D.` (Phần I) | 18/18 |
 | `→ Đáp án:` (Phần III) | 6/6 |
 
-## Google Colab (GPU) — overlay 2 mô hình
+## Google Colab — chạy từng cell để đánh giá
 
-Mở `colab_docx_to_azota.ipynb` (runtime **T4** cho UniMERNet-tiny; **A100/L4** nếu bật Unlimited-OCR 3B).
+Mở `colab_docx_to_azota.ipynb`. Runtime **T4** cho Bước 1–3a; **A100** nếu bật Unlimited-OCR.
 
-Thứ tự cell:
+**Cách đánh giá:** `Shift+Enter` từng cell. Đừng Run all khi đang đo thời gian.
 
-1. Cài `convert.py` (clone repo hoặc upload folder này)
-2. Upload `.docx` → chạy `convert_docx()` → có ngay `markup.txt` / `sidecar/` / `manifest.json`
-3. Raster WMF → PNG
-4. UniMERNet nhận dạng từng `mathtype_N` → ghi `sidecar/mathtype_N.tex` + `manifest.latex`
-5. (Tùy chọn) LibreOffice `.docx` → PDF → Unlimited-OCR `infer` / `infer_multi`
-6. Tải zip kết quả
+Mỗi bước in đúng format log của bạn:
 
-Cờ trong notebook:
+```
+⏱ THỜI GIAN:
+Bước 1: 0.2s (OOXML extract)     # hoặc PDF → PNG
+Bước 2: 1.8s (raster WMF)
+Bước 3: 49s (UniMERNet 4 ảnh)    # từng ảnh, giống "OCR 4 ảnh"
+Bước 4: 0.4s (ghép+fix)
+TỔNG : 51.4s
+```
+
+Với PDF, Bước 3b in thời gian từng trang (giống log Kaggle 85s / 74s / …).
+
+Cờ cắt mẫu để đánh giá nhanh:
 
 ```python
-RUN_UNIMERNET = True          # T4 16GB đủ tiny/small
-RUN_UNLIMITED_OCR = False     # bật khi A100; T4 dễ OOM
+MAX_UNIMERNET_IMAGES = 4   # None = hết MathType
+MAX_OCR_PAGES = 1          # None = hết trang (~57s × N)
+RUN_UNLIMITED_OCR = False  # True trên A100
 ```
+
+Thứ tự cell: config → clone → pip (3 cell) → upload → Bước 1 → preview → Bước 2 → UniMERNet load / infer từng ảnh → OCR từng trang → ghép+fix → `timer.print_summary()` → zip.
 
 ## Ánh xạ đề mẫu → Azota
 

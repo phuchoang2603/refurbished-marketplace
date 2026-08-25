@@ -93,25 +93,15 @@ def rasterize_formula_image(src: Path, dest_png: Path, dpi: int = 300) -> Path |
     return None
 
 
-def run_unimernet(
-    image_paths: Iterable[tuple[str, Path]],
-    model_size: str = "tiny",
-    device: str | None = None,
-    cfg_path: str | Path | None = None,
-) -> dict[str, str]:
-    """Recognize LaTeX for (asset_id, png_path) pairs. Requires `unimernet` + GPU/CPU torch."""
+def load_unimernet(cfg_path: str | Path | None = None, device: str | None = None):
+    """Load UniMERNet once so Colab can infer image-by-image."""
     import argparse
 
     import torch
-    from PIL import Image
 
-    try:
-        from unimernet.common.config import Config
-        import unimernet.tasks as tasks
-        from unimernet.processors import load_processor
-    except ImportError as exc:
-        raise ImportError("pip install -U 'unimernet[full]' and download a checkpoint") from exc
-
+    from unimernet.common.config import Config
+    import unimernet.tasks as tasks
+    from unimernet.processors import load_processor
     import unimernet
 
     pkg = Path(unimernet.__file__).resolve().parent
@@ -127,31 +117,88 @@ def run_unimernet(
     )
     found = next((p for p in cfg_candidates if p.exists()), None)
     if found is None:
-        raise FileNotFoundError(
-            "Cannot find UniMERNet configs/demo.yaml. Clone "
-            "https://github.com/opendatalab/UniMERNet and pass cfg_path=."
-        )
-    cfg_path = found
-
-    args = argparse.Namespace(cfg_path=str(cfg_path), options=None)
+        raise FileNotFoundError("Cannot find UniMERNet configs/demo.yaml")
+    args = argparse.Namespace(cfg_path=str(found), options=None)
     cfg = Config(args)
     task = tasks.setup_task(cfg)
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
-    model = task.build_model(cfg).to(device)
+    model = task.build_model(cfg).to(device).eval()
     vis_processor = load_processor(
         "formula_image_eval",
         cfg.config.datasets.formula_rec_eval.vis_processor.eval,
     )
-    _ = model_size  # checkpoint is selected via demo.yaml
+    return model, vis_processor, device
 
+
+def unimernet_one(model, vis_processor, device, image_path: str | Path) -> str:
+    from PIL import Image
+
+    raw = Image.open(image_path).convert("RGB")
+    image = vis_processor(raw).unsqueeze(0).to(device)
+    output = model.generate({"image": image})
+    return output["pred_str"][0]
+
+
+def run_unimernet(
+    image_paths: Iterable[tuple[str, Path]],
+    model_size: str = "tiny",
+    device: str | None = None,
+    cfg_path: str | Path | None = None,
+) -> dict[str, str]:
+    """Recognize LaTeX for (asset_id, png_path) pairs. Requires `unimernet` + GPU/CPU torch."""
+    _ = model_size
+    model, vis_processor, device = load_unimernet(cfg_path=cfg_path, device=device)
     preds: dict[str, str] = {}
     for asset_id, path in image_paths:
-        raw = Image.open(path).convert("RGB")
-        image = vis_processor(raw).unsqueeze(0).to(device)
-        output = model.generate({"image": image})
-        preds[asset_id] = output["pred_str"][0]
+        preds[asset_id] = unimernet_one(model, vis_processor, device, path)
     return preds
+
+
+def load_unlimited_ocr(model_name: str = "baidu/Unlimited-OCR"):
+    import torch
+    from transformers import AutoModel, AutoTokenizer
+
+    tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+    dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
+    model = AutoModel.from_pretrained(
+        model_name,
+        trust_remote_code=True,
+        use_safetensors=True,
+        torch_dtype=dtype,
+    )
+    if torch.cuda.is_available():
+        model = model.cuda()
+    return model.eval(), tokenizer
+
+
+def unlimited_ocr_one(
+    model,
+    tokenizer,
+    image_file: str,
+    output_path: str,
+    gundam: bool = True,
+    prompt: str = "<image>document parsing.",
+) -> str:
+    Path(output_path).mkdir(parents=True, exist_ok=True)
+    model.infer(
+        tokenizer,
+        prompt=prompt,
+        image_file=image_file,
+        output_path=output_path,
+        base_size=1024,
+        image_size=640 if gundam else 1024,
+        crop_mode=gundam,
+        max_length=32768,
+        no_repeat_ngram_size=35,
+        ngram_window=128,
+        save_results=True,
+    )
+    texts = []
+    for p in sorted(Path(output_path).rglob("*")):
+        if p.suffix.lower() in {".md", ".txt"}:
+            texts.append(p.read_text(encoding="utf-8", errors="replace"))
+    return "\n\n".join(texts)
 
 
 def run_unlimited_ocr_pages(

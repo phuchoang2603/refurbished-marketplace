@@ -184,6 +184,48 @@ def test_strip_unlimited_ocr_det():
     assert "B. hai" in out
 
 
+def test_markdown_to_azota(tmp_path: Path):
+    from markdown_to_azota import markdown_to_azota
+
+    png = tmp_path / "image1.png"
+    png.write_bytes(b"\x89PNG\r\n\x1a\n")
+    md = """
+**Câu 1:** Cho $\\log_{a} b = 1$.
+
+| Doanh thu | Số ngày |
+|-----------|---------|
+| 10 | 2 |
+| 20 | 3 |
+
+![fig](image1.png){width="2in"}
+
+A. 1.
+*B. 2.
+C. 3.
+D. 4.
+""".strip()
+    sidecar = tmp_path / "sidecar"
+    text, assets = markdown_to_azota(md, sidecar_dir=sidecar, media_root=tmp_path)
+    assert "[!b:$Câu 1:$]" in text
+    assert r"$\log_{a} b = 1$" in text
+    assert "[* Doanh thu | Số ngày *]" in text
+    assert "[img:$img_1$]" in text
+    assert "*B. 2." in text
+    assert assets[0]["id"] == "img_1"
+    assert (sidecar / "img_1.png").exists()
+
+
+def test_step_timer():
+    from eval_timer import StepTimer
+
+    t = StepTimer()
+    with t.step("Bước 1", "OOXML"):
+        pass
+    s = t.summary()
+    assert "Bước 1:" in s
+    assert "TỔNG :" in s
+
+
 def test_sample_exam_counts(tmp_path: Path):
     sample = Path(__file__).resolve().parents[1] / "samples" / "de-vat-li-lan-3.docx"
     if not sample.exists():
