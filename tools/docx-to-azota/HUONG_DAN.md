@@ -34,7 +34,8 @@ Code + đề + `azota_out` + zip nằm ở `MyDrive/markdown azota` (không ph�
 4. Colab → File → Upload notebook.
 5. Runtime → **T4 GPU**.
 6. Chạy ô **A2** trước — cấp quyền Drive, đợi `OK True`. **Đừng bấm Stop.**
-7. `Shift+Enter` từng ô. Không Run all. Không dán cell từ `Untitled1.ipynb`.
+7. `Shift+Enter` từng ô. Không Run all. Không dán 3 dòng `from install_colab import …` từ chat (mất `sys.path`).
+8. Nếu `ModuleNotFoundError: install_colab`: chạy **ô B2 đầy đủ** (tự tìm Drive / clone), không Restart rồi chỉ chạy 3 dòng import.
 
 Phần A (Drive → upload → extract → zip trong folder của bạn) **không cài UniMERNet**. Xong phần A là đủ nộp Azota.
 

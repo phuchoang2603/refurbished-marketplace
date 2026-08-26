@@ -27,6 +27,12 @@ DEFAULT_REPO = "https://github.com/phuchoang2603/refurbished-marketplace.git"
 DEFAULT_BRANCH = "cursor/docx-to-azota-pipeline-4d56"
 STAGING = Path("/content/_repo_azota")
 DRIVE_ROOTS = (Path("/content/drive/MyDrive"), Path("/content/drive/My Drive"))
+REQUIRED_FILES = ("convert.py", "install_colab.py", "compat_transformers.py")
+LOCAL_FALLBACKS = (
+    Path("/content/docx-to-azota"),
+    Path("/content/_repo_azota/tools/docx-to-azota"),
+    Path("/content/repo/tools/docx-to-azota"),
+)
 
 
 def _norm(name: str) -> str:
@@ -71,6 +77,42 @@ def resolve_markdown_azota(
     dest = create_under / CANONICAL_NAME
     dest.mkdir(parents=True, exist_ok=True)
     return dest
+
+
+def toolkit_is_complete(root: Path) -> bool:
+    return root.is_dir() and all((root / name).is_file() for name in REQUIRED_FILES)
+
+
+def iter_named_markdown_azota(search_roots: list[Path]) -> list[Path]:
+    found: list[Path] = []
+    try:
+        found.append(resolve_markdown_azota(search_roots))
+    except FileNotFoundError:
+        pass
+    return found
+
+
+def find_complete_toolkit(search_roots: list[Path] | None = None) -> Path | None:
+    """Prefer Drive ``markdown azota`` if it has install_colab.py, else Colab copies."""
+    ordered: list[Path] = []
+    if search_roots:
+        ordered.extend(iter_named_markdown_azota(search_roots))
+        for root in search_roots:
+            if root.is_dir():
+                ordered.append(root)
+    ordered.extend(LOCAL_FALLBACKS)
+    seen: set[Path] = set()
+    for path in ordered:
+        try:
+            path = path.resolve()
+        except OSError:
+            continue
+        if path in seen:
+            continue
+        seen.add(path)
+        if toolkit_is_complete(path):
+            return path
+    return None
 
 
 def copy_toolkit(src: Path, dest: Path) -> None:
@@ -165,6 +207,37 @@ def sync_to_markdown_azota(
     print("ROOT", root, flush=True)
     print("OK", (root / "convert.py").exists(), flush=True)
     return root
+
+
+def reconnect_toolkit(*, refresh_if_incomplete: bool = True) -> Path:
+    """Re-attach sys.path after a Colab Restart session (Part B import).
+
+    Does not require ``ROOT`` from an earlier cell.
+    """
+    my_drive: Path | None
+    try:
+        my_drive = mount_drive()
+        search = list(DRIVE_ROOTS)
+    except SystemExit:
+        my_drive = None
+        search = []
+    found = find_complete_toolkit(search or None)
+    if found is not None:
+        return use_path(found)
+    if not refresh_if_incomplete:
+        raise SystemExit("không thấy install_colab.py — chạy lại ô A2")
+    src = clone_toolkit()
+    if my_drive is not None:
+        dest = resolve_markdown_azota(list(DRIVE_ROOTS), create_under=my_drive)
+        copy_toolkit(src, dest)
+        if toolkit_is_complete(dest):
+            (dest / "uploads").mkdir(exist_ok=True)
+            (dest / "azota_out").mkdir(exist_ok=True)
+            (dest / "models").mkdir(exist_ok=True)
+            return use_path(dest)
+    if toolkit_is_complete(src):
+        return use_path(src)
+    raise SystemExit("clone xong vẫn thiếu install_colab.py — chạy lại ô A2, đừng bấm Stop")
 
 
 if __name__ == "__main__":
