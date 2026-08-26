@@ -128,7 +128,7 @@ Với đề `.docx` (ĐỀ VẬT LÍ LẦN 3):
 | 16 công thức MathType | **UniMERNet-tiny batch** | ~441MB, vài giây |
 | 8 hình vẽ | `[img:$img_N$]` giữ nguyên; Unlimited-OCR chỉ khi còn VRAM | tắt mặc định trên T4 |
 
-Colab: upload `colab_start_here.ipynb` sau khi **Disconnect and delete runtime**. Phần A extract Azota không cài UniMERNet. Không dùng Untitled1 / `unimernet[full]` / `tokenizers`.
+Colab: upload `colab_start_here.ipynb` sau khi **Disconnect and delete runtime**. Ô A2 mount Drive và copy toolkit vào folder **`markdown azota`**. Phần A extract Azota không cài UniMERNet. Không dùng Untitled1 / `unimernet[full]` / `tokenizers`.
 
 Mở `colab_optimized.ipynb` → Runtime GPU T4 → `Shift+Enter`:
 

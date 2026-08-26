@@ -24,14 +24,18 @@ Mẫu: `python3 convert.py samples/de-vat-li-lan-3.docx -o azota_out`
 
 ---
 
-## Colab — làm lại từ đầu
+## Colab — lưu hết vào Drive folder **markdown azota**
 
-1. Runtime → **Disconnect and delete runtime** (xóa runtime bẩn).
-2. Tải notebook: [colab_start_here.ipynb](https://github.com/phuchoang2603/refurbished-marketplace/blob/cursor/docx-to-azota-pipeline-4d56/tools/docx-to-azota/colab_start_here.ipynb)
-3. Colab → File → Upload notebook → chọn file vừa tải.
-4. Runtime → **T4 GPU**.
-5. `Shift+Enter` từng ô. Không Run all. Không dán cell từ chat cũ / `Untitled1.ipynb`.
+Code + đề + `azota_out` + zip nằm ở `MyDrive/markdown azota` (không phải `/content`, không mất khi tắt máy).
 
-Phần A của notebook (clone → upload → extract → zip) **không cài UniMERNet**. Xong phần A là đủ nộp Azota.
+1. Trên Google Drive, giữ folder tên **`markdown azota`** (đã có thì dùng; chưa có notebook sẽ tạo).
+2. Runtime → **Disconnect and delete runtime**.
+3. Tải notebook: [colab_start_here.ipynb](https://github.com/phuchoang2603/refurbished-marketplace/blob/cursor/docx-to-azota-pipeline-4d56/tools/docx-to-azota/colab_start_here.ipynb)
+4. Colab → File → Upload notebook.
+5. Runtime → **T4 GPU**.
+6. Chạy ô **A2** trước — cấp quyền Drive, đợi `OK True`. **Đừng bấm Stop.**
+7. `Shift+Enter` từng ô. Không Run all. Không dán cell từ `Untitled1.ipynb`.
 
-Phần B chỉ khi cần `$latex$` từ ảnh MathType.
+Phần A (Drive → upload → extract → zip trong folder của bạn) **không cài UniMERNet**. Xong phần A là đủ nộp Azota.
+
+Phần B chỉ khi cần `$latex$` từ ảnh MathType. Checkpoint model cũng vào `markdown azota/models`.
