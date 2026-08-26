@@ -225,6 +225,8 @@ def test_colab_opt_helpers(tmp_path: Path):
     out = inject_latex_into_markup(markup, {"mathtype_1": r"\alpha + \beta"})
     assert r"$\alpha + \beta$" in out
     assert "[!m:$mathml_1$]" in out
+    skipped = inject_latex_into_markup(markup, {"mathtype_1": r"^ { 2 } H"})
+    assert "[!m:$mathtype_1$]" in skipped
     img = tmp_path / "sidecar"
     img.mkdir()
     f = img / "mathtype_1.wmf"

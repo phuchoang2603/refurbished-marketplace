@@ -10,6 +10,7 @@ Unload UniMERNet before loading Unlimited-OCR so T4 16GB does not OOM.
 from __future__ import annotations
 
 import gc
+import re
 from pathlib import Path
 from typing import Any
 
@@ -137,11 +138,24 @@ def vision_jobs_from_manifest(
     return jobs
 
 
+def is_plausible_latex(latex: str) -> bool:
+    """Skip UniMERNet fragments that would make Azota markup worse than placeholders."""
+    body = latex.strip().strip("$")
+    if len(body) < 2:
+        return False
+    compact = re.sub(r"\s+", "", body)
+    if compact.startswith("^") or compact.startswith("_"):
+        return False
+    if "\\" not in body and len(compact) < 8:
+        return False
+    return True
+
+
 def inject_latex_into_markup(markup: str, predictions: dict[str, str]) -> str:
     """Replace [!m:$mathtype_N$] with $latex$ so Azota renders without OLE."""
     for aid, latex in predictions.items():
         body = latex.strip().strip("$")
-        if not body:
+        if not body or not is_plausible_latex(body):
             continue
         markup = markup.replace(f"[!m:${aid}$]", f"${body}$")
     return markup
