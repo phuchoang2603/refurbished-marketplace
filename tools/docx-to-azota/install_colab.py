@@ -124,6 +124,13 @@ def install_unimernet_colab() -> None:
             print("skip extra", pkg, flush=True)
     unimernet = _import_unimernet_with_extras(py)
     print("unimernet OK", unimernet.__file__, flush=True)
+    print(
+        "\n=== B2 XONG — import thành công ===\n"
+        "Dòng pip 'ERROR: unimernet 0.2.3 requires transformers==4.42.4' "
+        "là CẢNH BÁO, không phải crash. Cố ý giữ transformers 5 của Colab.\n"
+        "Tiếp: chạy ô B3 (cần man / timer / OUT từ Phần A).\n",
+        flush=True,
+    )
 
 
 def _import_unimernet_with_extras(py: str):
