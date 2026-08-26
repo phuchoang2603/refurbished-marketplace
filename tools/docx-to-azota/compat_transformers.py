@@ -65,6 +65,23 @@ def find_pruneable_heads_and_indices(
     return heads_set, index
 
 
+PAST_KV_LEN_RE = re.compile(
+    r"past_key_values_length = past_key_values\[0\]\[0\]\.shape\[2\] if past_key_values is not None else 0"
+)
+
+PAST_KV_LEN_REPL = """if past_key_values is not None and not isinstance(past_key_values, (tuple, list)):  # azota_kv_cache
+            _seq = 0
+            if hasattr(past_key_values, "get_seq_length"):
+                try:
+                    _seq = int(past_key_values.get_seq_length() or 0)
+                except Exception:
+                    _seq = 0
+            if _seq == 0:
+                past_key_values = None
+            elif hasattr(past_key_values, "to_legacy_cache"):
+                past_key_values = past_key_values.to_legacy_cache() or None
+        past_key_values_length = past_key_values[0][0].shape[2] if past_key_values is not None else 0"""
+
 ONNX_IMPORT_RE = re.compile(
     r"from transformers\.onnx import OnnxConfig, OnnxConfigWithPast, OnnxSeq2SeqConfigWithPast\s*"
     r"from transformers\.onnx\.utils import compute_effective_axis_dimension"
@@ -104,6 +121,13 @@ except Exception:  # azota_onnx_stub — transformers 5 removed this module
             return fixed_dimension + num_token_to_add
         return dimension + num_token_to_add
 '''
+
+
+def rewrite_encoder_decoder_kv_cache(source: str) -> str:
+    if "azota_kv_cache" in source:
+        return source
+    updated, n = PAST_KV_LEN_RE.subn(PAST_KV_LEN_REPL, source, count=1)
+    return updated if n else source
 
 
 def rewrite_decoder_onnx_imports(source: str) -> str:
@@ -320,6 +344,91 @@ def restore_get_head_mask(model=None) -> None:
             module._convert_head_mask_to_5d = types.MethodType(_convert_head_mask_to_5d, module)
 
 
+def to_legacy_kv_cache(past_key_values):
+    """EncoderDecoderCache → tuple, or None when empty (transformers 5 generate)."""
+    if past_key_values is None:
+        return None
+    if isinstance(past_key_values, (tuple, list)):
+        return past_key_values or None
+    seq = 0
+    getter = getattr(past_key_values, "get_seq_length", None)
+    if callable(getter):
+        try:
+            seq = int(getter() or 0)
+        except Exception:
+            seq = 0
+    if seq == 0:
+        return None
+    to_legacy = getattr(past_key_values, "to_legacy_cache", None)
+    if callable(to_legacy):
+        try:
+            legacy = to_legacy()
+            return legacy or None
+        except Exception:
+            return None
+    return past_key_values
+
+
+def patch_unimernet_kv_cache(model=None) -> None:
+    """HF generate passes EncoderDecoderCache; UniMERNet decoder indexes tuples.
+
+    Disable KV cache on generate and coerce cache objects to legacy tuples.
+    """
+    try:
+        from unimernet.models.unimernet import encoder_decoder as ed
+    except Exception:
+        return
+    decoder_cls = getattr(ed, "CustomMBartDecoder", None)
+    donut_cls = getattr(ed, "DonutEncoderDecoder", None)
+    if decoder_cls is not None:
+        orig = decoder_cls.forward
+        if not getattr(orig, "_azota_kv", False):
+
+            def forward(self, *args, **kwargs):
+                if "past_key_values" in kwargs:
+                    kwargs["past_key_values"] = to_legacy_kv_cache(kwargs.get("past_key_values"))
+                kwargs["use_cache"] = False
+                return orig(self, *args, **kwargs)
+
+            forward._azota_kv = True  # type: ignore[attr-defined]
+            decoder_cls.forward = forward
+    if donut_cls is not None:
+        orig_gen = donut_cls.generate
+        if not getattr(orig_gen, "_azota_nocache", False):
+
+            def generate(self, pixel_values, temperature, max_new_tokens, decoder_start_token_id, do_sample, top_p, **kwargs):
+                num_channels = pixel_values.shape[1]
+                if num_channels == 1:
+                    pixel_values = pixel_values.repeat(1, 3, 1, 1)
+                outputs = self.model.generate(
+                    pixel_values=pixel_values,
+                    max_new_tokens=max_new_tokens,
+                    decoder_start_token_id=decoder_start_token_id,
+                    temperature=temperature,
+                    do_sample=do_sample,
+                    top_p=top_p,
+                    use_cache=False,
+                )
+                return outputs[:, 1:]
+
+            generate._azota_nocache = True  # type: ignore[attr-defined]
+            donut_cls.generate = generate
+    if model is None:
+        return
+    inner = getattr(model, "model", None)
+    hf = getattr(inner, "model", None) if inner is not None else None
+    if hf is not None and hasattr(hf, "generate"):
+        orig_hf = hf.generate
+        if not getattr(orig_hf, "_azota_nocache", False):
+
+            def hf_generate(*args, **kwargs):
+                kwargs["use_cache"] = False
+                return orig_hf(*args, **kwargs)
+
+            hf_generate._azota_nocache = True  # type: ignore[attr-defined]
+            hf.generate = hf_generate
+
+
 def _unimernet_package_file(*relative: str):
     """Locate a file under the installed unimernet package without importing it."""
     import site
@@ -368,6 +477,19 @@ def rewrite_installed_decoder_onnx() -> str | None:
     return str(decoder)
 
 
+def rewrite_installed_encoder_decoder_kv() -> str | None:
+    """Convert transformers 5 EncoderDecoderCache to legacy tuples in UniMERNet decoder."""
+    path = _unimernet_package_file("models", "unimernet", "encoder_decoder.py")
+    if path is None:
+        return None
+    original = path.read_text(encoding="utf-8")
+    updated = rewrite_encoder_decoder_kv_cache(original)
+    if updated != original:
+        path.write_text(updated, encoding="utf-8")
+        print("patched", path)
+    return str(path)
+
+
 def rewrite_installed_qformer() -> str | None:
     """Rewrite site-packages UniMERNet Qformer.py so a later Restart still imports."""
     qformer = _unimernet_package_file("models", "blip2_models", "Qformer.py")
@@ -386,6 +508,7 @@ def import_unimernet():
     patch_transformers_for_unimernet()
     rewrite_installed_decoder_onnx()
     rewrite_installed_qformer()
+    rewrite_installed_encoder_decoder_kv()
     purge_unimernet_modules()
     import unimernet
 

@@ -308,6 +308,18 @@ def test_get_head_mask_none_layers() -> None:
     assert get_head_mask(Dummy(), None, 4) == [None, None, None, None]
 
 
+def test_rewrite_encoder_decoder_kv_cache() -> None:
+    from compat_transformers import rewrite_encoder_decoder_kv_cache, to_legacy_kv_cache
+
+    src = "        past_key_values_length = past_key_values[0][0].shape[2] if past_key_values is not None else 0\n"
+    out = rewrite_encoder_decoder_kv_cache(src)
+    assert "azota_kv_cache" in out
+    assert rewrite_encoder_decoder_kv_cache(out) == out
+    assert to_legacy_kv_cache(None) is None
+    assert to_legacy_kv_cache(()) is None
+    assert to_legacy_kv_cache(((1,),)) == ((1,),)
+
+
 def test_step_timer():
     from eval_timer import StepTimer
 
