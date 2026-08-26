@@ -1,8 +1,12 @@
-# DOCX → Azota markup (hybrid UniMERNet + Unlimited-OCR)
+# DOCX → Azota markup (Tầng A)
 
 Chuyển đề thi Word (`.docx`) sang **cú pháp Azota phẳng theo dòng**, giữ nguyên công thức / ảnh / bảng dưới dạng placeholder + file sidecar.
 
-**Quy trình đúng (có cần Colab không?): xem [`HUONG_DAN.md`](HUONG_DAN.md).** Tóm tắt: CPU `convert.py` là bắt buộc; Colab GPU chỉ khi cần UniMERNet/OCR.
+**Sản phẩm v1 = Tầng A** (`docx_extract/`): OOXML → `markup.txt` + `sidecar/` + `manifest.json`. Spec: [`docs/superpowers/specs/2026-07-06-docx-clean-module-design.md`](docs/superpowers/specs/2026-07-06-docx-clean-module-design.md).
+
+UniMERNet (công thức ảnh → LaTeX) và Unlimited-OCR **nằm ngoài v1** — Azota nhận placeholder `[!m:$mathtype_N$]` / `[img:$img_N$]`.
+
+**Quy trình đúng: [`HUONG_DAN.md`](HUONG_DAN.md).** CPU `convert.py` (shim Colab → `docx_extract`) là bắt buộc.
 
 Mẫu chuẩn đã chạy thành công: `samples/de-vat-li-lan-3.docx`
 (`ĐỀ VẬT LÍ LẦN 3_VER 2 (2).docx`).
@@ -190,5 +194,6 @@ Thứ tự cell: config → clone → pip (3 cell) → upload → Bước 1 → 
 ## Kiểm thử
 
 ```bash
-python3 -m pytest tests/test_convert.py -q
+cd tools/docx-to-azota
+python3 -m pytest tests -q
 ```

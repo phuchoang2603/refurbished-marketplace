@@ -1,5 +1,5 @@
 [!b:$---NTP$]
-[!b:$Cho biết:$] [!m:$mathml_1$] hạt/mol; [!m:$mathml_2$][!b:$J$].
+[!b:$Cho biết:$] [!m:$mathml_1$] hạt/mol; [!m:$mathml_2$][!b:$J.$]
 PHẦN I. Câu trắc nghiệm nhiều phương án lựa chọn (4,5 điểm). [!i:$Thí sinh trả lời từ câu 1 đến câu 18. Mỗi câu hỏi thí sinh chỉ chọn một phương án.$]
 Câu 1: Vào mùa đông, khi ta hà hơi vào một mặt gương phẳng, mặt gương bị mờ đi. Hiện tượng mờ đi của mặt gương được giải thích dựa vào sự
 A. nóng chảy.
@@ -146,8 +146,8 @@ D. 1000 vòng.
 Lời giải
 Áp dụng công thức máy biến áp: [!m:$mathml_19$]vòng.
 [!b:$Chọn B.$]
-PHẦN II. Câu trắc nghiệm đúng sai (4,0 điểm). [!i:$Thí sinh trả lời từ câu 1 đến câu 4. Trong mỗi ý$][!b!i:$ a), b), c), d) $][!i:$Trong mỗi câu thí sinh chọn đúng hoặc sai.$]
-Nhóm I. Để hàn các linh kiện trong mạch điện tử, người thợ sửa chữa thường sử dụng máy hàn điện có mỏ hàn để làm nóng chảy dây thiếc hàn như hình vẽ. Biết rằng loại thiếc hàn được sử dụng là hỗn hợp thiếc và chì với tỉ lệ khối lượng là 63:37, khối lượng một cuộn thiếc hàn là 150 g. Biết thiếc và chì có nhiệt nóng chảy riêng lần lượt là 0,61.10[!sup:$5 $]J/kg và 0,25.10[!sup:$5 $]J/kg. Mỏ hàn làm việc với điện áp đầu vào là 220 V, điện áp đầu ra là 24 V, điện trở của mối hàn là 2,4 [!m:$mathml_20$].
+PHẦN II. Câu trắc nghiệm đúng sai (4,0 điểm). [!i:$Thí sinh trả lời từ câu 1 đến câu 4. Trong mỗi ý$] [!b!i:$a), b), c), d)$] [!i:$Trong mỗi câu thí sinh chọn đúng hoặc sai.$]
+Nhóm I. Để hàn các linh kiện trong mạch điện tử, người thợ sửa chữa thường sử dụng máy hàn điện có mỏ hàn để làm nóng chảy dây thiếc hàn như hình vẽ. Biết rằng loại thiếc hàn được sử dụng là hỗn hợp thiếc và chì với tỉ lệ khối lượng là 63:37, khối lượng một cuộn thiếc hàn là 150 g. Biết thiếc và chì có nhiệt nóng chảy riêng lần lượt là 0,61.10[!sup:$5$] J/kg và 0,25.10[!sup:$5$] J/kg. Mỏ hàn làm việc với điện áp đầu vào là 220 V, điện áp đầu ra là 24 V, điện trở của mối hàn là 2,4 [!m:$mathml_20$].
 [img:$img_3$]
 a) Khi hàn, mỏ hàn sẽ phóng ra tia lửa điện để làm nóng chảy thiếc hàn.
 b) Trong máy hàn điện, có sử dụng một máy biến áp là máy tăng áp.
@@ -197,7 +197,7 @@ Nhiệt độ tăng làm tăng vận tốc chuyển động nhiệt [!m:$mathml_
 c) Theo phuong trình [!m:$mathml_45$]. Đồ thị p theo T chỉ là đường thẳng qua gốc toạ độ khi số mol khí n không đổi. Ở đây n tăng sau mỗi lần bơm nên hệ số góc [!m:$mathml_46$] thay đổi liên tục [!m:$mathml_47$]đồ thị sẽ là một đường cong đi lên.
 d) Tại lần bơm thứ 5: t = 57[!sup:$0$]C [!m:$mathml_48$]T = 57 + 273 = 330 K.
 Số chỉ áp kế 0,7Bar [!m:$mathml_49$]áp suất khí p = 1,0 + 0,7 = 1,7Bar = 1,7.10[!sup:$5$]Pa.
-Thể tích V = 10 lít = 10[!sup:$-2$]m[!sup:$3 $]
+Thể tích V = 10 lít = 10[!sup:$-2$]m[!sup:$3$]
 Số mol khí sau lần bơm thứ 5: [!m:$mathml_50$]
 Nhóm IV. Đồng vị phóng xạ iodine-131 ([!m:$mathml_51$])được sử dụng phổ biến trong y học hạt nhân để chẩn đoán và điều trị bệnh ung thư tuyến giáp. Nó phân rã bằng cách phát ra tia [!m:$mathtype_12$] kèm theo bức xạ [!m:$mathtype_13$], với chu kỳ bán rã khoảng 8 ngày. Một bệnh nhân được chỉ định uống một liều thuốc chứa [!m:$mathml_52$] có độ phóng xạ ban đầu là [!m:$mathml_53$] Bq.
 *a) Tia [!m:$mathtype_14$] phát ra từ quá trình phân rã của iodine-131 có bản chất là sóng điện từ với bước sóng rất ngắn, có khả năng đâm xuyên mạnh.
@@ -235,12 +235,12 @@ Lời giải
 Câu 5. Tổng số hạt mang điện có trong 119 gam nguyên tử uranium [!m:$mathml_65$] bằng x.10[!sup:$25$] hạt. Giá trị của x bằng bao nhiêu? (kết quả được làm tròn đến hàng phần trăm)
 → Đáp án: 5,54
 Lời giải
-[!i:$Tổng số hạt mang điện có trong nguyên tử uranium $][!m:$mathml_66$][!i:$ bằng tổng số hạt proton và electron và bằng 92 + 92 = 184.$]
-[!i:$Tổng số hạt mang điện có trong 119 gam nguyên tử uranium $][!m:$mathml_67$] [!i:$là:$]
-[!m:$mathml_68$] [!b!i:$($][!b!i:$hạt$][!b!i:$)$]
+[!i:$Tổng số hạt mang điện có trong nguyên tử uranium$] [!m:$mathml_66$] [!i:$bằng tổng số hạt proton và electron và bằng 92 + 92 = 184.$]
+[!i:$Tổng số hạt mang điện có trong 119 gam nguyên tử uranium$] [!m:$mathml_67$] [!i:$là:$]
+[!m:$mathml_68$] [!b!i:$(hạt)$]
 Câu 6. Potassium (kali) là một khoáng chất chiếm tỉ lệ nhiều thứ ba trong cơ thể người. Kali có vai trò quan trọng trong việc điều chỉnh cân bằng chất lỏng, truyền tín hiệu đến hệ thần kinh và điều chỉnh sự co cơ. Kali tự nhiên có chứa đồng vị phóng xạ [!sup:$40$]K với chu kì bán rã bằng 1,277.10[!sup:$9$] năm. Đo trong cơ thể một người, độ phóng xạ của [!sup:$40$]K là 8281 Bq. Lấy 1 năm có 365 ngày, khối lượng hạt nhân bằng số khối. Khối lượng của [!sup:$40$]K có trong cơ thể người này tại thời điểm đo trên bằng bao nhiêu gam (kết quả được làm tròn đến hàng phần trăm)?
 → Đáp án: 0,03
 Lời giải
-[!b:$Ta $][!b:$có:$]
+[!b:$Ta có:$]
 [!m:$mathml_69$]
-[!i:$Vậy, $][!i:$khối lượng của $][!i:$[!sup:$40$]$][!i:$K có trong cơ thể người này xấp xỉ bằng 0,03 g.$]
+[!i:$Vậy, khối lượng của$] [!i:$[!sup:$40$]$][!i:$K có trong cơ thể người này xấp xỉ bằng 0,03 g.$]

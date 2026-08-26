@@ -1,6 +1,6 @@
 # DOCX → Azota
 
-Hai việc riêng. **Không** trộn UniMERNet vào bước extract.
+Hai việc riêng. **Không** trộn UniMERNet vào bước extract. Tầng A (spec đã duyệt) là `docx_extract/` — `python3 convert.py` chỉ là shim.
 
 | Việc | Cần GPU? | File |
 | --- | --- | --- |
