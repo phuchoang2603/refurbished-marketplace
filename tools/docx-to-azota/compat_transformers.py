@@ -233,6 +233,7 @@ def patch_transformers_for_unimernet() -> None:
         except Exception:
             pass
     force_eager_attention()
+    restore_get_head_mask()
 
 
 def force_eager_attention() -> None:
@@ -266,6 +267,57 @@ def force_eager_attention() -> None:
     get_correct_attn_implementation._azota_eager = True  # type: ignore[attr-defined]
     ptm.get_correct_attn_implementation = get_correct_attn_implementation
     print("attn_implementation=eager for UniMERNet", flush=True)
+
+
+def get_head_mask(self, head_mask=None, num_hidden_layers: int = 0, is_attention_chunked: bool = False):
+    """Copy of transformers 4.42 ``PreTrainedModel.get_head_mask`` (removed in v5)."""
+    if head_mask is not None:
+        head_mask = self._convert_head_mask_to_5d(head_mask, num_hidden_layers)
+        if is_attention_chunked is True:
+            head_mask = head_mask.unsqueeze(-1)
+    else:
+        head_mask = [None] * num_hidden_layers
+    return head_mask
+
+
+def _convert_head_mask_to_5d(self, head_mask, num_hidden_layers: int):
+    if head_mask.dim() == 1:
+        head_mask = head_mask.unsqueeze(0).unsqueeze(0).unsqueeze(-1).unsqueeze(-1)
+        head_mask = head_mask.expand(num_hidden_layers, -1, -1, -1, -1)
+    elif head_mask.dim() == 2:
+        head_mask = head_mask.unsqueeze(1).unsqueeze(-1).unsqueeze(-1)
+    if head_mask.dim() != 5:
+        raise ValueError(f"head_mask.dim != 5, instead {head_mask.dim()}")
+    dtype = getattr(self, "dtype", head_mask.dtype)
+    return head_mask.to(dtype=dtype)
+
+
+def restore_get_head_mask(model=None) -> None:
+    """Re-attach ``get_head_mask`` on PreTrainedModel and UniMERNet encoder instances."""
+    import types
+
+    try:
+        import transformers.modeling_utils as modeling_utils
+
+        ptm = modeling_utils.PreTrainedModel
+        current = getattr(ptm, "get_head_mask", None)
+        if current is None or not getattr(current, "_azota_head_mask", False):
+            ptm.get_head_mask = get_head_mask
+            ptm.get_head_mask._azota_head_mask = True  # type: ignore[attr-defined]
+        if not hasattr(ptm, "_convert_head_mask_to_5d"):
+            ptm._convert_head_mask_to_5d = _convert_head_mask_to_5d
+    except Exception:
+        pass
+    if model is None:
+        return
+    for module in model.modules():
+        name = type(module).__name__
+        if "UnimerNet" not in name and "unimernet" not in type(module).__module__:
+            continue
+        if not hasattr(module, "get_head_mask"):
+            module.get_head_mask = types.MethodType(get_head_mask, module)
+        if not hasattr(module, "_convert_head_mask_to_5d"):
+            module._convert_head_mask_to_5d = types.MethodType(_convert_head_mask_to_5d, module)
 
 
 def _unimernet_package_file(*relative: str):

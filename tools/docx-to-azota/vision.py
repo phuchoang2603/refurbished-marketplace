@@ -132,6 +132,9 @@ def load_unimernet(cfg_path: str | Path | None = None, device: str | None = None
         model.set_attn_implementation("eager")
     except Exception:
         pass
+    from compat_transformers import restore_get_head_mask
+
+    restore_get_head_mask(model)
     if fp16 and device == "cuda":
         model = model.half()
     vis_processor = load_processor(
@@ -166,6 +169,9 @@ def unimernet_batch(
     from PIL import Image
 
     preds: dict[str, str] = {}
+    from compat_transformers import restore_get_head_mask
+
+    restore_get_head_mask(model)
     use_half = next(model.parameters()).dtype == torch.float16
     for i in range(0, len(jobs), batch_size):
         chunk = jobs[i : i + batch_size]

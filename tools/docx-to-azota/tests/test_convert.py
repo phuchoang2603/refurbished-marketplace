@@ -299,6 +299,15 @@ def test_force_eager_attention_is_wired() -> None:
     assert "set_attn_implementation" in vis
 
 
+def test_get_head_mask_none_layers() -> None:
+    from compat_transformers import get_head_mask
+
+    class Dummy:
+        dtype = "float32"
+
+    assert get_head_mask(Dummy(), None, 4) == [None, None, None, None]
+
+
 def test_step_timer():
     from eval_timer import StepTimer
 
