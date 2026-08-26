@@ -4,7 +4,7 @@ Hai việc riêng. **Không** trộn UniMERNet vào bước extract. Tầng A (s
 
 | Việc | Cần GPU? | File |
 | --- | --- | --- |
-| 1. Extract Azota | Không | `markup.txt` + `sidecar/` + `manifest.json` |
+| 1. Extract Azota | Không | `azota.md` (= markdown Azota) + `markup.txt` + `sidecar/` + `manifest.json` |
 | 2. MathType → `$latex$` | Colab T4 | thay `[!m:$mathtype_N$]` |
 
 Azota nhận placeholder **và** `$latex$` từ OMML (CPU). Đề mẫu: 69 mathml → LaTeX, 16 mathtype vẫn placeholder, 8 img **không GPU**.

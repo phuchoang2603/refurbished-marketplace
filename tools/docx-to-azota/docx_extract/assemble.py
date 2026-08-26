@@ -89,6 +89,7 @@ def clean_docx(path: str | Path, out_dir: str | Path) -> dict[str, Any]:
         markup = "\n".join(ctx.lines).rstrip() + "\n"
         markup = inject_mathml_latex(markup, ctx.sidecar.assets)
         (out / "markup.txt").write_text(markup, encoding="utf-8")
+        (out / "azota.md").write_text(markup, encoding="utf-8")
         manifest = {
             "source": Path(path).name,
             "document_part": ctx.document_path,
@@ -125,6 +126,7 @@ def main(argv: list[str] | None = None) -> int:
     manifest = clean_docx(args.docx, args.out)
     print(json.dumps(manifest["counts"], ensure_ascii=False, indent=2))
     print(f"Wrote {args.out / 'markup.txt'}")
+    print(f"Wrote {args.out / 'azota.md'}  (markdown Azota — dán vào Azota)")
     print(f"Wrote {args.out / 'manifest.json'}")
     print(f"Wrote {args.out / 'sidecar'} ({len(manifest['assets'])} assets)")
     return 0

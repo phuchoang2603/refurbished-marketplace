@@ -371,6 +371,8 @@ def test_sample_exam_counts(tmp_path: Path):
     assert manifest["counts"]["mathtype"] == 16
     assert manifest["counts"]["img"] == 8
     text = (tmp_path / "markup.txt").read_text(encoding="utf-8")
+    md = (tmp_path / "azota.md").read_text(encoding="utf-8")
+    assert md == text
     assert text.count("[!m:$mathtype_") == 16
     assert text.count("[img:$img_") == 8
     # OMML is converted to $latex$ on CPU (not UniMERNet).
