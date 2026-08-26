@@ -232,6 +232,40 @@ def patch_transformers_for_unimernet() -> None:
             tf_utils.torch_int = torch_int
         except Exception:
             pass
+    force_eager_attention()
+
+
+def force_eager_attention() -> None:
+    """Transformers 5 defaults to SDPA; UniMERNet CustomMBartDecoder sets ``_supports_sdpa = False``.
+
+    If the parent encoder already stored ``attn_implementation="sdpa"`` on the config,
+    decoder ``__init__`` treats that as explicit and raises instead of falling back.
+    Rewrite the request to ``eager`` when the module cannot dispatch SDPA.
+    """
+    import os
+
+    os.environ["TRANSFORMERS_ATTN_IMPLEMENTATION"] = "eager"
+    import transformers.modeling_utils as modeling_utils
+
+    ptm = modeling_utils.PreTrainedModel
+    orig = ptm.get_correct_attn_implementation
+    if getattr(orig, "_azota_eager", False):
+        return
+
+    def get_correct_attn_implementation(self, requested_attention=None, is_init_check=False, *args, **kwargs):
+        if not getattr(self, "_supports_sdpa", False) and (
+            requested_attention is None
+            or (isinstance(requested_attention, str) and "sdpa" in requested_attention)
+        ):
+            requested_attention = "eager"
+        try:
+            return orig(self, requested_attention, is_init_check, *args, **kwargs)
+        except TypeError:
+            return orig(self, requested_attention, is_init_check)
+
+    get_correct_attn_implementation._azota_eager = True  # type: ignore[attr-defined]
+    ptm.get_correct_attn_implementation = get_correct_attn_implementation
+    print("attn_implementation=eager for UniMERNet", flush=True)
 
 
 def _unimernet_package_file(*relative: str):

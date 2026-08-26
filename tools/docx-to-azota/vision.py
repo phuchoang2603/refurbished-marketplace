@@ -128,6 +128,10 @@ def load_unimernet(cfg_path: str | Path | None = None, device: str | None = None
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
     model = task.build_model(cfg).to(device).eval()
+    try:
+        model.set_attn_implementation("eager")
+    except Exception:
+        pass
     if fp16 and device == "cuda":
         model = model.half()
     vis_processor = load_processor(

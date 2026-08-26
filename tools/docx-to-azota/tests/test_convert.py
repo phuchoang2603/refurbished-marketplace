@@ -290,6 +290,15 @@ def test_rewrite_decoder_onnx_imports():
     assert "install_transformers_onnx_stub()" in src
 
 
+def test_force_eager_attention_is_wired() -> None:
+    src = (Path(__file__).resolve().parent.parent / "compat_transformers.py").read_text(encoding="utf-8")
+    assert "def force_eager_attention" in src
+    assert "force_eager_attention()" in src
+    assert 'requested_attention = "eager"' in src
+    vis = (Path(__file__).resolve().parent.parent / "vision.py").read_text(encoding="utf-8")
+    assert "set_attn_implementation" in vis
+
+
 def test_step_timer():
     from eval_timer import StepTimer
 
