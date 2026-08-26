@@ -35,6 +35,6 @@ Mẫu: `python3 convert.py samples/de-vat-li-lan-3.docx -o azota_out`
 5. `Shift+Enter` từng ô. Không Run all. Không dán cell từ chat cũ / `Untitled1.ipynb`.
 6. Ô A2 clone vào `/content/docx-to-azota` — **đừng bấm Stop**, đợi `OK True`. **Không** hiện hộp Google Drive.
 
-Phần A (clone → upload → extract → zip) **không cài UniMERNet**. Xong phần A là đủ nộp Azota.
+Phần A (clone → upload → extract → zip) **không cài UniMERNet**. Ô A5 in `EXTRACT HOÀN TẤT` (cùng khuôn log Kaggle). Xong phần A là đủ nộp Azota.
 
 Phần B chỉ khi cần `$latex$` từ ảnh MathType. Nếu `ModuleNotFoundError: install_colab`, chạy **cả ô B2** (tự clone `/content/docx-to-azota`), không chỉ 3 dòng import.

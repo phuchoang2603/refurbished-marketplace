@@ -333,6 +333,35 @@ def test_step_timer():
     assert "TỔNG :" in s
 
 
+def test_kaggle_style_ocr_report(capsys):
+    from eval_timer import print_ocr_complete
+
+    text = print_ocr_complete(
+        "/kaggle/input/de.pdf",
+        [85.16, 74.59, 60.35, 61.13, 4.93],
+        pdf_to_png_seconds=0.37,
+    )
+    assert "OCR HOÀN TẤT" in text
+    assert "Số trang/ảnh: 5" in text
+    assert "Page 1: 85.16 giây (1.42 phút)" in text
+    assert "Tổng thời gian OCR: 286.16 giây" in text
+    assert "PDF -> PNG: 0.37 giây" in text
+    assert "OCR HOÀN TẤT" in capsys.readouterr().out
+
+
+def test_extract_complete_report():
+    from eval_timer import print_extract_complete
+
+    text = print_extract_complete(
+        "/content/de.docx",
+        0.12,
+        {"mathml": 69, "mathtype": 16, "img": 8, "lines": 247},
+    )
+    assert "EXTRACT HOÀN TẤT" in text
+    assert "mathml: 69" in text
+    assert "DOCX -> Azota: 0.12 giây" in text
+
+
 def test_sample_exam_counts(tmp_path: Path):
     sample = Path(__file__).resolve().parents[1] / "samples" / "de-vat-li-lan-3.docx"
     if not sample.exists():
