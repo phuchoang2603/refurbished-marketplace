@@ -159,7 +159,7 @@ def test_convert_mini_docx(tmp_path: Path):
     out = tmp_path / "out"
     manifest = convert_docx(src, out)
     markup = (out / "markup.txt").read_text(encoding="utf-8")
-    assert "[!m:$mathml_1$]" in markup
+    assert "[!m:$mathml_1$]" in markup or "$E=mc^2$" in markup
     assert "[!i:$nang luong$]" in markup or "[!i:$nang luong $]" in markup
     assert "*D." in markup
     assert manifest["counts"]["mathml"] == 1
@@ -371,9 +371,13 @@ def test_sample_exam_counts(tmp_path: Path):
     assert manifest["counts"]["mathtype"] == 16
     assert manifest["counts"]["img"] == 8
     text = (tmp_path / "markup.txt").read_text(encoding="utf-8")
-    assert text.count("[!m:$mathml_") == 69
     assert text.count("[!m:$mathtype_") == 16
     assert text.count("[img:$img_") == 8
+    # OMML is converted to $latex$ on CPU (not UniMERNet).
+    assert text.count("[!m:$mathml_") == 0
+    tex_files = list((tmp_path / "sidecar").glob("mathml_*.tex"))
+    assert len(tex_files) == 69
+    assert r"\frac" in text or r"_{" in text
     assert "*D. ngưng tụ." in text
     assert "→ Đáp án: 69,6" in text
     assert "[* Số lần bơm" in text

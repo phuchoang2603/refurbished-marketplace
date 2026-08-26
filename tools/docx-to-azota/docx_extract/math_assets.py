@@ -10,6 +10,7 @@ from xml.etree import ElementTree as ET
 
 from .loader import resolve_media
 from .ns import local, qn, xml_fragment
+from .omml_latex import omml_to_latex
 
 MATHTYPE_PROGIDS = {
     "equation.dsmt4",
@@ -81,6 +82,9 @@ def emit_mathml(om: ET.Element, ctx) -> str:
     asset_id = ctx.sidecar.next_id("mathml")
     filename = f"{asset_id}.xml"
     (ctx.sidecar.sidecar_dir / filename).write_text(xml_fragment(om), encoding="utf-8")
+    latex = omml_to_latex(om)
+    if latex:
+        (ctx.sidecar.sidecar_dir / f"{asset_id}.tex").write_text(latex + "\n", encoding="utf-8")
     placeholder = f"[!m:${asset_id}$]"
     ctx.sidecar.add(
         Asset(
@@ -91,6 +95,7 @@ def emit_mathml(om: ET.Element, ctx) -> str:
             document_order=ctx.order,
             source_file=ctx.document_path,
             xpath_hint="/".join(ctx.xpath_stack + ["m:oMath"]),
+            latex=latex or None,
         )
     )
     return placeholder

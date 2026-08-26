@@ -7,7 +7,7 @@ Hai việc riêng. **Không** trộn UniMERNet vào bước extract. Tầng A (s
 | 1. Extract Azota | Không | `markup.txt` + `sidecar/` + `manifest.json` |
 | 2. MathType → `$latex$` | Colab T4 | thay `[!m:$mathtype_N$]` |
 
-Azota nhận placeholder. Đề mẫu: 69 mathml, 16 mathtype, 8 img **không GPU**.
+Azota nhận placeholder **và** `$latex$` từ OMML (CPU). Đề mẫu: 69 mathml → LaTeX, 16 mathtype vẫn placeholder, 8 img **không GPU**.
 
 **Cấm trên Colab:** `pip install unimernet[full]`, `pip install tokenizers`, `pip install transformers==4.42.4`.
 
@@ -35,6 +35,6 @@ Mẫu: `python3 convert.py samples/de-vat-li-lan-3.docx -o azota_out`
 5. `Shift+Enter` từng ô. Không Run all. Không dán cell từ chat cũ / `Untitled1.ipynb`.
 6. Ô A2 clone vào `/content/docx-to-azota` — **đừng bấm Stop**, đợi `OK True`. **Không** hiện hộp Google Drive.
 
-Phần A (clone → upload → extract → zip) **không cài UniMERNet**. Ô A5 in `EXTRACT HOÀN TẤT` (cùng khuôn log Kaggle). Xong phần A là đủ nộp Azota.
+Phần A (clone → upload → extract → zip) **không cài UniMERNet**. Ô extract tự đổi 69 công thức Word (OMML) thành `$latex$`. 16 MathType vẫn `[!m:$mathtype_N$]` (UniMERNet trên Colab đang ra rác).
 
 Phần B chỉ khi cần `$latex$` từ ảnh MathType. Nếu `ModuleNotFoundError: install_colab`, chạy **cả ô B2** (tự clone `/content/docx-to-azota`), không chỉ 3 dòng import.

@@ -14,6 +14,7 @@ from zipfile import ZipFile
 from .loader import Document, load
 from .math_assets import AssetStore
 from .ns import local, qn
+from .omml_latex import inject_mathml_latex
 from .runs import postprocess_lines, render_paragraph
 from .tables import render_table
 
@@ -85,7 +86,9 @@ def clean_docx(path: str | Path, out_dir: str | Path) -> dict[str, Any]:
                 log.debug("skip %s[%s]: %s", name, i, exc)
             ctx.xpath_stack.pop()
         ctx.lines = postprocess_lines(ctx.lines)
-        (out / "markup.txt").write_text("\n".join(ctx.lines).rstrip() + "\n", encoding="utf-8")
+        markup = "\n".join(ctx.lines).rstrip() + "\n"
+        markup = inject_mathml_latex(markup, ctx.sidecar.assets)
+        (out / "markup.txt").write_text(markup, encoding="utf-8")
         manifest = {
             "source": Path(path).name,
             "document_part": ctx.document_path,

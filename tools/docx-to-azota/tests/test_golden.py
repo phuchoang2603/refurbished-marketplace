@@ -45,3 +45,5 @@ def test_asset_counts_and_key_lines(tmp_path: Path) -> None:
     text = (out_dir / "markup.txt").read_text(encoding="utf-8")
     assert "*D. ngưng tụ." in text
     assert "→ Đáp án: 69,6" in text
+    assert text.count("[!m:$mathtype_") == 16
+    assert "[!m:$mathml_" not in text
