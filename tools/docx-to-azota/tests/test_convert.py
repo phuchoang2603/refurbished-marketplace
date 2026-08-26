@@ -262,10 +262,12 @@ def test_install_colab_never_pins_tokenizers():
     install_fn = src.split("def install_unimernet_colab")[1].split("def allow_wmf")[0]
     assert "tokenizers>=" not in install_fn
     assert "unimernet[full]" not in install_fn
-    from install_colab import FORBIDDEN_PIP
+    from install_colab import FORBIDDEN_PIP, REQUIRED_EXTRAS
 
     assert "unimernet[full]" in FORBIDDEN_PIP
     assert "transformers==4.42.4" in FORBIDDEN_PIP
+    assert "evaluate" in REQUIRED_EXTRAS
+    assert "tokenizers" not in REQUIRED_EXTRAS
 
 
 def test_rewrite_decoder_onnx_imports():

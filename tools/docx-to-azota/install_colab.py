@@ -32,6 +32,52 @@ FORBIDDEN_PIP = (
     "transformers==4.42.4",
 )
 
+# UniMERNet is installed --no-deps; these are the inference extras we do install.
+# Never add tokenizers / transformers here.
+REQUIRED_EXTRAS = (
+    "omegaconf",
+    "timm",
+    "ftfy",
+    "albumentations",
+    "rapidfuzz",
+    "webdataset",
+    "evaluate",
+    "nltk",
+    "termcolor",
+    "tabulate",
+    "rich",
+    "matplotlib",
+)
+OPTIONAL_EXTRAS = ("iopath", "fairscale", "Wand", "opencv-python-headless")
+# import-name → pip name, used if import still fails after REQUIRED_EXTRAS
+PIP_FOR_MODULE = {
+    "evaluate": "evaluate",
+    "omegaconf": "omegaconf",
+    "timm": "timm",
+    "ftfy": "ftfy",
+    "albumentations": "albumentations",
+    "rapidfuzz": "rapidfuzz",
+    "webdataset": "webdataset",
+    "iopath": "iopath",
+    "fairscale": "fairscale",
+    "nltk": "nltk",
+    "cv2": "opencv-python-headless",
+    "PIL": "pillow",
+    "yaml": "pyyaml",
+    "einops": "einops",
+    "sentencepiece": "sentencepiece",
+    "huggingface_hub": "huggingface_hub",
+    "skimage": "scikit-image",
+    "Levenshtein": "python-Levenshtein",
+}
+NEVER_AUTO_PIP = {
+    "tokenizers",
+    "transformers",
+    "torch",
+    "numpy",
+    "unimernet",
+}
+
 
 def _run(cmd: list[str]) -> None:
     print("+", " ".join(cmd), flush=True)
@@ -70,30 +116,35 @@ def install_unimernet_colab() -> None:
     )
     py = sys.executable
     _run([py, "-m", "pip", "install", "-q", "unimernet", "--no-deps"])
-    _run(
-        [
-            py,
-            "-m",
-            "pip",
-            "install",
-            "-q",
-            "omegaconf",
-            "timm",
-            "ftfy",
-            "albumentations",
-            "rapidfuzz",
-            "webdataset",
-        ]
-    )
-    for pkg in ("iopath", "fairscale", "Wand"):
+    _run([py, "-m", "pip", "install", "-q", *REQUIRED_EXTRAS])
+    for pkg in OPTIONAL_EXTRAS:
         try:
             _run([py, "-m", "pip", "install", "-q", pkg])
         except subprocess.CalledProcessError:
             print("skip extra", pkg, flush=True)
+    unimernet = _import_unimernet_with_extras(py)
+    print("unimernet OK", unimernet.__file__, flush=True)
+
+
+def _import_unimernet_with_extras(py: str):
+    """Install remaining known extras if UniMERNet imports a missing module."""
     from compat_transformers import import_unimernet
 
-    unimernet = import_unimernet()
-    print("unimernet OK", unimernet.__file__, flush=True)
+    last: BaseException | None = None
+    for _ in range(8):
+        try:
+            return import_unimernet()
+        except ModuleNotFoundError as exc:
+            last = exc
+            name = exc.name or ""
+            if name in NEVER_AUTO_PIP or name.startswith("transformers"):
+                raise
+            pkg = PIP_FOR_MODULE.get(name)
+            if pkg is None:
+                raise
+            print("missing", name, "→ pip", pkg, flush=True)
+            _run([py, "-m", "pip", "install", "-q", pkg])
+    raise last if last else RuntimeError("unimernet import failed")
 
 
 def allow_wmf_in_imagemagick() -> None:
