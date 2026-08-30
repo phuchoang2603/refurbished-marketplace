@@ -104,6 +104,20 @@ The repository SHALL include local and staging Argo CD child Applications for th
 - **WHEN** an observability Application syncs
 - **THEN** it deploys the observability chart into the `monitoring` namespace
 
+### Requirement: Privileged Pod Security for host-network DaemonSets
+
+Child Applications that deploy host-network or hostPath DaemonSets (Istio CNI, ztunnel, Prometheus node-exporter) SHALL set Argo CD `syncPolicy.managedNamespaceMetadata` so `CreateNamespace=true` labels the destination namespace `pod-security.kubernetes.io/enforce=privileged` (and matching audit/warn). Unlabeled namespaces inherit cluster-default PSS baseline (Talos) and those DaemonSets cannot schedule.
+
+#### Scenario: Monitoring namespace allows node-exporter
+
+- **WHEN** the observability Application creates or syncs the `monitoring` namespace
+- **THEN** the namespace is labeled for privileged Pod Security so node-exporter can use hostNetwork, hostPID, hostPath, and hostPort
+
+#### Scenario: Istio-system namespace allows ambient DaemonSets
+
+- **WHEN** Istio Applications create or sync the `istio-system` namespace
+- **THEN** the namespace is labeled for privileged Pod Security so `istio-cni-node` and `ztunnel` DaemonSets can schedule
+
 ### Requirement: Observability sync ordering
 
 The observability Application SHALL sync before workloads or mesh features that depend on metrics storage and Grafana.

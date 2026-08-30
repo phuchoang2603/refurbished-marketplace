@@ -7,6 +7,9 @@ victoria-metrics-k8s-stack:
   grafana:
     persistence:
       enabled: true
+    # First boot on PVC runs a long SQLite migration; default 600s deadline
+    # marks the Deployment ProgressDeadlineExceeded and Argo Degraded.
+    progressDeadlineSeconds: 900
     resources:
       requests:
         cpu: 50m

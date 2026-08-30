@@ -124,6 +124,7 @@ When Grafana access is available, confirm:
 
 The upstream chart has a few ArgoCD-specific behaviors that are handled on the observability Application in `infra/argocd/app-of-apps/templates/applications.tpl`:
 
+- `managedNamespaceMetadata` labels `monitoring` (and `istio-system` on the Istio apps) `pod-security.kubernetes.io/enforce=privileged` so Talos default PSS baseline does not block node-exporter / CNI / ztunnel DaemonSets.
 - `RespectIgnoreDifferences=true` is enabled so ignored generated fields are also respected during apply.
 - VictoriaMetrics Operator self-signed webhook certificate drift is ignored.
 - Grafana generated admin password and related deployment checksum drift are ignored.

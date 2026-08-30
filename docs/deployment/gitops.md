@@ -17,7 +17,7 @@ Staging syncs everything via `staging-root` → `infra/argocd/app-of-apps` + cha
 
 **Local (Colima):** `tilt up` installs Argo CD and applies `local-root` (current git branch). Both environments render children from the shared Helm chart [`infra/argocd/app-of-apps/`](../../infra/argocd/app-of-apps/); env-specific settings live inline on each root Application’s `helm.values`. Children inherit `targetRevision` via `$ARGOCD_APP_SOURCE_TARGET_REVISION`. Local omits marketplace (Tilt). Observability defaults are apps-only (Istio L7 scrapes + ecommerce/kafka logs + VT/OTLP; no node-exporter/ksm/Alertmanager). Staging restores full platform budgets via `values-staging.yaml`. See [local-setup](../development/local-setup.md).
 
-**Staging:** Same chart; `staging-root` sets `global.imageRegistry` / `imageTag`, enables marketplace, and points chart `valueFiles` at chart-adjacent `values-staging.yaml` overlays where needed.
+**Staging:** Same chart; `staging-root` sets `global.imageRegistry` / `imageTag`, enables marketplace, and points chart `valueFiles` at chart-adjacent `values-staging.yaml` overlays where needed. Istio and observability Applications set `managedNamespaceMetadata` so `istio-system` and `monitoring` are privileged under Pod Security (required on Talos; default unlabeled namespaces are baseline and reject CNI, ztunnel, and node-exporter). Marketplace already does the same for `ecommerce` ambient labels.
 
 **Terraform (not in Git for staging):** Argo CD on remote clusters.
 

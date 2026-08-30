@@ -43,6 +43,10 @@ spec:
 {{- if $app.ignoreDifferences }}
       - RespectIgnoreDifferences=true
 {{- end }}
+{{- with $app.managedNamespaceMetadata }}
+    managedNamespaceMetadata:
+{{- toYaml . | nindent 6 }}
+{{- end }}
 {{- if $app.ignoreDifferences }}
   ignoreDifferences:
     - group: ""
