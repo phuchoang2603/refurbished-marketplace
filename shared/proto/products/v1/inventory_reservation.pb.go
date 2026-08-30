@@ -139,7 +139,7 @@ const file_shared_proto_products_v1_inventory_reservation_proto_rawDesc = "" +
 	"\vtotal_cents\x18\x03 \x01(\x03R\n" +
 	"totalCents\"7\n" +
 	"\x1aInventoryReservationFailed\x12\x19\n" +
-	"\border_id\x18\x01 \x01(\tR\aorderIdB=Z;github.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1;productsv1b\x06proto3"
+	"\border_id\x18\x01 \x01(\tR\aorderIdBVZTgithub.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1;productsv1b\x06proto3"
 
 var (
 	file_shared_proto_products_v1_inventory_reservation_proto_rawDescOnce sync.Once

@@ -73,7 +73,7 @@ const file_shared_proto_payment_v1_payment_outcome_proto_rawDesc = "" +
 	"-shared/proto/payment/v1/payment_outcome.proto\x12\n" +
 	"payment.v1\"+\n" +
 	"\x0ePaymentOutcome\x12\x19\n" +
-	"\border_id\x18\x01 \x01(\tR\aorderIdB;Z9github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1;paymentv1b\x06proto3"
+	"\border_id\x18\x01 \x01(\tR\aorderIdBTZRgithub.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1;paymentv1b\x06proto3"
 
 var (
 	file_shared_proto_payment_v1_payment_outcome_proto_rawDescOnce sync.Once

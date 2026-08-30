@@ -654,7 +654,7 @@ const file_shared_proto_orders_v1_orders_proto_rawDesc = "" +
 	"\vCreateOrder\x12\x1d.orders.v1.CreateOrderRequest\x1a\x10.orders.v1.Order\x12@\n" +
 	"\fGetOrderByID\x12\x1e.orders.v1.GetOrderByIDRequest\x1a\x10.orders.v1.Order\x12^\n" +
 	"\x11ListOrdersByBuyer\x12#.orders.v1.ListOrdersByBuyerRequest\x1a$.orders.v1.ListOrdersByBuyerResponse\x12J\n" +
-	"\x11UpdateOrderStatus\x12#.orders.v1.UpdateOrderStatusRequest\x1a\x10.orders.v1.OrderB9Z7github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1;ordersv1b\x06proto3"
+	"\x11UpdateOrderStatus\x12#.orders.v1.UpdateOrderStatusRequest\x1a\x10.orders.v1.OrderBRZPgithub.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1;ordersv1b\x06proto3"
 
 var (
 	file_shared_proto_orders_v1_orders_proto_rawDescOnce sync.Once

@@ -562,7 +562,7 @@ const file_shared_proto_cart_v1_cart_proto_rawDesc = "" +
 	"\vAddCartItem\x12\x1b.cart.v1.AddCartItemRequest\x1a\r.cart.v1.Cart\x12I\n" +
 	"\x13SetCartItemQuantity\x12#.cart.v1.SetCartItemQuantityRequest\x1a\r.cart.v1.Cart\x12A\n" +
 	"\x0fRemoveCartItems\x12\x1f.cart.v1.RemoveCartItemsRequest\x1a\r.cart.v1.Cart\x126\n" +
-	"\tClearCart\x12\x19.cart.v1.ClearCartRequest\x1a\x0e.cart.v1.EmptyB5Z3github.com/phuchoang2603/refurbished-marketplace/shared/proto/cart/v1;cartv1b\x06proto3"
+	"\tClearCart\x12\x19.cart.v1.ClearCartRequest\x1a\x0e.cart.v1.EmptyBNZLgithub.com/phuchoang2603/refurbished-marketplace/shared/proto/cart/v1;cartv1b\x06proto3"
 
 var (
 	file_shared_proto_cart_v1_cart_proto_rawDescOnce sync.Once

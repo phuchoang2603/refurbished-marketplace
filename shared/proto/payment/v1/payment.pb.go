@@ -575,7 +575,7 @@ const file_shared_proto_payment_v1_payment_proto_rawDesc = "" +
 	"\x0ePaymentService\x12{\n" +
 	"\x1aCreateHostedPaymentSession\x12-.payment.v1.CreateHostedPaymentSessionRequest\x1a..payment.v1.CreateHostedPaymentSessionResponse\x12u\n" +
 	"\x1eGetHostedPaymentSessionByOrder\x121.payment.v1.GetHostedPaymentSessionByOrderRequest\x1a .payment.v1.HostedPaymentSession\x12i\n" +
-	"\x14HandleGatewayWebhook\x12'.payment.v1.HandleGatewayWebhookRequest\x1a(.payment.v1.HandleGatewayWebhookResponseB;Z9github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1;paymentv1b\x06proto3"
+	"\x14HandleGatewayWebhook\x12'.payment.v1.HandleGatewayWebhookRequest\x1a(.payment.v1.HandleGatewayWebhookResponseBTZRgithub.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1;paymentv1b\x06proto3"
 
 var (
 	file_shared_proto_payment_v1_payment_proto_rawDescOnce sync.Once

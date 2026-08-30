@@ -479,7 +479,7 @@ const file_shared_proto_products_v1_products_proto_rawDesc = "" +
 	"\rCreateProduct\x12!.products.v1.CreateProductRequest\x1a\x14.products.v1.Product\x12J\n" +
 	"\x0eGetProductByID\x12\".products.v1.GetProductByIDRequest\x1a\x14.products.v1.Product\x12_\n" +
 	"\x10GetProductsByIDs\x12$.products.v1.GetProductsByIDsRequest\x1a%.products.v1.GetProductsByIDsResponse\x12S\n" +
-	"\fListProducts\x12 .products.v1.ListProductsRequest\x1a!.products.v1.ListProductsResponseB=Z;github.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1;productsv1b\x06proto3"
+	"\fListProducts\x12 .products.v1.ListProductsRequest\x1a!.products.v1.ListProductsResponseBVZTgithub.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1;productsv1b\x06proto3"
 
 var (
 	file_shared_proto_products_v1_products_proto_rawDescOnce sync.Once

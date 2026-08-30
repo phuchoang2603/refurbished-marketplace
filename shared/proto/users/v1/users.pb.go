@@ -477,7 +477,7 @@ const file_shared_proto_users_v1_users_proto_rawDesc = "" +
 	"\vGetUserByID\x12\x1c.users.v1.GetUserByIDRequest\x1a\x0e.users.v1.User\x128\n" +
 	"\x05Login\x12\x16.users.v1.LoginRequest\x1a\x17.users.v1.TokenResponse\x12<\n" +
 	"\aRefresh\x12\x18.users.v1.RefreshRequest\x1a\x17.users.v1.TokenResponse\x12;\n" +
-	"\x06Logout\x12\x17.users.v1.LogoutRequest\x1a\x18.users.v1.LogoutResponseB7Z5github.com/phuchoang2603/refurbished-marketplace/shared/proto/users/v1;usersv1b\x06proto3"
+	"\x06Logout\x12\x17.users.v1.LogoutRequest\x1a\x18.users.v1.LogoutResponseBPZNgithub.com/phuchoang2603/refurbished-marketplace/shared/proto/users/v1;usersv1b\x06proto3"
 
 var (
 	file_shared_proto_users_v1_users_proto_rawDescOnce sync.Once

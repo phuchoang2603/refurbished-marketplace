@@ -14,7 +14,6 @@ import (
 func newRouter(h *handlers.Handler) http.Handler {
 	router := chi.NewRouter()
 	router.Use(
-		middleware.RealIP,
 		middleware.Recoverer,
 		middleware.Timeout(60*time.Second),
 		otelHTTPMiddleware(),

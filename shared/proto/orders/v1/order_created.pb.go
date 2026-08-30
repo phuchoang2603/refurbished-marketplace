@@ -166,7 +166,7 @@ const file_shared_proto_orders_v1_order_created_proto_rawDesc = "" +
 	"\x10OrderCreatedItem\x12\x1d\n" +
 	"\n" +
 	"product_id\x18\x01 \x01(\tR\tproductId\x12\x1a\n" +
-	"\bquantity\x18\x02 \x01(\x05R\bquantityB9Z7github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1;ordersv1b\x06proto3"
+	"\bquantity\x18\x02 \x01(\x05R\bquantityBRZPgithub.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1;ordersv1b\x06proto3"
 
 var (
 	file_shared_proto_orders_v1_order_created_proto_rawDescOnce sync.Once
