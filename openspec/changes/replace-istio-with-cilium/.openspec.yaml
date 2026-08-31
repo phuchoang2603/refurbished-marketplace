@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-08-31
+goal: "Single dataplane: Cilium CNI, Gateway API, Hubble L4. Remove Istio
+  charts, waypoint, and Istio metrics."
