@@ -1,4 +1,12 @@
-# Chart defaults = Talos / production-like full platform stack.
+# Chart defaults = Talos-dev. Prod hosts: values-prod.yaml.
+ingress:
+  enabled: true
+  name: grafana
+  port: 80
+  hostname: grafana-dev.phuchoang.sbs
+  backendService: observability-grafana
+  backendPort: 80
+
 victoria-metrics-k8s-stack:
   fullnameOverride: vmks
 
@@ -12,6 +20,10 @@ victoria-metrics-k8s-stack:
 
   grafana:
     enabled: true
+    grafana.ini:
+      server:
+        domain: grafana-dev.phuchoang.sbs
+        root_url: https://grafana-dev.phuchoang.sbs
     plugins:
       - victoriametrics-logs-datasource
     persistence:

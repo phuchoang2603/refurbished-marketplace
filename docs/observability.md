@@ -31,7 +31,12 @@ Set service env `OTEL_EXPORTER_OTLP_ENDPOINT=vtsingle-vmks.monitoring.svc.cluste
 
 ## Grafana Access
 
-Argo CD deploys the observability chart into `monitoring`.
+Argo CD deploys the observability chart into `monitoring`. Cilium Gateway + HTTPRoute (Cloudflare origin):
+
+- Dev: `https://grafana-dev.phuchoang.sbs`
+- Prod: `https://grafana.phuchoang.sbs`
+
+Point the tunnel Public Hostname at `http://cilium-gateway-grafana.monitoring.svc.cluster.local:80`.
 
 Port-forward Grafana:
 
@@ -39,7 +44,7 @@ Port-forward Grafana:
 kubectl port-forward -n monitoring svc/observability-grafana 3000:80
 ```
 
-Open http://localhost:3000 and sign in:
+Open the public hostname (or http://localhost:3000) and sign in:
 
 - **Username:** `admin`
 - **Password:** generated into Secret `observability-grafana` (key `admin-password`)

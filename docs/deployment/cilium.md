@@ -24,19 +24,23 @@ East–west traffic is ordinary ClusterIP. Hubble L4 is the network observe path
 
 ## Edge
 
-| Env  | Hostname                 | Backend                     |
-| ---- | ------------------------ | --------------------------- |
-| dev  | `shop-dev.phuchoang.sbs` | `web`                       |
-| dev  | `pay-dev.phuchoang.sbs`  | `payment-gateway-simulator` |
-| prod | `shop.phuchoang.sbs`     | `web`                       |
-| prod | `pay.phuchoang.sbs`      | `payment-gateway-simulator` |
+| Env  | Hostname                    | Backend                     |
+| ---- | --------------------------- | --------------------------- |
+| dev  | `shop-dev.phuchoang.sbs`    | `web`                       |
+| dev  | `pay-dev.phuchoang.sbs`     | `payment-gateway-simulator` |
+| dev  | `grafana-dev.phuchoang.sbs` | `observability-grafana`     |
+| prod | `shop.phuchoang.sbs`        | `web`                       |
+| prod | `pay.phuchoang.sbs`         | `payment-gateway-simulator` |
+| prod | `grafana.phuchoang.sbs`     | `observability-grafana`     |
 
 HTTPRoutes set `X-Forwarded-Proto: https` and `X-Forwarded-Host` so hosted-payment callbacks are not rewritten to HTTP (POST → Cloudflare 301 → GET → 405).
 
 Cloudflare Zero Trust Public Hostnames (not in Git):
 
 - `shop-dev.phuchoang.sbs` / `pay-dev.phuchoang.sbs` (dev) → `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`
+- `grafana-dev.phuchoang.sbs` (dev) → `http://cilium-gateway-grafana.monitoring.svc.cluster.local:80`
 - `shop.phuchoang.sbs` / `pay.phuchoang.sbs` (prod) → same origin DNS on the prod cluster
+- `grafana.phuchoang.sbs` (prod) → `http://cilium-gateway-grafana.monitoring.svc.cluster.local:80`
 
 TLS terminates at Cloudflare. No marketplace TLS Secret on the Gateway. Do not reuse the `cilium-ingress` Hubble/Longhorn/Argo Gateways for shop/pay.
 

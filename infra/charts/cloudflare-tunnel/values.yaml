@@ -7,8 +7,10 @@ image:
   pullPolicy: IfNotPresent
 
 # Remotely managed tunnel: Public Hostnames are configured in Cloudflare Zero Trust.
-# Point shop/pay (or shop-dev/pay-dev) Public Hostnames at the Cilium Gateway Service, for example:
+# Point shop/pay (or shop-dev/pay-dev) Public Hostnames at:
 #   http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80
+# Grafana (grafana-dev / grafana) Public Hostname at:
+#   http://cilium-gateway-grafana.monitoring.svc.cluster.local:80
 tunnel:
   existingSecret: cloudflare-tunnel-token
   existingSecretKey: token

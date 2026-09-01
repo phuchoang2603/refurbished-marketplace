@@ -27,6 +27,9 @@ spec:
           valueFiles:
             - values-prod.yaml
         apps:
+          observability:
+            valueFiles:
+              - values-prod.yaml
           kafka:
             valueFiles:
               - values-prod.yaml
