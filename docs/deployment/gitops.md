@@ -14,7 +14,7 @@ Talos **dev** and **prod** are the runtimes. Argo CD runs on the **gpu** cluster
 
 Both roots may be applied on gpu; they target different clusters. Do not put Doppler config names in Helm. Cloudflare Public Hostnames stay in Zero Trust; origin DNS is `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`.
 
-Child Applications inherit `targetRevision` via `$ARGOCD_APP_SOURCE_TARGET_REVISION`. Change `dev-root` `spec.source.targetRevision` in `infra/argocd/dev/root.yaml`, commit, and `kubectl apply -f` that file on gpu. `global.imageTag` is `$ARGOCD_APP_REVISION`. Wait for GHCR `:<sha>` or pods ImagePullBackOff until the image job finishes. Set the field back to `main` before merge / PR image cleanup.
+Child Applications inherit `targetRevision` via `$ARGOCD_APP_SOURCE_TARGET_REVISION`. Change `dev-root` `spec.source.targetRevision` in `infra/argocd/dev/root.yaml`, commit, and `kubectl apply -f` that file on gpu. `global.imageTag` is `$ARGOCD_APP_REVISION`. Wait for GHCR `:<sha>` or pods ImagePullBackOff until the image job finishes. Leave `targetRevision` on the branch you are running until you deliberately retarget (do not flip it to `main` just because a PR merged).
 
 ## What Argo CD syncs
 
@@ -51,5 +51,5 @@ Marketplace and Kafka Connect images: `ghcr.io/phuchoang2603/refurbished-marketp
 
 ## Related
 
-- [cilium.md](cilium.md) — CNI, Gateway API, Cloudflare origin, Hubble
+- [cilium.md](cilium.md) — CNI, Gateway API, Cloudflare origin
 - [ci.md](ci.md) — GHCR `:main` / `:<sha>` and PR SHA cleanup

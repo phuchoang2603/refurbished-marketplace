@@ -2,7 +2,7 @@
 # Secrets on talos-dev: kubectl --kubeconfig=$HOME/.kube/talos-dev.yaml apply -f infra/k8s/doppler-token.dev.secret.yaml
 # Images: GHCR :<git-sha> ($ARGOCD_APP_REVISION).
 # Git pointer is spec.source.targetRevision in this file. Change it here, commit, apply.
-# Before merging this change to main, set targetRevision back to main.
+# Leave this on the live feature branch until we deliberately retarget (do not flip to main on merge).
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:

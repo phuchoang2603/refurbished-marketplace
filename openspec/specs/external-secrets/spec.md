@@ -8,11 +8,11 @@ Define how External Secrets Operator and Doppler sync application credentials in
 
 ### Requirement: External Secrets Operator installed
 
-The repository SHALL install External Secrets Operator on the local Kubernetes cluster using the upstream Helm chart in the `operators` namespace.
+The repository SHALL install External Secrets Operator on the Talos cluster using the upstream Helm chart in the `operators` namespace via Argo CD. Tilt SHALL NOT install ESO.
 
-#### Scenario: ESO operator healthy after local bootstrap
+#### Scenario: ESO operator healthy after GitOps sync
 
-- **WHEN** a developer runs `tilt up` with a valid cluster context
+- **WHEN** the Talos operators Application syncs
 - **THEN** the External Secrets Operator deployment becomes ready in the `operators` namespace
 
 ### Requirement: Doppler ClusterSecretStore with service token
@@ -96,9 +96,9 @@ Secret provisioning SHALL remain provider-agnostic at the service deployment lay
 
 ### Requirement: Doppler environment configs
 
-Doppler SHALL use separate configs for local development and production (for example `dev` and `prd`). Local Colima SHALL use a Doppler service token scoped to the development config.
+Doppler MAY use separate configs for non-production vs production secrets. Bootstrap of `operators/doppler-token` SHALL use kubectl (or equivalent) as on staging. A Tilt-applied `doppler-token.dev.secret.yaml` and Colima-only bootstrap SHALL NOT be required.
 
-#### Scenario: Local dev config
+#### Scenario: Bootstrap without Tilt
 
-- **WHEN** bootstrapping local development
-- **THEN** the service token used for ESO is scoped to the Doppler development config only
+- **WHEN** a contributor bootstraps secrets after this change
+- **THEN** they create `operators/doppler-token` without running `tilt up`

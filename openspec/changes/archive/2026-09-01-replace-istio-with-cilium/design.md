@@ -12,7 +12,7 @@ Follow-on: `add-cilium-mesh-policy-and-canary`.
 
 **Goals:**
 
-- One dataplane: Cilium CNI + Cilium Gateway API + Hubble L4 on Talos.
+- One dataplane: Cilium CNI + Cilium Gateway API on Talos. Hubble is off; traces are app OTEL.
 - Same browser contract: Cloudflare HTTPS, HTTP origin, host-based routes, forwarded proto/host headers.
 - Dev and prod share one Talos chart shape (GHCR, observability, CNPG-in-chart, Cilium Gateway). Env is two clusters: Doppler token on the cluster, thin Argo roots (`dev-root` / `prod-root`), and `values-prod.yaml` for prod hostnames only.
 - CI publishes images Argo can pull: SHA tags on `main` and on PRs; prune PR-only GHCR versions when the PR closes.
@@ -22,7 +22,7 @@ Follow-on: `add-cilium-mesh-policy-and-canary`.
 
 - Tilt, Colima/k3s, Tiltfile workarounds, and a second “local” Helm personality.
 - Preview environments per PR (extra namespaces, hosts, CNPG clusters). One live `ecommerce` on the cluster.
-- Hubble L7 metrics / Istio-RED replacement.
+- Hubble L7 metrics / Istio-RED replacement (follow-on [#43](https://github.com/phuchoang2603/refurbished-marketplace/issues/43) app-level OTEL metrics).
 - Cilium as an Argo Application.
 - Mesh/Gateway proxy spans.
 
@@ -30,13 +30,13 @@ Follow-on: `add-cilium-mesh-policy-and-canary`.
 
 ### 1. Cilium is cluster-owned in talos-proxmox; do not copy Helm values here
 
-Source of truth: sibling repo **talos-proxmox** `apps/values/cilium.yaml` (installed by `apps/bootstrap.sh`, chart 1.18.13). Live talos-dev `helm get values cilium` already includes WireGuard, Envoy L7, `cluster.name/id`, Gateway API, and Hubble. L2 pool and Hubble/Longhorn/Argo Gateways live in `apps/manifests/env/*/network.yaml` + `routes.yaml`.
+Source of truth: sibling repo **talos-proxmox** `apps/values/cilium.yaml` (installed by cluster bootstrap, chart 1.18.x). Marketplace GitOps only consumes `gatewayClassName: cilium`. Hubble may be disabled in those cluster values; this repo does not require it. L2 pool and platform Gateways (Longhorn, Argo CD) live in talos-proxmox network manifests.
 
 This repo does **not** keep a second Cilium values file (it would drift). Marketplace GitOps only consumes `gatewayClassName: cilium`. Follow-on `add-cilium-mesh-policy-and-canary` may add policies/routes; it must not helm-upgrade Cilium.
 
 ### 2. Argo CD is the only deploy path; delete Tilt-era quirks
 
-One Talos cluster, one app-of-apps catalog, marketplace always an Argo Application, images always GHCR. Chart **defaults** are talos-dev. Prod is a second cluster with `prod-root` + Doppler `prd` + `values-prod.yaml` hosts.
+One app-of-apps catalog, two thin roots (`dev-root` / `prod-root`) on the **gpu** cluster. Children destine registered Argo clusters `dev` / `prod`. Chart **defaults** are talos-dev (`shop-dev` / `pay-dev`). Prod uses `values-prod.yaml` hosts. `dev-root` `targetRevision` stays on the branch we are running until we change it on purpose (not automatically back to `main` at merge).
 
 **Delete (legacy / Tilt-only):**
 
@@ -55,7 +55,7 @@ One Talos cluster, one app-of-apps catalog, marketplace always an Argo Applicati
 | Tilt-applied `doppler-token.dev.secret.yaml`                                                                      | Local bootstrap                                  | Same pattern as remote: bootstrap Secret once, ESO `ClusterSecretStore`    |
 | Tilt extra Gateway API CRD apply                                                                                  | Colima had no CRDs                               | Talos/Cilium already has Gateway API                                       |
 | Docs/PR template/`CONTRIBUTING` `tilt up` on Colima                                                               | Old DX                                           | Argo + GHCR                                                                |
-| `.dev` Cloudflare hosts as chart default                                                                          | Second Colima front door                         | Cluster uses the real shop/pay hostnames; no second ingress profile        |
+| `.dev` Cloudflare hosts as chart default                                                                          | Second Colima front door                         | Talos-dev uses `shop-dev`/`pay-dev`; prod overlay uses `shop`/`pay`        |
 
 **Allowed to differ between “what’s live on main” and a branch:** `targetRevision`, `global.imageTag` (SHA via `$ARGOCD_APP_REVISION`), Doppler config if secrets must not mix. Not a second cluster shape.
 
@@ -83,9 +83,9 @@ Do **not** ApplicationSet-per-PR in this change (would need `pr-N` namespaces, e
 
 **templ/CSS:** keep generating on the laptop and committing (current `web.Dockerfile` `go build`s committed `_templ.go`). Optional later: generate inside the image so CI is hermetic.
 
-### 5–8. Edge Gateway, no waypoint, Hubble L4, protocol ports, Cloudflare cutover
+### 5–8. Edge Gateway, no waypoint, traces without Hubble, protocol ports, Cloudflare cutover
 
-Unchanged in intent from the Cilium cutover (class `cilium`, in-cluster Gateway Service DNS — LoadBalancer type, not ClusterIP enum — drop Istio, Hubble L4, host-based HTTPRoutes).
+Cilium Gateway class `cilium`. Origin Service is LoadBalancer (Cilium 1.18) but `cloudflared` uses in-cluster DNS `cilium-gateway-<gateway-name>.<ns>.svc.cluster.local:80`. No Istio waypoint. Service ports named `grpc` / `http` from chart `protocol`. Grafana has its own Gateway in `monitoring`. Hubble is not part of this observe path.
 
 ## Risks / Trade-offs
 
@@ -100,7 +100,7 @@ Unchanged in intent from the Cilium cutover (class `cilium`, in-cluster Gateway 
 
 ## Migration Plan
 
-1. Confirm Talos `GatewayClass/cilium`; Hubble up; Argo already on the cluster.
+1. Confirm Talos `GatewayClass/cilium`; Argo on gpu destining `dev`/`prod`.
 2. Add PR image workflow + SHA tags; add closed-PR GHCR cleanup.
 3. Collapse to one Argo root; GHCR-required chart defaults; full observability defaults; CNPG in the marketplace release; delete Tiltfile, local-root, Colima devenv wiring.
 4. Switch ingress to Cilium Gateway; update Cloudflare origin DNS; verify checkout.

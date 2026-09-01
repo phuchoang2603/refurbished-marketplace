@@ -6,11 +6,11 @@ Issue [#38](https://github.com/phuchoang2603/refurbished-marketplace/issues/38):
 
 - **BREAKING:** Remove Istio wrapper charts and Argo Applications (`base`, `istiod`, `cni`, `ztunnel`). Marketplace traffic no longer uses `gatewayClassName: istio` or `istio-waypoint`.
 - Switch marketplace ingress to Kubernetes Gateway API with `gatewayClassName: cilium`. Keep the same host-based HTTPRoutes, `X-Forwarded-Proto` / `X-Forwarded-Host` filters, and Cloudflare Tunnel as the HTTPS front door.
-- Provision the Cilium Gateway origin as ClusterIP (or equivalent in-cluster DNS) so `cloudflared` does not depend on L2 announcement VIPs. Repoint Cloudflare Public Hostnames to the new Service DNS.
+- Cilium 1.18 Gateway Services are LoadBalancer; `cloudflared` still uses in-cluster Service DNS (`cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`). Repoint Cloudflare Public Hostnames to that DNS (not `ecommerce-ingress-istio`).
 - Delete ambient namespace labels, waypoint Gateway (`mesh.tpl`), Tilt Istio labels, and Istio L7 VMPodScrapes / Marketplace Istio RED dashboard.
-- Treat Hubble L4 plus existing app OTEL → VictoriaTraces as the observe path. No Cilium L7 visibility policies, no Hubble HTTP metrics requirement, no replacement Grafana RED dashboard in this change.
+- Observe with existing app OTEL → VictoriaTraces. Hubble is not enabled on the clusters and is not a closure requirement. Istio RED is gone; app-level OTEL RED is follow-on [#43](https://github.com/phuchoang2603/refurbished-marketplace/issues/43). No Cilium L7 visibility policies in this change.
 - Document expected Cilium Helm values for Talos (cluster-owned CNI, not Argo).
-- Dev on Talos SHALL use the same Argo app-of-apps + GHCR path as prod, with overlays limited to real env deltas (git revision, image SHA vs `:main`, secrets/hostnames if they must differ).
+- Dev and prod share app-of-apps. Argo CD runs on gpu; roots destine registered clusters `dev` / `prod`. Overlays: git revision, image SHA vs `:main`, Doppler token on the dest cluster, `values-prod.yaml` hosts. `dev-root` `targetRevision` may stay on a feature branch until we retarget it.
 - CI tags GHCR `:<git-sha>` on every image build and `:main` only on `refs/heads/main`. After the PR closes, delete those SHA package versions; keep `:main`.
 
 - templ/Tailwind: generate in devenv and commit (or in-Dockerfile); no Tilt watches.
@@ -21,14 +21,14 @@ Issue [#38](https://github.com/phuchoang2603/refurbished-marketplace/issues/38):
 
 ### New Capabilities
 
-- `cilium-ingress`: GitOps-managed Cilium Gateway API edge for marketplace browser traffic (and simulator), Cloudflare Tunnel HTTP origin, ClusterIP origin, TLS ownership, and ingress rollback.
-- `cilium-observability`: Hubble L4 plus app OTEL as the post-Istio observe path; no waypoint, no Istio scrapes, no L7 mesh metrics requirement.
+- `cilium-ingress`: GitOps-managed Cilium Gateway API edge (shop/pay, plus Grafana on the observability chart), Cloudflare Tunnel HTTP origin via LoadBalancer Service DNS, TLS ownership, and ingress rollback.
+- `cilium-observability`: App OTEL traces + Victoria stack; no waypoint, no Istio scrapes, no Hubble requirement, no replacement RED dashboard in this change.
 
 ### Modified Capabilities
 
 - `istio-ingress`: Retired. All Istio Gateway requirements are removed in favor of `cilium-ingress`.
 - `istio-observability`: Retired. Ambient, waypoint, Istio chart pins, and Istio L7 telemetry requirements are removed. Protocol-aware Service ports move to `cilium-observability`.
-- `argocd-gitops`: Drop GitOps-managed Istio and the Tilt/Colima split (`local-root` without marketplace, empty GHCR, dual apply). One Talos root; marketplace always Argo; branch/`main` tracking; `imageTag` = git SHA on dev, `main` on prod.
+- `argocd-gitops`: Drop GitOps-managed Istio and the Tilt/Colima split. Two roots on gpu destining `dev`/`prod`; marketplace always Argo; `dev-root` may stay on a feature branch; `imageTag` = git SHA on dev, `main` on prod.
 - `platform-observability`: Stop Istio scrapes/RED. Chart defaults SHALL be the full platform stack (not Colima apps-only). One PVC/resource profile, not local-vs-staging sizes.
 - `distributed-tracing`: Keep “no mesh/Gateway proxy spans in the waterfall”; drop Istio-specific wording.
 - `ghcr-release`: `:<git-sha>` plus `:main` on the default branch. No Tilt `docker_build` / short image names.

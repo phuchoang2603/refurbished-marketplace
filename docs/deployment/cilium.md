@@ -2,21 +2,21 @@
 
 Cilium is cluster bootstrap from **talos-proxmox**, not an Argo Application in this repo. Empty-cluster CNI still needs that Helm install; this repo must not duplicate `apps/values/cilium.yaml` (a second copy would drift and can wipe mesh flags on `helm upgrade`).
 
-Already on the cluster (verified against talos-dev Helm user values):
+Already on the cluster (Cilium Helm from talos-proxmox):
 
-- CNI, kube-proxy replacement, L2 announcements, Gateway API, Hubble relay+UI
-- WireGuard encryption, Envoy L7 proxy, `cluster.name=talos` / `cluster.id=1`
-- L2 IP pool + platform Gateways in `cilium-ingress` (Hubble `10.69.100.1`, Longhorn, Argo CD)
+- CNI, kube-proxy replacement, L2 announcements, Gateway API
+- WireGuard encryption, Envoy L7 proxy, cluster name/id as set in that repo
+- L2 IP pool + platform Gateways in `cilium-ingress` (Longhorn, Argo CD; Hubble UI is not required and may be absent)
 
-This repo only consumes that dataplane: marketplace `Gateway`/`HTTPRoute` (`gatewayClassName: cilium`), Cloudflare origin DNS, and later `CiliumNetworkPolicy` if a follow-on change needs it. Do not add WireGuard/Envoy/ClusterMesh values here.
+This repo only consumes that dataplane: marketplace and Grafana `Gateway`/`HTTPRoute` (`gatewayClassName: cilium`) and Cloudflare origin DNS. Do not add WireGuard/Envoy/ClusterMesh values here.
 
 Marketplace browser traffic: Cloudflare Tunnel → Cilium Gateway API.
 
-Cilium 1.18 Gateway Services are `LoadBalancer` (ClusterIP is not a valid `CiliumGatewayClassConfig` service type). `cloudflared` still uses in-cluster DNS:
+Cilium 1.18 Gateway Services are `LoadBalancer`. `cloudflared` uses in-cluster DNS (not the L2 VIP):
 
 `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`
 
-East–west traffic is ordinary ClusterIP. Hubble L4 is the network observe path; application traces stay OTEL → VictoriaTraces.
+East–west traffic is ordinary ClusterIP. Application traces stay OTEL → VictoriaTraces. Hubble is not part of the observe path; request/error/duration SLIs are follow-on issue [#43](https://github.com/phuchoang2603/refurbished-marketplace/issues/43).
 
 ## GitOps
 
@@ -42,20 +42,12 @@ Cloudflare Zero Trust Public Hostnames (not in Git):
 - `shop.phuchoang.sbs` / `pay.phuchoang.sbs` (prod) → same origin DNS on the prod cluster
 - `grafana.phuchoang.sbs` (prod) → `http://cilium-gateway-grafana.monitoring.svc.cluster.local:80`
 
-TLS terminates at Cloudflare. No marketplace TLS Secret on the Gateway. Do not reuse the `cilium-ingress` Hubble/Longhorn/Argo Gateways for shop/pay.
+TLS terminates at Cloudflare. No marketplace TLS Secret on the Gateway. Do not reuse the `cilium-ingress` Longhorn/Argo Gateways for shop/pay.
 
 ```bash
 kubectl get gateway,httproute -n ecommerce
 kubectl get svc -n ecommerce -l gateway.networking.k8s.io/gateway-name=ecommerce-ingress
 kubectl get pods -n cloudflare-tunnel
-```
-
-## Hubble
-
-On the LAN (cluster bootstrap, not this chart): `http://10.69.100.1` (dev). Optional:
-
-```bash
-kubectl -n kube-system port-forward svc/hubble-ui 12000:80
 ```
 
 ## Rollback

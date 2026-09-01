@@ -1,22 +1,24 @@
+# Cilium Observability
+
 ## Purpose
 
-Define post-Istio observe-only networking telemetry: Hubble L4 flows plus existing application OpenTelemetry traces, without Cilium L7 visibility policies or Istio waypoint metrics.
+Define post-Istio observe path: marketplace OpenTelemetry traces to VictoriaTraces, without Hubble, Cilium L7 visibility policies, or Istio waypoint metrics. Application-level RED metrics are follow-on GitHub issue #43.
 
-## ADDED Requirements
+## Requirements
 
-### Requirement: Hubble L4 is the network observe path
+### Requirement: Hubble is not a closure requirement
 
-After Istio removal, marketplace network observability SHALL use Hubble L4 (flows / Hubble UI) and SHALL NOT require Hubble HTTP/gRPC metrics, CiliumNetworkPolicy L7 visibility rules, or a Grafana dashboard that replaces Marketplace Istio RED.
+After Istio removal, marketplace network observability SHALL NOT require Hubble (relay/UI), Hubble HTTP/gRPC metrics, CiliumNetworkPolicy L7 visibility rules, or a Grafana dashboard that replaces Marketplace Istio RED. Hubble MAY be disabled or deleted on the cluster.
 
 #### Scenario: L7 mesh metrics are not required
 
 - **WHEN** marketplace flows are verified after the Cilium cutover
-- **THEN** closure does not depend on `hubble_http_*` metrics or Istio `istio_requests_total`
+- **THEN** closure does not depend on `hubble_http_*` metrics, Hubble UI, or Istio `istio_requests_total`
 
-#### Scenario: Hubble is available where Cilium runs
+#### Scenario: App RED is a follow-on
 
-- **WHEN** Cilium is installed on Talos per documented values
-- **THEN** Hubble (including relay/UI when those flags are enabled) can show L4 flows involving marketplace pods
+- **WHEN** contributors look for request/error/duration SLIs after Istio RED is removed
+- **THEN** documentation points at GitHub issue #43 (app-level OTEL metrics) rather than restoring Hubble scrapes
 
 ### Requirement: Application traces remain OTEL to VictoriaTraces
 

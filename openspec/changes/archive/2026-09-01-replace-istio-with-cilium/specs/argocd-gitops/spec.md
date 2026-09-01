@@ -1,22 +1,22 @@
 ## ADDED Requirements
 
-### Requirement: Staging Cilium ingress enablement
+### Requirement: Cilium ingress enablement on dest clusters
 
-The staging ArgoCD marketplace Application SHALL be able to enable Cilium edge Gateway API resources through Helm value overlays.
+The marketplace Application SHALL render Cilium edge Gateway API resources when the chart has ingress enabled. Chart defaults SHALL enable ingress for `shop-dev` / `pay-dev`. Production SHALL enable ingress for `shop` / `pay` via `values-prod.yaml`.
 
-#### Scenario: Staging overlay enables ingress
+#### Scenario: Dev chart defaults enable ingress
 
-- **WHEN** staging marketplace values set ingress enablement and host/URL settings
-- **THEN** ArgoCD sync renders the Cilium `Gateway` and marketplace `HTTPRoute` resources from the marketplace chart
+- **WHEN** talos-dev marketplace values use chart defaults
+- **THEN** Argo CD sync renders the Cilium `Gateway` and marketplace `HTTPRoute` resources
 
-#### Scenario: Production ingress remains opt-in
+#### Scenario: Production overlay enables prod hosts
 
-- **WHEN** production manifests are rendered before production ingress enablement is chosen
-- **THEN** production marketplace workloads do not expose a Cilium ingress Gateway by accident
+- **WHEN** prod-root applies `values-prod.yaml`
+- **THEN** production marketplace workloads expose a Cilium ingress Gateway for `shop` / `pay`
 
-### Requirement: Argo on Talos owns marketplace
+### Requirement: Argo on gpu destines Talos workload clusters
 
-The Talos cluster root Application SHALL enable the marketplace chart via Argo CD. Tilt SHALL NOT be the applier for marketplace Helm. Child Applications SHALL inherit `targetRevision` from the root so branch tracking moves git and (with matching GHCR tags) images together.
+Root Applications on the gpu cluster SHALL enable the marketplace chart via Argo CD. Children SHALL destine registered clusters `dev` or `prod`. Tilt SHALL NOT be the applier for marketplace Helm. Child Applications SHALL inherit `targetRevision` from the root so branch tracking moves git and (with matching GHCR tags) images together. `dev-root` `targetRevision` MAY remain on a feature branch after merge until operators retarget it.
 
 #### Scenario: Marketplace is an Argo Application
 
@@ -41,7 +41,7 @@ CNPG Clusters for marketplace services SHALL be resources of the Argo-managed ma
 
 ### Requirement: App-of-apps per environment
 
-The repository SHALL provide a shared Argo CD app-of-apps Helm chart under `infra/argocd/app-of-apps/` plus a thin root Application for Talos that enables marketplace and sets `global.imageRegistry` / `global.imageTag`. Child Applications SHALL inherit `targetRevision` from the root via `$ARGOCD_APP_SOURCE_TARGET_REVISION`. `infra/argocd/local/` and a Tilt-omitted marketplace Application SHALL NOT exist.
+The repository SHALL provide a shared Argo CD app-of-apps Helm chart under `infra/argocd/app-of-apps/` plus thin `dev-root` and `prod-root` Applications on gpu that enable marketplace and set `global.imageRegistry` / `global.imageTag` and `destinationName`. Child Applications SHALL inherit `targetRevision` from the root via `$ARGOCD_APP_SOURCE_TARGET_REVISION`. `infra/argocd/local/` and a Tilt-omitted marketplace Application SHALL NOT exist.
 
 #### Scenario: Talos root application
 
@@ -111,11 +111,11 @@ The observability Application SHALL sync before workloads that depend on metrics
 
 ### Requirement: Kafka messaging namespace separation
 
-The staging Kafka Application SHALL deploy Strimzi Kafka, Connect, and UI resources to a dedicated `kafka` namespace so marketplace Cilium L7 or Gateway policies in `ecommerce` do not intercept Kafka TLS traffic.
+The Kafka Application SHALL deploy Strimzi Kafka, Connect, and UI resources to a dedicated `kafka` namespace so marketplace Gateway policies in `ecommerce` do not intercept Kafka TLS traffic.
 
 #### Scenario: Kafka sync targets kafka namespace
 
-- **WHEN** the staging Kafka Application syncs from Git
+- **WHEN** the Kafka Application syncs from Git
 - **THEN** Kafka cluster resources are applied to the `kafka` namespace rather than `ecommerce`
 
 #### Scenario: Marketplace reaches Kafka across namespaces
@@ -123,13 +123,13 @@ The staging Kafka Application SHALL deploy Strimzi Kafka, Connect, and UI resour
 - **WHEN** marketplace services publish or consume messages
 - **THEN** they use the Kafka bootstrap address in the `kafka` namespace DNS (for example `*.kafka.svc`)
 
-### Requirement: Staging hosted payment URL uses edge route
+### Requirement: Hosted payment URL uses edge route
 
-Staging value overlays SHALL set `HOSTED_PAYMENT_BASE_URL` to the Cloudflare-facing simulator HTTPS base URL when Cilium ingress simulator routing is enabled.
+Chart defaults SHALL set `HOSTED_PAYMENT_BASE_URL` to the Cloudflare-facing `pay-dev` HTTPS URL. Production overlay SHALL use `pay`.
 
-#### Scenario: Staging simulator URL is public edge
+#### Scenario: Simulator URL is public edge
 
-- **WHEN** staging ingress with simulator routing is enabled
+- **WHEN** ingress with simulator routing is enabled
 - **THEN** the web Deployment environment uses the public `https://` simulator hostname, not `http://payment-gateway-simulator:8097` cluster DNS alone and not `http://localhost:8097`
 
 ## REMOVED Requirements

@@ -1,27 +1,29 @@
+# Cilium Ingress
+
 ## Purpose
 
-Define Cilium Gateway API edge ingress for marketplace browser traffic, with Cloudflare Tunnel as the public HTTPS front door on Talos using the same shop/pay hostnames as production.
+Define Cilium Gateway API edge ingress for marketplace browser traffic, with Cloudflare Tunnel as the public HTTPS front door on Talos. Chart defaults are `shop-dev` / `pay-dev`; production hosts live in `values-prod.yaml`.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: GitOps-managed Cilium edge gateway
 
-The system SHALL provide GitOps-managed Kubernetes Gateway API resources that use Cilium (`gatewayClassName: cilium`, or a documented Cilium GatewayClass with ClusterIP parameters) as the edge implementation for marketplace browser traffic when ingress is enabled. Chart defaults SHALL use the cluster shop/pay hostnames (not a Colima `.dev` overlay).
+The system SHALL provide GitOps-managed Kubernetes Gateway API resources that use Cilium (`gatewayClassName: cilium`) as the edge implementation for marketplace browser traffic when ingress is enabled. Chart defaults SHALL use `shop-dev` / `pay-dev` hostnames. Production SHALL overlay `shop` / `pay` via `values-prod.yaml`. Cilium 1.18 Gateway Services MAY be `LoadBalancer`; the tunnel origin SHALL use in-cluster Service DNS, not an L2 VIP.
 
 #### Scenario: Sync creates edge Gateway
 
 - **WHEN** marketplace values enable ingress and Argo CD syncs the marketplace chart on Talos
-- **THEN** a `Gateway` with a Cilium GatewayClass exists and is Accepted for HTTP browser entry
+- **THEN** a `Gateway` with `gatewayClassName: cilium` exists and is Programmed for HTTP browser entry
 
 #### Scenario: No Istio waypoint gateway
 
 - **WHEN** marketplace ingress is enabled after Istio removal
 - **THEN** the chart does not render an `istio-waypoint` Gateway or HBONE listener
 
-#### Scenario: Chart defaults keep ingress on for cluster hosts
+#### Scenario: Chart defaults keep ingress on for shop-dev hosts
 
 - **WHEN** the marketplace chart renders with default values
-- **THEN** ingress Gateway and HTTPRoute resources are rendered for the cluster shop/pay hostnames (not a Colima-only `.dev` pair)
+- **THEN** ingress Gateway and HTTPRoute resources are rendered for `shop-dev` / `pay-dev` (not a Colima-only extra pair)
 
 ### Requirement: Browser traffic reaches web through Cilium Gateway
 
@@ -58,7 +60,7 @@ The system SHALL expose the hosted `payment-gateway-simulator` on a Cilium-manag
 
 ### Requirement: Cloudflare Tunnel is the public front door
 
-Talos marketplace edges SHALL assume Cloudflare Tunnel as the public HTTPS front door and the Cilium Gateway as the HTTP origin. The repository SHALL deploy an in-cluster `cloudflared` connector through Argo CD and SHALL NOT require a marketplace TLS certificate on the Cilium Gateway for this path. The Gateway Service SHALL be reachable in-cluster as ClusterIP (or documented equivalent Service DNS) without requiring an L2 announcement VIP for the tunnel.
+Talos marketplace edges SHALL assume Cloudflare Tunnel as the public HTTPS front door and the Cilium Gateway as the HTTP origin. The repository SHALL deploy an in-cluster `cloudflared` connector through Argo CD and SHALL NOT require a marketplace TLS certificate on the Cilium Gateway for this path. The origin URL SHALL be `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80` (or the equivalent Grafana Service DNS) without requiring the L2 announcement VIP for the tunnel.
 
 #### Scenario: Origin is HTTP behind Cloudflare
 
@@ -72,7 +74,7 @@ Talos marketplace edges SHALL assume Cloudflare Tunnel as the public HTTPS front
 
 #### Scenario: cloudflared is GitOps-managed
 
-- **WHEN** the local or staging root Application syncs from Git
+- **WHEN** `dev-root` or `prod-root` syncs from Git
 - **THEN** Argo CD manages a `cloudflare-tunnel` Application that runs `cloudflared` with a tunnel token sourced from External Secrets
 
 ### Requirement: TLS termination ownership is documented
@@ -82,7 +84,7 @@ The repository SHALL document that marketplace browser TLS terminates at Cloudfl
 #### Scenario: Contributor finds TLS ownership
 
 - **WHEN** a contributor reads marketplace ingress deployment docs after this change
-- **THEN** the docs state that local and staging terminate TLS at Cloudflare and use HTTP between the tunnel and Cilium Gateway
+- **THEN** the docs state that Talos-dev and prod terminate TLS at Cloudflare and use HTTP between the tunnel and Cilium Gateway
 
 ### Requirement: Ingress rollback is documented
 
@@ -95,7 +97,7 @@ The system SHALL document rollback steps that disable Cilium marketplace ingress
 
 ### Requirement: Cilium CNI is cluster-owned
 
-The repository SHALL document expected Cilium Helm values for Talos and SHALL NOT manage the Cilium agent as an Argo CD Application. Marketplace ingress SHALL be applied by Argo CD on that cluster so `GatewayClass` for Cilium is available without Colima/k3s or Tilt.
+The repository SHALL document expected Cilium Helm values for Talos and SHALL NOT manage the Cilium agent as an Argo CD Application. Marketplace ingress SHALL be applied by Argo CD so `GatewayClass` for Cilium is available without Colima/k3s or Tilt.
 
 #### Scenario: Talos Cilium remains bootstrap
 

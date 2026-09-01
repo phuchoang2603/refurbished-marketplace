@@ -23,7 +23,7 @@ context: |
   - Keep observability helpers under shared/observe/ (trace, log)
   - Keep shared error helpers under shared/err/ (dberr, grpcerr)
   - Keep docs/ for stable architecture notes, Mermaid diagrams, ADR-style decisions, and service ownership notes
-  - Keep operator/app Helm charts under infra/charts/; shared Argo app-of-apps under infra/argocd/app-of-apps/ with the Talos root under infra/argocd/talos/
+  - Keep operator/app Helm charts under infra/charts/; shared Argo app-of-apps under infra/argocd/app-of-apps/ with roots under infra/argocd/dev/ and infra/argocd/prod/
 
   Code style:
   - Don't format the code because I already have a git-hook to autoformat for me.

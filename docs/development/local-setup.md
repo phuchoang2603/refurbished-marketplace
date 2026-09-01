@@ -20,7 +20,7 @@ kubectl apply -f infra/argocd/dev/root.yaml
 
 `prod-root` is the same pattern with the prod kubeconfig for Doppler and `infra/argocd/prod/root.yaml` on gpu. Do not apply the `prd` Doppler token on talos-dev.
 
-Children follow the root’s git revision (`spec.source.targetRevision` in `infra/argocd/dev/root.yaml`). Change that field in git, then `kubectl apply -f` the same file **on gpu**. `global.imageTag` is `$ARGOCD_APP_REVISION`. Wait for GHCR `:<sha>` after the image job. Prod uses `:main`. Before this PR merges, set `targetRevision` back to `main`.
+Children follow the root’s git revision (`spec.source.targetRevision` in `infra/argocd/dev/root.yaml`). Change that field in git, then `kubectl apply -f` the same file **on gpu**. `global.imageTag` is `$ARGOCD_APP_REVISION`. Wait for GHCR `:<sha>` after the image job. Prod uses `:main`. Keep `dev-root` on the live feature branch until you want a different pointer.
 
 ## Development shell
 

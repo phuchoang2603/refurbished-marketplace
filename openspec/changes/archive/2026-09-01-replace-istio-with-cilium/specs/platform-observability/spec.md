@@ -53,10 +53,10 @@ Argo CD on Talos SHALL deploy the observability stack into the `monitoring` name
 - **WHEN** the Talos app-of-apps syncs
 - **THEN** Argo CD manages an observability Application that deploys into `monitoring`
 
-#### Scenario: Grafana is reachable via port-forward
+#### Scenario: Grafana is reachable via Gateway or port-forward
 
 - **WHEN** the observability stack is healthy
-- **THEN** documentation explains how to port-forward Grafana in the `monitoring` namespace
+- **THEN** a Cilium Gateway/HTTPRoute exposes Grafana (dev: `grafana-dev.phuchoang.sbs`) and documentation also explains how to port-forward Grafana in the `monitoring` namespace
 
 ### Requirement: Backend-first scope
 
@@ -77,9 +77,9 @@ The observability stack SHALL provide metrics, logs, and traces backends. Custom
 - **WHEN** distributed tracing is enabled for marketplace workloads
 - **THEN** Go services MAY export OTLP spans to VictoriaTraces for Grafana Explore
 
-### Requirement: VictoriaTraces accepts application and mesh OTLP
+### Requirement: VictoriaTraces accepts application OTLP
 
-The platform observability stack SHALL remain the destination for distributed traces visualized in Grafana, including spans exported by marketplace services. Mesh or Gateway proxy tracing is not required.
+The platform observability stack SHALL remain the destination for distributed traces visualized in Grafana, including spans exported by marketplace services. Mesh, Hubble, or Gateway proxy tracing is not required.
 
 #### Scenario: Grafana still uses VictoriaTraces
 
