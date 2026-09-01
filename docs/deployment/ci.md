@@ -17,12 +17,9 @@ The `govulncheck` job uses the same service matrix and path-filter fan-out as `t
 
 ## Container images (GHCR)
 
-Pushes to `main` that touch image-related paths trigger `.github/workflows/release-images.yml`. The workflow matrix lists every image inline and pushes **all** of them (`:main` and `:<commit-sha>`). `workflow_dispatch` also builds the full matrix.
+Pushes to `main` that touch image-related paths trigger `.github/workflows/release-images.yml` (`:main` and `:<commit-sha>`). Pull requests on the same paths push `:<commit-sha>` and `:pr-<n>` (never `:main`). Closed PRs run `.github/workflows/cleanup-pr-images.yml` to delete `:pr-<n>` package versions (not `:main`). Argo CD `global.imageTag` must be the git SHA, not the moving `pr-*` tag. Retarget the cluster to `main` before cleanup.
 
-- `ghcr.io/<repository>/<image>:<commit-sha>`
-- `ghcr.io/<repository>/<image>:main` (rolling tag)
-
-Local development builds short image names with Tilt `docker_build`. Staging Argo CD Applications set `global.imageRegistry` and `global.imageTag` to pull from GHCR — see [gitops.md](gitops.md).
+See [gitops.md](gitops.md).
 
 ## Path-filter fan-out for tests
 
@@ -41,4 +38,4 @@ Local development builds short image names with Tilt `docker_build`. Staging Arg
 | `shared/testutil/kafka/**`    | products, orders, payment                   |
 | `shared/testutil/redis/**`    | cart                                        |
 
-Local formatting and codegen drift checks (`treefmt`, `generate-proto`, `sqlc-gen`; templ/tailwind via Tilt watches) stay out of CI.
+Local formatting and codegen drift checks (`treefmt`, `generate-proto`, `sqlc-gen`) stay out of CI.

@@ -1,0 +1,69 @@
+name: Cleanup PR GHCR images
+
+on:
+  pull_request:
+    types: [closed]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete PR-only package versions
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+          PR: ${{ github.event.number }}
+        run: |
+          python3 <<'PY'
+          import json, os, subprocess, urllib.parse
+
+          owner = os.environ["OWNER"]
+          repo = os.environ["REPO"]
+          tag = f"pr-{os.environ['PR']}"
+          images = [
+              "web", "users", "users-migrator", "products", "products-migrator",
+              "orders", "orders-migrator", "cart", "payment", "payment-migrator",
+              "payment-gateway-simulator", "connect-debezium",
+          ]
+
+          def gh(*args):
+              return subprocess.run(
+                  ["gh", "api", *args],
+                  check=False,
+                  capture_output=True,
+                  text=True,
+              )
+
+          for image in images:
+              pkg = urllib.parse.quote(f"{repo}/{image}", safe="")
+              list_path = f"/users/{owner}/packages/container/{pkg}/versions"
+              listed = gh("--paginate", list_path)
+              if listed.returncode != 0 or not listed.stdout.strip():
+                  continue
+              try:
+                  versions = json.loads(listed.stdout)
+              except json.JSONDecodeError:
+                  continue
+              if isinstance(versions, dict):
+                  versions = [versions]
+              for version in versions:
+                  tags = (
+                      (version.get("metadata") or {})
+                      .get("container", {})
+                      .get("tags")
+                      or []
+                  )
+                  if tag not in tags or "main" in tags:
+                      continue
+                  vid = version["id"]
+                  print(f"deleting {repo}/{image} version {vid} tags={tags}")
+                  deleted = gh("-X", "DELETE", f"{list_path}/{vid}")
+                  if deleted.returncode != 0:
+                      print(deleted.stderr)
+                      raise SystemExit(deleted.returncode)
+          PY
