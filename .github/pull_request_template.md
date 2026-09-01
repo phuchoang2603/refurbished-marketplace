@@ -14,9 +14,9 @@
 
 ## Test plan
 
-<!-- Prefer Tilt + local Argo on Colima for integration flows; note any unit tests run -->
+<!-- Prefer Talos + Argo + GHCR for integration flows -->
 
-- [ ] Verified with `tilt up` (Colima)
+- [ ] Verified on Talos (Argo sync, shop/pay)
 - [ ] Other:
 
 ## Notes

@@ -8,7 +8,7 @@ Run these from inside `devenv shell`:
 | `sqlc-gen`       | Regenerate sqlc query code for services with `sqlc.yaml`     |
 | `tidy`           | `go work sync` — keeps workspace module dependencies aligned |
 
-Web `templ` and Tailwind are regenerated continuously by Tilt (`templ-watch` / `tailwind-watch`) while `tilt up` is running.
+Web `templ` and Tailwind: run generators locally and commit the outputs (`*_templ.go`, `static/app.css`). CI builds the `web` image from those files.
 
 Edit SQL migrations under `services/<service>/db/migrations/` and queries under `services/<service>/db/queries/`, then run `sqlc-gen` when query shapes change.
 

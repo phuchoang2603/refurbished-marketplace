@@ -1,16 +1,15 @@
 repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
 targetRevision: main
-namePrefix: local
+namePrefix: talos
 
 global:
-  imageRegistry: ""
-  imageTag: ""
+  imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
+  imageTag: main
 
 marketplace:
-  enabled: false
+  enabled: true
   valueFiles: []
 
-# Shared child Application catalog (env roots override fields via helm.values)
 apps:
   external-secrets:
     syncWave: "0"
@@ -27,37 +26,6 @@ apps:
     path: infra/charts/operators/strimzi
     releaseName: strimzi-cluster-operator
     namespace: operators
-  istio-base:
-    syncWave: "0"
-    path: infra/charts/operators/istio/base
-    releaseName: istio-base
-    namespace: istio-system
-    # Talos (and other clusters with default PSS baseline) reject CNI/ztunnel
-    # hostPath + extra capabilities unless the namespace is privileged.
-    managedNamespaceMetadata: &pssPrivileged
-      labels:
-        pod-security.kubernetes.io/enforce: privileged
-        pod-security.kubernetes.io/audit: privileged
-        pod-security.kubernetes.io/warn: privileged
-  istiod:
-    syncWave: "1"
-    path: infra/charts/operators/istio/istiod
-    releaseName: istiod
-    namespace: istio-system
-    managedNamespaceMetadata: *pssPrivileged
-  istio-cni:
-    syncWave: "1"
-    path: infra/charts/operators/istio/cni
-    releaseName: istio-cni
-    namespace: istio-system
-    valueFiles: []
-    managedNamespaceMetadata: *pssPrivileged
-  ztunnel:
-    syncWave: "2"
-    path: infra/charts/operators/istio/ztunnel
-    releaseName: ztunnel
-    namespace: istio-system
-    managedNamespaceMetadata: *pssPrivileged
   observability:
     syncWave: "1"
     path: infra/charts/observability
@@ -65,8 +33,11 @@ apps:
     namespace: monitoring
     valueFiles: []
     ignoreDifferences: true
-    # node-exporter (staging) needs hostNetwork/hostPID/hostPath/hostPort.
-    managedNamespaceMetadata: *pssPrivileged
+    managedNamespaceMetadata:
+      labels:
+        pod-security.kubernetes.io/enforce: privileged
+        pod-security.kubernetes.io/audit: privileged
+        pod-security.kubernetes.io/warn: privileged
   kafka:
     syncWave: "4"
     path: infra/charts/kafka

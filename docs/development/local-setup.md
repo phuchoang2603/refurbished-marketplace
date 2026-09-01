@@ -3,22 +3,18 @@
 ## Prerequisites
 
 - [Nix](https://nixos.org/) with [devenv](https://devenv.sh/) for pinned tooling
-- A local Kubernetes runtime (Colima + Docker / k3s recommended)
-- [Doppler](https://www.doppler.com/) account for cluster secrets — see [secrets.md](secrets.md)
-- A Cloudflare Zero Trust tunnel for local `.dev` hostnames (same pattern as staging)
+- Talos kubeconfig (for example `KUBECONFIG=$HOME/.kube/talos-dev.yaml`)
+- [Doppler](https://doppler.com/) — see [secrets.md](secrets.md)
+- Cloudflare Zero Trust tunnel for `shop.phuchoang.sbs` / `pay.phuchoang.sbs`
 
-### Colima
+Argo CD must already be installed on the cluster. Apply the GitOps root from this repo:
 
-Chart defaults target **4 CPU / 8 GiB** Colima (tight Istio/Kafka/CNPG budgets; observability is apps-only: ecommerce/kafka metrics–logs–traces, no node-exporter/ksm/Alertmanager). Keep Traefik disabled:
-
-```yaml
-cpu: 4
-memory: 8
-kubernetes:
-  enabled: true
-  k3sArgs:
-    - --disable=traefik
+```bash
+export KUBECONFIG="$HOME/.kube/talos-dev.yaml"
+kubectl apply -f infra/argocd/talos/root.yaml
 ```
+
+Children follow the root’s git revision. Push the branch, wait for GHCR image jobs (`:<sha>`), then set `global.imageTag` on the root to that SHA if you are not on `main`.
 
 ## Development shell
 
@@ -26,51 +22,30 @@ kubernetes:
 devenv shell
 ```
 
-The shell provides Go, protobuf tooling, Kubernetes tooling (`kubectl`, `helm`), Doppler, OpenSpec, and Tilt. On enter, devenv tasks regenerate proto/sqlc when those inputs change. A gitignored `.env` file is loaded automatically.
+Go, protobuf, `kubectl`, `helm`, Doppler, OpenSpec. On enter, devenv regenerates proto/sqlc when those inputs change.
 
-## Hybrid Tilt + Argo CD
+templ / Tailwind: generate on the laptop and commit (`templ generate`, `tailwindcss …`). Images are built in GitHub Actions, not locally into the cluster.
 
-| Layer                                                               | Local owner                                 |
-| ------------------------------------------------------------------- | ------------------------------------------- |
-| Operators, Istio, Kafka, apps-only observability, Cloudflare Tunnel | Argo CD (`local-root` → `app-of-apps`)      |
-| `refurbished-marketplace` chart (DBs, secrets, services, ingress)   | Tilt                                        |
-| Image builds + `templ` / Tailwind watches                           | Tilt                                        |
-| Browser                                                             | Cloudflare Tunnel → Istio Gateway           |
-| Debug (optional)                                                    | Tilt port-forwards (`8080` web, gRPC, CNPG) |
+## Browser
 
-Chart `values.yaml` enables ambient mesh and Istio ingress for:
+Cloudflare Tunnel → Cilium Gateway (`cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`).
 
-| Hostname                 | Backend                     |
-| ------------------------ | --------------------------- |
-| `shop-dev.phuchoang.sbs` | `web`                       |
-| `pay-dev.phuchoang.sbs`  | `payment-gateway-simulator` |
-
-1. Secrets: copy `infra/k8s/doppler-token.dev.secret.yaml.example` → `doppler-token.dev.secret.yaml` and paste the Doppler `dev` token.
-2. In Doppler `dev`, set `CLOUDFLARE_TUNNEL_TOKEN` for a dedicated local tunnel.
-3. In Cloudflare Zero Trust → that tunnel → Public Hostnames:
-   - `shop-dev.phuchoang.sbs` → `http://ecommerce-ingress-istio.ecommerce.svc.cluster.local:80`
-   - `pay-dev.phuchoang.sbs` → `http://ecommerce-ingress-istio.ecommerce.svc.cluster.local:80`
-4. Push this branch (Argo reads GitHub). Tilt applies `local-root` with the **current git branch**; child Applications inherit that revision via `$ARGOCD_APP_SOURCE_TARGET_REVISION`.
-5. Start Tilt:
-
-```bash
-tilt up
-```
-
-6. Open https://shop-dev.phuchoang.sbs (or use Tilt’s web port-forward on `localhost:8080` for debug).
-
-`templ-watch` / `tailwind-watch` run under Tilt; rebuilds of the `web` image pick up those assets via `docker_build`.
+| Hostname             | Backend                     |
+| -------------------- | --------------------------- |
+| `shop.phuchoang.sbs` | `web`                       |
+| `pay.phuchoang.sbs`  | `payment-gateway-simulator` |
 
 Smoke-check:
 
 ```bash
 kubectl get applications -n argo-cd
 kubectl get gateway,httproute -n ecommerce
-kubectl get pods -n cloudflare-tunnel
+kubectl get svc -n ecommerce -l gateway.networking.k8s.io/gateway-name=ecommerce-ingress
 kubectl get pods -n ecommerce
-kubectl get pods -n monitoring
 ```
+
+Optional debug: `kubectl -n ecommerce port-forward svc/web 8080:8080`.
 
 ## Integration testing
 
-Integration tests rely on Testcontainers for Kafka, PostgreSQL, and Redis/Valkey. Prefer verifying full-service flows against the local Tilt + Argo stack; run targeted Go tests when they add meaningful coverage.
+Integration tests use Testcontainers (Docker on the laptop). Full flows: Talos + Argo + GHCR.

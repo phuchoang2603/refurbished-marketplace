@@ -15,7 +15,7 @@ kafka:
   minInsyncReplicas: 1
   storage:
     size: 5Gi
-  # Colima-friendly broker JVM / requests (staging overlays values-staging.yaml).
+  # Broker JVM / requests. Staging overlays values-staging.yaml.
   jvmOptions:
     "-Xms": 256m
     "-Xmx": 256m

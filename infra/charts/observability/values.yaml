@@ -1,14 +1,9 @@
-# Chart defaults = local Colima, apps-only signals:
-# - metrics: Istio waypoint + ingress scrapes (ecommerce) → VMSingle
-# - traces: VTSingle OTLP for marketplace services
-# - logs: VLAgent filtered to ecommerce → VLSingle
-# No node-exporter, kube-state-metrics, Alertmanager, or default K8s dashboards.
-# Staging overlays values-staging.yaml for full platform stack.
+# Chart defaults = Talos / production-like full platform stack.
 victoria-metrics-k8s-stack:
   fullnameOverride: vmks
 
   defaultDashboards:
-    enabled: false
+    enabled: true
 
   # Upstream renders vmks-sync-job as a Helm hook, which Argo CD does not run.
   # The wrapper chart creates an equivalent PostSync Job instead.
@@ -20,7 +15,7 @@ victoria-metrics-k8s-stack:
     plugins:
       - victoriametrics-logs-datasource
     persistence:
-      enabled: false
+      enabled: true
     # TraceQL / Traces Drilldown and VictoriaLogs Explore are memory-heavy;
     # 512Mi OOMKilled (exit 137) on Logs Explore — give it headroom.
     resources:
@@ -30,6 +25,7 @@ victoria-metrics-k8s-stack:
       limits:
         cpu: 500m
         memory: 1Gi
+    progressDeadlineSeconds: 900
 
   # Upstream hardcodes /select/jaeger for defaultDatasources.victoriatraces and
   # does not tpl-expand extra URLs. Provide Tempo explicitly for TraceQL /
@@ -116,36 +112,35 @@ victoria-metrics-k8s-stack:
         enabled: false
     resources:
       requests:
-        cpu: 25m
-        memory: 64Mi
-      limits:
-        cpu: 200m
+        cpu: 50m
         memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
 
   alertmanager:
-    enabled: false
+    enabled: true
 
-  # Needs Alertmanager; enable in values-staging.yaml.
   vmalert:
-    enabled: false
+    enabled: true
 
   vmsingle:
     enabled: true
     spec:
-      retentionPeriod: 1d
+      retentionPeriod: 7d
       resources:
         requests:
           cpu: 50m
-          memory: 128Mi
+          memory: 256Mi
         limits:
-          cpu: 500m
-          memory: 512Mi
+          cpu: "1"
+          memory: 1Gi
       storage:
         accessModes:
           - ReadWriteOnce
         resources:
           requests:
-            storage: 1Gi
+            storage: 20Gi
 
   vmcluster:
     enabled: false
@@ -153,18 +148,18 @@ victoria-metrics-k8s-stack:
   vlsingle:
     enabled: true
     spec:
-      retentionPeriod: 1d
+      retentionPeriod: 3d
       resources:
         requests:
-          cpu: 25m
-          memory: 64Mi
+          cpu: 50m
+          memory: 256Mi
         limits:
-          cpu: 200m
-          memory: 192Mi
+          cpu: "1"
+          memory: 1Gi
       storage:
         resources:
           requests:
-            storage: 1Gi
+            storage: 20Gi
 
   vlcluster:
     enabled: false
@@ -172,7 +167,7 @@ victoria-metrics-k8s-stack:
   vmagent:
     enabled: true
     spec:
-      # Pick up wrapper-owned Istio VMPodScrapes only (no node/ksm scrapes locally).
+      # Pick up VMPodScrapes / VMServiceScrapes cluster-wide.
       selectAllByDefault: true
       podScrapeNamespaceSelector: {}
       podScrapeSelector: {}
@@ -180,44 +175,40 @@ victoria-metrics-k8s-stack:
       serviceScrapeSelector: {}
       resources:
         requests:
-          cpu: 25m
-          memory: 64Mi
-        limits:
-          cpu: 200m
+          cpu: 50m
           memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 256Mi
 
   vlagent:
     enabled: true
     spec:
       k8sCollector:
         enabled: true
-        # Marketplace apps (+ CNPG in this ns). Skip mesh Envoy text (use
-        # metrics/traces) and wait-for-db init noise; Kafka stays on traces.
-        excludeFilter: "not kubernetes.pod_namespace:=ecommerce or kubernetes.container_name:in(istio-proxy, wait-for-db)"
+        excludeFilter: "not kubernetes.pod_namespace:=ecommerce or kubernetes.container_name:=wait-for-db"
       resources:
         requests:
-          cpu: 25m
-          memory: 64Mi
-        limits:
-          cpu: 200m
+          cpu: 50m
           memory: 128Mi
+        limits:
+          cpu: 500m
+          memory: 256Mi
 
   vtsingle:
     enabled: true
     spec:
-      retentionPeriod: 1d
-      # Direct OTLP ingest (no collector). HTTP remains on :10428;
-      # gRPC enabled for app/Istio exporters.
+      retentionPeriod: 3d
       extraArgs:
         otlpGRPCListenAddr: ":4317"
         otlpGRPC.tls: "false"
       resources:
         requests:
-          cpu: 25m
-          memory: 64Mi
+          cpu: 50m
+          memory: 256Mi
         limits:
-          cpu: 200m
-          memory: 192Mi
+          cpu: "1"
+          memory: 1Gi
       serviceSpec:
         useAsDefault: true
         spec:
@@ -233,34 +224,20 @@ victoria-metrics-k8s-stack:
       storage:
         resources:
           requests:
-            storage: 1Gi
+            storage: 10Gi
 
   vtcluster:
     enabled: false
 
   prometheus-node-exporter:
-    enabled: false
+    enabled: true
 
   kube-state-metrics:
-    enabled: false
+    enabled: true
 
-# Wrapper-owned dashboard/rules sync job for Argo CD PostSync.
 dashboardSyncJob:
-  enabled: false
+  enabled: true
 
-# Repo-owned Grafana dashboards (ConfigMaps → Grafana sidecar).
-# Independent of defaultDashboards / dashboardSyncJob so local Colima still
-# gets Marketplace Istio RED without pulling upstream K8s dashboards.
 customDashboards:
-  enabled: true
+  enabled: false
   folder: Marketplace
-
-# Scrape Istio L7 proxies only (waypoint + ingress). Control-plane scrapes omitted.
-istioScrapes:
-  enabled: true
-  waypointName: ecommerce-waypoint
-  waypointNamespaces:
-    - ecommerce
-  ingressName: ecommerce-ingress
-  ingressNamespaces:
-    - ecommerce

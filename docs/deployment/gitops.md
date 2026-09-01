@@ -1,54 +1,42 @@
 # GitOps deployment (Argo CD)
 
-Staging syncs everything via `staging-root` → `infra/argocd/app-of-apps` + chart-adjacent `values-staging.yaml` overlays. Local Colima: Tilt owns the marketplace chart; Argo (`local-root` → same chart defaults + inline `helm.values`) owns operators, Istio, Kafka, apps-only observability, and Cloudflare Tunnel.
+One Talos cluster. `talos-root` (`infra/argocd/talos/root.yaml`) → [`infra/argocd/app-of-apps`](../../infra/argocd/app-of-apps/). Chart defaults are production-like (GHCR images, full observability). Operator/Kafka/tunnel overlays still use chart-adjacent `values-staging.yaml` where those charts keep env files.
+
+Child Applications inherit `targetRevision` via `$ARGOCD_APP_SOURCE_TARGET_REVISION`. Point the root at a branch and set `global.imageTag` to that commit SHA (after CI publishes GHCR images) to run a PR on the cluster. One live `ecommerce` namespace — one git revision at a time. Retarget to `main` before PR image cleanup.
 
 ## What Argo CD syncs
 
-| Component                           | Source                  | Pin                                                              | Namespace           | Local | Staging |
-| ----------------------------------- | ----------------------- | ---------------------------------------------------------------- | ------------------- | ----- | ------- |
-| External Secrets Operator           | This repo wrapper chart | upstream chart `2.6.0` + Doppler `ClusterSecretStore`            | `operators`         | yes   | yes     |
-| CloudNativePG                       | This repo wrapper chart | upstream chart `0.28.3`                                          | `operators`         | yes   | yes     |
-| Strimzi                             | This repo wrapper chart | upstream chart `1.0.0`, `watchAnyNamespace=true`                 | `operators`         | yes   | yes     |
-| Istio base / istiod / cni / ztunnel | This repo wrappers      | official Istio charts `1.30.2` (ambient)                         | `istio-system`      | yes   | yes     |
-| `observability`                     | This repo wrapper chart | `victoria-metrics-k8s-stack` `0.86.0` (local: apps-only)         | `monitoring`        | yes   | yes     |
-| `refurbished-marketplace`           | This repo               | CNPG, ExternalSecrets, migrations, services                      | `ecommerce`         | Tilt  | yes     |
-| `kafka`                             | This repo               | Debezium reads secrets/DBs in `ecommerce`                        | `kafka`             | yes   | yes     |
-| `cloudflare-tunnel`                 | This repo               | `cloudflared` connector; tunnel token via Doppler ExternalSecret | `cloudflare-tunnel` | yes   | yes     |
+| Component                 | Source        | Pin                                                  | Namespace           |
+| ------------------------- | ------------- | ---------------------------------------------------- | ------------------- |
+| External Secrets Operator | Wrapper chart | upstream chart + Doppler `ClusterSecretStore`        | `operators`         |
+| CloudNativePG             | Wrapper chart | upstream chart                                       | `operators`         |
+| Strimzi                   | Wrapper chart | `watchAnyNamespace=true`                             | `operators`         |
+| `observability`           | Wrapper chart | `victoria-metrics-k8s-stack` `0.86.0`                | `monitoring`        |
+| `refurbished-marketplace` | This repo     | CNPG, ExternalSecrets, migrations, services, Gateway | `ecommerce`         |
+| `kafka`                   | This repo     | Debezium reads secrets/DBs in `ecommerce`            | `kafka`             |
+| `cloudflare-tunnel`       | This repo     | `cloudflared`; token via Doppler ExternalSecret      | `cloudflare-tunnel` |
 
-**Local (Colima):** `tilt up` installs Argo CD and applies `local-root` (current git branch). Both environments render children from the shared Helm chart [`infra/argocd/app-of-apps/`](../../infra/argocd/app-of-apps/); env-specific settings live inline on each root Application’s `helm.values`. Children inherit `targetRevision` via `$ARGOCD_APP_SOURCE_TARGET_REVISION`. Local omits marketplace (Tilt). Observability defaults are apps-only (Istio L7 scrapes + ecommerce/kafka logs + VT/OTLP; no node-exporter/ksm/Alertmanager). Staging restores full platform budgets via `values-staging.yaml`. See [local-setup](../development/local-setup.md).
+Cilium is cluster-owned in **talos-proxmox** (`apps/values/cilium.yaml` + L2/Gateway manifests), not this repo and not an Argo app. See [`infra/cilium/README.md`](../../infra/cilium/README.md). Argo here may later apply marketplace policies/routes only.
 
-**Staging:** Same chart; `staging-root` sets `global.imageRegistry` / `imageTag`, enables marketplace, and points chart `valueFiles` at chart-adjacent `values-staging.yaml` overlays where needed. Istio and observability Applications set `managedNamespaceMetadata` so `istio-system` and `monitoring` are privileged under Pod Security (required on Talos; default unlabeled namespaces are baseline and reject CNI, ztunnel, and node-exporter). Marketplace already does the same for `ecommerce` ambient labels.
+`monitoring` is privileged PSS for node-exporter. Apply `talos-root` after Argo CD is installed on the cluster (Helm, not Tilt).
 
-**Terraform (not in Git for staging):** Argo CD on remote clusters.
+**Bootstrap:** Doppler service token Secret in `operators` — see [secrets](../development/secrets.md).
 
-**Bootstrap (not in Git):** Doppler service token secret in `operators` — see [secrets](../development/secrets.md). Locally Tilt applies the `dev` Doppler secret.
-
-**Marketplace chart** (`infra/charts/refurbished-marketplace`): CNPG clusters, ExternalSecrets, goose migration Jobs, and service Deployments. Staging overlays live in `values-staging.yaml` (wired via `valueFiles`).
-
-Staging sync waves: operators + Istio base (0) → observability + istiod/cni (1) → ztunnel (2) → marketplace (3) → kafka (4) → cloudflare-tunnel (5). Local Argo uses the same waves for infra apps (no marketplace Application).
-
-Inside `refurbished-marketplace`, resource sync waves (staging Argo) order work as: ExternalSecrets (2) → CNPG clusters (3) → migration Jobs (4) → Deployments / waypoint / ingress Gateway (5) → HTTPRoutes (6).
+Sync waves: operators (0) → observability (1) → marketplace (3) → kafka (4) → cloudflare-tunnel (5).
 
 ```
 infra/argocd/
-├── app-of-apps/              # shared child Application catalog (one template)
-│   ├── values.yaml           # defaults + apps map
+├── app-of-apps/
+│   ├── values.yaml
 │   └── templates/applications.tpl
-├── local/root.yaml           # inline helm.values (local)
-└── staging/root.yaml         # inline helm.values (staging + global images)
+└── talos/root.yaml
 ```
 
-## Bootstrap (staging)
+## Images
 
-1. Terraform: Argo CD, `operators` + `ecommerce` namespaces (`kafka` is created by the Kafka Application via `CreateNamespace=true`)
-2. Add `prd` application secrets in Doppler ([secrets](../development/secrets.md))
-3. Apply Doppler bootstrap secret: `kubectl apply -f infra/k8s/doppler-token.prd.secret.yaml`
-4. Apply `infra/argocd/staging/root.yaml` to the Argo CD namespace
-5. GHCR pull access if images are private
+Marketplace and Kafka Connect images: `ghcr.io/phuchoang2603/refurbished-marketplace/<name>:<sha>` (and `:main` on the default branch). PRs also get `:pr-<n>`; Argo must pin the SHA. See [ci.md](ci.md).
 
-## See also
+## Related
 
-- [ci.md](ci.md) — image builds and GHCR tags
-- [secrets.md](../development/secrets.md) — Doppler + ESO
-- [observability.md](../observability.md) — VictoriaMetrics stack and Grafana access
-- [istio.md](istio.md) — ambient mesh enrollment and rollback
+- [cilium.md](cilium.md) — CNI, Gateway API, Cloudflare origin, Hubble
+- [ci.md](ci.md) — GHCR publish and PR cleanup

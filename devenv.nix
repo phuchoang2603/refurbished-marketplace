@@ -5,15 +5,10 @@
   ...
 }:
 
-let
-  homeDir = builtins.getEnv "HOME";
-  colimaSocket = "${homeDir}/.config/colima/k8s/docker.sock";
-in
 {
   dotenv.enable = true;
 
   env = {
-    DOCKER_HOST = "unix://${colimaSocket}";
     TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE = "/var/run/docker.sock";
     DOPPLER_PROJECT = "refurbished-marketplace";
     DOPPLER_CONFIG = "dev";
@@ -31,7 +26,7 @@ in
     protoc-gen-go
     protoc-gen-go-grpc
 
-    # templ / css (Tilt watches invoke these)
+    # templ / css
     templ
     tailwindcss
 
@@ -39,10 +34,6 @@ in
     kubectl
     kubernetes-helm
     doppler
-    tilt
-
-    # ai stuff
-    nodejs
     openspec
 
     # formatter

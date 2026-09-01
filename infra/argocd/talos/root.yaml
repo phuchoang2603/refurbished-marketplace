@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: staging-root
+  name: talos-root
   namespace: argo-cd
   finalizers:
     - resources-finalizer.argocd.argoproj.io/foreground
@@ -13,14 +13,6 @@ spec:
     path: infra/argocd/app-of-apps
     helm:
       values: |
-        namePrefix: staging
-        global:
-          imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
-          imageTag: main
-        marketplace:
-          enabled: true
-          valueFiles:
-            - values-staging.yaml
         apps:
           external-secrets:
             valueFiles:
@@ -29,18 +21,6 @@ spec:
             valueFiles:
               - values-staging.yaml
           strimzi:
-            valueFiles:
-              - values-staging.yaml
-          istiod:
-            valueFiles:
-              - values-staging.yaml
-          istio-cni:
-            valueFiles:
-              - values-staging.yaml
-          ztunnel:
-            valueFiles:
-              - values-staging.yaml
-          observability:
             valueFiles:
               - values-staging.yaml
           kafka:

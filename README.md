@@ -43,19 +43,20 @@ graph LR
 - Kafka for asynchronous domain integration.
 - `templ` for typed server-rendered HTML components.
 - Datastar-compatible markup for browser interactions and fragment updates.
-- Kubernetes + Helm (CloudNativePG, Strimzi, Istio ambient, External Secrets).
-- Local DX: Tilt for the marketplace chart + image builds; Argo CD (`local-root` / shared `app-of-apps`) for operators, Istio, Kafka, observability, and Cloudflare Tunnel. Staging uses the same chart with `values-staging.yaml`.
-- Cloudflare Tunnel to Istio Gateway for browser ingress (`.dev` hosts locally, production hosts in staging).
-- Nix/devenv for local tooling (`tilt`, codegen); OpenSpec for change proposals.
+- Kubernetes + Helm (CloudNativePG, Strimzi, Cilium Gateway API, External Secrets).
+- GitOps: Argo CD on Talos (`talos-root` / shared `app-of-apps`); images from GHCR.
+- Cloudflare Tunnel to Cilium Gateway for browser ingress.
+- Nix/devenv for local tooling (codegen); OpenSpec for change proposals.
 
 ## Development
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/development/](docs/development/) for the local workflow (`devenv`, Tilt + Argo on Colima, secrets, code generation), OpenSpec planning, and GitHub issue conventions.
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/development/](docs/development/) for devenv, Argo on Talos, secrets, and OpenSpec.
 
 Quick start:
 
 ```bash
 devenv shell
-tilt up
-# https://shop-dev.phuchoang.sbs
+export KUBECONFIG="$HOME/.kube/talos-dev.yaml"
+kubectl apply -f infra/argocd/talos/root.yaml
+# https://shop.phuchoang.sbs
 ```

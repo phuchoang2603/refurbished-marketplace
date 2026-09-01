@@ -29,9 +29,11 @@ Follow-on: `add-cilium-mesh-policy-and-canary`.
 
 ## Decisions
 
-### 1. Cilium is cluster-owned; this repo documents values
+### 1. Cilium is cluster-owned in talos-proxmox; do not copy Helm values here
 
-Same as before: Talos bootstrap, not app-of-apps.
+Source of truth: sibling repo **talos-proxmox** `apps/values/cilium.yaml` (installed by `apps/bootstrap.sh`, chart 1.18.13). Live talos-dev `helm get values cilium` already includes WireGuard, Envoy L7, `cluster.name/id`, Gateway API, and Hubble. L2 pool and Hubble/Longhorn/Argo Gateways live in `apps/manifests/env/*/network.yaml` + `routes.yaml`.
+
+This repo does **not** keep a second Cilium values file (it would drift). Marketplace GitOps only consumes `gatewayClassName: cilium`. Follow-on `add-cilium-mesh-policy-and-canary` may add policies/routes; it must not helm-upgrade Cilium.
 
 ### 2. Argo CD is the only deploy path; delete Tilt-era quirks
 
@@ -99,7 +101,7 @@ This is good hygiene (GHCR storage, fewer stale tags). It is **not** a substitut
 
 ### 5–8. Edge Gateway, no waypoint, Hubble L4, protocol ports, Cloudflare cutover
 
-Unchanged in intent from the Cilium cutover (class `cilium`, ClusterIP origin, drop Istio, Hubble L4, host-based HTTPRoutes).
+Unchanged in intent from the Cilium cutover (class `cilium`, in-cluster Gateway Service DNS — LoadBalancer type, not ClusterIP enum — drop Istio, Hubble L4, host-based HTTPRoutes).
 
 ## Risks / Trade-offs
 

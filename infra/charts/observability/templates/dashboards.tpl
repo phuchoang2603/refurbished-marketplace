@@ -1,7 +1,5 @@
 {{- /*
-Repo-owned Grafana dashboards → ConfigMaps for the Grafana sidecar
-(label grafana_dashboard=1). Enabled on local and staging so marketplace
-Istio RED is available without waiting on the default-dashboard sync job.
+Repo-owned Grafana dashboards → ConfigMaps for the Grafana sidecar.
 */}}
 {{- if .Values.customDashboards.enabled }}
 {{- range $path, $_ := .Files.Glob "dashboards/*.json" }}

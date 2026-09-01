@@ -1,4 +1,4 @@
-# Chart defaults = local Colima (single connector).
+# Chart defaults: in-cluster Cloudflare Tunnel to Cilium Gateway origin.
 replicaCount: 1
 
 image:
@@ -7,8 +7,8 @@ image:
   pullPolicy: IfNotPresent
 
 # Remotely managed tunnel: Public Hostnames are configured in Cloudflare Zero Trust.
-# Point both shop/pay hosts at the Istio Gateway ClusterIP Service, for example:
-#   http://ecommerce-ingress-istio.ecommerce.svc.cluster.local:80
+# Point both shop/pay hosts at the Cilium Gateway Service, for example:
+#   http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80
 tunnel:
   existingSecret: cloudflare-tunnel-token
   existingSecretKey: token
