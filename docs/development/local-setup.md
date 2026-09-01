@@ -22,9 +22,7 @@ Children follow the root’s git revision. Push the branch, wait for GHCR image 
 devenv shell
 ```
 
-Go, protobuf, `kubectl`, `helm`, Doppler, OpenSpec. On enter, devenv regenerates proto/sqlc when those inputs change.
-
-templ / Tailwind: generate on the laptop and commit (`templ generate`, `tailwindcss …`). Images are built in GitHub Actions, not locally into the cluster.
+Go, protobuf, `kubectl`, `helm`, Doppler, OpenSpec. On enter, devenv regenerates proto/sqlc/templ/Tailwind when those inputs change (`codegen:templ`, `codegen:tailwind`). Commit the generated files; CI builds the `web` image from them.
 
 ## Browser
 

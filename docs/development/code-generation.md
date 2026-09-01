@@ -2,13 +2,15 @@
 
 Run these from inside `devenv shell`:
 
-| Command          | Purpose                                                      |
-| ---------------- | ------------------------------------------------------------ |
-| `generate-proto` | Regenerate Go code from `**/proto/*/v1/*.proto`              |
-| `sqlc-gen`       | Regenerate sqlc query code for services with `sqlc.yaml`     |
-| `tidy`           | `go work sync` — keeps workspace module dependencies aligned |
+| Command             | Purpose                                                                            |
+| ------------------- | ---------------------------------------------------------------------------------- |
+| `generate-proto`    | Regenerate Go code from `**/proto/*/v1/*.proto`                                    |
+| `sqlc-gen`          | Regenerates sqlc query code for services with `sqlc.yaml`                          |
+| `tidy`              | `go work sync` — keeps workspace module dependencies aligned                       |
+| `generate-templ`    | `templ generate` in `services/web` (also `codegen:templ` on devenv enter)          |
+| `generate-tailwind` | Tailwind → `services/web/static/app.css` (also `codegen:tailwind` on devenv enter) |
 
-Web `templ` and Tailwind: run generators locally and commit the outputs (`*_templ.go`, `static/app.css`). CI builds the `web` image from those files.
+Commit `*_templ.go` and `static/app.css`. CI builds the `web` image from those files. For a live watch while editing, run `templ generate --watch` / `tailwindcss … --watch=always` in `services/web` (Tilt no longer does this).
 
 Edit SQL migrations under `services/<service>/db/migrations/` and queries under `services/<service>/db/queries/`, then run `sqlc-gen` when query shapes change.
 

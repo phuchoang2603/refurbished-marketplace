@@ -97,6 +97,20 @@
         done
       '';
     };
+
+    generate-templ = {
+      exec = ''
+        cd "${config.git.root}/services/web"
+        templ generate
+      '';
+    };
+
+    generate-tailwind = {
+      exec = ''
+        cd "${config.git.root}/services/web"
+        tailwindcss -c tailwind.config.js -i tailwind.css -o static/app.css
+      '';
+    };
   };
 
   tasks = {
@@ -129,6 +143,26 @@
         "shared/**/go.mod"
         "tools/**/go.mod"
         "go.work"
+      ];
+    };
+
+    "codegen:templ" = {
+      exec = "generate-templ";
+      before = [ "devenv:enterShell" ];
+
+      execIfModified = [
+        "services/web/**/*.templ"
+      ];
+    };
+
+    "codegen:tailwind" = {
+      exec = "generate-tailwind";
+      before = [ "devenv:enterShell" ];
+
+      execIfModified = [
+        "services/web/tailwind.css"
+        "services/web/tailwind.config.js"
+        "services/web/**/*.templ"
       ];
     };
   };
