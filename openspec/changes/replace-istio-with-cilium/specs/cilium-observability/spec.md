@@ -15,7 +15,7 @@ After Istio removal, marketplace network observability SHALL use Hubble L4 (flow
 
 #### Scenario: Hubble is available where Cilium runs
 
-- **WHEN** Cilium is installed for local or staging per documented values
+- **WHEN** Cilium is installed on Talos per documented values
 - **THEN** Hubble (including relay/UI when those flags are enabled) can show L4 flows involving marketplace pods
 
 ### Requirement: Application traces remain OTEL to VictoriaTraces
@@ -61,5 +61,5 @@ Marketplace namespaces SHALL NOT be labeled for Istio ambient dataplane or waypo
 
 #### Scenario: Ambient labels absent
 
-- **WHEN** the marketplace namespace is applied by Argo CD or Tilt
+- **WHEN** the marketplace namespace is applied by Argo CD on Talos
 - **THEN** it does not set `istio.io/dataplane-mode` or `istio.io/use-waypoint`

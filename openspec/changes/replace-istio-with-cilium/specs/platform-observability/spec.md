@@ -1,5 +1,63 @@
 ## MODIFIED Requirements
 
+### Requirement: Victoria observability stack
+
+The repository SHALL provide a Helm wrapper chart for deploying the VictoriaMetrics Kubernetes metrics, logs, traces, dashboards, and alerting stack. Chart defaults SHALL be the full platform profile (node-exporter, kube-state-metrics, Alertmanager, default dashboards, staging-class PVC sizes). A Colima apps-only default overlay SHALL NOT exist.
+
+#### Scenario: Wrapper chart defines observability stack
+
+- **WHEN** the observability chart dependencies are built
+- **THEN** the chart includes `victoria-metrics-k8s-stack` from `https://victoriametrics.github.io/helm-charts/` as a dependency pinned to version `0.86.0`
+
+#### Scenario: Stack includes core metrics components
+
+- **WHEN** the observability chart is rendered with default values
+- **THEN** it includes VictoriaMetrics metrics storage, VMAgent scraping, Grafana, Alertmanager, kube-state-metrics, and node-exporter
+
+#### Scenario: Stack uses single-node backends
+
+- **WHEN** the observability chart is rendered for this change
+- **THEN** it enables VMSingle, VLSingle, and VTSingle and does not require VMCluster, VLCluster, or VTCluster
+
+#### Scenario: Stack uses default storage class
+
+- **WHEN** persistent storage is configured for VMSingle, VLSingle, or VTSingle
+- **THEN** the chart does not override the cluster default storage class
+
+#### Scenario: Stack uses initial retention periods
+
+- **WHEN** single-node backend retention is configured
+- **THEN** metrics retention is `7d`, logs retention is `3d`, and traces retention is `3d`
+
+#### Scenario: Stack uses one PVC size profile
+
+- **WHEN** the observability chart is rendered
+- **THEN** VMSingle requests `20Gi`, VLSingle requests `20Gi`, and VTSingle requests `10Gi` of storage (no separate 5Gi/5Gi/2Gi Colima profile)
+
+#### Scenario: Stack includes logs backend
+
+- **WHEN** the observability chart is rendered
+- **THEN** it includes VictoriaLogs single-node storage and VLAgent collection according to chart values
+
+#### Scenario: Stack includes traces backend
+
+- **WHEN** the observability chart is rendered
+- **THEN** it includes VictoriaTraces single-node storage and a Grafana VictoriaTraces datasource according to chart values
+
+### Requirement: Local Argo deploys observability
+
+Argo CD on Talos SHALL deploy the observability stack into the `monitoring` namespace using those full-platform chart defaults (not `local-root` apps-only values).
+
+#### Scenario: Argo includes observability stack
+
+- **WHEN** the Talos app-of-apps syncs
+- **THEN** Argo CD manages an observability Application that deploys into `monitoring`
+
+#### Scenario: Grafana is reachable via port-forward
+
+- **WHEN** the observability stack is healthy
+- **THEN** documentation explains how to port-forward Grafana in the `monitoring` namespace
+
 ### Requirement: Backend-first scope
 
 The observability stack SHALL provide metrics, logs, and traces backends. Custom per-service `/metrics` endpoints remain out of scope for platform closure. Marketplace services SHALL emit structured JSON logs to stdout for VLAgent collection when structured logging is enabled, and MAY emit OTLP traces into VictoriaTraces when distributed tracing is enabled.

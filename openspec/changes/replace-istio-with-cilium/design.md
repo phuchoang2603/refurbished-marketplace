@@ -1,93 +1,125 @@
 ## Context
 
-Local Colima and staging still install Istio ambient (`infra/charts/operators/istio/` pinned to 1.30.2) and enroll `ecommerce` via Argo `managedNamespaceMetadata` plus Tilt labels. Browser path is Cloudflare Tunnel → `Gateway` `gatewayClassName: istio` ClusterIP (`networking.istio.io/service-type: ClusterIP`) → HTTPRoutes for `shop*` / `pay*`. East–west L7 RED comes from `ecommerce-waypoint`. App traces already go OTEL → VictoriaTraces; mesh tracing is specified as absent.
+Today: Tilt on Colima owns marketplace Helm + `docker_build` + templ/tailwind watches; Argo `local-root` skips marketplace; staging Argo tracks `main` and GHCR `:main`. Talos already runs Cilium. Tilt against Talos would need a registry and `live_update` because Talos does not share the laptop Docker daemon.
 
-The Talos cluster already runs Cilium (kube-proxy replacement, L2 announcements, `gatewayAPI.enabled`, Hubble). Cilium is the CNI: Argo cannot own it. Colima/k3s today is not Cilium.
+New intent: **no Tilt deploy path.** One Talos cluster, Argo CD is the only applier, git branch + GHCR SHA is the inner loop.
 
-Follow-on hardening is `add-cilium-mesh-policy-and-canary`.
+templ `_templ.go` files are already committed; Tailwind CSS is copied from the repo in `web.Dockerfile`. Watches were convenience, not a cluster requirement.
+
+Follow-on: `add-cilium-mesh-policy-and-canary`.
 
 ## Goals / Non-Goals
 
 **Goals:**
 
-- One dataplane on Talos and Colima: Cilium CNI + Cilium Gateway API + Hubble L4.
-- Same browser contract: Cloudflare HTTPS, HTTP origin, host-based routes, forwarded proto/host headers (payment callback 405 canary).
-- Remove Istio from GitOps, charts, Tilt, observability scrapes/dashboards, and docs.
-- Kafka namespace stays isolated from L7 proxy intercept.
+- One dataplane: Cilium CNI + Cilium Gateway API + Hubble L4 on Talos.
+- Same browser contract: Cloudflare HTTPS, HTTP origin, host-based routes, forwarded proto/host headers.
+- Dev and prod share one cluster shape: same Argo apps, GHCR images, observability, CNPG-in-chart, shop/pay Gateway. Overlays only for revision, image SHA, and secrets if required.
+- CI publishes images Argo can pull: SHA tags on `main` and on PRs; prune PR-only GHCR versions when the PR closes.
+- Remove Istio; kafka stays out of L7 intercept.
 
 **Non-Goals:**
 
-- Strict mTLS, AuthorizationPolicy-equivalents, retries, circuit breakers, traffic splitting / canaries (next change).
-- Hubble L7 HTTP/gRPC metrics, CiliumNetworkPolicy `http: [{}]` visibility, or a Grafana replacement for Marketplace Istio RED.
-- Making Cilium an Argo Application.
-- Changing Cloudflare Zero Trust Public Hostname UI into Git (only origin Service DNS changes).
+- Tilt, Colima/k3s, Tiltfile workarounds, and a second “local” Helm personality.
+- Preview environments per PR (extra namespaces, hosts, CNPG clusters). One live `ecommerce` on the cluster.
+- Hubble L7 metrics / Istio-RED replacement.
+- Cilium as an Argo Application.
 - Production app-of-apps (still deferred).
-- Mesh or Gateway proxy spans in VictoriaTraces.
+- Mesh/Gateway proxy spans.
 
 ## Decisions
 
-### 1. Cilium is cluster-owned; this repo documents values, it does not sync the CNI
+### 1. Cilium is cluster-owned; this repo documents values
 
-Keep Talos Cilium install outside Argo (bootstrap / Talos docs). Commit reference Helm values for Talos (the flags already in use: `kubeProxyReplacement`, `gatewayAPI`, Hubble, Talos cgroup/devices) and a separate Colima/k3s values file used by local bootstrap.
+Same as before: Talos bootstrap, not app-of-apps.
 
-**Rationale:** CNI must exist before Argo. Chicken-egg if Cilium is a child Application.
+### 2. Argo CD is the only deploy path; delete Tilt-era quirks
 
-**Alternatives considered:** Cilium Helm chart in app-of-apps (fails if the cluster cannot schedule pods without CNI); Istio+Cilium dual stack (rejected).
+One Talos cluster, one app-of-apps root, marketplace always an Argo Application, images always GHCR. Chart **defaults** are that cluster (prod-like), not a Colima profile that staging overlays back to reality.
 
-### 2. Colima must run Cilium too (option C)
+**Delete (legacy / Tilt-only):**
 
-Local k3s disables Traefik (already) and must run Cilium instead of default flannel so `GatewayClass/cilium` exists the same way as staging. Document Colima/k3s args + a one-shot or Tilt-owned Cilium Helm install with **non-Talos** values (`k8sServiceHost`/`Port`, cgroup, devices).
+| Quirk                                                                                                             | Why it existed                                   | Replacement                                                                |
+| ----------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | -------------------------------------------------------------------------- |
+| `Tiltfile` (install Argo, Gateway API CRDs, Doppler secret, `local-root`, `docker_build`, watches, port-forwards) | Colima inner loop                                | Git push → CI → Argo; `kubectl` port-forward if needed                     |
+| Strip Namespace from Helm + Tilt `ecommerce-namespace` labels                                                     | Tilt prune/recreate deleted CNPG                 | Argo `CreateNamespace` + `managedNamespaceMetadata` only (no Istio labels) |
+| Out-of-band `helm template databases.tpl \| kubectl apply`                                                        | `tilt down` deleted CNPG PVCs / Debezium offsets | Marketplace chart owns CNPG Clusters; `tilt down` is gone                  |
+| `local-root` with `marketplace.enabled: false`                                                                    | Tilt owned the app chart                         | Single root; marketplace on                                                |
+| Empty `global.imageRegistry` → short image names                                                                  | Tilt loaded images into Colima Docker            | Always `ghcr.io/.../name:sha`                                              |
+| Marketplace `values.yaml` Colima CPU/mem / 512Mi PVCs                                                             | Fit 4 CPU / 8 GiB k3s                            | Defaults = current staging-class requests/limits/storage                   |
+| Observability chart defaults apps-only (no node-exporter/ksm/Alertmanager/default dashboards)                     | Colima RAM                                       | Defaults = full platform stack (today’s `values-staging.yaml` shape)       |
+| Dual Istio CNI `platform: k3s` vs RKE2 overlays                                                                   | Colima vs old staging                            | Istio charts deleted                                                       |
+| `mesh.tpl` comments + ambient labels for Tilt vs Argo namespace fight                                             | Two appliers                                     | No waypoint; Argo owns ns metadata                                         |
+| devenv `DOCKER_HOST` Colima k8s socket, `tilt` package                                                            | Local k8s + Tilt                                 | Docker only if Testcontainers needs it; drop Tilt                          |
+| Tilt-applied `doppler-token.dev.secret.yaml`                                                                      | Local bootstrap                                  | Same pattern as remote: bootstrap Secret once, ESO `ClusterSecretStore`    |
+| Tilt extra Gateway API CRD apply                                                                                  | Colima had no CRDs                               | Talos/Cilium already has Gateway API                                       |
+| Docs/PR template/`CONTRIBUTING` `tilt up` on Colima                                                               | Old DX                                           | Argo + GHCR                                                                |
+| `.dev` Cloudflare hosts as chart default                                                                          | Second Colima front door                         | Cluster uses the real shop/pay hostnames; no second ingress profile        |
 
-**Rationale:** otherwise local and staging diverge on the only remaining mesh/edge.
+**Allowed to differ between “what’s live on main” and a branch:** `targetRevision`, `global.imageTag` (SHA), Doppler config if secrets must not mix. Not a second cluster shape.
 
-**Alternatives considered:** Istio on Colima, Cilium on Talos (faster, permanently forked DX).
+**Rationale:** matching dev and prod means the same YAML path, not a miniature stack that only resembles prod after overlays.
 
-### 3. Edge is still Gateway API in the marketplace chart
+**Alternatives considered:** keep Colima-sized defaults with a `values-talos.yaml` overlay (still two personalities); Tilt `live_update` (rejected).
 
-Keep `ingress.tpl` Gateway + two HTTPRoutes in `ecommerce`. Change `gatewayClassName` to `cilium`. Drop Istio ClusterIP annotation. Use `CiliumGatewayClassConfig` (parametersRef on GatewayClass, or a dedicated class) so the generated Service is ClusterIP for `cloudflared`. If ClusterIP is unavailable, document hitting the Service cluster DNS even if type is LoadBalancer — still must not require a LAN L2 VIP for the tunnel.
+### 3. Branch tracking is one pointer, not N preview envs
 
-**Rationale:** routes are app-specific; Cloudflare only needs stable in-cluster DNS.
+Default: root `targetRevision: main`, `global.imageTag: main` (or the SHA `:main` points at).
 
-**Alternatives considered:** Cilium Ingress CRD (extra API); MetalLB/L2 VIP as the origin (breaks the tunnel-only design).
+To run a feature on the cluster: point that **same** root at the branch and set `global.imageTag` to the PR head SHA CI pushed. One `ecommerce` namespace — only one git revision live at a time.
 
-### 4. Delete waypoint and ambient enrollment
+Do **not** ApplicationSet-per-PR in this change (would need `pr-N` namespaces, extra shop hosts, extra CNPG).
 
-Remove `mesh.tpl`, `mesh.*` values, Argo/Tilt `istio.io/*` labels. No Cilium GAMMA mesh Gateway in this change.
+**Rationale:** homelab has one shop. Branch tracking is “what is live,” not “every PR gets a URL.”
 
-**Rationale:** L7 waypoint existed for Istio RED; Hubble L4 + OTEL replace that observe story.
+**Alternatives considered:** ApplicationSet PR generator (correct for multi-preview, too much here); only deploy after merge (simplest; then PR images are optional until you want to flip the pointer).
 
-### 5. Observability: subtract Istio, do not add Hubble Prometheus as a requirement
+### 4. CI builds PR images; delete PR-only tags after close — yes, with rules
 
-Remove `istioScrapes`, Istio RED dashboard, `istio-proxy` log excludes if unused. Hubble UI remains the L4 flow UI (already enabled on Talos; enable equivalently on Colima). App traces unchanged.
+**Build on PR (ideal if you want to Argo-track a branch before merge):**
 
-**Rationale:** user chose not to recreate L7 RED.
+- Reuse the release matrix (or path-filter it).
+- Push immutable `ghcr.io/<repo>/<image>:<git-sha>` (`github.sha` of the PR head).
+- Optional moving tag `pr-<n>` for humans — Argo should pin **SHA**, not `pr-N` (that tag moves on every push).
+- Do not overwrite `:main` from a PR.
 
-### 6. Protocol-aware Service ports stay
+**After merge/close, delete PR-only versions:**
 
-Keep Helm `services.*.protocol` port names / appProtocol. Useful for Cilium Gateway and future L7 policy. Not used to drive Hubble HTTP metrics in this change.
+- Trigger `pull_request: types: [closed]`.
+- Delete GHCR package versions whose only useful tags are `pr-<n>` or SHAs that are **not** on `main` and not currently specified in Argo.
+- **Do not** delete `:main`, production pins, or a SHA Argo is still rolling out.
+- Squash merge ⇒ PR SHA ≠ merge SHA ⇒ safe to delete the PR SHA images after close.
+- Merge commit ⇒ same: PR head SHA is usually unused after merge; still delete `pr-*`.
 
-### 7. Cut over origin DNS in Cloudflare last
+This is good hygiene (GHCR storage, fewer stale tags). It is **not** a substitute for pinning Argo to SHAs. Deleting too early while the cluster still runs `imageTag: <pr-sha>` will 404 ImagePullBackOff — always retarget Argo to `main` before or as part of close.
 
-Service name will change off `ecommerce-ingress-istio`. Sequence: Cilium Gateway Accepted → new Service Ready → update Public Hostnames → delete Istio. Reverse for rollback if shop/pay break (especially hosted-payment POST → 405).
+**Cheaper alternative if PRs are not deployed:** skip PR pushes; only `main` builds images. Branch tracking then cannot deploy app code until merge (Helm-only git changes could still sync). Choose PR builds because the user wants to run a branch on Talos.
+
+**templ/CSS:** keep generating on the laptop and committing (current `web.Dockerfile` `go build`s committed `_templ.go`). Optional later: generate inside the image so CI is hermetic.
+
+### 5–8. Edge Gateway, no waypoint, Hubble L4, protocol ports, Cloudflare cutover
+
+Unchanged in intent from the Cilium cutover (class `cilium`, ClusterIP origin, drop Istio, Hubble L4, host-based HTTPRoutes).
 
 ## Risks / Trade-offs
 
-| Risk                                                                               | Mitigation                                                                |
-| ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------- |
-| Colima Cilium bootstrap is the hard local DX piece                                 | Spike k3s + Cilium + GatewayClass before deleting Istio locally           |
-| `CiliumGatewayClassConfig` ClusterIP not supported on the installed Cilium version | Fall back to in-cluster Service DNS; never require L2 VIP for cloudflared |
-| Header filters unimplemented on Cilium Gateway                                     | Spike `RequestHeaderModifier`; payment callback is the canary             |
-| Gateway API CRD channel mismatch                                                   | Pin CRDs to what Cilium documents for that version                        |
-| Dual GatewayClasses during migrate                                                 | Only one parent for shop/pay hosts at a time                              |
-| Hubble UI not GitOps-exposed                                                       | Document port-forward / in-cluster access; not a Grafana requirement      |
+| Risk                                                 | Mitigation                                                                                 |
+| ---------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Argo syncs git before PR images exist                | Pin `imageTag` to SHA; wait for the image workflow; or `ImageUpdater` later (not required) |
+| Full image matrix on every PR push is slow/expensive | Path-filter matrix; skip unchanged images (document if deferred)                           |
+| Delete GHCR while Argo still uses the SHA            | Cleanup only on PR closed, after root is back on `main`                                    |
+| One cluster, two branches                            | Document: one live revision; do not ApplicationSet in this change                          |
+| Tiltfile leftover confuses DX                        | Delete Tiltfile and `infra/argocd/local/` in this change                                   |
+| Generated templ drift without Tilt watch             | devenv/hooks; commit generated files as today                                              |
+| Unifying observability defaults grows RAM vs Colima  | Accepted: Talos is the only cluster                                                        |
 
 ## Migration Plan
 
-1. Confirm Talos `GatewayClass/cilium` Accepted; Hubble relay/UI up.
-2. Add Colima Cilium bootstrap + values; verify `GatewayClass/cilium` locally.
-3. Add ClusterIP GatewayClass config; switch marketplace `ingress.tpl`; keep Istio installed until the new Gateway is Accepted.
-4. Point Cloudflare Public Hostnames at the Cilium Gateway Service; verify shop + pay callback.
-5. Remove waypoint, ambient labels, Istio Argo apps/charts, Istio scrapes/dashboard.
-6. Rewrite docs; OpenSpec validate.
+1. Confirm Talos `GatewayClass/cilium`; Hubble up; Argo already on the cluster.
+2. Add PR image workflow + SHA tags; add closed-PR GHCR cleanup.
+3. Collapse to one Argo root; GHCR-required chart defaults; full observability defaults; CNPG in the marketplace release; delete Tiltfile, local-root, Colima devenv wiring.
+4. Switch ingress to Cilium Gateway; update Cloudflare origin DNS; verify checkout.
+5. Remove Istio apps/charts/scrapes and remaining Tilt/Istio labels.
+6. OpenSpec validate; update #38.
 
-Rollback: restore Istio Gateway class and Cloudflare origin DNS; re-enable Istio apps before deleting Cilium Gateway routes.
+Rollback: Istio Gateway + origin DNS as before. Images: keep `:main`; PR cleanup is independent.

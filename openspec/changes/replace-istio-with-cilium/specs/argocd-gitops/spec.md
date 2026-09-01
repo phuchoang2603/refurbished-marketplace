@@ -14,7 +14,63 @@ The staging ArgoCD marketplace Application SHALL be able to enable Cilium edge G
 - **WHEN** production manifests are rendered before production ingress enablement is chosen
 - **THEN** production marketplace workloads do not expose a Cilium ingress Gateway by accident
 
+### Requirement: Argo on Talos owns marketplace
+
+The Talos cluster root Application SHALL enable the marketplace chart via Argo CD. Tilt SHALL NOT be the applier for marketplace Helm. Child Applications SHALL inherit `targetRevision` from the root so branch tracking moves git and (with matching GHCR tags) images together.
+
+#### Scenario: Marketplace is an Argo Application
+
+- **WHEN** the Talos root syncs from Git
+- **THEN** a marketplace Application exists and applies `infra/charts/refurbished-marketplace`
+
+#### Scenario: Root revision is inherited
+
+- **WHEN** the root Application `targetRevision` is a branch or `main`
+- **THEN** child Applications use that same git revision
+
+### Requirement: Marketplace release owns databases
+
+CNPG Clusters for marketplace services SHALL be resources of the Argo-managed marketplace Helm release. The repository SHALL NOT apply databases out-of-band to protect them from `tilt down`.
+
+#### Scenario: Clusters sync with the chart
+
+- **WHEN** the marketplace Application syncs
+- **THEN** CNPG Cluster objects are applied from the chart templates, not from a Tilt `kubectl apply` of `helm template`
+
 ## MODIFIED Requirements
+
+### Requirement: App-of-apps per environment
+
+The repository SHALL provide a shared Argo CD app-of-apps Helm chart under `infra/argocd/app-of-apps/` plus a thin root Application for Talos that enables marketplace and sets `global.imageRegistry` / `global.imageTag`. Child Applications SHALL inherit `targetRevision` from the root via `$ARGOCD_APP_SOURCE_TARGET_REVISION`. `infra/argocd/local/` and a Tilt-omitted marketplace Application SHALL NOT exist.
+
+#### Scenario: Talos root application
+
+- **WHEN** the Talos cluster root Application syncs from Git
+- **THEN** child Applications exist for operators, `refurbished-marketplace`, and `kafka` as defined
+
+#### Scenario: Talos inherits root revision
+
+- **WHEN** a root Application renders the app-of-apps chart with `targetRevision` parameterized from `$ARGOCD_APP_SOURCE_TARGET_REVISION`
+- **THEN** each child Application uses the same Git revision as that root
+
+#### Scenario: Talos shares global image settings
+
+- **WHEN** the Talos root sets `global.imageRegistry` and `global.imageTag`
+- **THEN** child Applications that inject global images (for example kafka and marketplace) render those values into their Helm `values`
+
+### Requirement: Chart image registry and tag resolution
+
+The `refurbished-marketplace` and `kafka` Helm charts SHALL support `global.imageRegistry` and `global.imageTag`. Cluster deploys SHALL always render GHCR image references (`{registry}/{shortName}:{tag}`). Empty registry / short Colima names SHALL NOT be a supported cluster path. Chart default resources and PVC sizes SHALL match the production-like profile (not a Colima-miniature overlay).
+
+#### Scenario: Remote cluster GHCR reference
+
+- **WHEN** Helm renders with `global.imageRegistry` set and `global.imageTag` set to a git SHA or `main`
+- **THEN** a service with `image: web` deploys as `ghcr.io/<repository>/web:<tag>`
+
+#### Scenario: Chart defaults are production-like
+
+- **WHEN** the marketplace chart renders without a Colima overlay
+- **THEN** request/limit and database storage defaults are the staging-class sizes, not the 4 CPU / 8 GiB Colima budget
 
 ### Requirement: Environment-specific Helm values
 
