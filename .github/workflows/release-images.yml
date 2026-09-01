@@ -104,7 +104,11 @@ jobs:
           set -euo pipefail
           repo="${{ github.repository }}"
           image="${{ matrix.image }}"
-          sha="${{ github.sha }}"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            sha="${{ github.event.pull_request.head.sha }}"
+          else
+            sha="${{ github.sha }}"
+          fi
           tags="ghcr.io/${repo}/${image}:${sha}"
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             tags="${tags}
