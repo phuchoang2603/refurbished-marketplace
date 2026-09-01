@@ -6,7 +6,7 @@ Define strict Cilium mutual TLS, identity-based authorization, retries, and circ
 
 ### Requirement: Strict mTLS for marketplace east-west
 
-Marketplace service-to-service traffic in `ecommerce` SHALL require Cilium mutual authentication (mTLS). Workloads that are not in the documented exception list (CNPG, migration jobs, Valkey sidecars, Kafka brokers in `kafka`) SHALL fail closed when mTLS is missing.
+Marketplace service-to-service traffic in `ecommerce` SHALL require Cilium mutual authentication. Workloads that are not in the documented exception list (CNPG, migration jobs, Valkey, Kafka brokers in `kafka`) SHALL fail closed when mutual authentication is missing.
 
 #### Scenario: Enrolled gRPC calls require mTLS
 
@@ -20,12 +20,12 @@ Marketplace service-to-service traffic in `ecommerce` SHALL require Cilium mutua
 
 ### Requirement: Authorization between marketplace identities
 
-The system SHALL allow only documented caller identities to reach each marketplace HTTP/gRPC Service (equivalent intent to Istio AuthorizationPolicy).
+The system SHALL allow only documented caller identities to reach each marketplace HTTP/gRPC Service.
 
 #### Scenario: Unknown identity is denied
 
 - **WHEN** a pod that is not an allowed caller sends traffic to a protected gRPC Service
-- **THEN** Hubble or Cilium policy drops the flow and the call fails
+- **THEN** Cilium policy drops the flow and the call fails
 
 #### Scenario: Documented callers succeed
 
@@ -34,7 +34,7 @@ The system SHALL allow only documented caller identities to reach each marketpla
 
 ### Requirement: Retries and circuit breakers
 
-The system SHALL apply documented retry and circuit-breaker (or outlier-detection) settings for Gateway-to-web and/or web-to-gRPC paths using Cilium/Envoy or Gateway API, without retrying non-idempotent checkout/payment RPCs unsafely.
+The system SHALL apply documented retry and circuit-breaker (or outlier-detection) settings for Gateway-to-web and/or web-to-gRPC paths using Cilium Envoy or Gateway API, without retrying non-idempotent checkout/payment RPCs unsafely.
 
 #### Scenario: Transient failures retry where safe
 
@@ -44,7 +44,7 @@ The system SHALL apply documented retry and circuit-breaker (or outlier-detectio
 #### Scenario: Unhealthy backends are ejected
 
 - **WHEN** a backend instance exceeds the circuit-breaker / outlier threshold
-- **THEN** new requests are not sent to that instance until it recovers or the canary is aborted
+- **THEN** new requests are not sent to that instance until it recovers
 
 ### Requirement: Policy rollback
 

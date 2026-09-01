@@ -1,31 +1,29 @@
 ## Why
 
-Issue [#39](https://github.com/phuchoang2603/refurbished-marketplace/issues/39): After Istio is gone, east–west traffic is still plain cluster networking: no mandatory mTLS, no identity-based authorization, no mesh retries/circuit breakers, and deployments are all-at-once. This change is the deferred hardening + progressive-delivery slice that the original Istio observe baseline explicitly left out.
+Issue [#39](https://github.com/phuchoang2603/refurbished-marketplace/issues/39): After Istio removal, east–west traffic is still plain cluster networking: no mandatory mTLS, no identity-based authorization, and no mesh retries/circuit breakers. This is the deferred hardening slice from the original Istio observe baseline, implemented on Cilium.
 
-Depends on `replace-istio-with-cilium` / [#38](https://github.com/phuchoang2603/refurbished-marketplace/issues/38) landing first (Cilium Gateway API edge, no Istio).
+Depends on archived `replace-istio-with-cilium` / [#38](https://github.com/phuchoang2603/refurbished-marketplace/issues/38) (Cilium Gateway edge, no Istio).
 
 ## What Changes
 
-- Enforce strict mutual TLS on marketplace east–west traffic using Cilium (SPIFFE / Cilium mutual auth), not Istio `PeerAuthentication`.
-- Add authorization for marketplace identities (CiliumNetworkPolicy and/or equivalent) so only intended clients reach gRPC/HTTP services. Kafka/Strimzi TLS stays outside L7 intercept.
-- Add retries and circuit-breaking for east–west and/or Gateway north–south using Cilium/Envoy (or Gateway API retry/timeout) rather than Istio `VirtualService` / `DestinationRule`.
-- Add Argo Rollouts (or equivalent Argo progressive delivery) so at least one marketplace workload can canary via Gateway API HTTPRoute weights (or Cilium GAMMA) instead of a single ReplicaSet cutover.
-- Document rollback: disable strict auth without taking the shop down; abort a canary back to stable.
+- Enforce strict mutual TLS on marketplace east–west traffic using Cilium identities (`CiliumNetworkPolicy` `authentication.mode: required`), not Istio `PeerAuthentication`. SPIRE / Cilium mutual-auth Helm is enabled in talos-proxmox; this repo consumes it and does not helm-upgrade Cilium.
+- Add authorization so only documented callers reach marketplace HTTP/gRPC Services. Kafka/Strimzi TLS stays outside L7 intercept.
+- Add retries and circuit-breaking for Gateway → web and/or web → gRPC using Gateway API and/or `CiliumEnvoyConfig`, not Istio `VirtualService` / `DestinationRule`.
+- Document rollback: disable strict auth without taking the shop down.
 
 ## Capabilities
 
 ### New Capabilities
 
-- `cilium-mesh-policy`: Strict mTLS, authorization, retries, and circuit breakers for marketplace traffic on Cilium after the Istio removal.
-- `argocd-canary`: GitOps-managed canary (Argo Rollouts + Gateway API traffic splitting) for marketplace workloads.
+- `cilium-mesh-policy`: Strict mTLS, authorization, retries, and circuit breakers for marketplace traffic on Cilium after Istio removal.
 
 ### Modified Capabilities
 
-- `argocd-gitops`: Add a Rollouts (or equivalent) operator Application and canary-aware marketplace delivery. Do not resurrect Istio. Canary traffic splitting attaches to the Cilium Gateway HTTPRoutes introduced by `replace-istio-with-cilium`.
+- (none)
 
 ## Impact
 
-- New platform operator (Argo Rollouts) plus Cilium policy objects and possibly `CiliumEnvoyConfig` / HTTPRoute filters.
-- Marketplace chart Deployments may become Rollouts for chosen services (likely `web` first).
-- Observability should show canary vs stable and mTLS/authz denials (Hubble + existing Grafana).
-- Out of scope until `replace-istio-with-cilium` is archived: implementing any of this against Istio CRDs.
+- Marketplace chart: CiliumNetworkPolicies and possibly `CiliumEnvoyConfig` / HTTPRoute retry filters.
+- talos-proxmox: Cilium Helm enables mutual auth/SPIRE so `authentication.mode: required` can fail closed.
+- Observability: policy drops should be visible with whatever the cluster already exposes (Hubble is optional/off on Talos today); do not re-enable Hubble as a hard dependency.
+- Out of scope: Istio CRDs; Argo Rollouts / Flagger; canary or HTTPRoute traffic splitting; canary Deployments.
