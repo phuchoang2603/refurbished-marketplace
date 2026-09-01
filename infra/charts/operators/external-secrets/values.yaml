@@ -1,27 +1,27 @@
 external-secrets:
   resources:
     requests:
-      cpu: 10m
-      memory: 32Mi
-    limits:
-      cpu: 100m
+      cpu: 25m
       memory: 64Mi
+    limits:
+      cpu: 200m
+      memory: 128Mi
   webhook:
     resources:
       requests:
-        cpu: 10m
-        memory: 32Mi
-      limits:
-        cpu: 100m
+        cpu: 25m
         memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
   certController:
     resources:
       requests:
-        cpu: 10m
-        memory: 32Mi
-      limits:
-        cpu: 100m
+        cpu: 25m
         memory: 64Mi
+      limits:
+        cpu: 200m
+        memory: 128Mi
 
 clusterSecretStore:
   enabled: true

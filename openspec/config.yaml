@@ -7,13 +7,13 @@ context: |
   Development Workflow:
   - devenv.nix manages local development tooling; if tools are missing, add them to devenv.nix and run `direnv reload`
   - Go multi-module workspace. Prefer the devenv `tidy` script for `go work sync`
-  - Talos Kubernetes + Argo CD (`infra/argocd/talos/root.yaml` → shared `infra/argocd/app-of-apps`). Marketplace, operators, Kafka, observability, and Cloudflare Tunnel are Argo Applications. Images come from GHCR (`global.imageTag` = git SHA or `main`). Do not compile and run Go services as host processes (tests are okay)
-  - Chart `values.yaml` is Talos/prod-like (GHCR, shop/pay hostnames, Cilium Gateway). Operator charts may still use `values-staging.yaml` overlays
+  - Talos Kubernetes + Argo CD (`infra/argocd/dev/root.yaml` or `prod/root.yaml` → shared `infra/argocd/app-of-apps`). Marketplace, operators, Kafka, observability, and Cloudflare Tunnel are Argo Applications. Images come from GHCR (`global.imageTag` = git SHA or `main`). Do not compile and run Go services as host processes (tests are okay)
+  - Chart `values.yaml` is Talos-shaped (GHCR, Cilium Gateway, shop-dev/pay-dev). Prod marketplace hosts: `values-prod.yaml`.
   - Browser access is Cloudflare Tunnel → Cilium Gateway
   - HTML-first web edge using chi, templ, Tailwind CSS, Datastar. Generate templ/Tailwind locally and commit; CI builds images
   - gRPC for internal service-to-service traffic. Prefer devenv `generate-proto` for protobuf codegen
   - PostgreSQL with goose migrations and sqlc queries. Prefer devenv `sqlc-gen`
-  - GitOps root: `infra/argocd/talos/root.yaml`. Cilium is cluster-owned in talos-proxmox, not Argo. Production-as-a-separate-cluster is not in-tree yet
+  - GitOps: `infra/argocd/dev/root.yaml` (talos-dev + Doppler `dev`) and `infra/argocd/prod/root.yaml` (prod Talos + Doppler `prd`). Cilium is cluster-owned in talos-proxmox, not Argo. Do not put Doppler config in Argo values
 
   Repo conventions:
   - Keep service code under services/<name>/ and private code in internal/

@@ -1,7 +1,10 @@
+# Apply only on talos-dev. Do not apply prod-root here.
+# Secrets: kubectl apply -f infra/k8s/doppler-token.dev.secret.yaml
+# Chart values.yaml (shop-dev / pay-dev). Track main, or pin imageTag to a PR SHA.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: talos-root
+  name: dev-root
   namespace: argo-cd
   finalizers:
     - resources-finalizer.argocd.argoproj.io/foreground
@@ -13,22 +16,12 @@ spec:
     path: infra/argocd/app-of-apps
     helm:
       values: |
-        apps:
-          external-secrets:
-            valueFiles:
-              - values-staging.yaml
-          cnpg:
-            valueFiles:
-              - values-staging.yaml
-          strimzi:
-            valueFiles:
-              - values-staging.yaml
-          kafka:
-            valueFiles:
-              - values-staging.yaml
-          cloudflare-tunnel:
-            valueFiles:
-              - values-staging.yaml
+        namePrefix: dev
+        global:
+          imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
+          imageTag: main
+        marketplace:
+          enabled: true
       parameters:
         - name: targetRevision
           value: $ARGOCD_APP_SOURCE_TARGET_REVISION

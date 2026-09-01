@@ -45,6 +45,6 @@ body:
     attributes:
       label: Environment
       description: e.g. Talos kubeconfig, Argo revision, shop.phuchoang.sbs
-      placeholder: talos-dev.yaml, talos-root tracking main
+      placeholder: talos-dev.yaml, dev-root tracking main
     validations:
       required: false

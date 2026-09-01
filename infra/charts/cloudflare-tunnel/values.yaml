@@ -7,7 +7,7 @@ image:
   pullPolicy: IfNotPresent
 
 # Remotely managed tunnel: Public Hostnames are configured in Cloudflare Zero Trust.
-# Point both shop/pay hosts at the Cilium Gateway Service, for example:
+# Point shop/pay (or shop-dev/pay-dev) Public Hostnames at the Cilium Gateway Service, for example:
 #   http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80
 tunnel:
   existingSecret: cloudflare-tunnel-token
@@ -23,8 +23,8 @@ externalSecrets:
 
 resources:
   requests:
-    cpu: 5m
-    memory: 16Mi
+    cpu: 10m
+    memory: 32Mi
   limits:
-    cpu: 100m
-    memory: 64Mi
+    cpu: 200m
+    memory: 128Mi

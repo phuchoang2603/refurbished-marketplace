@@ -20,21 +20,23 @@ East–west traffic is ordinary ClusterIP. Hubble L4 is the network observe path
 
 ## GitOps
 
-`talos-root` (`infra/argocd/talos/root.yaml`) renders [`infra/argocd/app-of-apps`](../../infra/argocd/app-of-apps/). Marketplace enrollment has no Istio labels. Kafka stays in namespace `kafka`.
+`dev-root` / `prod-root` (`infra/argocd/dev/root.yaml`, `infra/argocd/prod/root.yaml`) render [`infra/argocd/app-of-apps`](../../infra/argocd/app-of-apps/). Marketplace enrollment has no Istio labels. Kafka stays in namespace `kafka`.
 
 ## Edge
 
-| Hostname             | Backend                     |
-| -------------------- | --------------------------- |
-| `shop.phuchoang.sbs` | `web`                       |
-| `pay.phuchoang.sbs`  | `payment-gateway-simulator` |
+| Env  | Hostname                 | Backend                     |
+| ---- | ------------------------ | --------------------------- |
+| dev  | `shop-dev.phuchoang.sbs` | `web`                       |
+| dev  | `pay-dev.phuchoang.sbs`  | `payment-gateway-simulator` |
+| prod | `shop.phuchoang.sbs`     | `web`                       |
+| prod | `pay.phuchoang.sbs`      | `payment-gateway-simulator` |
 
 HTTPRoutes set `X-Forwarded-Proto: https` and `X-Forwarded-Host` so hosted-payment callbacks are not rewritten to HTTP (POST → Cloudflare 301 → GET → 405).
 
 Cloudflare Zero Trust Public Hostnames (not in Git):
 
-- `shop.phuchoang.sbs` → `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`
-- `pay.phuchoang.sbs` → `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`
+- `shop-dev.phuchoang.sbs` / `pay-dev.phuchoang.sbs` (dev) → `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`
+- `shop.phuchoang.sbs` / `pay.phuchoang.sbs` (prod) → same origin DNS on the prod cluster
 
 TLS terminates at Cloudflare. No marketplace TLS Secret on the Gateway. Do not reuse the `cilium-ingress` Hubble/Longhorn/Argo Gateways for shop/pay.
 

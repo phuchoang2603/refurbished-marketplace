@@ -15,8 +15,9 @@ Thanks for helping build this project. Guides live under [docs/development/](doc
 devenv shell
 export KUBECONFIG="$HOME/.kube/talos-dev.yaml"
 # secrets: docs/development/secrets.md
-kubectl apply -f infra/argocd/talos/root.yaml
-# https://shop.phuchoang.sbs
+kubectl apply -f infra/k8s/doppler-token.dev.secret.yaml
+kubectl apply -f infra/argocd/dev/root.yaml
+# https://shop-dev.phuchoang.sbs
 ```
 
 ## Development guides

@@ -1,0 +1,48 @@
+# Apply only on prod Talos. Do not apply dev-root here.
+# Secrets: kubectl apply -f infra/k8s/doppler-token.prd.secret.yaml
+# Hosts: marketplace values-prod.yaml. Kafka RF/retention and tunnel replicas: chart values-prod.yaml.
+# Pin imageTag to a release SHA (not a moving tag).
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: prod-root
+  namespace: argo-cd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io/foreground
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
+    targetRevision: main
+    path: infra/argocd/app-of-apps
+    helm:
+      values: |
+        namePrefix: prod
+        global:
+          imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
+          # Replace with a commit SHA for a coordinated release.
+          imageTag: main
+        marketplace:
+          enabled: true
+          valueFiles:
+            - values-prod.yaml
+        apps:
+          kafka:
+            valueFiles:
+              - values-prod.yaml
+          cloudflare-tunnel:
+            valueFiles:
+              - values-prod.yaml
+      parameters:
+        - name: targetRevision
+          value: $ARGOCD_APP_SOURCE_TARGET_REVISION
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argo-cd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

@@ -5,14 +5,18 @@
 - [Nix](https://nixos.org/) with [devenv](https://devenv.sh/) for pinned tooling
 - Talos kubeconfig (for example `KUBECONFIG=$HOME/.kube/talos-dev.yaml`)
 - [Doppler](https://doppler.com/) — see [secrets.md](secrets.md)
-- Cloudflare Zero Trust tunnel for `shop.phuchoang.sbs` / `pay.phuchoang.sbs`
+- Cloudflare Zero Trust tunnel for `shop-dev.phuchoang.sbs` / `pay-dev.phuchoang.sbs`
 
-Argo CD must already be installed on the cluster. Apply the GitOps root from this repo:
+Argo CD must already be installed on the cluster. On **talos-dev**, bootstrap Doppler **dev** then apply the **dev** root:
 
 ```bash
 export KUBECONFIG="$HOME/.kube/talos-dev.yaml"
-kubectl apply -f infra/argocd/talos/root.yaml
+kubectl create namespace operators --dry-run=client -o yaml | kubectl apply -f -
+kubectl apply -f infra/k8s/doppler-token.dev.secret.yaml
+kubectl apply -f infra/argocd/dev/root.yaml
 ```
+
+Do not apply `prod-root` or the `prd` Doppler token on this cluster. Prod is a separate Talos kubecontext + `infra/argocd/prod/root.yaml`.
 
 Children follow the root’s git revision. Push the branch, wait for GHCR image jobs (`:<sha>`), then set `global.imageTag` on the root to that SHA if you are not on `main`.
 
@@ -28,10 +32,10 @@ Go, protobuf, `kubectl`, `helm`, Doppler, OpenSpec. On enter, devenv regenerates
 
 Cloudflare Tunnel → Cilium Gateway (`cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`).
 
-| Hostname             | Backend                     |
-| -------------------- | --------------------------- |
-| `shop.phuchoang.sbs` | `web`                       |
-| `pay.phuchoang.sbs`  | `payment-gateway-simulator` |
+| Hostname                 | Backend                     |
+| ------------------------ | --------------------------- |
+| `shop-dev.phuchoang.sbs` | `web`                       |
+| `pay-dev.phuchoang.sbs`  | `payment-gateway-simulator` |
 
 Smoke-check:
 

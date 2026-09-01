@@ -1,6 +1,10 @@
+# Shared Application catalog. Env lives in:
+# - cluster bootstrap: operators/doppler-token (Doppler dev vs prd)
+# - infra/argocd/{dev,prod}/root.yaml: namePrefix, git revision, imageTag, optional valueFiles
+# Chart values.yaml is the Talos-dev shape. Do not add Doppler config names here.
 repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
 targetRevision: main
-namePrefix: talos
+namePrefix: dev
 
 global:
   imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace

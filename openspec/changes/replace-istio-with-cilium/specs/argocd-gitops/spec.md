@@ -74,7 +74,7 @@ The `refurbished-marketplace` and `kafka` Helm charts SHALL support `global.imag
 
 ### Requirement: Environment-specific Helm values
 
-The repository SHALL provide Helm value overlays as chart-adjacent `values-staging.yaml` files (referenced from staging Applications via `valueFiles`) for marketplace and observability where needed. Staging overlays SHALL set `global.imageTag` to `main` for marketplace/kafka images. Production overlays SHALL set `global.imageTag` to a commit SHA for coordinated releases when production is added.
+The repository SHALL provide a chart-adjacent `values-prod.yaml` overlay (referenced from prod-root via `valueFiles`) for production marketplace hostnames. Dev uses chart `values.yaml`.
 
 #### Scenario: Staging pulls rolling main tag
 

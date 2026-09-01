@@ -1,6 +1,6 @@
 global:
-  imageRegistry: ""
-  imageTag: ""
+  imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
+  imageTag: main
 
 # Namespace that hosts marketplace CNPG databases and app secrets
 # (orders-app, payment-app, products-app). Kafka itself deploys to Release.Namespace.
@@ -15,59 +15,57 @@ kafka:
   minInsyncReplicas: 1
   storage:
     size: 5Gi
-  # Broker JVM / requests. Staging overlays values-staging.yaml.
   jvmOptions:
-    "-Xms": 256m
-    "-Xmx": 256m
+    "-Xms": 512m
+    "-Xmx": 512m
   resources:
     requests:
-      cpu: 50m
-      memory: 384Mi
+      cpu: 100m
+      memory: 768Mi
     limits:
-      cpu: 500m
-      memory: 512Mi
+      cpu: "1"
+      memory: 1Gi
 
 # Topic/user operators previously ran BestEffort (no requests) and got
 # starved on busy nodes — health probes never bound and Kafka stayed NotReady.
 entityOperator:
   topicOperator:
     jvmOptions:
-      "-Xms": 128m
-      "-Xmx": 128m
+      "-Xms": 256m
+      "-Xmx": 256m
     resources:
       requests:
         cpu: 50m
-        memory: 256Mi
+        memory: 384Mi
       limits:
         cpu: 500m
-        memory: 384Mi
+        memory: 512Mi
   userOperator:
     jvmOptions:
-      "-Xms": 128m
-      "-Xmx": 128m
+      "-Xms": 256m
+      "-Xmx": 256m
     resources:
       requests:
         cpu: 50m
-        memory: 256Mi
+        memory: 384Mi
       limits:
         cpu: 500m
-        memory: 384Mi
+        memory: 512Mi
 
 connect:
   clusterName: ecommerce-connect-cluster
   image: connect-debezium
-  # Keep enough heap for Debezium plugin scan; still below prior 512m/768Mi local burn.
   jvmOptions:
-    "-Xms": 256m
-    "-Xmx": 256m
+    "-Xms": 512m
+    "-Xmx": 512m
   # spec.tracing (Strimzi OTEL java agent) adds ~200Mi of non-heap overhead
   # (agent + metaspace + direct buffers); 512Mi limit caused repeated OOMKills.
   resources:
     requests:
-      cpu: 50m
-      memory: 512Mi
-    limits:
+      cpu: 100m
       memory: 768Mi
+    limits:
+      memory: 1Gi
   livenessProbe:
     initialDelaySeconds: 180
     timeoutSeconds: 5
@@ -83,7 +81,7 @@ entities:
     topics:
       - name: orders.created
         partitions: 1
-        retention: 86400000 # 1 day local
+        retention: 86400000 # 1 day
     connector:
       name: orders-outbox
       sourceSecretName: orders-app
@@ -125,7 +123,7 @@ entities:
       outboxTable: public.inventory_outbox
       publicationAutocreateMode: filtered
 provectus:
-  enabled: false
+  enabled: true
   name: kafka-ui
   image: provectuslabs/kafka-ui:v0.7.2
   port: 8080

@@ -2,7 +2,7 @@
 
 Today: Tilt on Colima owns marketplace Helm + `docker_build` + templ/tailwind watches; Argo `local-root` skips marketplace; staging Argo tracks `main` and GHCR `:main`. Talos already runs Cilium. Tilt against Talos would need a registry and `live_update` because Talos does not share the laptop Docker daemon.
 
-New intent: **no Tilt deploy path.** One Talos cluster, Argo CD is the only applier, git branch + GHCR SHA is the inner loop.
+New intent: **no Tilt deploy path.** Talos + Argo CD is the only applier. Dev and prod are two Talos clusters; git branch + GHCR SHA is the inner loop on talos-dev.
 
 templ `_templ.go` files are already committed; Tailwind CSS is copied from the repo in `web.Dockerfile`. Watches were convenience, not a cluster requirement.
 
@@ -14,7 +14,7 @@ Follow-on: `add-cilium-mesh-policy-and-canary`.
 
 - One dataplane: Cilium CNI + Cilium Gateway API + Hubble L4 on Talos.
 - Same browser contract: Cloudflare HTTPS, HTTP origin, host-based routes, forwarded proto/host headers.
-- Dev and prod share one cluster shape: same Argo apps, GHCR images, observability, CNPG-in-chart, shop/pay Gateway. Overlays only for revision, image SHA, and secrets if required.
+- Dev and prod share one Talos chart shape (GHCR, observability, CNPG-in-chart, Cilium Gateway). Env is two clusters: Doppler token on the cluster, thin Argo roots (`dev-root` / `prod-root`), and `values-prod.yaml` for prod hostnames only.
 - CI publishes images Argo can pull: SHA tags on `main` and on PRs; prune PR-only GHCR versions when the PR closes.
 - Remove Istio; kafka stays out of L7 intercept.
 
@@ -24,7 +24,6 @@ Follow-on: `add-cilium-mesh-policy-and-canary`.
 - Preview environments per PR (extra namespaces, hosts, CNPG clusters). One live `ecommerce` on the cluster.
 - Hubble L7 metrics / Istio-RED replacement.
 - Cilium as an Argo Application.
-- Production app-of-apps (still deferred).
 - Mesh/Gateway proxy spans.
 
 ## Decisions
@@ -37,7 +36,7 @@ This repo does **not** keep a second Cilium values file (it would drift). Market
 
 ### 2. Argo CD is the only deploy path; delete Tilt-era quirks
 
-One Talos cluster, one app-of-apps root, marketplace always an Argo Application, images always GHCR. Chart **defaults** are that cluster (prod-like), not a Colima profile that staging overlays back to reality.
+One Talos cluster, one app-of-apps catalog, marketplace always an Argo Application, images always GHCR. Chart **defaults** are talos-dev. Prod is a second cluster with `prod-root` + Doppler `prd` + `values-prod.yaml` hosts.
 
 **Delete (legacy / Tilt-only):**
 
@@ -49,7 +48,7 @@ One Talos cluster, one app-of-apps root, marketplace always an Argo Application,
 | `local-root` with `marketplace.enabled: false`                                                                    | Tilt owned the app chart                         | Single root; marketplace on                                                |
 | Empty `global.imageRegistry` → short image names                                                                  | Tilt loaded images into Colima Docker            | Always `ghcr.io/.../name:sha`                                              |
 | Marketplace `values.yaml` Colima CPU/mem / 512Mi PVCs                                                             | Fit 4 CPU / 8 GiB k3s                            | Defaults = current staging-class requests/limits/storage                   |
-| Observability chart defaults apps-only (no node-exporter/ksm/Alertmanager/default dashboards)                     | Colima RAM                                       | Defaults = full platform stack (today’s `values-staging.yaml` shape)       |
+| Observability chart defaults apps-only (no node-exporter/ksm/Alertmanager/default dashboards)                     | Colima RAM                                       | Defaults = full platform stack (former `values-staging.yaml` shape)        |
 | Dual Istio CNI `platform: k3s` vs RKE2 overlays                                                                   | Colima vs old staging                            | Istio charts deleted                                                       |
 | `mesh.tpl` comments + ambient labels for Tilt vs Argo namespace fight                                             | Two appliers                                     | No waypoint; Argo owns ns metadata                                         |
 | devenv `DOCKER_HOST` Colima k8s socket, `tilt` package                                                            | Local k8s + Tilt                                 | Docker only if Testcontainers needs it; drop Tilt                          |

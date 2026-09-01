@@ -7,8 +7,8 @@ ingress:
   enabled: true
   name: ecommerce-ingress
   port: 80
-  webHostname: shop.phuchoang.sbs
-  simulatorHostname: pay.phuchoang.sbs
+  webHostname: shop-dev.phuchoang.sbs
+  simulatorHostname: pay-dev.phuchoang.sbs
 
 defaults:
   otel:

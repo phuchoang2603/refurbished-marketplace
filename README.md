@@ -44,7 +44,7 @@ graph LR
 - `templ` for typed server-rendered HTML components.
 - Datastar-compatible markup for browser interactions and fragment updates.
 - Kubernetes + Helm (CloudNativePG, Strimzi, Cilium Gateway API, External Secrets).
-- GitOps: Argo CD on Talos (`talos-root` / shared `app-of-apps`); images from GHCR.
+- GitOps: Argo CD on Talos (`dev-root` / `prod-root` → shared `app-of-apps`); images from GHCR.
 - Cloudflare Tunnel to Cilium Gateway for browser ingress.
 - Nix/devenv for local tooling (codegen); OpenSpec for change proposals.
 
@@ -57,6 +57,7 @@ Quick start:
 ```bash
 devenv shell
 export KUBECONFIG="$HOME/.kube/talos-dev.yaml"
-kubectl apply -f infra/argocd/talos/root.yaml
-# https://shop.phuchoang.sbs
+kubectl apply -f infra/k8s/doppler-token.dev.secret.yaml
+kubectl apply -f infra/argocd/dev/root.yaml
+# https://shop-dev.phuchoang.sbs
 ```

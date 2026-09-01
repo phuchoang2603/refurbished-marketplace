@@ -1,8 +1,19 @@
 # GitOps deployment (Argo CD)
 
-One Talos cluster. `talos-root` (`infra/argocd/talos/root.yaml`) → [`infra/argocd/app-of-apps`](../../infra/argocd/app-of-apps/). Chart defaults are production-like (GHCR images, full observability). Operator/Kafka/tunnel overlays still use chart-adjacent `values-staging.yaml` where those charts keep env files.
+Talos is the runtime for **dev** and **prod**. Argo CD itself stays cluster bootstrap (talos-proxmox). This repo only adds a thin root Application per cluster.
 
-Child Applications inherit `targetRevision` via `$ARGOCD_APP_SOURCE_TARGET_REVISION`. Point the root at a branch and set `global.imageTag` to that commit SHA (after CI publishes GHCR images) to run a PR on the cluster. One live `ecommerce` namespace — one git revision at a time. Retarget to `main` before PR image cleanup.
+## Where env lives
+
+| Layer       | What                                       | Dev                                                                  | Prod                                                                                          |
+| ----------- | ------------------------------------------ | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Cluster     | kubeconfig, apply one root                 | `~/.kube/talos-dev.yaml` + `dev-root`                                | prod kubeconfig + `prod-root`                                                                 |
+| Secrets     | `operators/doppler-token` (not Helm)       | `doppler-token.dev.secret.yaml`                                      | `doppler-token.prd.secret.yaml`                                                               |
+| Git (root)  | `namePrefix`, `targetRevision`, `imageTag` | `dev`, track `main` or a PR SHA                                      | `prod`, pin a release SHA                                                                     |
+| Git (chart) | `values.yaml`                              | default (shop-dev, 1 Kafka replica, 1-day topic retention, 1 tunnel) | `values-prod.yaml` on marketplace (hosts), kafka (RF 3, 7-day retention), tunnel (2 replicas) |
+
+Do not apply both roots on one cluster (`ecommerce` is shared). Do not put Doppler config names in Helm. Cloudflare Public Hostnames stay in Zero Trust; origin DNS is `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`.
+
+Child Applications inherit `targetRevision` via `$ARGOCD_APP_SOURCE_TARGET_REVISION`. On talos-dev, point `dev-root` at a branch and set `global.imageTag` to that SHA after GHCR publishes. Retarget to `main` before PR image cleanup.
 
 ## What Argo CD syncs
 
@@ -16,9 +27,9 @@ Child Applications inherit `targetRevision` via `$ARGOCD_APP_SOURCE_TARGET_REVIS
 | `kafka`                   | This repo     | Debezium reads secrets/DBs in `ecommerce`            | `kafka`             |
 | `cloudflare-tunnel`       | This repo     | `cloudflared`; token via Doppler ExternalSecret      | `cloudflare-tunnel` |
 
-Cilium is cluster-owned in **talos-proxmox** (`apps/values/cilium.yaml` + L2/Gateway manifests), not this repo and not an Argo app. See [`infra/cilium/README.md`](../../infra/cilium/README.md). Argo here may later apply marketplace policies/routes only.
+Cilium is cluster-owned in **talos-proxmox**, not an Argo app. See [`infra/cilium/README.md`](../../infra/cilium/README.md).
 
-`monitoring` is privileged PSS for node-exporter. Apply `talos-root` after Argo CD is installed on the cluster (Helm, not Tilt).
+`monitoring` is privileged PSS for node-exporter.
 
 **Bootstrap:** Doppler service token Secret in `operators` — see [secrets](../development/secrets.md).
 
@@ -29,7 +40,8 @@ infra/argocd/
 ├── app-of-apps/
 │   ├── values.yaml
 │   └── templates/applications.tpl
-└── talos/root.yaml
+├── dev/root.yaml
+└── prod/root.yaml
 ```
 
 ## Images
