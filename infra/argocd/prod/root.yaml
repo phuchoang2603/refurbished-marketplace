@@ -1,5 +1,5 @@
-# Apply only on prod Talos. Do not apply dev-root here.
-# Secrets: kubectl apply -f infra/k8s/doppler-token.prd.secret.yaml
+# Apply on the gpu cluster (Argo CD). Workloads land on the registered `prod` cluster.
+# Secrets on prod: kubectl --kubeconfig=$HOME/.kube/talos-prod.yaml apply -f infra/k8s/doppler-token.prd.secret.yaml
 # Images: GHCR :main. Hosts/Kafka/tunnel: chart values-prod.yaml.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -17,6 +17,7 @@ spec:
     helm:
       values: |
         namePrefix: prod
+        destinationName: prod
         global:
           imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
           imageTag: main
@@ -36,6 +37,7 @@ spec:
         - name: targetRevision
           value: $ARGOCD_APP_SOURCE_TARGET_REVISION
   destination:
+    # Application CRs stay on gpu (where Argo CD runs).
     server: https://kubernetes.default.svc
     namespace: argo-cd
   syncPolicy:

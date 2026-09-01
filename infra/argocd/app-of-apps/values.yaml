@@ -1,10 +1,12 @@
 # Shared Application catalog. Env lives in:
-# - cluster bootstrap: operators/doppler-token (Doppler dev vs prd)
-# - infra/argocd/{dev,prod}/root.yaml: namePrefix, git revision, imageTag, optional valueFiles
+# - dest cluster: operators/doppler-token (Doppler dev vs prd)
+# - infra/argocd/{dev,prod}/root.yaml: namePrefix, destinationName, git revision, imageTag
 # Chart values.yaml is the Talos-dev shape. Do not add Doppler config names here.
+# Argo CD runs on the gpu cluster; destinationName is the registered Argo cluster (dev / prod).
 repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
 targetRevision: main
 namePrefix: dev
+destinationName: dev
 
 global:
   imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace

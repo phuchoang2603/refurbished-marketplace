@@ -1,19 +1,20 @@
 # GitOps deployment (Argo CD)
 
-Talos is the runtime for **dev** and **prod**. Argo CD itself stays cluster bootstrap (talos-proxmox). This repo only adds a thin root Application per cluster.
+Talos **dev** and **prod** are the runtimes. Argo CD runs on the **gpu** cluster (talos-proxmox `bootstrap-gpu.sh`) and registers remotes named `dev` and `prod`. This repo’s root Applications live in gpu `argo-cd`; children destine those cluster names.
 
 ## Where env lives
 
 | Layer       | What                                       | Dev                                                                  | Prod                                                                                          |
 | ----------- | ------------------------------------------ | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Cluster     | kubeconfig, apply one root                 | `~/.kube/talos-dev.yaml` + `dev-root`                                | prod kubeconfig + `prod-root`                                                                 |
-| Secrets     | `operators/doppler-token` (not Helm)       | `doppler-token.dev.secret.yaml`                                      | `doppler-token.prd.secret.yaml`                                                               |
+| Argo        | apply roots                                | `~/.kube/talos-gpu.yaml` + `dev-root` (`destinationName: dev`)       | same gpu kubeconfig + `prod-root` (`destinationName: prod`)                                   |
+| Workloads   | kubeconfig for Doppler / kubectl           | `~/.kube/talos-dev.yaml`                                             | prod kubeconfig                                                                               |
+| Secrets     | `operators/doppler-token` (not Helm)       | `doppler-token.dev.secret.yaml` on talos-dev                         | `doppler-token.prd.secret.yaml` on prod                                                       |
 | Git (root)  | `namePrefix`, `targetRevision`, `imageTag` | `dev`, branch or `main`; images = `$ARGOCD_APP_REVISION`             | `prod`, git `main`; images = `:main`                                                          |
 | Git (chart) | `values.yaml`                              | default (shop-dev, 1 Kafka replica, 1-day topic retention, 1 tunnel) | `values-prod.yaml` on marketplace (hosts), kafka (RF 3, 7-day retention), tunnel (2 replicas) |
 
-Do not apply both roots on one cluster (`ecommerce` is shared). Do not put Doppler config names in Helm. Cloudflare Public Hostnames stay in Zero Trust; origin DNS is `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`.
+Both roots may be applied on gpu; they target different clusters. Do not put Doppler config names in Helm. Cloudflare Public Hostnames stay in Zero Trust; origin DNS is `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`.
 
-Child Applications inherit `targetRevision` via `$ARGOCD_APP_SOURCE_TARGET_REVISION`. Change `dev-root` `spec.source.targetRevision` in `infra/argocd/dev/root.yaml`, commit, and `kubectl apply -f` that file. `global.imageTag` is `$ARGOCD_APP_REVISION`. Wait for GHCR `:<sha>` or pods ImagePullBackOff until the image job finishes. Set the field back to `main` before merge / PR image cleanup.
+Child Applications inherit `targetRevision` via `$ARGOCD_APP_SOURCE_TARGET_REVISION`. Change `dev-root` `spec.source.targetRevision` in `infra/argocd/dev/root.yaml`, commit, and `kubectl apply -f` that file on gpu. `global.imageTag` is `$ARGOCD_APP_REVISION`. Wait for GHCR `:<sha>` or pods ImagePullBackOff until the image job finishes. Set the field back to `main` before merge / PR image cleanup.
 
 ## What Argo CD syncs
 

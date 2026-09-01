@@ -5,7 +5,7 @@ Application secrets are **not** committed to Git. External Secrets Operator sync
 ## Doppler project
 
 1. Create a Doppler project named `refurbished-marketplace`.
-2. Use Doppler config `dev` on talos-dev and `prd` on prod. The service token Secret on that cluster selects the config; Argo does not set it.
+2. Use Doppler config `dev` on talos-dev and `prd` on prod. The service token Secret on that cluster selects the config; Argo does not set it. Apply tokens with the **workload** kubeconfig, not gpu.
 
 ## Application secrets
 
@@ -25,10 +25,10 @@ Application secrets are **not** committed to Git. External Secrets Operator sync
 ESO reads `operators/doppler-token` key `dopplerToken`.
 
 ```bash
-# talos-dev
-kubectl apply -f infra/k8s/doppler-token.dev.secret.yaml
-# prod Talos
-kubectl apply -f infra/k8s/doppler-token.prd.secret.yaml
+# talos-dev workloads
+kubectl --kubeconfig="$HOME/.kube/talos-dev.yaml" apply -f infra/k8s/doppler-token.dev.secret.yaml
+# prod workloads
+kubectl --kubeconfig="$HOME/.kube/talos-prod.yaml" apply -f infra/k8s/doppler-token.prd.secret.yaml
 ```
 
 Do not commit tokens. Do not set Doppler `dev`/`prd` in Helm or Argo values.

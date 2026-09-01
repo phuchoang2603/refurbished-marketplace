@@ -58,6 +58,11 @@ The repository SHALL provide a shared Argo CD app-of-apps Helm chart under `infr
 - **WHEN** the Talos root sets `global.imageRegistry` and `global.imageTag`
 - **THEN** child Applications that inject global images (for example kafka and marketplace) render those values into their Helm `values`
 
+#### Scenario: Children destine the registered cluster
+
+- **WHEN** a root Application sets `destinationName` to `dev` or `prod`
+- **THEN** child Applications destine that Argo CD cluster name (not in-cluster on gpu)
+
 ### Requirement: Chart image registry and tag resolution
 
 The `refurbished-marketplace` and `kafka` Helm charts SHALL support `global.imageRegistry` and `global.imageTag`. Cluster deploys SHALL always render GHCR image references (`{registry}/{shortName}:{tag}`). Empty registry / short Colima names SHALL NOT be a supported cluster path. Chart default resources and PVC sizes SHALL match the production-like profile (not a Colima-miniature overlay).

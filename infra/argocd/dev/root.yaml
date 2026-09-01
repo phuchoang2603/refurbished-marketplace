@@ -1,5 +1,5 @@
-# Apply only on talos-dev. Do not apply prod-root here.
-# Secrets: kubectl apply -f infra/k8s/doppler-token.dev.secret.yaml
+# Apply on the gpu cluster (Argo CD). Workloads land on the registered `dev` cluster.
+# Secrets on talos-dev: kubectl --kubeconfig=$HOME/.kube/talos-dev.yaml apply -f infra/k8s/doppler-token.dev.secret.yaml
 # Images: GHCR :<git-sha> ($ARGOCD_APP_REVISION).
 # Git pointer is spec.source.targetRevision in this file. Change it here, commit, apply.
 # Before merging this change to main, set targetRevision back to main.
@@ -19,6 +19,7 @@ spec:
     helm:
       values: |
         namePrefix: dev
+        destinationName: dev
         global:
           imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
           imagePullPolicy: Always
@@ -30,6 +31,7 @@ spec:
         - name: global.imageTag
           value: $ARGOCD_APP_REVISION
   destination:
+    # Application CRs stay on gpu (where Argo CD runs).
     server: https://kubernetes.default.svc
     namespace: argo-cd
   syncPolicy:

@@ -50,7 +50,7 @@ graph LR
 
 ## Development
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/development/](docs/development/) for devenv, Argo on Talos, secrets, and OpenSpec.
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/development/](docs/development/) for devenv, Argo on gpu, secrets, and OpenSpec.
 
 Quick start:
 
@@ -58,6 +58,7 @@ Quick start:
 devenv shell
 export KUBECONFIG="$HOME/.kube/talos-dev.yaml"
 kubectl apply -f infra/k8s/doppler-token.dev.secret.yaml
+export KUBECONFIG="$HOME/.kube/talos-gpu.yaml"
 kubectl apply -f infra/argocd/dev/root.yaml
 # https://shop-dev.phuchoang.sbs
 ```

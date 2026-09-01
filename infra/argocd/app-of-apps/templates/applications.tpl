@@ -32,7 +32,7 @@ spec:
           imagePullPolicy: {{ $.Values.global.imagePullPolicy | default "IfNotPresent" | quote }}
 {{- end }}
   destination:
-    server: https://kubernetes.default.svc
+    name: {{ $.Values.destinationName | quote }}
     namespace: {{ $app.namespace }}
   syncPolicy:
     automated:
@@ -108,7 +108,7 @@ spec:
           imagePullPolicy: {{ .Values.global.imagePullPolicy | default "IfNotPresent" | quote }}
 {{- end }}
   destination:
-    server: https://kubernetes.default.svc
+    name: {{ .Values.destinationName | quote }}
     namespace: ecommerce
   syncPolicy:
     automated:
