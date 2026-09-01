@@ -10,7 +10,7 @@ import (
 
 	"github.com/XSAM/otelsql"
 	"go.opentelemetry.io/otel/attribute"
-	semconv "go.opentelemetry.io/otel/semconv/v1.41.0"
+	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 )
 
 const maxDBQueryTextLen = 1024
