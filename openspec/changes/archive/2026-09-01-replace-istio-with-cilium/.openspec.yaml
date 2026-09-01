@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-08-31
+goal: "Single dataplane: Cilium CNI + Gateway API. Remove Istio charts and
+  waypoint. Observe via app OTEL traces; RED metrics are a follow-on."

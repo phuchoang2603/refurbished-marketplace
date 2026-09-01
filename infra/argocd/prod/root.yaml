@@ -1,0 +1,52 @@
+# Apply on the gpu cluster (Argo CD). Workloads land on the registered `prod` cluster.
+# Secrets on prod: kubectl --kubeconfig=$HOME/.kube/talos-prod.yaml apply -f infra/k8s/doppler-token.prd.secret.yaml
+# Images: GHCR :main. Hosts/Kafka/tunnel: chart values-prod.yaml.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: prod-root
+  namespace: argo-cd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io/foreground
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
+    targetRevision: main
+    path: infra/argocd/app-of-apps
+    helm:
+      values: |
+        namePrefix: prod
+        destinationName: prod
+        global:
+          imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
+          imageTag: main
+          imagePullPolicy: Always
+        marketplace:
+          enabled: true
+          valueFiles:
+            - values-prod.yaml
+        apps:
+          observability:
+            valueFiles:
+              - values-prod.yaml
+          kafka:
+            valueFiles:
+              - values-prod.yaml
+          cloudflare-tunnel:
+            valueFiles:
+              - values-prod.yaml
+      parameters:
+        - name: targetRevision
+          value: $ARGOCD_APP_SOURCE_TARGET_REVISION
+  destination:
+    # Application CRs stay on gpu (where Argo CD runs).
+    server: https://kubernetes.default.svc
+    namespace: argo-cd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

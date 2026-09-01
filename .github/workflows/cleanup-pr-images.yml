@@ -24,7 +24,7 @@ jobs:
 
           owner = os.environ["OWNER"]
           repo = os.environ["REPO"]
-          tag = f"pr-{os.environ['PR']}"
+          pr = os.environ["PR"]
           images = [
               "web", "users", "users-migrator", "products", "products-migrator",
               "orders", "orders-migrator", "cart", "payment", "payment-migrator",
@@ -39,26 +39,49 @@ jobs:
                   text=True,
               )
 
+          def paginate(path):
+              items = []
+              page = 1
+              while True:
+                  listed = gh(f"{path}?per_page=100&page={page}")
+                  if listed.returncode != 0 or not listed.stdout.strip():
+                      break
+                  try:
+                      chunk = json.loads(listed.stdout)
+                  except json.JSONDecodeError:
+                      break
+                  if isinstance(chunk, dict):
+                      chunk = [chunk]
+                  if not chunk:
+                      break
+                  items.extend(chunk)
+                  if len(chunk) < 100:
+                      break
+                  page += 1
+              return items
+
+          shas = {
+              c["sha"]
+              for c in paginate(f"/repos/{owner}/{repo}/pulls/{pr}/commits")
+              if c.get("sha")
+          }
+          if not shas:
+              print("no PR commits; nothing to delete")
+              raise SystemExit(0)
+
           for image in images:
               pkg = urllib.parse.quote(f"{repo}/{image}", safe="")
               list_path = f"/users/{owner}/packages/container/{pkg}/versions"
-              listed = gh("--paginate", list_path)
-              if listed.returncode != 0 or not listed.stdout.strip():
-                  continue
-              try:
-                  versions = json.loads(listed.stdout)
-              except json.JSONDecodeError:
-                  continue
-              if isinstance(versions, dict):
-                  versions = [versions]
-              for version in versions:
+              for version in paginate(list_path):
                   tags = (
                       (version.get("metadata") or {})
                       .get("container", {})
                       .get("tags")
                       or []
                   )
-                  if tag not in tags or "main" in tags:
+                  if "main" in tags:
+                      continue
+                  if not (set(tags) & shas):
                       continue
                   vid = version["id"]
                   print(f"deleting {repo}/{image} version {vid} tags={tags}")

@@ -1,0 +1,10 @@
+# Prod overlay (Argo `prod-root` valueFiles).
+ingress:
+  hostname: grafana.phuchoang.sbs
+
+victoria-metrics-k8s-stack:
+  grafana:
+    grafana.ini:
+      server:
+        domain: grafana.phuchoang.sbs
+        root_url: https://grafana.phuchoang.sbs

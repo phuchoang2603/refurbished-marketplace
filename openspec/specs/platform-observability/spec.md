@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Define the VictoriaMetrics Kubernetes metrics, logs, traces, dashboards, and alerting stack delivered through a repository-owned Helm wrapper and staging GitOps, without requiring application instrumentation in the first slice.
+Define the VictoriaMetrics Kubernetes metrics, logs, traces, dashboards, and alerting stack delivered through a repository-owned Helm wrapper and Talos GitOps, without requiring per-service `/metrics` endpoints for platform closure.
 
 ## Requirements
 
 ### Requirement: Victoria observability stack
 
-The repository SHALL provide a local Helm wrapper chart for deploying the VictoriaMetrics Kubernetes metrics, logs, traces, dashboards, and alerting stack.
+The repository SHALL provide a Helm wrapper chart for deploying the VictoriaMetrics Kubernetes metrics, logs, traces, dashboards, and alerting stack. Chart defaults SHALL be the full platform profile (node-exporter, kube-state-metrics, Alertmanager, default dashboards, staging-class PVC sizes). A Colima apps-only default overlay SHALL NOT exist.
 
 #### Scenario: Wrapper chart defines observability stack
 
@@ -17,8 +17,8 @@ The repository SHALL provide a local Helm wrapper chart for deploying the Victor
 
 #### Scenario: Stack includes core metrics components
 
-- **WHEN** the observability chart is rendered
-- **THEN** it includes VictoriaMetrics metrics storage, VMAgent scraping, Grafana, Alertmanager, kube-state-metrics, and node-exporter components according to chart values
+- **WHEN** the observability chart is rendered with default values
+- **THEN** it includes VictoriaMetrics metrics storage, VMAgent scraping, Grafana, Alertmanager, kube-state-metrics, and node-exporter
 
 #### Scenario: Stack uses single-node backends
 
@@ -35,15 +35,10 @@ The repository SHALL provide a local Helm wrapper chart for deploying the Victor
 - **WHEN** single-node backend retention is configured
 - **THEN** metrics retention is `7d`, logs retention is `3d`, and traces retention is `3d`
 
-#### Scenario: Stack uses local PVC sizes
+#### Scenario: Stack uses one PVC size profile
 
-- **WHEN** the observability chart is rendered for local validation
-- **THEN** VMSingle requests `5Gi`, VLSingle requests `5Gi`, and VTSingle requests `2Gi` of storage
-
-#### Scenario: Stack uses staging PVC sizes
-
-- **WHEN** the observability chart is rendered for staging
-- **THEN** VMSingle requests `20Gi`, VLSingle requests `20Gi`, and VTSingle requests `10Gi` of storage
+- **WHEN** the observability chart is rendered
+- **THEN** VMSingle requests `20Gi`, VLSingle requests `20Gi`, and VTSingle requests `10Gi` of storage (no separate 5Gi/5Gi/2Gi Colima profile)
 
 #### Scenario: Stack includes logs backend
 
@@ -57,17 +52,17 @@ The repository SHALL provide a local Helm wrapper chart for deploying the Victor
 
 ### Requirement: Local Argo deploys observability
 
-Local Argo CD (`local-root` → shared app-of-apps chart defaults / inline `helm.values`) SHALL deploy the observability stack into the `monitoring` namespace using chart default values.
+Argo CD on Talos SHALL deploy the observability stack into the `monitoring` namespace using those full-platform chart defaults (not `local-root` apps-only values).
 
-#### Scenario: Local Argo includes observability stack
+#### Scenario: Argo includes observability stack
 
-- **WHEN** the local app-of-apps syncs
+- **WHEN** the Talos app-of-apps syncs
 - **THEN** Argo CD manages an observability Application that deploys into `monitoring`
 
-#### Scenario: Local Grafana is reachable via port-forward
+#### Scenario: Grafana is reachable via Gateway or port-forward
 
-- **WHEN** the local observability stack is healthy
-- **THEN** documentation explains how to port-forward Grafana in the `monitoring` namespace
+- **WHEN** the observability stack is healthy
+- **THEN** a Cilium Gateway/HTTPRoute exposes Grafana (dev: `grafana-dev.phuchoang.sbs`) and documentation also explains how to port-forward Grafana in the `monitoring` namespace
 
 ### Requirement: Backend-first scope
 
@@ -83,15 +78,10 @@ The observability stack SHALL provide metrics, logs, and traces backends. Custom
 - **WHEN** marketplace services emit JSON slog lines to stdout
 - **THEN** VLAgent continues to collect those lines into VictoriaLogs without requiring a separate application log exporter
 
-#### Scenario: Application and mesh traces may use VictoriaTraces
+#### Scenario: Application traces use VictoriaTraces
 
 - **WHEN** distributed tracing is enabled for marketplace workloads
-- **THEN** Go services and Istio OpenTelemetry tracing MAY export OTLP spans to VictoriaTraces for Grafana Explore
-
-#### Scenario: Istio supplies service request metrics
-
-- **WHEN** Istio L7 metrics are scraped from waypoint and ingress
-- **THEN** request rate, request latency, and request error ratio dashboards can use those Istio metrics instead of per-service custom instrumentation where those metrics are sufficient
+- **THEN** Go services MAY export OTLP spans to VictoriaTraces for Grafana Explore
 
 ### Requirement: Grafana datasources and alerting baseline
 
@@ -124,11 +114,11 @@ The repository SHALL document how developers and operators access Grafana, verif
 #### Scenario: Developer opens Grafana
 
 - **WHEN** observability is deployed
-- **THEN** documentation explains the Grafana port-forward and basic login/access path
+- **THEN** documentation explains the Grafana public hostname or port-forward and basic login/access path
 
 #### Scenario: Operator verifies scrape health
 
-- **WHEN** staging observability is deployed
+- **WHEN** observability is deployed
 - **THEN** documentation explains how to verify that scrape targets are healthy
 
 #### Scenario: Operator correlates traces to logs
@@ -136,27 +126,13 @@ The repository SHALL document how developers and operators access Grafana, verif
 - **WHEN** structured application logging is enabled
 - **THEN** documentation explains how to filter VictoriaLogs by `service` and `trace_id` and how to use Grafana Trace → logs
 
-### Requirement: Istio L7 metrics scrapes target waypoint and ingress only
+### Requirement: VictoriaTraces accepts application OTLP
 
-The observability chart SHALL scrape Istio L7 metrics from the marketplace waypoint and ingress Gateway proxies and SHALL NOT scrape istiod, ztunnel, or istio-cni as part of the default Istio scrape set.
-
-#### Scenario: Waypoint and ingress are scraped
-
-- **WHEN** `istioScrapes` is enabled in the observability chart
-- **THEN** VMPodScrape (or equivalent) targets exist for the ecommerce waypoint and the ecommerce ingress Gateway proxies
-
-#### Scenario: Control-plane ambient scrapes are absent
-
-- **WHEN** `istioScrapes` is enabled in the observability chart
-- **THEN** the chart does not create scrape targets for istiod, ztunnel, or istio-cni
-
-### Requirement: VictoriaTraces accepts application and mesh OTLP
-
-The platform observability stack SHALL remain the destination for distributed traces visualized in Grafana, including spans exported by marketplace services and Istio OpenTelemetry tracing.
+The platform observability stack SHALL remain the destination for distributed traces visualized in Grafana, including spans exported by marketplace services. Mesh, Hubble, or Gateway proxy tracing is not required.
 
 #### Scenario: Grafana still uses VictoriaTraces
 
-- **WHEN** operators inspect traces after application and mesh exporters are enabled
+- **WHEN** operators inspect traces after application exporters are enabled
 - **THEN** they use the existing Grafana VictoriaTraces datasource rather than a temporary tracing UI
 
 ### Requirement: Trace to logs correlation in Grafana

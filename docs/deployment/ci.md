@@ -17,7 +17,7 @@ The `govulncheck` job uses the same service matrix and path-filter fan-out as `t
 
 ## Container images (GHCR)
 
-Pushes to `main` that touch image-related paths trigger `.github/workflows/release-images.yml` (`:main` and `:<commit-sha>`). Pull requests on the same paths push `:<commit-sha>` and `:pr-<n>` (never `:main`). Closed PRs run `.github/workflows/cleanup-pr-images.yml` to delete `:pr-<n>` package versions (not `:main`). Argo CD `global.imageTag` must be the git SHA, not the moving `pr-*` tag. Retarget the cluster to `main` before cleanup.
+Pushes to `main` that touch image-related paths trigger `.github/workflows/release-images.yml` (`:<git-sha>` and `:main`). Pull requests and dispatch off `main` push `:<git-sha>` only (PR head SHA, never `:main`). Closed PRs run `.github/workflows/cleanup-pr-images.yml` to delete GHCR versions tagged only with that PR’s commit SHAs (never `:main`). Dev Argo sets `global.imageTag` to `$ARGOCD_APP_REVISION`; prod uses `:main`. Retarget talos-dev off the PR branch before cleanup.
 
 See [gitops.md](gitops.md).
 

@@ -7,13 +7,13 @@ context: |
   Development Workflow:
   - devenv.nix manages local development tooling; if tools are missing, add them to devenv.nix and run `direnv reload`
   - Go multi-module workspace. Prefer the devenv `tidy` script for `go work sync`
-  - Local Kubernetes is Colima/k3s. Primary DX is `tilt up`: Tilt deploys the refurbished-marketplace chart and builds images; Tilt also installs Argo CD and applies `infra/argocd/local/root.yaml` (shared `infra/argocd/app-of-apps` with inline local helm.values) for operators, Istio, Kafka, observability, and Cloudflare Tunnel (marketplace is not an Argo Application locally). Do not try to compile and run Go services as host processes (tests are okay)
-  - Chart `values.yaml` is Colima-local (short image names, ambient mesh, Istio ingress on `shop-dev.phuchoang.sbs` / `pay-dev.phuchoang.sbs`). Staging overlays live in `values-staging.yaml`
-  - Browser access locally is Cloudflare Tunnel → Istio Gateway; Tilt also exposes debug port-forwards (web 8080, gRPC, CNPG)
-  - HTML-first web edge using chi, templ, Tailwind CSS, Datastar, and vendored DatastarUI-style components. Prefer Tilt `templ-watch` / `tailwind-watch` rather than hand-running codegen unless asked
+  - Talos Kubernetes + Argo CD on the gpu cluster (`infra/argocd/dev/root.yaml` or `prod/root.yaml` → app-of-apps). Children destine registered clusters `dev` / `prod`. Marketplace, operators, Kafka, observability, and Cloudflare Tunnel are Argo Applications. Images come from GHCR (`:<git-sha>` on talos-dev via `$ARGOCD_APP_REVISION`, `:main` on prod). Do not compile and run Go services as host processes (tests are okay)
+  - Chart `values.yaml` is Talos-shaped (GHCR, Cilium Gateway, shop-dev/pay-dev). Prod marketplace hosts: `values-prod.yaml`.
+  - Browser access is Cloudflare Tunnel → Cilium Gateway
+  - HTML-first web edge using chi, templ, Tailwind CSS, Datastar. Generate templ/Tailwind locally and commit; CI builds images
   - gRPC for internal service-to-service traffic. Prefer devenv `generate-proto` for protobuf codegen
   - PostgreSQL with goose migrations and sqlc queries. Prefer devenv `sqlc-gen`
-  - Staging GitOps: `infra/argocd/staging/root.yaml` → same `app-of-apps` chart with inline staging helm.values (marketplace + GHCR global images). Production app-of-apps is not in-tree yet
+  - GitOps: `infra/argocd/dev/root.yaml` (talos-dev + Doppler `dev`) and `infra/argocd/prod/root.yaml` (prod Talos + Doppler `prd`). Cilium is cluster-owned in talos-proxmox, not Argo. Do not put Doppler config in Argo values
 
   Repo conventions:
   - Keep service code under services/<name>/ and private code in internal/
@@ -23,7 +23,7 @@ context: |
   - Keep observability helpers under shared/observe/ (trace, log)
   - Keep shared error helpers under shared/err/ (dberr, grpcerr)
   - Keep docs/ for stable architecture notes, Mermaid diagrams, ADR-style decisions, and service ownership notes
-  - Keep operator/app Helm charts under infra/charts/; shared Argo app-of-apps under infra/argocd/app-of-apps/ with thin roots under infra/argocd/{local,staging}/
+  - Keep operator/app Helm charts under infra/charts/; shared Argo app-of-apps under infra/argocd/app-of-apps/ with roots under infra/argocd/dev/ and infra/argocd/prod/
 
   Code style:
   - Don't format the code because I already have a git-hook to autoformat for me.

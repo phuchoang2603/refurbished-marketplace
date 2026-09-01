@@ -10,16 +10,7 @@ It deploys the first platform baseline for:
 - Dashboards: Grafana
 - Alerts: Alertmanager and stack-managed rules
 
-Application metrics endpoints and log shipping changes remain out of scope for the platform slice. Marketplace services export OTLP traces **directly** to VictoriaTraces (no OpenTelemetry Collector required). Istio mesh proxies do not export traces; use Istio L7 metrics for edge SLIs.
-
-The observability wrapper scrapes Istio L7 proxies into VMSingle via `VMPodScrape` resources (`istioScrapes.enabled`):
-
-| Target   | Namespace                  | Port                          |
-| -------- | -------------------------- | ----------------------------- |
-| waypoint | `ecommerce` (configurable) | `http-envoy-prom` / `metrics` |
-| ingress  | `ecommerce` (configurable) | `http-envoy-prom` / `metrics` |
-
-Control-plane targets (istiod, ztunnel, istio-cni) are intentionally not scraped.
+Application metrics endpoints and log shipping changes remain out of scope for the platform slice. Marketplace services export OTLP traces **directly** to VictoriaTraces. Gateway proxies do not export traces. Hubble is not required (it may be deleted on the cluster). App-level RED metrics are follow-on [#43](https://github.com/phuchoang2603/refurbished-marketplace/issues/43).
 
 ### OTLP endpoints (direct to VTSingle)
 
@@ -30,33 +21,14 @@ Control-plane targets (istiod, ztunnel, istio-cni) are intentionally not scraped
 
 Set service env `OTEL_EXPORTER_OTLP_ENDPOINT=vtsingle-vmks.monitoring.svc.cluster.local:4317` (gRPC) or use the HTTP URL with the `shared/observe/trace` bootstrap’s HTTP mode.
 
-Useful PromQL after marketplace traffic:
-
-```promql
-sum by (destination_app, request_protocol) (
-  rate(istio_requests_total{
-    destination_service_namespace="ecommerce",
-    reporter=~"source|waypoint",
-    endpoint="http-envoy-prom"
-  }[5m])
-)
-```
-
-Ambient mesh emits `reporter="source"` (ingress) and `reporter="waypoint"` — not classic sidecar `reporter="destination"`. The Marketplace Istio RED dashboard filters accordingly. Prefer a single scrape endpoint (`http-envoy-prom`) in queries so dual-port scrapes do not double-count.
-
-### Marketplace Istio RED dashboard
-
-The wrapper chart ships a repo-owned Grafana dashboard **Marketplace Istio RED** (`infra/charts/observability/dashboards/marketplace-istio-red.json`) as a ConfigMap labeled `grafana_dashboard=1` (folder **Marketplace**). It graphs request rate, 5xx / gRPC error rate, and p50/p95/p99 latency from Istio L7 scrapes — no Go `/metrics` required.
-
-After Grafana is up (and sidecar has reloaded), open **Dashboards → Marketplace → Marketplace Istio RED**, or:
-
-```bash
-kubectl get configmap -n monitoring -l grafana_dashboard=1
-```
-
 ## Grafana Access
 
-Local and staging Argo CD both deploy the observability chart into `monitoring` (local uses chart `values.yaml`; staging uses `values-staging.yaml`).
+Argo CD deploys the observability chart into `monitoring`. Cilium Gateway + HTTPRoute (Cloudflare origin):
+
+- Dev: `https://grafana-dev.phuchoang.sbs`
+- Prod: `https://grafana.phuchoang.sbs`
+
+Point the tunnel Public Hostname at `http://cilium-gateway-grafana.monitoring.svc.cluster.local:80`.
 
 Port-forward Grafana:
 
@@ -64,7 +36,7 @@ Port-forward Grafana:
 kubectl port-forward -n monitoring svc/observability-grafana 3000:80
 ```
 
-Open http://localhost:3000 and sign in:
+Open the public hostname (or http://localhost:3000) and sign in:
 
 - **Username:** `admin`
 - **Password:** generated into Secret `observability-grafana` (key `admin-password`)
@@ -90,12 +62,12 @@ Default dashboards are fetched by `vmks-sync-job` (an Argo CD `PostSync` hook in
 kubectl get configmaps -n monitoring -l grafana_dashboard=1
 ```
 
-## Staging Health Checks
+## Health checks
 
-After ArgoCD syncs `staging-observability`, check the Application and namespace:
+After Argo CD syncs the observability Application, check the Application (on gpu) and namespace (on the dest cluster):
 
 ```bash
-kubectl get applications.argoproj.io -n argo-cd staging-observability
+kubectl --kubeconfig="$HOME/.kube/talos-gpu.yaml" get applications.argoproj.io -n argo-cd
 kubectl get pods -n monitoring
 kubectl get pvc -n monitoring
 ```
@@ -124,7 +96,7 @@ When Grafana access is available, confirm:
 
 The upstream chart has a few ArgoCD-specific behaviors that are handled on the observability Application in `infra/argocd/app-of-apps/templates/applications.tpl`:
 
-- `managedNamespaceMetadata` labels `monitoring` (and `istio-system` on the Istio apps) `pod-security.kubernetes.io/enforce=privileged` so Talos default PSS baseline does not block node-exporter / CNI / ztunnel DaemonSets.
+- `managedNamespaceMetadata` labels `monitoring` `pod-security.kubernetes.io/enforce=privileged` so Talos default PSS baseline does not block node-exporter.
 - `RespectIgnoreDifferences=true` is enabled so ignored generated fields are also respected during apply.
 - VictoriaMetrics Operator self-signed webhook certificate drift is ignored.
 - Grafana generated admin password and related deployment checksum drift are ignored.
@@ -135,7 +107,7 @@ ArgoCD does not run Helm pre-delete hooks, so removal should not rely on the cha
 
 ## Distributed tracing (e2e)
 
-App tracing bootstrap lives in `shared/observe/trace` (wired through `shared/runtime`). Marketplace services export OTLP **directly** to VictoriaTraces (no collector). Istio ambient stays enrolled for L7 **metrics** only — mesh proxy tracing (Gateway Telemetry / Envoy OTEL) is not used.
+App tracing bootstrap lives in `shared/observe/trace` (wired through `shared/runtime`). Marketplace services export OTLP **directly** to VictoriaTraces (no collector). Mesh proxy tracing is not used.
 
 ```
 Browser → ingress → web ──gRPC──▶ domain services (+ DB / Redis child spans)
@@ -154,7 +126,7 @@ Browser → ingress → web ──gRPC──▶ domain services (+ DB / Redis ch
 
 **Connect tracing:** KafkaConnect sets `spec.tracing.type: opentelemetry` (loads Strimzi `tracing-agent`) plus `OTEL_PROPAGATORS=tracecontext` and OTLP export to VictoriaTraces. EventRouter maps `tracingspancontext` → Kafka `traceparent`. Rebuild `connect-debezium` only when the Debezium plugin changes; enabling the agent is a chart/CR change.
 
-**Mesh:** Keep ambient + waypoint/ingress **metrics** (Marketplace Istio RED). Trace waterfalls are app + Connect only — no `ecommerce-ingress` / `ecommerce-waypoint` spans.
+**Mesh / edge SLIs:** Istio RED is gone. Hubble is not the observe path. Use traces + logs until app OTEL metrics land in [#43](https://github.com/phuchoang2603/refurbished-marketplace/issues/43). Waterfalls are app + Connect only — no Gateway proxy spans.
 
 **Verify after deploy:**
 
@@ -167,13 +139,13 @@ Browser → ingress → web ──gRPC──▶ domain services (+ DB / Redis ch
 
 3. Open a TraceId for service `web`: root should look like `POST /cart/checkout` (or similar route pattern), not the bare string `web`. Expect web → orders (gRPC + DB children) → Debezium/connect → products (messaging + DB). Kafka `orders.created` records should carry a `traceparent` header.
 4. Complete hosted-payment success/fail; confirm callback → payment gRPC → payment outbox path.
-5. Confirm mesh proxy spans are absent. Edge SLIs stay on **Marketplace Istio RED** (Istio L7 metrics), not VictoriaTraces.
+5. Confirm Gateway proxy spans are absent. Edge request/error/duration dashboards wait on [#43](https://github.com/phuchoang2603/refurbished-marketplace/issues/43).
 
 ## Structured logging
 
 Marketplace services emit **JSON slog** lines to stdout via `shared/observe/log` (wired by `shared/runtime.InitLogging`). Call sites use that package’s helpers — prefer `InfoContext` / `WarnContext` / `ErrorContext` on request paths so `trace_id` / `span_id` are injected; use `Key*` constants with key/value pairs (or `Attr*` with `LogAttrs`). Do not use raw `log/slog`. VLAgent scrapes those lines into VictoriaLogs.
 
-VLAgent scrapes the `ecommerce` namespace (apps + CNPG DB pods) and skips `istio-proxy` / `wait-for-db` containers — mesh stays on **metrics**. Kafka Connect remains visible via traces (`connect-debezium`); use `kubectl logs` for broker/Connect/Envoy text if needed.
+VLAgent scrapes the `ecommerce` namespace (apps + CNPG DB pods) and skips `wait-for-db` init containers.
 
 HTTP/gRPC access logs put the useful bits in `msg` (e.g. `GET /orders/... 200`, `ListOrdersByBuyer OK`) while keeping structured attrs for filters. Log `level` is emitted lowercase (`info`, `error`, …) so Grafana Explore does not mark marketplace JSON as `unknown`.
 
@@ -221,7 +193,7 @@ kubernetes.pod_namespace:="ecommerce"
   AND service:in(web,orders,payment,products,cart,users)
 ```
 
-4. **Optional drills:** `order_id:="<uuid>"` on app JSON; for the Kafka hop use TraceId spans (`connect-debezium`) rather than Connect pod logs (not scraped into VL). Edge latency/errors: **Dashboards → Marketplace → Marketplace Istio RED** (Istio L7 metrics).
+4. **Optional drills:** `order_id:="<uuid>"` on app JSON; for the Kafka hop use TraceId spans (`connect-debezium`) rather than Connect pod logs (not scraped into VL).
 
 ### Trace → logs
 

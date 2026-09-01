@@ -5,15 +5,10 @@
   ...
 }:
 
-let
-  homeDir = builtins.getEnv "HOME";
-  colimaSocket = "${homeDir}/.config/colima/k8s/docker.sock";
-in
 {
   dotenv.enable = true;
 
   env = {
-    DOCKER_HOST = "unix://${colimaSocket}";
     TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE = "/var/run/docker.sock";
     DOPPLER_PROJECT = "refurbished-marketplace";
     DOPPLER_CONFIG = "dev";
@@ -31,7 +26,7 @@ in
     protoc-gen-go
     protoc-gen-go-grpc
 
-    # templ / css (Tilt watches invoke these)
+    # templ / css
     templ
     tailwindcss
 
@@ -39,10 +34,6 @@ in
     kubectl
     kubernetes-helm
     doppler
-    tilt
-
-    # ai stuff
-    nodejs
     openspec
 
     # formatter
@@ -106,6 +97,20 @@ in
         done
       '';
     };
+
+    generate-templ = {
+      exec = ''
+        cd "${config.git.root}/services/web"
+        templ generate
+      '';
+    };
+
+    generate-tailwind = {
+      exec = ''
+        cd "${config.git.root}/services/web"
+        tailwindcss -c tailwind.config.js -i tailwind.css -o static/app.css
+      '';
+    };
   };
 
   tasks = {
@@ -138,6 +143,26 @@ in
         "shared/**/go.mod"
         "tools/**/go.mod"
         "go.work"
+      ];
+    };
+
+    "codegen:templ" = {
+      exec = "generate-templ";
+      before = [ "devenv:enterShell" ];
+
+      execIfModified = [
+        "services/web/**/*.templ"
+      ];
+    };
+
+    "codegen:tailwind" = {
+      exec = "generate-tailwind";
+      before = [ "devenv:enterShell" ];
+
+      execIfModified = [
+        "services/web/tailwind.css"
+        "services/web/tailwind.config.js"
+        "services/web/**/*.templ"
       ];
     };
   };
