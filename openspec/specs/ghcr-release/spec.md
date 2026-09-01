@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define how container images under `infra/docker/` are built and published to GitHub Container Registry so staging and production can pin coordinated image tags.
+Define how container images under `infra/docker/` are built and published to GitHub Container Registry so Talos-dev and prod can pin coordinated image tags.
 
 ## Requirements
 
@@ -64,7 +64,7 @@ After a pull request is merged or closed, the repository SHALL delete GHCR packa
 
 ### Requirement: Release workflow includes all infra docker images
 
-The release workflow SHALL build and push all marketplace and infra images declared in the `release-images.yml` matrix on every workflow run that executes the release job, including application services, migrators, `payment-gateway-simulator`, and `connect-debezium`. Cluster deploys SHALL pull those GHCR tags via Argo CD. Tilt `docker_build` SHALL NOT be required for Talos.
+The release workflow SHALL build and push all marketplace and infra images declared in the `release-images.yml` matrix on every workflow run that executes the release job, including application services, migrators, `payment-gateway-simulator`, and `connect-debezium`. Cluster deploys SHALL pull those GHCR tags via Argo CD.
 
 #### Scenario: Full image matrix on main push
 

@@ -8,7 +8,7 @@ Define the VictoriaMetrics Kubernetes metrics, logs, traces, dashboards, and ale
 
 ### Requirement: Victoria observability stack
 
-The repository SHALL provide a Helm wrapper chart for deploying the VictoriaMetrics Kubernetes metrics, logs, traces, dashboards, and alerting stack. Chart defaults SHALL be the full platform profile (node-exporter, kube-state-metrics, Alertmanager, default dashboards, staging-class PVC sizes). A Colima apps-only default overlay SHALL NOT exist.
+The repository SHALL provide a Helm wrapper chart for deploying the VictoriaMetrics Kubernetes metrics, logs, traces, dashboards, and alerting stack. Chart defaults SHALL be the full platform profile (node-exporter, kube-state-metrics, Alertmanager, default dashboards, Talos PVC sizes).
 
 #### Scenario: Wrapper chart defines observability stack
 
@@ -38,7 +38,7 @@ The repository SHALL provide a Helm wrapper chart for deploying the VictoriaMetr
 #### Scenario: Stack uses one PVC size profile
 
 - **WHEN** the observability chart is rendered
-- **THEN** VMSingle requests `20Gi`, VLSingle requests `20Gi`, and VTSingle requests `10Gi` of storage (no separate 5Gi/5Gi/2Gi Colima profile)
+- **THEN** VMSingle requests `20Gi`, VLSingle requests `20Gi`, and VTSingle requests `10Gi` of storage
 
 #### Scenario: Stack includes logs backend
 
@@ -50,9 +50,9 @@ The repository SHALL provide a Helm wrapper chart for deploying the VictoriaMetr
 - **WHEN** the observability chart is rendered
 - **THEN** it includes VictoriaTraces single-node storage and a Grafana VictoriaTraces datasource according to chart values
 
-### Requirement: Local Argo deploys observability
+### Requirement: Argo deploys observability
 
-Argo CD on Talos SHALL deploy the observability stack into the `monitoring` namespace using those full-platform chart defaults (not `local-root` apps-only values).
+Argo CD on Talos SHALL deploy the observability stack into the `monitoring` namespace using those full-platform chart defaults.
 
 #### Scenario: Argo includes observability stack
 

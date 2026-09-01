@@ -16,7 +16,7 @@ Application metrics endpoints and log shipping changes remain out of scope for t
 
 | Protocol         | Endpoint                                                                                 |
 | ---------------- | ---------------------------------------------------------------------------------------- |
-| gRPC (preferred) | `vtsingle-vmks.monitoring.svc.cluster.local:4317` (insecure TLS in staging)              |
+| gRPC (preferred) | `vtsingle-vmks.monitoring.svc.cluster.local:4317` (insecure TLS in-cluster)              |
 | HTTP fallback    | `http://vtsingle-vmks.monitoring.svc.cluster.local:10428/insert/opentelemetry/v1/traces` |
 
 Set service env `OTEL_EXPORTER_OTLP_ENDPOINT=vtsingle-vmks.monitoring.svc.cluster.local:4317` (gRPC) or use the HTTP URL with the `shared/observe/trace` bootstrap’s HTTP mode.

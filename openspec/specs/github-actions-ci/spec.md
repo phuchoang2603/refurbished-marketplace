@@ -145,7 +145,7 @@ When a selected service test job runs for a module that uses Testcontainers, CI 
 #### Scenario: Backend service tests with containers
 
 - **WHEN** CI runs tests for users, products, orders, payment, or cart due to path selection
-- **THEN** the test job uses the runner Docker environment sufficient for Testcontainers without Colima-specific configuration
+- **THEN** the test job uses the runner Docker environment sufficient for Testcontainers
 
 ### Requirement: Helm validation on chart changes
 

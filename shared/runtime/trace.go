@@ -9,7 +9,7 @@ import (
 )
 
 // InitTracing configures the global OpenTelemetry provider.
-// Empty OTEL_EXPORTER_OTLP_ENDPOINT keeps a noop exporter (Tilt-friendly).
+// Empty OTEL_EXPORTER_OTLP_ENDPOINT keeps a noop exporter.
 func InitTracing(ctx context.Context, serviceName string) (func(context.Context) error, error) {
 	cfg := sharedtrace.LoadConfig(serviceName)
 	shutdown, err := sharedtrace.Init(ctx, cfg)

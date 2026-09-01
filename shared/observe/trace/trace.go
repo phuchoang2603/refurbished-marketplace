@@ -24,7 +24,7 @@ const (
 )
 
 // Config controls the shared tracer provider. Empty Endpoint skips export
-// (noop provider) so Tilt/local can run without VictoriaTraces.
+// (noop provider).
 type Config struct {
 	ServiceName string
 	Endpoint    string

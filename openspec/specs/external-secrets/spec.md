@@ -2,13 +2,13 @@
 
 ## Purpose
 
-Define how External Secrets Operator and Doppler sync application credentials into local Colima and remote GitOps clusters without committing plaintext secrets.
+Define how External Secrets Operator and Doppler sync application credentials into Talos GitOps clusters without committing plaintext secrets.
 
 ## Requirements
 
 ### Requirement: External Secrets Operator installed
 
-The repository SHALL install External Secrets Operator on the Talos cluster using the upstream Helm chart in the `operators` namespace via Argo CD. Tilt SHALL NOT install ESO.
+The repository SHALL install External Secrets Operator on the Talos cluster using the upstream Helm chart in the `operators` namespace via Argo CD.
 
 #### Scenario: ESO operator healthy after GitOps sync
 
@@ -52,23 +52,23 @@ The repository SHALL render `ExternalSecret` resources from the `refurbished-mar
 
 The repository SHALL NOT commit plaintext Kubernetes Secret manifests for application credentials. `infra/k8s/secrets.yaml` SHALL be removed.
 
-#### Scenario: Local bootstrap without secrets.yaml
+#### Scenario: Bootstrap without secrets.yaml
 
-- **WHEN** a developer runs `tilt up` after secrets setup
+- **WHEN** External Secrets Operator syncs after Doppler bootstrap
 - **THEN** application secrets are created by ESO and not from a committed `infra/k8s/secrets.yaml`
 
 ### Requirement: Doppler bootstrap secret manifests
 
 The repository SHALL provide example Kubernetes Secret manifests for Doppler service tokens and document manual creation of gitignored `dev` and `prd` bootstrap files under `infra/k8s/`.
 
-#### Scenario: Developer creates local bootstrap secret
+#### Scenario: Developer creates talos-dev bootstrap secret
 
-- **WHEN** a developer prepares local Colima development
+- **WHEN** a developer prepares talos-dev
 - **THEN** they copy `infra/k8s/doppler-token.dev.secret.yaml.example` to `infra/k8s/doppler-token.dev.secret.yaml` and paste a `dev` config service token
 
-#### Scenario: Operator bootstraps remote cluster secret
+#### Scenario: Operator bootstraps prod cluster secret
 
-- **WHEN** a staging or production cluster is prepared for GitOps
+- **WHEN** the prod cluster is prepared for GitOps
 - **THEN** an operator applies `infra/k8s/doppler-token.prd.secret.yaml` manually before application `ExternalSecret` resources sync
 
 ### Requirement: devenv Doppler CLI defaults
@@ -80,9 +80,9 @@ The repository SHALL provide Doppler CLI via devenv and set `DOPPLER_PROJECT` an
 - **WHEN** a developer enters `devenv shell`
 - **THEN** `DOPPLER_PROJECT` and `DOPPLER_CONFIG` are available for `doppler` CLI commands
 
-#### Scenario: Bootstrap applies local Doppler secret
+#### Scenario: Bootstrap applies Doppler secret
 
-- **WHEN** `tilt up` runs with `infra/k8s/doppler-token.dev.secret.yaml` present
+- **WHEN** `infra/k8s/doppler-token.dev.secret.yaml` is applied on talos-dev
 - **THEN** Kubernetes Secret `doppler-token` exists in `operators` with key `dopplerToken`
 
 ### Requirement: Provider swap via ClusterSecretStore
@@ -96,9 +96,9 @@ Secret provisioning SHALL remain provider-agnostic at the service deployment lay
 
 ### Requirement: Doppler environment configs
 
-Doppler MAY use separate configs for non-production vs production secrets. Bootstrap of `operators/doppler-token` SHALL use kubectl (or equivalent) as on staging. A Tilt-applied `doppler-token.dev.secret.yaml` and Colima-only bootstrap SHALL NOT be required.
+Doppler MAY use separate configs for non-production vs production secrets. Bootstrap of `operators/doppler-token` SHALL use kubectl (or equivalent) on the destination cluster.
 
-#### Scenario: Bootstrap without Tilt
+#### Scenario: Bootstrap with kubectl
 
-- **WHEN** a contributor bootstraps secrets after this change
-- **THEN** they create `operators/doppler-token` without running `tilt up`
+- **WHEN** a contributor bootstraps secrets
+- **THEN** they create `operators/doppler-token` with kubectl on the workload cluster

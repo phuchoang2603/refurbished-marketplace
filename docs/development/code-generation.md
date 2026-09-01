@@ -10,7 +10,7 @@ Run these from inside `devenv shell`:
 | `generate-templ`    | `templ generate` in `services/web` (also `codegen:templ` on devenv enter)          |
 | `generate-tailwind` | Tailwind → `services/web/static/app.css` (also `codegen:tailwind` on devenv enter) |
 
-Commit `*_templ.go` and `static/app.css`. CI builds the `web` image from those files. For a live watch while editing, run `templ generate --watch` / `tailwindcss … --watch=always` in `services/web` (Tilt no longer does this).
+Commit `*_templ.go` and `static/app.css`. CI builds the `web` image from those files. For a live watch while editing, run `templ generate --watch` / `tailwindcss … --watch=always` in `services/web`.
 
 Edit SQL migrations under `services/<service>/db/migrations/` and queries under `services/<service>/db/queries/`, then run `sqlc-gen` when query shapes change.
 

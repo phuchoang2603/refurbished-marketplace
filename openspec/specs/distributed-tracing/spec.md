@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change add-e2e-distributed-tracing. Update Purpose after archive.
+Define end-to-end checkout tracing: one W3C TraceId across HTTP, gRPC, outbox/Debezium, and Kafka consumers, exported to VictoriaTraces.
 
 ## Requirements
 
@@ -78,16 +78,16 @@ Kafka consumers for marketplace domain events SHALL extract W3C context from mes
 
 ### Requirement: End-to-end checkout TraceId is verifiable
 
-A staging checkout and hosted-payment callback SHALL produce a single connected TraceId spanning web, domain services, outbox/Debezium, and consumers as documented. Mesh proxy spans are not required for verification.
+A Talos-dev checkout and hosted-payment callback SHALL produce a single connected TraceId spanning web, domain services, outbox/Debezium, and consumers as documented. Mesh proxy spans are not required for verification.
 
 #### Scenario: Checkout waterfall is connected
 
-- **WHEN** an operator places an order through staging checkout after this change
+- **WHEN** an operator places an order through Talos-dev checkout
 - **THEN** Grafana Explore against VictoriaTraces shows one TraceId covering web → CreateOrder → outbox → Debezium → inventory handling, including DB child spans where those services query Postgres
 
 #### Scenario: Hosted payment callback is connected
 
-- **WHEN** an operator completes a hosted-payment success or failure callback in staging
+- **WHEN** an operator completes a hosted-payment success or failure callback on Talos-dev
 - **THEN** Grafana Explore shows one TraceId covering the callback → payment gRPC → payment outbox path as applicable
 
 #### Scenario: Mesh proxy services are absent from the waterfall

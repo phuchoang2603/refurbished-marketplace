@@ -1,5 +1,5 @@
 apiVersion: v2
 name: app-of-apps
-description: Shared Argo CD child Applications for local and staging
+description: Shared Argo CD child Applications for Talos dev and prod
 type: application
 version: 0.1.0

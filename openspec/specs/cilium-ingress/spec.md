@@ -23,7 +23,7 @@ The system SHALL provide GitOps-managed Kubernetes Gateway API resources that us
 #### Scenario: Chart defaults keep ingress on for shop-dev hosts
 
 - **WHEN** the marketplace chart renders with default values
-- **THEN** ingress Gateway and HTTPRoute resources are rendered for `shop-dev` / `pay-dev` (not a Colima-only extra pair)
+- **THEN** ingress Gateway and HTTPRoute resources are rendered for `shop-dev` / `pay-dev`
 
 ### Requirement: Browser traffic reaches web through Cilium Gateway
 
@@ -97,7 +97,7 @@ The system SHALL document rollback steps that disable Cilium marketplace ingress
 
 ### Requirement: Cilium CNI is cluster-owned
 
-The repository SHALL document expected Cilium Helm values for Talos and SHALL NOT manage the Cilium agent as an Argo CD Application. Marketplace ingress SHALL be applied by Argo CD so `GatewayClass` for Cilium is available without Colima/k3s or Tilt.
+The repository SHALL document expected Cilium Helm values for Talos and SHALL NOT manage the Cilium agent as an Argo CD Application. Marketplace ingress SHALL be applied by Argo CD so `GatewayClass` for Cilium is available.
 
 #### Scenario: Talos Cilium remains bootstrap
 
@@ -109,14 +109,14 @@ The repository SHALL document expected Cilium Helm values for Talos and SHALL NO
 - **WHEN** the Talos marketplace Application syncs with ingress enabled
 - **THEN** a Cilium GatewayClass is Accepted and the marketplace Gateway is bound to it
 
-### Requirement: Tilt is not the cluster deploy path
+### Requirement: Cluster deploy path is Argo CD and GHCR
 
-Documented developer workflow SHALL deploy marketplace workloads with Argo CD and GHCR, not Tilt `helm`/`docker_build`. templ and Tailwind MAY still be generated on the laptop and committed; they SHALL NOT require a Tilt watch attached to cluster pods.
+Documented developer workflow SHALL deploy marketplace workloads with Argo CD and GHCR. templ and Tailwind MAY still be generated on the laptop and committed.
 
-#### Scenario: No Tilt apply for marketplace
+#### Scenario: Marketplace is applied by Argo
 
-- **WHEN** a contributor follows local-setup after this change
-- **THEN** they are not required to run `tilt up` to install Argo, build images, or apply the marketplace chart
+- **WHEN** a contributor follows local-setup
+- **THEN** they install Argo, wait for GHCR images, and sync the marketplace chart via GitOps
 
 #### Scenario: Branch tracking uses git and GHCR
 
