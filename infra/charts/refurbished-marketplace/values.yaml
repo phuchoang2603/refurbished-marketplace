@@ -9,6 +9,18 @@ ingress:
   port: 80
   webHostname: shop-dev.phuchoang.sbs
   simulatorHostname: pay-dev.phuchoang.sbs
+  # Timeouts only. No HTTP retries: checkout POST and hosted-payment callbacks are not idempotent at this layer.
+  timeouts:
+    request: 30s
+    backendRequest: 25s
+
+# CiliumNetworkPolicy in this chart. SPIRE / Cilium Helm stays in talos-proxmox.
+meshPolicy:
+  enabled: true
+  # false = allow-lists exist but default-deny ingress is off (observe).
+  enforce: true
+  # Requires cilium-spire from talos-proxmox. Set false if SPIRE is not Ready.
+  mutualAuth: true
 
 defaults:
   otel:

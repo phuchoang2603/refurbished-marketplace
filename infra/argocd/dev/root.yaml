@@ -14,7 +14,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
-    targetRevision: openspec/replace-istio-with-cilium
+    targetRevision: openspec/add-cilium-mesh-policy-and-canary
     path: infra/argocd/app-of-apps
     helm:
       values: |

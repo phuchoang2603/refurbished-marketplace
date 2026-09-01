@@ -48,6 +48,11 @@ spec:
                 value: https
               - name: X-Forwarded-Host
                 value: {{ $webHost | quote }}
+{{- with .Values.ingress.timeouts }}
+      timeouts:
+        request: {{ .request | quote }}
+        backendRequest: {{ .backendRequest | quote }}
+{{- end }}
       backendRefs:
         - name: web
           port: {{ index .Values.services "web" "port" }}
@@ -77,6 +82,11 @@ spec:
                 value: https
               - name: X-Forwarded-Host
                 value: {{ $simHost | quote }}
+{{- with .Values.ingress.timeouts }}
+      timeouts:
+        request: {{ .request | quote }}
+        backendRequest: {{ .backendRequest | quote }}
+{{- end }}
       backendRefs:
         - name: payment-gateway-simulator
           port: {{ index .Values.services "payment-gateway-simulator" "port" }}
