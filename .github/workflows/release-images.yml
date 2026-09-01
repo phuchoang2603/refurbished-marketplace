@@ -91,6 +91,8 @@ jobs:
             build_args: ""
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
 
       - uses: docker/login-action@v3
         with:
@@ -102,18 +104,15 @@ jobs:
         id: tags
         run: |
           set -euo pipefail
-          repo="${{ github.repository }}"
-          image="${{ matrix.image }}"
           if [ "${{ github.event_name }}" = "pull_request" ]; then
             sha="${{ github.event.pull_request.head.sha }}"
           else
             sha="${{ github.sha }}"
           fi
+          repo="${{ github.repository }}"
+          image="${{ matrix.image }}"
           tags="ghcr.io/${repo}/${image}:${sha}"
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            tags="${tags}
-          ghcr.io/${repo}/${image}:pr-${{ github.event.number }}"
-          elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
             tags="${tags}
           ghcr.io/${repo}/${image}:main"
           fi

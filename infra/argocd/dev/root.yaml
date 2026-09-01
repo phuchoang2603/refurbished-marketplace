@@ -1,7 +1,6 @@
 # Apply only on talos-dev. Do not apply prod-root here.
 # Secrets: kubectl apply -f infra/k8s/doppler-token.dev.secret.yaml
-# Set spec.source.targetRevision to main or a branch. Images use that commit SHA
-# ($ARGOCD_APP_REVISION) — wait for GHCR :<sha> before pods will pull.
+# Images: GHCR :<git-sha> ($ARGOCD_APP_REVISION). Git: set targetRevision to the branch.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -20,6 +19,7 @@ spec:
         namePrefix: dev
         global:
           imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
+          imagePullPolicy: Always
         marketplace:
           enabled: true
       parameters:

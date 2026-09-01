@@ -9,29 +9,15 @@ The repository SHALL build and push marketplace/infra images to GHCR on pull req
 - **WHEN** a pull request changes image-related paths (same path set as the main release workflow, or a documented subset)
 - **THEN** CI pushes `ghcr.io/<repository>/<image>:<git-sha>` for the PR head commit for each image in the build matrix
 
-#### Scenario: Optional PR number tag is not the Argo pin
-
-- **WHEN** CI also tags `pr-<number>`
-- **THEN** documentation and Argo values pin `global.imageTag` to the git SHA, not the moving `pr-*` tag
-
 #### Scenario: PR does not overwrite main
 
 - **WHEN** the pull request image job runs
 - **THEN** it does not push the `:main` tag
 
-### Requirement: Delete PR-only GHCR versions after the PR closes
+#### Scenario: Dispatch on a non-main ref is not prod
 
-After a pull request is merged or closed, the repository SHALL delete GHCR package versions that exist only for that PR (`pr-<n>` and PR-head SHAs that `main` does not use). It SHALL NOT delete `:main`, production-pinned SHAs, or a SHA the live Argo Application still specifies.
-
-#### Scenario: Closed PR cleanup
-
-- **WHEN** a pull request is closed (merged or not) and Argo is not pinned to that PR’s image SHA
-- **THEN** a workflow deletes the corresponding PR-only GHCR tags/versions
-
-#### Scenario: Live SHA is preserved
-
-- **WHEN** cleanup would remove an image digest still referenced by `global.imageTag` on the cluster
-- **THEN** that version is not deleted
+- **WHEN** the image job runs via `workflow_dispatch` on a ref other than `refs/heads/main`
+- **THEN** it tags `:<git-sha>` only, not `:main`
 
 ## MODIFIED Requirements
 

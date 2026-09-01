@@ -46,7 +46,7 @@ One Talos cluster, one app-of-apps catalog, marketplace always an Argo Applicati
 | Strip Namespace from Helm + Tilt `ecommerce-namespace` labels                                                     | Tilt prune/recreate deleted CNPG                 | Argo `CreateNamespace` + `managedNamespaceMetadata` only (no Istio labels) |
 | Out-of-band `helm template databases.tpl \| kubectl apply`                                                        | `tilt down` deleted CNPG PVCs / Debezium offsets | Marketplace chart owns CNPG Clusters; `tilt down` is gone                  |
 | `local-root` with `marketplace.enabled: false`                                                                    | Tilt owned the app chart                         | Single root; marketplace on                                                |
-| Empty `global.imageRegistry` → short image names                                                                  | Tilt loaded images into Colima Docker            | Always `ghcr.io/.../name:sha`                                              |
+| Empty `global.imageRegistry` → short image names                                                                  | Tilt loaded images into Colima Docker            | Always `ghcr.io/.../name:<sha>` or `:main`                                 |
 | Marketplace `values.yaml` Colima CPU/mem / 512Mi PVCs                                                             | Fit 4 CPU / 8 GiB k3s                            | Defaults = current staging-class requests/limits/storage                   |
 | Observability chart defaults apps-only (no node-exporter/ksm/Alertmanager/default dashboards)                     | Colima RAM                                       | Defaults = full platform stack (former `values-staging.yaml` shape)        |
 | Dual Istio CNI `platform: k3s` vs RKE2 overlays                                                                   | Colima vs old staging                            | Istio charts deleted                                                       |
@@ -57,7 +57,7 @@ One Talos cluster, one app-of-apps catalog, marketplace always an Argo Applicati
 | Docs/PR template/`CONTRIBUTING` `tilt up` on Colima                                                               | Old DX                                           | Argo + GHCR                                                                |
 | `.dev` Cloudflare hosts as chart default                                                                          | Second Colima front door                         | Cluster uses the real shop/pay hostnames; no second ingress profile        |
 
-**Allowed to differ between “what’s live on main” and a branch:** `targetRevision`, `global.imageTag` (SHA), Doppler config if secrets must not mix. Not a second cluster shape.
+**Allowed to differ between “what’s live on main” and a branch:** `targetRevision`, `global.imageTag` (SHA via `$ARGOCD_APP_REVISION`), Doppler config if secrets must not mix. Not a second cluster shape.
 
 **Rationale:** matching dev and prod means the same YAML path, not a miniature stack that only resembles prod after overlays.
 
@@ -65,9 +65,9 @@ One Talos cluster, one app-of-apps catalog, marketplace always an Argo Applicati
 
 ### 3. Branch tracking is one pointer, not N preview envs
 
-Default: root `targetRevision: main`, `global.imageTag: main` (or the SHA `:main` points at).
+Default: `dev-root` `imageTag` = `$ARGOCD_APP_REVISION`, `prod-root` `imageTag: main`. Git `targetRevision` can still be a branch on talos-dev.
 
-To run a feature on the cluster: point that **same** root at the branch and set `global.imageTag` to the PR head SHA CI pushed. One `ecommerce` namespace — only one git revision live at a time.
+To run a feature on the cluster: point `dev-root` at the branch; wait for CI to push `:<sha>`. One `ecommerce` namespace — only one git revision live at a time.
 
 Do **not** ApplicationSet-per-PR in this change (would need `pr-N` namespaces, extra shop hosts, extra CNPG).
 
@@ -75,26 +75,11 @@ Do **not** ApplicationSet-per-PR in this change (would need `pr-N` namespaces, e
 
 **Alternatives considered:** ApplicationSet PR generator (correct for multi-preview, too much here); only deploy after merge (simplest; then PR images are optional until you want to flip the pointer).
 
-### 4. CI builds PR images; delete PR-only tags after close — yes, with rules
+### 4. GHCR `:<sha>` plus `:main` on the default branch
 
-**Build on PR (ideal if you want to Argo-track a branch before merge):**
-
-- Reuse the release matrix (or path-filter it).
-- Push immutable `ghcr.io/<repo>/<image>:<git-sha>` (`github.sha` of the PR head).
-- Optional moving tag `pr-<n>` for humans — Argo should pin **SHA**, not `pr-N` (that tag moves on every push).
-- Do not overwrite `:main` from a PR.
-
-**After merge/close, delete PR-only versions:**
-
-- Trigger `pull_request: types: [closed]`.
-- Delete GHCR package versions whose only useful tags are `pr-<n>` or SHAs that are **not** on `main` and not currently specified in Argo.
-- **Do not** delete `:main`, production pins, or a SHA Argo is still rolling out.
-- Squash merge ⇒ PR SHA ≠ merge SHA ⇒ safe to delete the PR SHA images after close.
-- Merge commit ⇒ same: PR head SHA is usually unused after merge; still delete `pr-*`.
-
-This is good hygiene (GHCR storage, fewer stale tags). It is **not** a substitute for pinning Argo to SHAs. Deleting too early while the cluster still runs `imageTag: <pr-sha>` will 404 ImagePullBackOff — always retarget Argo to `main` before or as part of close.
-
-**Cheaper alternative if PRs are not deployed:** skip PR pushes; only `main` builds images. Branch tracking then cannot deploy app code until merge (Helm-only git changes could still sync). Choose PR builds because the user wants to run a branch on Talos.
+- Same release matrix; always tag the git SHA (PR **head** SHA on pull_request).
+- Tag `:main` only on `refs/heads/main`. No `:dev`, no `pr-<n>`, no closed-PR cleanup.
+- Argo `imagePullPolicy: Always` so kubelets pick up a new `:main` digest; SHA tags are unique.
 
 **templ/CSS:** keep generating on the laptop and committing (current `web.Dockerfile` `go build`s committed `_templ.go`). Optional later: generate inside the image so CI is hermetic.
 
@@ -104,15 +89,14 @@ Unchanged in intent from the Cilium cutover (class `cilium`, in-cluster Gateway 
 
 ## Risks / Trade-offs
 
-| Risk                                                 | Mitigation                                                                                 |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| Argo syncs git before PR images exist                | Pin `imageTag` to SHA; wait for the image workflow; or `ImageUpdater` later (not required) |
-| Full image matrix on every PR push is slow/expensive | Path-filter matrix; skip unchanged images (document if deferred)                           |
-| Delete GHCR while Argo still uses the SHA            | Cleanup only on PR closed, after root is back on `main`                                    |
-| One cluster, two branches                            | Document: one live revision; do not ApplicationSet in this change                          |
-| Tiltfile leftover confuses DX                        | Delete Tiltfile and `infra/argocd/local/` in this change                                   |
-| Generated templ drift without Tilt watch             | devenv/hooks; commit generated files as today                                              |
-| Unifying observability defaults grows RAM vs Colima  | Accepted: Talos is the only cluster                                                        |
+| Risk                                                 | Mitigation                                                        |
+| ---------------------------------------------------- | ----------------------------------------------------------------- |
+| Argo syncs git before `:<sha>` exists                | Wait for the image workflow; `imagePullPolicy: Always`            |
+| Full image matrix on every PR push is slow/expensive | Path-filter matrix; skip unchanged images (document if deferred)  |
+| One cluster, two branches                            | Document: one live revision; do not ApplicationSet in this change |
+| Tiltfile leftover confuses DX                        | Delete Tiltfile and `infra/argocd/local/` in this change          |
+| Generated templ drift without Tilt watch             | devenv/hooks; commit generated files as today                     |
+| Unifying observability defaults grows RAM vs Colima  | Accepted: Talos is the only cluster                               |
 
 ## Migration Plan
 

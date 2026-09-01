@@ -10,8 +10,9 @@ Issue [#38](https://github.com/phuchoang2603/refurbished-marketplace/issues/38):
 - Delete ambient namespace labels, waypoint Gateway (`mesh.tpl`), Tilt Istio labels, and Istio L7 VMPodScrapes / Marketplace Istio RED dashboard.
 - Treat Hubble L4 plus existing app OTEL → VictoriaTraces as the observe path. No Cilium L7 visibility policies, no Hubble HTTP metrics requirement, no replacement Grafana RED dashboard in this change.
 - Document expected Cilium Helm values for Talos (cluster-owned CNI, not Argo).
-- **BREAKING DX:** Stop using Tilt to install Argo, build images, or apply the marketplace chart. Delete Tilt-era workarounds (dual roots, Tilt-owned Helm, out-of-band CNPG/namespace, empty `imageRegistry`, Colima-sized chart defaults, apps-only observability defaults, devenv Colima Docker socket / `tilt` package). Dev on Talos SHALL use the same Argo app-of-apps + GHCR path as prod/staging, with overlays limited to real env deltas (git revision, image SHA, secrets/hostnames if they must differ).
-- CI builds and pushes GHCR images for pull requests (immutable commit SHA; optional `pr-<n>` tag) so a branch-tracking Application can sync. After the PR is closed or merged, delete those PR-only package versions; keep `:main` and SHAs still referenced by git/`main`.
+- Dev on Talos SHALL use the same Argo app-of-apps + GHCR path as prod, with overlays limited to real env deltas (git revision, image SHA vs `:main`, secrets/hostnames if they must differ).
+- CI tags GHCR `:<git-sha>` on every image build and `:main` only on `refs/heads/main`. No `:dev` or `pr-<n>` tags; no post-close GHCR cleanup.
+
 - templ/Tailwind: generate in devenv and commit (or in-Dockerfile); no Tilt watches.
 - Keep kafka in its own namespace with no L7 Cilium policies. Keep protocol-aware Service port names / `appProtocol`.
 - Rewrite Istio docs into Cilium/Gateway docs; rewrite local-setup around Argo + GHCR, not Colima/Tilt.
@@ -27,10 +28,10 @@ Issue [#38](https://github.com/phuchoang2603/refurbished-marketplace/issues/38):
 
 - `istio-ingress`: Retired. All Istio Gateway requirements are removed in favor of `cilium-ingress`.
 - `istio-observability`: Retired. Ambient, waypoint, Istio chart pins, and Istio L7 telemetry requirements are removed. Protocol-aware Service ports move to `cilium-observability`.
-- `argocd-gitops`: Drop GitOps-managed Istio and the Tilt/Colima split (`local-root` without marketplace, empty GHCR, dual apply). One Talos root; marketplace always Argo; branch/`main` tracking; `imageTag` = commit SHA.
+- `argocd-gitops`: Drop GitOps-managed Istio and the Tilt/Colima split (`local-root` without marketplace, empty GHCR, dual apply). One Talos root; marketplace always Argo; branch/`main` tracking; `imageTag` = git SHA on dev, `main` on prod.
 - `platform-observability`: Stop Istio scrapes/RED. Chart defaults SHALL be the full platform stack (not Colima apps-only). One PVC/resource profile, not local-vs-staging sizes.
 - `distributed-tracing`: Keep “no mesh/Gateway proxy spans in the waterfall”; drop Istio-specific wording.
-- `ghcr-release`: PR image builds to GHCR; post-close deletion of PR-only tags; main still publishes `:main` + SHA. No Tilt `docker_build` / short image names.
+- `ghcr-release`: `:<git-sha>` plus `:main` on the default branch. No Tilt `docker_build` / short image names.
 - `external-secrets`: Bootstrap Doppler token like the remote cluster (not Tilt `kubectl apply` of `doppler-token.dev.secret.yaml`).
 
 ## Impact

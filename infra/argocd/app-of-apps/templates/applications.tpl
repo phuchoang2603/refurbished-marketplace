@@ -29,6 +29,7 @@ spec:
         global:
           imageRegistry: {{ $.Values.global.imageRegistry }}
           imageTag: {{ $.Values.global.imageTag | quote }}
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy | default "IfNotPresent" | quote }}
 {{- end }}
   destination:
     server: https://kubernetes.default.svc
@@ -104,6 +105,7 @@ spec:
         global:
           imageRegistry: {{ .Values.global.imageRegistry }}
           imageTag: {{ .Values.global.imageTag | quote }}
+          imagePullPolicy: {{ .Values.global.imagePullPolicy | default "IfNotPresent" | quote }}
 {{- end }}
   destination:
     server: https://kubernetes.default.svc

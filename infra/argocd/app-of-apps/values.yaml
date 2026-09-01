@@ -9,6 +9,7 @@ namePrefix: dev
 global:
   imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
   imageTag: main
+  imagePullPolicy: Always
 
 marketplace:
   enabled: true

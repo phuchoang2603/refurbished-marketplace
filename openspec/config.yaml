@@ -7,7 +7,7 @@ context: |
   Development Workflow:
   - devenv.nix manages local development tooling; if tools are missing, add them to devenv.nix and run `direnv reload`
   - Go multi-module workspace. Prefer the devenv `tidy` script for `go work sync`
-  - Talos Kubernetes + Argo CD (`infra/argocd/dev/root.yaml` or `prod/root.yaml` → shared `infra/argocd/app-of-apps`). Marketplace, operators, Kafka, observability, and Cloudflare Tunnel are Argo Applications. Images come from GHCR (`global.imageTag` = git SHA or `main`). Do not compile and run Go services as host processes (tests are okay)
+  - Talos Kubernetes + Argo CD (`infra/argocd/dev/root.yaml` or `prod/root.yaml` → shared `infra/argocd/app-of-apps`). Marketplace, operators, Kafka, observability, and Cloudflare Tunnel are Argo Applications. Images come from GHCR (`:<git-sha>` on talos-dev via `$ARGOCD_APP_REVISION`, `:main` on prod). Do not compile and run Go services as host processes (tests are okay)
   - Chart `values.yaml` is Talos-shaped (GHCR, Cilium Gateway, shop-dev/pay-dev). Prod marketplace hosts: `values-prod.yaml`.
   - Browser access is Cloudflare Tunnel → Cilium Gateway
   - HTML-first web edge using chi, templ, Tailwind CSS, Datastar. Generate templ/Tailwind locally and commit; CI builds images

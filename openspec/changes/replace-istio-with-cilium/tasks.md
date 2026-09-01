@@ -4,11 +4,11 @@
 - [x] 1.2 One Talos Argo root with marketplace enabled; delete Tilt as applier and `marketplace.enabled: false` local-root.
 - [x] 1.3 Spike Cilium Gateway ClusterIP (`CiliumGatewayClassConfig` or equivalent) and `HTTPRoute` `RequestHeaderModifier`; record the origin Service DNS name.
 
-## 2. GHCR PR images and cleanup
+## 2. GHCR SHA + main
 
-- [x] 2.1 Add a pull_request image build that pushes `:<git-sha>` (and optional `pr-<n>`) without moving `:main`.
-- [x] 2.2 Add pull_request closed cleanup that deletes PR-only GHCR versions and never deletes `:main` or a SHA Argo still pins.
-- [x] 2.3 Document: wait for image job before Argo sync; retarget root to `main` before cleanup; path-filter the matrix if full builds are too heavy.
+- [x] 2.1 Tag `:<git-sha>` on every image build; add `:main` only on `refs/heads/main`.
+- [x] 2.2 Dev-root `imageTag` = `$ARGOCD_APP_REVISION`; prod-root `imageTag: main`; no PR-tag cleanup workflow.
+- [x] 2.3 Document wait for GHCR `:<sha>` before expecting pods to pull.
 
 ## 3. Marketplace ingress cutover
 
@@ -42,5 +42,5 @@
 ## 7. Verify and close
 
 - [ ] 7.1 Argo on Talos: Cilium Gateway Accepted, Cloudflare hosts, checkout (callback not 405).
-- [ ] 7.2 PR: images appear on GHCR at the head SHA; optional branch track on the cluster; after close, PR-only tags gone and `:main` intact.
+- [ ] 7.2 PR: GHCR `:<head-sha>` exists; talos-dev `$ARGOCD_APP_REVISION` matches; `:main` unchanged until merge to main.
 - [x] 7.3 Run `openspec validate replace-istio-with-cilium` and update GitHub issue [#38](https://github.com/phuchoang2603/refurbished-marketplace/issues/38).

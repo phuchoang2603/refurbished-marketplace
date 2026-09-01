@@ -76,15 +76,15 @@ The `refurbished-marketplace` and `kafka` Helm charts SHALL support `global.imag
 
 The repository SHALL provide a chart-adjacent `values-prod.yaml` overlay (referenced from prod-root via `valueFiles`) for production marketplace hostnames. Dev uses chart `values.yaml`.
 
-#### Scenario: Staging pulls rolling main tag
+#### Scenario: Dev pins the git SHA
 
-- **WHEN** the staging marketplace Application syncs
-- **THEN** Helm values set `global.imageRegistry` to the project GHCR path and `global.imageTag` to `main`
+- **WHEN** the talos-dev marketplace Application syncs
+- **THEN** Helm values set `global.imageRegistry` to the project GHCR path and `global.imageTag` to `$ARGOCD_APP_REVISION`
 
-#### Scenario: Production pins commit SHA
+#### Scenario: Production pulls rolling main tag
 
-- **WHEN** the production marketplace Application syncs after a promotion
-- **THEN** Helm values set `global.imageTag` to the promoted commit SHA shared by all service images
+- **WHEN** the production marketplace Application syncs
+- **THEN** Helm values set `global.imageTag` to `main`
 
 ### Requirement: Privileged Pod Security for host-network DaemonSets
 
