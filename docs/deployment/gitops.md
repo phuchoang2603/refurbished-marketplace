@@ -13,7 +13,7 @@ Talos is the runtime for **dev** and **prod**. Argo CD itself stays cluster boot
 
 Do not apply both roots on one cluster (`ecommerce` is shared). Do not put Doppler config names in Helm. Cloudflare Public Hostnames stay in Zero Trust; origin DNS is `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`.
 
-Child Applications inherit `targetRevision` via `$ARGOCD_APP_SOURCE_TARGET_REVISION`. On talos-dev, set `dev-root` `targetRevision` to the branch; `global.imageTag` is `$ARGOCD_APP_REVISION`. Wait for GHCR `:<sha>` or pods ImagePullBackOff until the image job finishes. Retarget to `main` before PR image cleanup.
+Child Applications inherit `targetRevision` via `$ARGOCD_APP_SOURCE_TARGET_REVISION`. Change `dev-root` `spec.source.targetRevision` in `infra/argocd/dev/root.yaml`, commit, and `kubectl apply -f` that file. `global.imageTag` is `$ARGOCD_APP_REVISION`. Wait for GHCR `:<sha>` or pods ImagePullBackOff until the image job finishes. Set the field back to `main` before merge / PR image cleanup.
 
 ## What Argo CD syncs
 

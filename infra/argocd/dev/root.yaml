@@ -1,6 +1,8 @@
 # Apply only on talos-dev. Do not apply prod-root here.
 # Secrets: kubectl apply -f infra/k8s/doppler-token.dev.secret.yaml
-# Images: GHCR :<git-sha> ($ARGOCD_APP_REVISION). Git: set targetRevision to the branch.
+# Images: GHCR :<git-sha> ($ARGOCD_APP_REVISION).
+# Git pointer is spec.source.targetRevision in this file. Change it here, commit, apply.
+# Before merging this change to main, set targetRevision back to main.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -12,7 +14,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
-    targetRevision: main
+    targetRevision: openspec/replace-istio-with-cilium
     path: infra/argocd/app-of-apps
     helm:
       values: |
