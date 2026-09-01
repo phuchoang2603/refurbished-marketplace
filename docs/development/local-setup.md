@@ -18,7 +18,7 @@ kubectl apply -f infra/argocd/dev/root.yaml
 
 Do not apply `prod-root` or the `prd` Doppler token on this cluster. Prod is a separate Talos kubecontext + `infra/argocd/prod/root.yaml`.
 
-Children follow the root’s git revision. Push the branch, wait for GHCR image jobs (`:<sha>`), then set `global.imageTag` on the root to that SHA if you are not on `main`.
+Children follow the root’s git revision. `dev-root` sets `global.imageTag` to `$ARGOCD_APP_REVISION` (the commit Argo checked out). To try a PR on talos-dev, set `spec.source.targetRevision` to the branch (once), wait for GHCR `:<sha>`, then sync. You do not paste the SHA into Git each push. Prod still pins `imageTag` in `prod-root`.
 
 ## Development shell
 

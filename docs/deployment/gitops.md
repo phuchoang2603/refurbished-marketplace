@@ -8,12 +8,12 @@ Talos is the runtime for **dev** and **prod**. Argo CD itself stays cluster boot
 | ----------- | ------------------------------------------ | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | Cluster     | kubeconfig, apply one root                 | `~/.kube/talos-dev.yaml` + `dev-root`                                | prod kubeconfig + `prod-root`                                                                 |
 | Secrets     | `operators/doppler-token` (not Helm)       | `doppler-token.dev.secret.yaml`                                      | `doppler-token.prd.secret.yaml`                                                               |
-| Git (root)  | `namePrefix`, `targetRevision`, `imageTag` | `dev`, track `main` or a PR SHA                                      | `prod`, pin a release SHA                                                                     |
+| Git (root)  | `namePrefix`, `targetRevision`, `imageTag` | `dev`, branch or `main`; images = `$ARGOCD_APP_REVISION`             | `prod`, pin git + `imageTag` SHA                                                              |
 | Git (chart) | `values.yaml`                              | default (shop-dev, 1 Kafka replica, 1-day topic retention, 1 tunnel) | `values-prod.yaml` on marketplace (hosts), kafka (RF 3, 7-day retention), tunnel (2 replicas) |
 
 Do not apply both roots on one cluster (`ecommerce` is shared). Do not put Doppler config names in Helm. Cloudflare Public Hostnames stay in Zero Trust; origin DNS is `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`.
 
-Child Applications inherit `targetRevision` via `$ARGOCD_APP_SOURCE_TARGET_REVISION`. On talos-dev, point `dev-root` at a branch and set `global.imageTag` to that SHA after GHCR publishes. Retarget to `main` before PR image cleanup.
+Child Applications inherit `targetRevision` via `$ARGOCD_APP_SOURCE_TARGET_REVISION`. On talos-dev, set `dev-root` `targetRevision` to the branch; `global.imageTag` is `$ARGOCD_APP_REVISION` (no per-push SHA edit). Wait for GHCR `:<sha>` or pods ImagePullBackOff until the image job finishes. Retarget to `main` before PR image cleanup.
 
 ## What Argo CD syncs
 
