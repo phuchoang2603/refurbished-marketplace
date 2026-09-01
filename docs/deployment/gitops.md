@@ -27,7 +27,7 @@ Child Applications inherit `targetRevision` via `$ARGOCD_APP_SOURCE_TARGET_REVIS
 | `kafka`                   | This repo     | Debezium reads secrets/DBs in `ecommerce`            | `kafka`             |
 | `cloudflare-tunnel`       | This repo     | `cloudflared`; token via Doppler ExternalSecret      | `cloudflare-tunnel` |
 
-Cilium is cluster-owned in **talos-proxmox**, not an Argo app. See [`infra/cilium/README.md`](../../infra/cilium/README.md).
+Cilium is cluster-owned in **talos-proxmox**, not an Argo app. See [cilium.md](cilium.md).
 
 `monitoring` is privileged PSS for node-exporter.
 
