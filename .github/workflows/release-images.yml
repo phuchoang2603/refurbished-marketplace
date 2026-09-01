@@ -12,6 +12,16 @@ on:
       - go.work.sum
       - "**/go.mod"
       - .github/workflows/release-images.yml
+  pull_request:
+    paths:
+      - infra/docker/**
+      - services/**
+      - shared/**
+      - tools/**
+      - go.work
+      - go.work.sum
+      - "**/go.mod"
+      - .github/workflows/release-images.yml
   workflow_dispatch:
 
 permissions:
@@ -88,12 +98,29 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Image tags
+        id: tags
+        run: |
+          set -euo pipefail
+          repo="${{ github.repository }}"
+          image="${{ matrix.image }}"
+          sha="${{ github.sha }}"
+          tags="ghcr.io/${repo}/${image}:${sha}"
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            tags="${tags}
+          ghcr.io/${repo}/${image}:pr-${{ github.event.number }}"
+          else
+            tags="${tags}
+          ghcr.io/${repo}/${image}:main"
+          fi
+          echo "tags<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$tags" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
       - uses: docker/build-push-action@v6
         with:
           context: .
           file: ${{ matrix.dockerfile }}
           build-args: ${{ matrix.build_args }}
           push: true
-          tags: |
-            ghcr.io/${{ github.repository }}/${{ matrix.image }}:${{ github.sha }}
-            ghcr.io/${{ github.repository }}/${{ matrix.image }}:main
+          tags: ${{ steps.tags.outputs.tags }}
