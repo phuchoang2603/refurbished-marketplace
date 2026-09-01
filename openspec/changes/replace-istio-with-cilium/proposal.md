@@ -11,7 +11,7 @@ Issue [#38](https://github.com/phuchoang2603/refurbished-marketplace/issues/38):
 - Treat Hubble L4 plus existing app OTEL → VictoriaTraces as the observe path. No Cilium L7 visibility policies, no Hubble HTTP metrics requirement, no replacement Grafana RED dashboard in this change.
 - Document expected Cilium Helm values for Talos (cluster-owned CNI, not Argo).
 - Dev on Talos SHALL use the same Argo app-of-apps + GHCR path as prod, with overlays limited to real env deltas (git revision, image SHA vs `:main`, secrets/hostnames if they must differ).
-- CI tags GHCR `:<git-sha>` on every image build and `:main` only on `refs/heads/main`. No `:dev` or `pr-<n>` tags; no post-close GHCR cleanup.
+- CI tags GHCR `:<git-sha>` on every image build and `:main` only on `refs/heads/main`. After the PR closes, delete those SHA package versions; keep `:main`.
 
 - templ/Tailwind: generate in devenv and commit (or in-Dockerfile); no Tilt watches.
 - Keep kafka in its own namespace with no L7 Cilium policies. Keep protocol-aware Service port names / `appProtocol`.

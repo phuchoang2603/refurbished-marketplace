@@ -117,6 +117,5 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
-    # Argo owns namespace metadata (do not template a Namespace in the chart).
-    managedNamespaceMetadata: {}
+    # Argo owns the ecommerce namespace (do not template a Namespace in the chart).
 {{- end }}

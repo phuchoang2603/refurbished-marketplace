@@ -19,6 +19,15 @@ The repository SHALL build and push marketplace/infra images to GHCR on pull req
 - **WHEN** the image job runs via `workflow_dispatch` on a ref other than `refs/heads/main`
 - **THEN** it tags `:<git-sha>` only, not `:main`
 
+### Requirement: Delete PR-only GHCR versions after the PR closes
+
+After a pull request is merged or closed, the repository SHALL delete GHCR package versions tagged with that PR’s commit SHAs. It SHALL NOT delete `:main` or versions that also carry the `main` tag.
+
+#### Scenario: Closed PR cleanup
+
+- **WHEN** a pull request is closed (merged or not)
+- **THEN** a workflow deletes GHCR versions whose tags include a SHA from that PR and do not include `main`
+
 ## MODIFIED Requirements
 
 ### Requirement: Release workflow includes all infra docker images

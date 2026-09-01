@@ -78,7 +78,7 @@ Do **not** ApplicationSet-per-PR in this change (would need `pr-N` namespaces, e
 ### 4. GHCR `:<sha>` plus `:main` on the default branch
 
 - Same release matrix; always tag the git SHA (PR **head** SHA on pull_request).
-- Tag `:main` only on `refs/heads/main`. No `:dev`, no `pr-<n>`, no closed-PR cleanup.
+- Tag `:main` only on `refs/heads/main`. No `:dev` or `pr-<n>`. Closed PRs delete SHA-only GHCR versions; never `:main`.
 - Argo `imagePullPolicy: Always` so kubelets pick up a new `:main` digest; SHA tags are unique.
 
 **templ/CSS:** keep generating on the laptop and committing (current `web.Dockerfile` `go build`s committed `_templ.go`). Optional later: generate inside the image so CI is hermetic.
@@ -91,7 +91,7 @@ Unchanged in intent from the Cilium cutover (class `cilium`, in-cluster Gateway 
 
 | Risk                                                 | Mitigation                                                        |
 | ---------------------------------------------------- | ----------------------------------------------------------------- |
-| Argo syncs git before `:<sha>` exists                | Wait for the image workflow; `imagePullPolicy: Always`            |
+| Argo still pins a PR SHA when cleanup runs           | Retarget `dev-root` to `main` before or as the PR closes          |
 | Full image matrix on every PR push is slow/expensive | Path-filter matrix; skip unchanged images (document if deferred)  |
 | One cluster, two branches                            | Document: one live revision; do not ApplicationSet in this change |
 | Tiltfile leftover confuses DX                        | Delete Tiltfile and `infra/argocd/local/` in this change          |

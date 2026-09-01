@@ -7,7 +7,7 @@
 ## 2. GHCR SHA + main
 
 - [x] 2.1 Tag `:<git-sha>` on every image build; add `:main` only on `refs/heads/main`.
-- [x] 2.2 Dev-root `imageTag` = `$ARGOCD_APP_REVISION`; prod-root `imageTag: main`; no PR-tag cleanup workflow.
+- [x] 2.2 Dev-root `imageTag` = `$ARGOCD_APP_REVISION`; prod-root `imageTag: main`; closed-PR cleanup deletes those SHAs, never `:main`.
 - [x] 2.3 Document wait for GHCR `:<sha>` before expecting pods to pull.
 
 ## 3. Marketplace ingress cutover
