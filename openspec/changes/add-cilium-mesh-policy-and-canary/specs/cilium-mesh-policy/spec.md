@@ -1,12 +1,12 @@
 ## Purpose
 
-Define strict Cilium mutual TLS, identity-based authorization, retries, and circuit breakers for marketplace traffic after Istio has been removed.
+Define strict Cilium mutual TLS, identity-based authorization, Gateway timeouts, and Cilium Gateway outlier detection for marketplace traffic after Istio has been removed.
 
 ## ADDED Requirements
 
 ### Requirement: Strict mTLS for marketplace east-west
 
-Marketplace service-to-service traffic in `ecommerce` SHALL require Cilium mutual authentication. Workloads that are not in the documented exception list (CNPG, migration jobs, Valkey, Kafka brokers in `kafka`) SHALL fail closed when mutual authentication is missing.
+Enrolled marketplace hops in `ecommerce` SHALL use Cilium mutual authentication (`authentication.mode: required` on documented ingress rules). Workloads outside the exception list (CNPG, migration jobs, Valkey, Kafka brokers in `kafka`) are not selected by these policies.
 
 #### Scenario: Enrolled gRPC calls require mTLS
 
@@ -20,7 +20,7 @@ Marketplace service-to-service traffic in `ecommerce` SHALL require Cilium mutua
 
 ### Requirement: Authorization between marketplace identities
 
-The system SHALL allow only documented caller identities to reach each marketplace HTTP/gRPC Service.
+The system SHALL allow only documented caller identities to reach each marketplace HTTP/gRPC Service. When `meshPolicy.enforce` is true, CNPs SHALL set `enableDefaultDeny.ingress: true` so unknown callers are dropped.
 
 #### Scenario: Unknown identity is denied
 
@@ -32,19 +32,19 @@ The system SHALL allow only documented caller identities to reach each marketpla
 - **WHEN** `web` calls `orders` (or other documented pairs) after policies are enforced
 - **THEN** checkout and related flows continue to succeed
 
-### Requirement: Retries and circuit breakers
+### Requirement: Gateway timeouts and outlier detection
 
-The system SHALL apply documented retry and circuit-breaker (or outlier-detection) settings for Gateway-to-web and/or web-to-gRPC paths using Cilium Envoy or Gateway API, without retrying non-idempotent checkout/payment RPCs unsafely.
+The system SHALL set documented HTTPRoute `timeouts` on shop and pay routes. The system SHALL NOT configure HTTPRoute retries or gRPC client retries for checkout or payment paths. Circuit breaking for Gateway backends SHALL rely on Cilium Gateway Envoy outlier detection (no `CiliumEnvoyConfig` in this repo).
 
-#### Scenario: Transient failures retry where safe
+#### Scenario: Shop routes have request timeouts
 
-- **WHEN** a safe idempotent hop fails with a retryable error
-- **THEN** the dataplane retries within the documented budget
+- **WHEN** shop or pay HTTPRoutes are rendered with ingress enabled
+- **THEN** each rule documents `timeouts.request` and `timeouts.backendRequest`
 
-#### Scenario: Unhealthy backends are ejected
+#### Scenario: Checkout is not retried at the dataplane
 
-- **WHEN** a backend instance exceeds the circuit-breaker / outlier threshold
-- **THEN** new requests are not sent to that instance until it recovers
+- **WHEN** a browser POST hits checkout or a hosted-payment callback on the shop hostname
+- **THEN** the HTTPRoute does not configure retries and gRPC clients do not add retry interceptors
 
 ### Requirement: Policy rollback
 

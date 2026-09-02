@@ -14,12 +14,12 @@ ingress:
     request: 30s
     backendRequest: 25s
 
-# CiliumNetworkPolicy in this chart. SPIRE / Cilium Helm stays in talos-proxmox.
+# Cilium mutual-auth / SPIRE is cluster Helm in talos-proxmox. CNPs are rendered here.
 meshPolicy:
   enabled: true
-  # false = allow-lists exist but default-deny ingress is off (observe).
+  # false = allow-lists without default-deny (observe unknown traffic still allowed).
   enforce: true
-  # Requires cilium-spire from talos-proxmox. Set false if SPIRE is not Ready.
+  # Requires cilium-spire Ready on the cluster.
   mutualAuth: true
 
 defaults:

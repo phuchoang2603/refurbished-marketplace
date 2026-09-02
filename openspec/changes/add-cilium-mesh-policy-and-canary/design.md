@@ -1,61 +1,56 @@
 ## Context
 
-See proposal.md for motivation. `replace-istio-with-cilium` left marketplace east–west as ClusterIP plus a Cilium Gateway edge. Cilium Helm lives in talos-proxmox; this repo must not helm-upgrade the CNI. Hubble is off on Talos. Argo CD is the only applier. The original Istio observe baseline deferred mTLS, authz, retries, and circuit breakers — this change implements that list on Cilium. Progressive delivery / canary is explicitly out of scope.
+See proposal.md for motivation. `replace-istio-with-cilium` left marketplace east–west as ClusterIP plus a Cilium Gateway edge. Cilium Helm lives in talos-proxmox; this repo must not helm-upgrade the CNI. Hubble is off on Talos. Argo CD is the only applier.
 
 ## Goals / Non-Goals
 
 **Goals:**
 
 - Fail-closed Cilium mutual auth + identity allow-lists for enrolled marketplace hops, with a documented exception matrix.
-- Conservative retries/CB on Gateway → web and/or web → gRPC without retrying CreateOrder / payment callbacks unsafely.
+- HTTPRoute timeouts on Gateway → web / pay; no dataplane retries until checkout idempotency (#35).
 - Rollback is Git + Argo sync (policy off).
 
 **Non-Goals:**
 
-- Canary, traffic splitting, weighted HTTPRoutes, Argo Rollouts, Flagger.
-- Installing SPIRE or flipping Cilium Helm from this marketplace repo (operator enables it in talos-proxmox).
-- Re-enabling Hubble as a requirement.
+- Canary, traffic splitting, Argo Rollouts, Flagger.
+- Installing SPIRE from this marketplace repo.
+- `CiliumEnvoyConfig` for east–west or explicit circuit-breaker CRDs.
+- HTTPRoute or gRPC retries on checkout/payment paths.
 
 ## Decisions
 
 ### 1. CiliumNetworkPolicy + mutual auth, not Istio CRDs
 
-Use Cilium identities and `CiliumNetworkPolicy` (ingress/egress allow-lists; `authentication.mode: required` on enrolled hops). Map callers from the existing graph: `web` → users/products/orders/cart/payment; payment ↔ simulator; consumers to Kafka stay L4/TLS to `kafka`.
+Use Cilium identities and `CiliumNetworkPolicy` (ingress allow-lists; `authentication.mode: required` on enrolled hops; `enableDefaultDeny.ingress: true` when `meshPolicy.enforce` is true). Map callers: `web` → users/products/orders/cart/payment; simulator → web callback; Kafka stays L4/TLS to `kafka`.
 
-**Cluster dependency:** Cilium mutual authentication needs SPIRE via Cilium Helm (`authentication.mutual.spire.enabled`) in talos-proxmox `apps/values/cilium.yaml`. The operator will enable that there. This change assumes it is present before enforcing `authentication.mode: required`.
+SPIRE is enabled in talos-proxmox Cilium Helm before `meshPolicy.mutualAuth: true`.
 
-**Alternatives considered:** Istio ambient waypoint policies (removed); Kubernetes NetworkPolicy only (no mTLS).
+### 2. HTTPRoute timeouts only; outlier detection from Cilium Gateway
 
-### 2. Retries and circuit breakers via Gateway API / Cilium Envoy
+Set `timeouts.request` / `timeouts.backendRequest` on shop and pay HTTPRoutes. Do not add HTTPRoute `retry` filters or gRPC retry interceptors — `CreateOrder` and hosted-payment callbacks are not idempotent at this layer ([#35](https://github.com/phuchoang2603/refurbished-marketplace/issues/35) is the prerequisite for safe checkout retries).
 
-Prefer HTTPRoute timeouts/retries on the shop Gateway path. For circuit breaking, use `CiliumEnvoyConfig` / `CiliumClusterwideEnvoyConfig` as Cilium documents for Envoy circuit breakers. Do not add application-level retry storms in Go as the platform control.
-
-**Alternatives considered:** client-side gRPC retries only (supplement, not the control plane).
+Cilium Gateway applies Envoy outlier detection on backend clusters by default; this repo does not add `CiliumEnvoyConfig`.
 
 ### 3. No canary in this change
 
-Shop traffic stays 100% on the existing `web` Service. Do not add a second Deployment/Service or HTTPRoute weights.
+Shop traffic stays on the single `web` Service and HTTPRoute backend.
 
-**Rationale:** operator dropped progressive delivery from this slice.
+### 4. talos-dev verification before archive
 
-**Alternatives considered:** GitOps HTTPRoute weights; Argo Rollouts (both rejected).
-
-### 4. Staging first, same Cloudflare path
-
-Prove deny policies and required mTLS on talos-dev without changing Cloudflare TLS or Public Hostnames.
+Prove deny (probe pod), allowed path (shop browse + checkout), and SPIRE Ready on talos-dev.
 
 ## Risks / Trade-offs
 
-| Risk                                              | Mitigation                                                                                    |
-| ------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Fail-closed mTLS breaks CNPG, migrations, or jobs | Exception matrix before enforce (init/migrate, DB, Valkey, kafka)                             |
-| Required mTLS before SPIRE is live on Talos       | Land talos-proxmox Cilium Helm first; do not flip `authentication.mode: required` until it is |
-| Retry + checkout idempotency                      | Do not blindly retry CreateOrder / hosted-payment callbacks                                   |
-| Hubble off                                        | Verify with `cilium` policy verdicts / agent logs and app traces, not a Hubble UI requirement |
+| Risk                                              | Mitigation                                              |
+| ------------------------------------------------- | ------------------------------------------------------- |
+| Fail-closed mTLS breaks CNPG, migrations, or jobs | Exception matrix; CNPs select app pods only             |
+| Required mTLS before SPIRE                        | Enable SPIRE in talos-proxmox first                     |
+| No dataplane retries until #35                    | Timeouts + implicit outlier detection only              |
+| `enforce: false` without default deny             | `enableDefaultDeny.ingress: false` only in observe mode |
 
 ## Migration Plan
 
-1. Confirm Cilium Gateway is live; confirm talos-proxmox has mutual-auth/SPIRE.
-2. Inventory allowed callers; observe-then-enforce CNPs.
-3. Enable `authentication.mode: required` on enrolled hops.
-4. Add retries/CB with conservative defaults; watch drops and traces.
+1. Confirm Cilium Gateway and SPIRE on talos-dev.
+2. Sync marketplace chart with `meshPolicy.enabled: true`, `enforce: true`, `mutualAuth: true`.
+3. Run probe deny + checkout on talos-dev.
+4. Watch agent logs and shop traces after sync.

@@ -38,29 +38,40 @@ Inventory lives in `products` (catalog). Kafka consumers are those same service 
 
 Chart knobs (`infra/charts/refurbished-marketplace/values.yaml`):
 
-| Value                   | Effect                                                                                       |
-| ----------------------- | -------------------------------------------------------------------------------------------- |
-| `meshPolicy.enabled`    | Render CNPs. `false` restores post-Istio ClusterIP (no allow-list).                          |
-| `meshPolicy.enforce`    | `false` keeps allow-lists but sets `enableDefaultDeny.ingress: false` (observe).             |
-| `meshPolicy.mutualAuth` | `false` drops `authentication.mode: required` (identity allow-list without SPIRE handshake). |
+| Value                   | Effect                                                                                                    |
+| ----------------------- | --------------------------------------------------------------------------------------------------------- |
+| `meshPolicy.enabled`    | Render CNPs. `false` restores post-Istio ClusterIP (no allow-list).                                       |
+| `meshPolicy.enforce`    | `true` sets `enableDefaultDeny.ingress: true` on CNPs (unknown callers dropped). `false` is observe-only. |
+| `meshPolicy.mutualAuth` | `false` drops `authentication.mode: required` (identity allow-list without SPIRE handshake).              |
 
-## Timeouts, retries, circuit breaking
+## Gateway timeouts and outlier detection
 
-Shop and pay HTTPRoutes set `timeouts.request` / `timeouts.backendRequest` (defaults 30s / 25s). **No HTTPRoute retries** and the Go gRPC clients have no retry interceptor: `CreateOrder` and hosted-payment callbacks must not be retried at the dataplane. Cilium Gateway already applies Envoy outlier detection on Gateway backend clusters; this repo does not add `CiliumEnvoyConfig` (it would intercept ClusterIP and is easy to get wrong).
+Shop and pay HTTPRoutes set `timeouts.request` / `timeouts.backendRequest` (defaults 30s / 25s). **No HTTPRoute retries** and no gRPC retry interceptors — checkout POST and hosted-payment callbacks are not idempotent at this layer ([#35](https://github.com/phuchoang2603/refurbished-marketplace/issues/35) is required before adding retries).
+
+Cilium Gateway applies Envoy outlier detection on backend clusters by default. This repo does not add `CiliumEnvoyConfig`.
 
 ## Policy verification
 
-Hubble is optional/off. After CNPs sync:
+After CNPs sync with `meshPolicy.enforce: true`:
 
 ```bash
 kubectl get ciliumnetworkpolicy -n ecommerce
-kubectl -n kube-system -c cilium-agent logs -l k8s-app=cilium --tail=200 | grep -E "Policy is requiring authentication|Successfully authenticated|Denied"
-# Unknown caller (expect drop when enforce is true):
-kubectl -n ecommerce run policy-probe --restart=Never --image=busybox --command -- wget -qO- --timeout=3 http://users:9091
-kubectl -n ecommerce delete pod policy-probe
-```
+kubectl -n kube-system -c cilium-agent logs -l k8s-app=cilium --tail=200 \
+  | grep -E 'Policy is requiring authentication|Successfully authenticated|Policy denied'
 
-Checkout through `shop-dev` / `shop` should still succeed for allowed callers.
+# Unknown caller — expect connection failure (not HTTP 200):
+kubectl -n ecommerce run policy-probe --restart=Never --image=busybox:1.36 \
+  --overrides='{"spec":{"securityContext":{"runAsNonRoot":true,"runAsUser":65534,"seccompProfile":{"type":"RuntimeDefault"}},"containers":[{"name":"policy-probe","image":"busybox:1.36","securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"runAsNonRoot":true,"runAsUser":65534,"seccompProfile":{"type":"RuntimeDefault"}},"command":["wget","-qO-","--timeout=3","http://users:9091"]}]}}' \
+  --command -- wget -qO- --timeout=3 http://users:9091
+kubectl -n ecommerce wait --for=jsonpath='{.status.phase}'=Succeeded pod/policy-probe --timeout=60s
+kubectl -n ecommerce logs policy-probe   # expect wget error / non-zero exit
+kubectl -n ecommerce delete pod policy-probe
+
+# Allowed path — shop browse and checkout on talos-dev:
+curl -fsS -o /dev/null -w '%{http_code}\n' https://shop-dev.phuchoang.sbs/
+curl -fsS -o /dev/null -w '%{http_code}\n' https://shop-dev.phuchoang.sbs/products
+# Complete one checkout in the browser (login → cart → pay simulator → return).
+```
 
 ## Mesh policy rollback
 

@@ -14,7 +14,10 @@ spec:
   endpointSelector:
     matchLabels:
       app: web
-{{- if not .Values.meshPolicy.enforce }}
+{{- if .Values.meshPolicy.enforce }}
+  enableDefaultDeny:
+    ingress: true
+{{- else }}
   enableDefaultDeny:
     ingress: false
 {{- end }}
@@ -52,7 +55,10 @@ spec:
   endpointSelector:
     matchLabels:
       app: {{ $name }}
-{{- if not $.Values.meshPolicy.enforce }}
+{{- if $.Values.meshPolicy.enforce }}
+  enableDefaultDeny:
+    ingress: true
+{{- else }}
   enableDefaultDeny:
     ingress: false
 {{- end }}
@@ -89,7 +95,10 @@ spec:
   endpointSelector:
     matchLabels:
       app: payment-gateway-simulator
-{{- if not .Values.meshPolicy.enforce }}
+{{- if .Values.meshPolicy.enforce }}
+  enableDefaultDeny:
+    ingress: true
+{{- else }}
   enableDefaultDeny:
     ingress: false
 {{- end }}
