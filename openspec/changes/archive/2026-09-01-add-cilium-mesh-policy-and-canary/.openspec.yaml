@@ -1,0 +1,4 @@
+schema: spec-driven
+created: 2026-08-31
+goal: Harden east-west security (mTLS, authz, retries/CB) after Cilium replaces
+  Istio.
