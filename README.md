@@ -19,20 +19,7 @@ This repository is a learning project for building distributed, highly available
 
 ### System Flow
 
-```mermaid
-graph LR
-  Browser[Browser] --> Web[web]
-  Web --> Users[users]
-  Web --> Products[products]
-  Web --> Cart[cart]
-  Web --> Orders[orders]
-  Orders --> Kafka[(Kafka)]
-  Kafka --> Products[products]
-  Kafka --> Payment[payment]
-  Kafka --> Orders
-  Payment --> Kafka
-  Products --> Kafka
-```
+![Architecture: Talos namespaces, ecommerce services, Kafka/Debezium, GitOps](docs/diagrams/architecture.svg)
 
 ## Tech Stack
 
