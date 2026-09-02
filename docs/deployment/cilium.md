@@ -63,7 +63,7 @@ kubectl -n kube-system -c cilium-agent logs -l k8s-app=cilium --tail=200 \
 kubectl -n ecommerce run policy-probe --restart=Never --image=busybox:1.36 \
   --overrides='{"spec":{"securityContext":{"runAsNonRoot":true,"runAsUser":65534,"seccompProfile":{"type":"RuntimeDefault"}},"containers":[{"name":"policy-probe","image":"busybox:1.36","securityContext":{"allowPrivilegeEscalation":false,"capabilities":{"drop":["ALL"]},"runAsNonRoot":true,"runAsUser":65534,"seccompProfile":{"type":"RuntimeDefault"}},"command":["wget","-qO-","--timeout=3","http://users:9091"]}]}}' \
   --command -- wget -qO- --timeout=3 http://users:9091
-kubectl -n ecommerce wait --for=jsonpath='{.status.phase}'=Succeeded pod/policy-probe --timeout=60s
+kubectl -n ecommerce wait --for=jsonpath='{.status.phase}'=Failed pod/policy-probe --timeout=60s
 kubectl -n ecommerce logs policy-probe   # expect wget error / non-zero exit
 kubectl -n ecommerce delete pod policy-probe
 
