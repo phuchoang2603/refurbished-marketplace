@@ -5,7 +5,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
-	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -29,21 +28,11 @@ func httpSpanName(_ string, r *http.Request) string {
 }
 
 func otelHTTPMiddleware() func(http.Handler) http.Handler {
-	return otelhttp.NewMiddleware("web",
-		otelhttp.WithSpanNameFormatter(httpSpanName),
-		otelhttp.WithMetricAttributesFn(httpRouteMetricAttrs),
-	)
+	return otelhttp.NewMiddleware("web", otelhttp.WithSpanNameFormatter(httpSpanName))
 }
 
-func httpRouteMetricAttrs(r *http.Request) []attribute.KeyValue {
-	if p := httpRoutePattern(r); p != "" {
-		return []attribute.KeyValue{semconv.HTTPRoute(p)}
-	}
-	return nil
-}
-
-// withHTTPRouteAttr sets http.route after chi matches. Span names come only
-// from httpSpanName; this does not call SetName.
+// withHTTPRouteAttr sets http.route on the span and otelhttp Labeler after chi
+// matches. Span names come only from httpSpanName; this does not call SetName.
 func withHTTPRouteAttr(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		next.ServeHTTP(w, r)
@@ -51,9 +40,13 @@ func withHTTPRouteAttr(next http.Handler) http.Handler {
 		if pattern == "" {
 			return
 		}
+		route := semconv.HTTPRoute(pattern)
+		if labeler, ok := otelhttp.LabelerFromContext(r.Context()); ok {
+			labeler.Add(route)
+		}
 		span := trace.SpanFromContext(r.Context())
 		if span.IsRecording() {
-			span.SetAttributes(semconv.HTTPRoute(pattern))
+			span.SetAttributes(route)
 		}
 	})
 }
