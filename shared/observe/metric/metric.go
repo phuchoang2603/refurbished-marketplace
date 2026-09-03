@@ -13,8 +13,6 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 )
 
-const defaultOTLPEndpoint = "http://vmsingle-vmks.monitoring.svc.cluster.local:8428/opentelemetry/v1/metrics"
-
 // Config controls the shared meter provider. Empty Endpoint skips export
 // (noop provider).
 type Config struct {
@@ -75,6 +73,3 @@ func Init(ctx context.Context, cfg Config) (func(context.Context) error, error) 
 	otel.SetMeterProvider(mp)
 	return mp.Shutdown, nil
 }
-
-// DefaultEndpoint is the in-cluster VictoriaMetrics OTLP HTTP metrics address.
-func DefaultEndpoint() string { return defaultOTLPEndpoint }

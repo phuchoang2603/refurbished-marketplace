@@ -108,7 +108,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
           "editorMode": "code",
-          "expr": "sum by (\"service.name\", \"rpc.method\") (rate({__name__=\"rpc.server.call.duration_count\"}[5m]))",
+          "expr": "sum by (\"service.name\", \"rpc.method\") (rate({__name__=\"rpc.server.call.duration_count\", \"service.name\"=~\"web|users|products|orders|cart|payment\"}[5m]))",
           "legendFormat": "{{service.name}} {{rpc.method}}",
           "refId": "A"
         }
@@ -132,7 +132,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
           "editorMode": "code",
-          "expr": "sum by (\"service.name\") (rate({__name__=\"rpc.server.call.duration_count\", \"rpc.response.status_code\"!=\"OK\"}[5m])) / sum by (\"service.name\") (rate({__name__=\"rpc.server.call.duration_count\"}[5m]))",
+          "expr": "sum by (\"service.name\") (rate({__name__=\"rpc.server.call.duration_count\", \"service.name\"=~\"web|users|products|orders|cart|payment\", \"rpc.response.status_code\"!=\"OK\"}[5m])) / sum by (\"service.name\") (rate({__name__=\"rpc.server.call.duration_count\", \"service.name\"=~\"web|users|products|orders|cart|payment\"}[5m]))",
           "legendFormat": "{{service.name}}",
           "refId": "A"
         }
@@ -155,7 +155,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum by (le, \"service.name\", \"rpc.method\") (rate({__name__=\"rpc.server.call.duration_bucket\"}[5m])))",
+          "expr": "histogram_quantile(0.95, sum by (le, \"service.name\", \"rpc.method\") (rate({__name__=\"rpc.server.call.duration_bucket\", \"service.name\"=~\"web|users|products|orders|cart|payment\"}[5m])))",
           "legendFormat": "{{service.name}} {{rpc.method}}",
           "refId": "A"
         }
