@@ -16,10 +16,10 @@
 ## 4. Grafana dashboard
 
 - [x] 4.1 Enable `customDashboards` and add a Marketplace RED dashboard JSON (web HTTP rate/error/p95 by route; gRPC **server** rate/error/p95 by service and method). Query VictoriaMetrics only.
-- [ ] 4.2 After the first live export on talos-dev, align PromQL with actual metric and label names VM stored.
+- [x] 4.2 After the first live export on talos-dev, align PromQL with actual metric and label names VM stored.
 
 ## 5. Docs and close-out
 
 - [x] 5.1 Update `docs/observability.md` (and Cilium observe notes that still treat #43 as a gap) with dual OTLP destinations, dashboard location, and Hubble-not-required.
-- [ ] 5.2 On talos-dev: generate HTTP + gRPC traffic (browse + checkout), confirm series in VictoriaMetrics and panels on the dashboard, confirm traces still land in VictoriaTraces.
-- [ ] 5.3 Close GitHub issue #43 when the dashboard shows live app RED.
+- [x] 5.2 On talos-dev: generate HTTP + gRPC traffic (browse + checkout), confirm series in VictoriaMetrics and panels on the dashboard, confirm traces still land in VictoriaTraces.
+- [x] 5.3 Close GitHub issue #43 when the dashboard shows live app RED.
