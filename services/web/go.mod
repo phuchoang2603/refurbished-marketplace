@@ -33,6 +33,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
 	github.com/klauspost/compress v1.19.2 // indirect
 	github.com/phuchoang2603/refurbished-marketplace/shared/messaging v0.0.0 // indirect
+	github.com/phuchoang2603/refurbished-marketplace/shared/observe/metric v0.0.0 // indirect
 	github.com/pierrec/lz4/v4 v4.1.28 // indirect
 	github.com/redis/go-redis/extra/rediscmd/v9 v9.22.0 // indirect
 	github.com/redis/go-redis/extra/redisotel/v9 v9.22.0 // indirect
@@ -42,11 +43,13 @@ require (
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.70.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.45.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.45.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.45.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.45.0 // indirect
 	go.opentelemetry.io/otel/metric v1.45.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.45.0 // indirect
+	go.opentelemetry.io/otel/sdk/metric v1.45.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.11.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
 	golang.org/x/net v0.57.0 // indirect
@@ -63,6 +66,7 @@ replace (
 	github.com/phuchoang2603/refurbished-marketplace/shared/err/grpcerr => ../../shared/err/grpcerr
 	github.com/phuchoang2603/refurbished-marketplace/shared/messaging => ../../shared/messaging
 	github.com/phuchoang2603/refurbished-marketplace/shared/observe/log => ../../shared/observe/log
+	github.com/phuchoang2603/refurbished-marketplace/shared/observe/metric => ../../shared/observe/metric
 	github.com/phuchoang2603/refurbished-marketplace/shared/observe/trace => ../../shared/observe/trace
 	github.com/phuchoang2603/refurbished-marketplace/shared/proto => ../../shared/proto
 	github.com/phuchoang2603/refurbished-marketplace/shared/runtime => ../../shared/runtime

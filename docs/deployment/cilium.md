@@ -16,7 +16,7 @@ Cilium 1.18 Gateway Services are `LoadBalancer`. `cloudflared` uses in-cluster D
 
 `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`
 
-East–west traffic is ordinary ClusterIP plus CiliumNetworkPolicy (allow-lists and optional required mTLS). Application traces stay OTEL → VictoriaTraces. Hubble is not part of the observe path; request/error/duration SLIs are follow-on issue [#43](https://github.com/phuchoang2603/refurbished-marketplace/issues/43).
+East–west traffic is ordinary ClusterIP plus CiliumNetworkPolicy (allow-lists and optional required mTLS). Application traces stay OTEL → VictoriaTraces. Hubble is not part of the observe path; request/error/duration SLIs are application OTEL metrics in VictoriaMetrics (Grafana **Marketplace RED**).
 
 SPIRE for Cilium mutual auth is cluster Helm in **talos-proxmox** (`authentication.mutual.spire`). This chart sets `authentication.mode: required` on enrolled hops. Do not helm-upgrade Cilium from this repo.
 

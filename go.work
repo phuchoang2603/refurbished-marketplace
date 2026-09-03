@@ -12,6 +12,7 @@ use (
 	./shared/err/grpcerr
 	./shared/messaging
 	./shared/observe/log
+	./shared/observe/metric
 	./shared/observe/trace
 	./shared/proto
 	./shared/runtime
@@ -27,6 +28,7 @@ replace (
 	github.com/phuchoang2603/refurbished-marketplace/shared/err/grpcerr v0.0.0 => ./shared/err/grpcerr
 	github.com/phuchoang2603/refurbished-marketplace/shared/messaging v0.0.0 => ./shared/messaging
 	github.com/phuchoang2603/refurbished-marketplace/shared/observe/log v0.0.0 => ./shared/observe/log
+	github.com/phuchoang2603/refurbished-marketplace/shared/observe/metric v0.0.0 => ./shared/observe/metric
 	github.com/phuchoang2603/refurbished-marketplace/shared/observe/trace v0.0.0 => ./shared/observe/trace
 	github.com/phuchoang2603/refurbished-marketplace/shared/proto v0.0.0 => ./shared/proto
 	github.com/phuchoang2603/refurbished-marketplace/shared/runtime v0.0.0 => ./shared/runtime

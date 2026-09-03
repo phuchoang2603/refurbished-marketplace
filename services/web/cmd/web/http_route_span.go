@@ -5,6 +5,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -28,7 +29,17 @@ func httpSpanName(_ string, r *http.Request) string {
 }
 
 func otelHTTPMiddleware() func(http.Handler) http.Handler {
-	return otelhttp.NewMiddleware("web", otelhttp.WithSpanNameFormatter(httpSpanName))
+	return otelhttp.NewMiddleware("web",
+		otelhttp.WithSpanNameFormatter(httpSpanName),
+		otelhttp.WithMetricAttributesFn(httpRouteMetricAttrs),
+	)
+}
+
+func httpRouteMetricAttrs(r *http.Request) []attribute.KeyValue {
+	if p := httpRoutePattern(r); p != "" {
+		return []attribute.KeyValue{semconv.HTTPRoute(p)}
+	}
+	return nil
 }
 
 // withHTTPRouteAttr sets http.route after chi matches. Span names come only

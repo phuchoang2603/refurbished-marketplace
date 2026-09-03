@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define post-Istio observe path: marketplace OpenTelemetry traces to VictoriaTraces, without Hubble, Cilium L7 visibility policies, or Istio waypoint metrics. Application-level RED metrics are follow-on GitHub issue #43.
+Define post-Istio observe path: marketplace OpenTelemetry traces to VictoriaTraces, without Hubble, Cilium L7 visibility policies, or Istio waypoint metrics. Application-level RED metrics are OpenTelemetry metrics in VictoriaMetrics (not Hubble).
 
 ## Requirements
 

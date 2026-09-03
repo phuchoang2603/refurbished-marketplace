@@ -10,16 +10,19 @@ It deploys the first platform baseline for:
 - Dashboards: Grafana
 - Alerts: Alertmanager and stack-managed rules
 
-Application metrics endpoints and log shipping changes remain out of scope for the platform slice. Marketplace services export OTLP traces **directly** to VictoriaTraces. Gateway proxies do not export traces. Hubble is not required (it may be deleted on the cluster). App-level RED metrics are follow-on [#43](https://github.com/phuchoang2603/refurbished-marketplace/issues/43).
+Application `/metrics` scrape endpoints remain out of scope. Marketplace services export OTLP traces **directly** to VictoriaTraces and OTLP metrics **directly** to VictoriaMetrics. Gateway proxies do not export traces. Hubble is not required (it may be deleted on the cluster). Grafana **Marketplace RED** (`Marketplace` folder) is the application request/error/duration path.
 
-### OTLP endpoints (direct to VTSingle)
+### OTLP endpoints
 
-| Protocol         | Endpoint                                                                                 |
-| ---------------- | ---------------------------------------------------------------------------------------- |
-| gRPC (preferred) | `vtsingle-vmks.monitoring.svc.cluster.local:4317` (insecure TLS in-cluster)              |
-| HTTP fallback    | `http://vtsingle-vmks.monitoring.svc.cluster.local:10428/insert/opentelemetry/v1/traces` |
+| Signal  | Protocol         | Endpoint                                                                                 |
+| ------- | ---------------- | ---------------------------------------------------------------------------------------- |
+| Traces  | gRPC (preferred) | `vtsingle-vmks.monitoring.svc.cluster.local:4317` (insecure TLS in-cluster)              |
+| Traces  | HTTP fallback    | `http://vtsingle-vmks.monitoring.svc.cluster.local:10428/insert/opentelemetry/v1/traces` |
+| Metrics | HTTP protobuf    | `http://vmsingle-vmks.monitoring.svc.cluster.local:8428/opentelemetry/v1/metrics`        |
 
-Set service env `OTEL_EXPORTER_OTLP_ENDPOINT=vtsingle-vmks.monitoring.svc.cluster.local:4317` (gRPC) or use the HTTP URL with the `shared/observe/trace` bootstrap’s HTTP mode.
+Set `OTEL_EXPORTER_OTLP_ENDPOINT` to the traces gRPC address (or the HTTP traces URL with the `shared/observe/trace` bootstrap’s HTTP mode). Set `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` to the VMSingle metrics URL. Do not point metrics at VictoriaTraces.
+
+Grafana folder **Marketplace** hosts **Marketplace RED**: web HTTP rate/error/p95 by chi route, and gRPC **server** rate/error/p95 by service and RPC. Hubble and Istio series are not the source.
 
 ## Grafana Access
 
@@ -126,7 +129,7 @@ Browser → ingress → web ──gRPC──▶ domain services (+ DB / Redis ch
 
 **Connect tracing:** KafkaConnect sets `spec.tracing.type: opentelemetry` (loads Strimzi `tracing-agent`) plus `OTEL_PROPAGATORS=tracecontext` and OTLP export to VictoriaTraces. EventRouter maps `tracingspancontext` → Kafka `traceparent`. Rebuild `connect-debezium` only when the Debezium plugin changes; enabling the agent is a chart/CR change.
 
-**Mesh / edge SLIs:** Istio RED is gone. Hubble is not the observe path. Use traces + logs until app OTEL metrics land in [#43](https://github.com/phuchoang2603/refurbished-marketplace/issues/43). Waterfalls are app + Connect only — no Gateway proxy spans.
+**Mesh / edge SLIs:** Istio RED is gone. Hubble is not the observe path. Use Grafana **Marketplace RED** (application OTEL metrics in VictoriaMetrics) for request/error/duration. Waterfalls are app + Connect only — no Gateway proxy spans.
 
 **Verify after deploy:**
 
@@ -139,7 +142,7 @@ Browser → ingress → web ──gRPC──▶ domain services (+ DB / Redis ch
 
 3. Open a TraceId for service `web`: root should look like `POST /cart/checkout` (or similar route pattern), not the bare string `web`. Expect web → orders (gRPC + DB children) → Debezium/connect → products (messaging + DB). Kafka `orders.created` records should carry a `traceparent` header.
 4. Complete hosted-payment success/fail; confirm callback → payment gRPC → payment outbox path.
-5. Confirm Gateway proxy spans are absent. Edge request/error/duration dashboards wait on [#43](https://github.com/phuchoang2603/refurbished-marketplace/issues/43).
+5. Confirm Gateway proxy spans are absent. For request/error/duration, open Grafana folder **Marketplace** → **Marketplace RED** (VictoriaMetrics). Hubble is not required.
 
 ## Structured logging
 

@@ -36,6 +36,16 @@ func main() {
 		}
 	}()
 
+	shutdownMetrics, err := runtime.InitMetrics(ctx, "cart")
+	if err != nil {
+		sharedlog.Fatal("init metrics", "err", err)
+	}
+	defer func() {
+		if err := shutdownMetrics(context.Background()); err != nil {
+			sharedlog.Error("metrics shutdown", "err", err)
+		}
+	}()
+
 	rdb, err := runtime.OpenRedis(ctx, cfg.RedisAddr)
 	if err != nil {
 		sharedlog.Fatal("open redis", "err", err)

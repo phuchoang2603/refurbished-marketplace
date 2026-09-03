@@ -251,5 +251,5 @@ dashboardSyncJob:
   enabled: true
 
 customDashboards:
-  enabled: false
+  enabled: true
   folder: Marketplace
