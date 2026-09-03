@@ -14,7 +14,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
-    targetRevision: openspec/add-cilium-mesh-policy-and-canary
+    targetRevision: add-app-otel-red-metrics
     path: infra/argocd/app-of-apps
     helm:
       values: |
