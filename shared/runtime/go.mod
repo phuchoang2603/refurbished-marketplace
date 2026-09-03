@@ -6,6 +6,7 @@ require (
 	github.com/XSAM/otelsql v0.43.0
 	github.com/phuchoang2603/refurbished-marketplace/shared/messaging v0.0.0
 	github.com/phuchoang2603/refurbished-marketplace/shared/observe/log v0.0.0
+	github.com/phuchoang2603/refurbished-marketplace/shared/observe/metric v0.0.0
 	github.com/phuchoang2603/refurbished-marketplace/shared/observe/trace v0.0.0
 	github.com/redis/go-redis/extra/redisotel/v9 v9.22.0
 	github.com/redis/go-redis/v9 v9.22.0
@@ -27,11 +28,13 @@ require (
 	github.com/twmb/franz-go/pkg/kmsg v1.13.1 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.70.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.45.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.45.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.45.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.45.0 // indirect
 	go.opentelemetry.io/otel/metric v1.45.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.45.0 // indirect
+	go.opentelemetry.io/otel/sdk/metric v1.45.0 // indirect
 	go.opentelemetry.io/otel/trace v1.45.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.11.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
@@ -50,6 +53,7 @@ replace (
 	github.com/phuchoang2603/refurbished-marketplace/shared/err/grpcerr => ../err/grpcerr
 	github.com/phuchoang2603/refurbished-marketplace/shared/messaging => ../messaging
 	github.com/phuchoang2603/refurbished-marketplace/shared/observe/log => ../observe/log
+	github.com/phuchoang2603/refurbished-marketplace/shared/observe/metric => ../observe/metric
 	github.com/phuchoang2603/refurbished-marketplace/shared/observe/trace => ../observe/trace
 	github.com/phuchoang2603/refurbished-marketplace/shared/proto => ../proto
 	github.com/phuchoang2603/refurbished-marketplace/shared/testutil/kafka => ../testutil/kafka

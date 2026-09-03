@@ -52,6 +52,16 @@ func main() {
 		}
 	}()
 
+	shutdownMetrics, err := runtime.InitMetrics(ctx, "users")
+	if err != nil {
+		sharedlog.Fatal("init metrics", "err", err)
+	}
+	defer func() {
+		if err := shutdownMetrics(context.Background()); err != nil {
+			sharedlog.Error("metrics shutdown", "err", err)
+		}
+	}()
+
 	if err := runtime.ServeGRPC(ctx, runtime.GRPCServerConfig{
 		Addr:        addr,
 		ServiceName: "users",

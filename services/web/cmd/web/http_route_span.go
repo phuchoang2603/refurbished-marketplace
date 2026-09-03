@@ -31,8 +31,8 @@ func otelHTTPMiddleware() func(http.Handler) http.Handler {
 	return otelhttp.NewMiddleware("web", otelhttp.WithSpanNameFormatter(httpSpanName))
 }
 
-// withHTTPRouteAttr sets http.route after chi matches. Span names come only
-// from httpSpanName; this does not call SetName.
+// withHTTPRouteAttr sets http.route on the span and otelhttp Labeler after chi
+// matches. Span names come only from httpSpanName; this does not call SetName.
 func withHTTPRouteAttr(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		next.ServeHTTP(w, r)
@@ -40,9 +40,13 @@ func withHTTPRouteAttr(next http.Handler) http.Handler {
 		if pattern == "" {
 			return
 		}
+		route := semconv.HTTPRoute(pattern)
+		if labeler, ok := otelhttp.LabelerFromContext(r.Context()); ok {
+			labeler.Add(route)
+		}
 		span := trace.SpanFromContext(r.Context())
 		if span.IsRecording() {
-			span.SetAttributes(semconv.HTTPRoute(pattern))
+			span.SetAttributes(route)
 		}
 	})
 }

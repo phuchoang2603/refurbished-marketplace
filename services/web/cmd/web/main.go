@@ -35,6 +35,16 @@ func main() {
 		}
 	}()
 
+	shutdownMetrics, err := runtime.InitMetrics(ctx, "web")
+	if err != nil {
+		sharedlog.Fatal("init metrics", "err", err)
+	}
+	defer func() {
+		if err := shutdownMetrics(context.Background()); err != nil {
+			sharedlog.Error("metrics shutdown", "err", err)
+		}
+	}()
+
 	deps, err := webclients.New(webclients.Config{
 		UsersAddr:    cfg.UsersAddr,
 		ProductsAddr: cfg.ProductsAddr,

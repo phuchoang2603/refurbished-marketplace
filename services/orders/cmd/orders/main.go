@@ -51,6 +51,16 @@ func main() {
 		}
 	}()
 
+	shutdownMetrics, err := runtime.InitMetrics(ctx, "orders")
+	if err != nil {
+		sharedlog.Fatal("init metrics", "err", err)
+	}
+	defer func() {
+		if err := shutdownMetrics(context.Background()); err != nil {
+			sharedlog.Error("metrics shutdown", "err", err)
+		}
+	}()
+
 	var wg sync.WaitGroup
 	runtime.StartKafkaConsumer(ctx, &wg, func(ctx context.Context, brokers []string) error {
 		return runOrderResultConsumer(ctx, svc, brokers, cfg.KafkaGroupID)

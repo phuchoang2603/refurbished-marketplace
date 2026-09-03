@@ -53,6 +53,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/phuchoang2603/refurbished-marketplace/shared/messaging v0.0.0 // indirect
+	github.com/phuchoang2603/refurbished-marketplace/shared/observe/metric v0.0.0 // indirect
 	github.com/phuchoang2603/refurbished-marketplace/shared/observe/trace v0.0.0 // indirect
 	github.com/pierrec/lz4/v4 v4.1.28 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
@@ -73,11 +74,13 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.70.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.70.0 // indirect
 	go.opentelemetry.io/otel v1.45.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp v1.45.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.45.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.45.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp v1.45.0 // indirect
 	go.opentelemetry.io/otel/metric v1.45.0 // indirect
 	go.opentelemetry.io/otel/sdk v1.45.0 // indirect
+	go.opentelemetry.io/otel/sdk/metric v1.45.0 // indirect
 	go.opentelemetry.io/otel/trace v1.45.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.11.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
@@ -97,6 +100,7 @@ replace (
 	github.com/phuchoang2603/refurbished-marketplace/shared/err/grpcerr => ../../shared/err/grpcerr
 	github.com/phuchoang2603/refurbished-marketplace/shared/messaging => ../../shared/messaging
 	github.com/phuchoang2603/refurbished-marketplace/shared/observe/log => ../../shared/observe/log
+	github.com/phuchoang2603/refurbished-marketplace/shared/observe/metric => ../../shared/observe/metric
 	github.com/phuchoang2603/refurbished-marketplace/shared/observe/trace => ../../shared/observe/trace
 	github.com/phuchoang2603/refurbished-marketplace/shared/proto => ../../shared/proto
 	github.com/phuchoang2603/refurbished-marketplace/shared/runtime => ../../shared/runtime

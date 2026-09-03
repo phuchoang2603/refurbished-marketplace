@@ -25,6 +25,7 @@ meshPolicy:
 defaults:
   otel:
     endpoint: vtsingle-vmks.monitoring.svc.cluster.local:4317
+    metricsEndpoint: http://vmsingle-vmks.monitoring.svc.cluster.local:8428/opentelemetry/v1/metrics
   resources:
     requests:
       cpu: 25m

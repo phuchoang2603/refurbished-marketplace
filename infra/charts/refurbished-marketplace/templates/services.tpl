@@ -90,6 +90,10 @@ spec:
             - name: OTEL_TRACES_SAMPLER_ARG
               value: "1"
 {{- end }}
+{{- with $.Values.defaults.otel.metricsEndpoint }}
+            - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+              value: {{ . | quote }}
+{{- end }}
 {{- if $svc.env }}
 {{- range $key, $value := $svc.env }}
             - name: {{ $key }}
