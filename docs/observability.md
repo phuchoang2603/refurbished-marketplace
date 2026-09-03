@@ -22,7 +22,7 @@ Application `/metrics` scrape endpoints remain out of scope. Marketplace service
 
 Set `OTEL_EXPORTER_OTLP_ENDPOINT` to the traces gRPC address (or the HTTP traces URL with the `shared/observe/trace` bootstrap’s HTTP mode). Set `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` to the VMSingle metrics URL. Do not point metrics at VictoriaTraces.
 
-Grafana folder **Marketplace** hosts **Marketplace RED**: web HTTP rate/error/p95 by chi route, and gRPC **server** rate/error/p95 by service and RPC. Hubble and Istio series are not the source.
+Grafana folder **Marketplace** hosts **Marketplace RED** (HTTP/gRPC rate/error/p95) and **Marketplace logs** (volume + JSON lines from VictoriaLogs). Hubble and Istio series are not the source.
 
 ## Grafana Access
 
@@ -142,7 +142,7 @@ Browser → ingress → web ──gRPC──▶ domain services (+ DB / Redis ch
 
 3. Open a TraceId for service `web`: root should look like `POST /cart/checkout` (or similar route pattern), not the bare string `web`. Expect web → orders (gRPC + DB children) → Debezium/connect → products (messaging + DB). Kafka `orders.created` records should carry a `traceparent` header.
 4. Complete hosted-payment success/fail; confirm callback → payment gRPC → payment outbox path.
-5. Confirm Gateway proxy spans are absent. For request/error/duration, open Grafana folder **Marketplace** → **Marketplace RED** (VictoriaMetrics). Hubble is not required.
+5. Confirm Gateway proxy spans are absent. For request/error/duration, open Grafana folder **Marketplace** → **Marketplace RED** (VictoriaMetrics). For JSON logs, open **Marketplace logs**. Hubble is not required.
 
 ## Structured logging
 
@@ -185,10 +185,10 @@ Exact filter syntax can vary slightly with the Grafana VL plugin UI — prefer E
 
 ### Debug a checkout
 
-Logs Drilldown does not work with VictoriaLogs — use **Explore**.
+Logs Drilldown does not work with VictoriaLogs — use **Marketplace logs** or **Explore**.
 
 1. **Traces:** Explore → **VictoriaTraces** → TraceQL `{ resource.service.name =~ "web|orders|payment|products|cart|users|connect-debezium" }` (or search service `web`) → open a TraceId. Expect app spans with route/RPC/messaging names, DB/Redis children where applicable, and `connect-debezium` on the async hop — not mesh proxy services.
-2. **App logs for that TraceId:** Trace → logs (Tempo `tracesToLogsV2` filters by `trace_id` only). You should see marketplace JSON lines across services for that TraceId.
+2. **App logs for that TraceId:** Trace → logs. Tempo sends LogsQL `trace_id:="<id>"` to VictoriaLogs (not a Loki `{trace_id=…}` selector). You should see marketplace JSON lines across services for that TraceId.
 3. **App logs in Explore** (same time range as the trace):
 
 ```logsql
@@ -200,8 +200,24 @@ kubernetes.pod_namespace:="ecommerce"
 
 ### Trace → logs
 
-The VictoriaTraces Tempo datasource (`uid: VictoriaTraces`) is provisioned with `tracesToLogsV2` pointing at VictoriaLogs (`uid: VictoriaLogs`, `filterByTraceID: true`, no `service.name` tag filter).
+The VictoriaTraces Tempo datasource (`uid: VictoriaTraces`) uses `tracesToLogsV2` with a **LogsQL custom query** `trace_id:="${__trace.traceId}"`. Grafana’s default `filterByTraceID` builds a Loki stream selector, which VictoriaLogs does not execute, so the jump looks empty or unfiltered.
 
 1. Open a span in Explore / Traces Drilldown.
 2. Use **Logs for this span** / Trace → logs.
-3. Confirm matching JSON lines include the same `trace_id` (all marketplace services that logged for that TraceId).
+3. Confirm matching JSON lines include the same `trace_id` (all marketplace services that logged for that TraceId). Do not expect span-id-only matching: access logs often carry the request TraceId on a different span than the one you clicked.
+
+Trace → metrics on the same Tempo datasource queries VictoriaMetrics request-rate series labeled `service.name`.
+
+### Logs dashboard and log → traces / metrics
+
+Grafana folder **Marketplace** → **Marketplace logs** shows ecommerce JSON volume (and errors) plus a logs panel. Filter by `service` (All expands to every marketplace service).
+
+VictoriaLogs derived fields (on log rows that have the label):
+
+| Field      | Opens                                           |
+| ---------- | ----------------------------------------------- |
+| `trace_id` | VictoriaTraces for that TraceId                 |
+| `service`  | VictoriaMetrics RED series for `"service.name"` |
+| `order_id` | VictoriaLogs query `order_id:<uuid>`            |
+
+Click the field in Explore or the logs panel, then the derived-field link.

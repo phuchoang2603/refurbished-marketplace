@@ -163,16 +163,39 @@ The observability chart SHALL provision a repository-owned Grafana dashboard for
 - **WHEN** the observability chart is synced with custom dashboards enabled
 - **THEN** Grafana includes the Marketplace RED dashboard in the Marketplace folder
 
+### Requirement: Marketplace logs dashboard is provisioned
+
+The observability chart SHALL provision a repository-owned Grafana dashboard that queries VictoriaLogs for marketplace application JSON logs.
+
+#### Scenario: Custom marketplace logs dashboard loads
+
+- **WHEN** the observability chart is synced with custom dashboards enabled
+- **THEN** Grafana includes a Marketplace logs dashboard in the Marketplace folder that can filter by service
+
 ### Requirement: Trace to logs correlation in Grafana
 
-The observability stack SHALL configure the Grafana VictoriaTraces (Tempo) datasource so operators can navigate from a span to VictoriaLogs lines filtered by TraceId (`trace_id`).
+The observability stack SHALL configure the Grafana VictoriaTraces (Tempo) datasource so operators can navigate from a span to VictoriaLogs using LogsQL on the log field `trace_id`. The link SHALL NOT rely on Loki-style stream selectors.
 
 #### Scenario: Tempo datasource links to VictoriaLogs
 
 - **WHEN** Grafana starts from the observability chart after this change
-- **THEN** the VictoriaTraces Tempo datasource includes Trace → logs configuration targeting the VictoriaLogs datasource using the log field `trace_id`
+- **THEN** the VictoriaTraces Tempo datasource includes Trace → logs configuration targeting the VictoriaLogs datasource with a LogsQL query on `trace_id`
 
 #### Scenario: Operator jumps from span to logs
 
 - **WHEN** an operator opens a marketplace span in Grafana Explore or Traces Drilldown and uses Trace → logs
 - **THEN** Grafana shows VictoriaLogs results for that TraceId when matching JSON log lines exist
+
+### Requirement: Log to traces and metrics correlation in Grafana
+
+The VictoriaLogs datasource SHALL expose derived fields so operators can jump from a log line to the matching trace and to application metrics that share `service` / `service.name`.
+
+#### Scenario: Operator jumps from log to trace
+
+- **WHEN** an operator opens a marketplace JSON log that includes `trace_id`
+- **THEN** Grafana offers a link to VictoriaTraces for that TraceId
+
+#### Scenario: Operator jumps from log to metrics
+
+- **WHEN** an operator opens a marketplace JSON log that includes `service`
+- **THEN** Grafana offers a link to VictoriaMetrics series filtered by that service name

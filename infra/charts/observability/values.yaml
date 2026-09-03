@@ -50,9 +50,9 @@ victoria-metrics-k8s-stack:
           uid: VictoriaLogs
           type: victoriametrics-logs-datasource
           jsonData:
-            # Grafana only treats lowercase level tokens as known. Map slog's
-            # uppercase Level.String() values and common text tokens in _msg
-            # (CNPG/Postgres, leftover Java lines).
+            # Marketplace JSON slog already emits lowercase level. Keep a
+            # short uppercase map for CNPG/Postgres lines Grafana would
+            # otherwise paint as unknown.
             logLevelRules:
               - field: level
                 operator: equals
@@ -79,27 +79,25 @@ victoria-metrics-k8s-stack:
                 value: DEBUG
                 level: debug
                 enabled: true
-              - field: _msg
-                operator: regex
-                value: "(?i)\\bERROR\\b"
-                level: error
-                enabled: true
-              - field: _msg
-                operator: regex
-                # Envoy/Istio use tab-separated "warning" / "warn" / "info".
-                value: "(?i)(?:\\t|\\s)(warn(?:ing)?)(?:\\t|\\s)"
-                level: warning
-                enabled: true
-              - field: _msg
-                operator: regex
-                value: "(?i)(?:\\t|\\s)(info|log)(?:\\t|\\s)"
-                level: info
-                enabled: true
-              - field: _msg
-                operator: regex
-                value: "(?i)(?:\\t|\\s)debug(?:\\t|\\s)"
-                level: debug
-                enabled: true
+            derivedFields:
+              - name: trace_id
+                matcherType: label
+                matcherRegex: trace_id
+                url: "${__value.raw}"
+                urlDisplayLabel: View trace
+                datasourceUid: VictoriaTraces
+              - name: service
+                matcherType: label
+                matcherRegex: service
+                url: '{__name__=~"http.server.request.duration_count|rpc.server.call.duration_count","service.name"="${__value.raw}"}'
+                urlDisplayLabel: View metrics
+                datasourceUid: VictoriaMetrics
+              - name: order_id
+                matcherType: label
+                matcherRegex: order_id
+                url: "order_id:${__value.raw}"
+                urlDisplayLabel: Related logs
+                datasourceUid: VictoriaLogs
     victoriatraces:
       datasources: []
     extra:
@@ -113,10 +111,20 @@ victoria-metrics-k8s-stack:
             datasourceUid: VictoriaLogs
             spanStartTimeShift: "-5m"
             spanEndTimeShift: "5m"
-            # TraceId-only: do not also filter by service.name→service, so
-            # Trace → logs returns all marketplace JSON lines for the TraceId.
-            filterByTraceID: true
+            # VictoriaLogs is LogsQL, not Loki. filterByTraceID generates a
+            # Loki stream selector that VL ignores, so Trace → logs looks empty
+            # or unfiltered. Custom query matches slog's trace_id field.
+            filterByTraceID: false
             filterBySpanID: false
+            customQuery: true
+            query: 'trace_id:="${__trace.traceId}"'
+          tracesToMetrics:
+            datasourceUid: VictoriaMetrics
+            spanStartTimeShift: "-5m"
+            spanEndTimeShift: "5m"
+            queries:
+              - name: Request rate
+                query: 'sum(rate({__name__=~"http.server.request.duration_count|rpc.server.call.duration_count","service.name"="${__span.tags[\"service.name\"]}"}[5m]))'
 
   victoria-metrics-operator:
     crds:
