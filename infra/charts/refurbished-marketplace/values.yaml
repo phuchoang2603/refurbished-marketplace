@@ -22,10 +22,12 @@ meshPolicy:
   # Requires cilium-spire Ready on the cluster.
   mutualAuth: true
 
+metricsScrape:
+  enabled: true
+
 defaults:
   otel:
     endpoint: vtsingle-vmks.monitoring.svc.cluster.local:4317
-    metricsEndpoint: http://vmsingle-vmks.monitoring.svc.cluster.local:8428/opentelemetry/v1/metrics
   resources:
     requests:
       cpu: 25m
@@ -190,3 +192,4 @@ services:
     image: payment-gateway-simulator
     port: 8097
     protocol: http
+    metrics: false
