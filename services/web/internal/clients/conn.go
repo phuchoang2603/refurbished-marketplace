@@ -11,5 +11,12 @@ func newConn(addr string) (*grpc.ClientConn, error) {
 	opts := append([]grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	}, sharedtrace.GRPCDialOptions()...)
-	return grpc.NewClient(addr, opts...)
+	conn, err := grpc.NewClient(addr, opts...)
+	if err != nil {
+		return nil, err
+	}
+	// grpc.NewClient is lazy; Connect now so checkout is not the first
+	// RPC (Cilium mTLS + HTTP/2 setup) to orders/payment.
+	conn.Connect()
+	return conn, nil
 }
