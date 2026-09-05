@@ -132,7 +132,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
           "editorMode": "code",
-          "expr": "sum by (job) (rate(rpc_server_call_duration_seconds_count{job=~\"web|users|products|orders|cart|payment\",rpc_grpc_status_code!=\"0\"}[5m])) / sum by (job) (rate(rpc_server_call_duration_seconds_count{job=~\"web|users|products|orders|cart|payment\"}[5m]))",
+          "expr": "sum by (job) (rate(rpc_server_call_duration_seconds_count{job=~\"web|users|products|orders|cart|payment\",rpc_response_status_code!=\"OK\"}[5m])) / sum by (job) (rate(rpc_server_call_duration_seconds_count{job=~\"web|users|products|orders|cart|payment\"}[5m]))",
           "legendFormat": "{{job}}",
           "refId": "A"
         }
