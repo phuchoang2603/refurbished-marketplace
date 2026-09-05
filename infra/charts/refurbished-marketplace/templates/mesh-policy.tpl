@@ -110,4 +110,31 @@ spec:
         - ports:
             - port: "8097"
               protocol: TCP
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-metrics-scrape
+  namespace: {{ $ns }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "7"
+spec:
+  description: VMAgent in monitoring scrapes /metrics without SPIRE mTLS.
+  endpointSelector:
+    matchLabels:
+      marketplace.metrics: "true"
+  ingress:
+    - fromEntities:
+        - host
+      toPorts:
+        - ports:
+            - port: "9100"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+      toPorts:
+        - ports:
+            - port: "9100"
+              protocol: TCP
 {{- end }}

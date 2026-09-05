@@ -31,8 +31,8 @@
         {
           "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
           "editorMode": "code",
-          "expr": "sum by (\"http.route\", \"http.request.method\") (rate({__name__=\"http.server.request.duration_count\", \"service.name\"=\"web\"}[5m]))",
-          "legendFormat": "{{http.request.method}} {{http.route}}",
+          "expr": "sum by (http_route, http_request_method) (rate(http_server_request_duration_seconds_count{job=\"web\"}[5m]))",
+          "legendFormat": "{{http_request_method}} {{http_route}}",
           "refId": "A"
         }
       ],
@@ -55,7 +55,7 @@
         {
           "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
           "editorMode": "code",
-          "expr": "sum(rate({__name__=\"http.server.request.duration_count\", \"service.name\"=\"web\", \"http.response.status_code\"=~\"5..\"}[5m])) / sum(rate({__name__=\"http.server.request.duration_count\", \"service.name\"=\"web\"}[5m]))",
+          "expr": "sum(rate(http_server_request_duration_seconds_count{job=\"web\",http_response_status_code=~\"5..\"}[5m])) / sum(rate(http_server_request_duration_seconds_count{job=\"web\"}[5m]))",
           "legendFormat": "5xx",
           "refId": "A"
         }
@@ -78,8 +78,8 @@
         {
           "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum by (le, \"http.route\") (rate({__name__=\"http.server.request.duration_bucket\", \"service.name\"=\"web\"}[5m])))",
-          "legendFormat": "{{http.route}}",
+          "expr": "histogram_quantile(0.95, sum by (le, http_route) (rate(http_server_request_duration_seconds_bucket{job=\"web\"}[5m])))",
+          "legendFormat": "{{http_route}}",
           "refId": "A"
         }
       ],
@@ -108,8 +108,8 @@
         {
           "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
           "editorMode": "code",
-          "expr": "sum by (\"service.name\", \"rpc.method\") (rate({__name__=\"rpc.server.call.duration_count\", \"service.name\"=~\"web|users|products|orders|cart|payment\"}[5m]))",
-          "legendFormat": "{{service.name}} {{rpc.method}}",
+          "expr": "sum by (job, rpc_method) (rate(rpc_server_call_duration_seconds_count{job=~\"web|users|products|orders|cart|payment\"}[5m]))",
+          "legendFormat": "{{job}} {{rpc_method}}",
           "refId": "A"
         }
       ],
@@ -132,8 +132,8 @@
         {
           "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
           "editorMode": "code",
-          "expr": "sum by (\"service.name\") (rate({__name__=\"rpc.server.call.duration_count\", \"service.name\"=~\"web|users|products|orders|cart|payment\", \"rpc.response.status_code\"!=\"OK\"}[5m])) / sum by (\"service.name\") (rate({__name__=\"rpc.server.call.duration_count\", \"service.name\"=~\"web|users|products|orders|cart|payment\"}[5m]))",
-          "legendFormat": "{{service.name}}",
+          "expr": "sum by (job) (rate(rpc_server_call_duration_seconds_count{job=~\"web|users|products|orders|cart|payment\",rpc_grpc_status_code!=\"0\"}[5m])) / sum by (job) (rate(rpc_server_call_duration_seconds_count{job=~\"web|users|products|orders|cart|payment\"}[5m]))",
+          "legendFormat": "{{job}}",
           "refId": "A"
         }
       ],
@@ -155,8 +155,8 @@
         {
           "datasource": { "type": "prometheus", "uid": "VictoriaMetrics" },
           "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum by (le, \"service.name\", \"rpc.method\") (rate({__name__=\"rpc.server.call.duration_bucket\", \"service.name\"=~\"web|users|products|orders|cart|payment\"}[5m])))",
-          "legendFormat": "{{service.name}} {{rpc.method}}",
+          "expr": "histogram_quantile(0.95, sum by (le, job, rpc_method) (rate(rpc_server_call_duration_seconds_bucket{job=~\"web|users|products|orders|cart|payment\"}[5m])))",
+          "legendFormat": "{{job}} {{rpc_method}}",
           "refId": "A"
         }
       ],
@@ -172,5 +172,5 @@
   "timezone": "browser",
   "title": "Marketplace RED",
   "uid": "marketplace-red",
-  "version": 1
+  "version": 2
 }

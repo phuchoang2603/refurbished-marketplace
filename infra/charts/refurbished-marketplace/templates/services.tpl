@@ -1,5 +1,9 @@
 {{- range $name, $svc := .Values.services }}
 {{- if $svc.enabled }}
+{{- $metricsEnabled := true }}
+{{- if hasKey $svc "metrics" }}
+{{- $metricsEnabled = $svc.metrics }}
+{{- end }}
 {{- $owner := "" }}
 {{- if $svc.db }}
 {{- $owner = default (printf "%s_app" $name) $svc.db.owner }}
@@ -25,6 +29,9 @@ spec:
     metadata:
       labels:
         app: {{ $name }}
+{{- if $metricsEnabled }}
+        marketplace.metrics: "true"
+{{- end }}
     spec:
 {{- if $svc.db }}
       initContainers:
@@ -58,7 +65,12 @@ spec:
           image: {{ include "refurbished-marketplace.image" (list $ $svc.image $svc.imageTag) }}
           imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
           ports:
-            - containerPort: {{ $svc.port }}
+            - name: {{ default "http" $svc.protocol }}
+              containerPort: {{ $svc.port }}
+{{- if $metricsEnabled }}
+            - name: metrics
+              containerPort: {{ default 9100 $svc.metricsPort }}
+{{- end }}
 {{- with $resources }}
           resources:
 {{ toYaml . | nindent 12 }}
@@ -90,9 +102,9 @@ spec:
             - name: OTEL_TRACES_SAMPLER_ARG
               value: "1"
 {{- end }}
-{{- with $.Values.defaults.otel.metricsEndpoint }}
-            - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
-              value: {{ . | quote }}
+{{- if $metricsEnabled }}
+            - name: METRICS_ADDR
+              value: {{ printf ":%v" (default 9100 $svc.metricsPort) | quote }}
 {{- end }}
 {{- if $svc.env }}
 {{- range $key, $value := $svc.env }}
@@ -115,5 +127,10 @@ spec:
     - name: {{ default "http" $svc.protocol }}
       port: {{ $svc.port }}
       targetPort: {{ $svc.port }}
+{{- if $metricsEnabled }}
+    - name: metrics
+      port: {{ default 9100 $svc.metricsPort }}
+      targetPort: metrics
+{{- end }}
 {{- end }}
 {{- end }}

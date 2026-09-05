@@ -89,7 +89,7 @@ victoria-metrics-k8s-stack:
               - name: service
                 matcherType: label
                 matcherRegex: service
-                url: '{__name__=~"http.server.request.duration_count|rpc.server.call.duration_count","service.name"="${__value.raw}"}'
+                url: 'http_server_request_duration_seconds_count{job="${__value.raw}"}'
                 urlDisplayLabel: View metrics
                 datasourceUid: VictoriaMetrics
               - name: order_id
@@ -124,7 +124,7 @@ victoria-metrics-k8s-stack:
             spanEndTimeShift: "5m"
             queries:
               - name: Request rate
-                query: 'sum(rate({__name__=~"http.server.request.duration_count|rpc.server.call.duration_count","service.name"="${__span.tags[\"service.name\"]}"}[5m]))'
+                query: 'sum(rate(http_server_request_duration_seconds_count{job="${__span.tags[\"service.name\"]}"}[5m])) or sum(rate(rpc_server_call_duration_seconds_count{job="${__span.tags[\"service.name\"]}"}[5m]))'
 
   victoria-metrics-operator:
     crds:
