@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define the VictoriaMetrics Kubernetes metrics, logs, traces, dashboards, and alerting stack delivered through a repository-owned Helm wrapper and Talos GitOps, without requiring per-service `/metrics` endpoints for platform closure.
+Define the VictoriaMetrics Kubernetes metrics, logs, traces, dashboards, and alerting stack delivered through a repository-owned Helm wrapper and Talos GitOps. Marketplace application RED is scraped from `/metrics` into VMSingle; traces remain OTLP to VictoriaTraces.
 
 ## Requirements
 
@@ -66,12 +66,7 @@ Argo CD on Talos SHALL deploy the observability stack into the `monitoring` name
 
 ### Requirement: Backend-first scope
 
-The observability stack SHALL provide metrics, logs, and traces backends. Custom per-service `/metrics` endpoints remain out of scope. Marketplace services SHALL emit structured JSON logs to stdout for VLAgent collection when structured logging is enabled, MAY emit OTLP traces into VictoriaTraces when distributed tracing is enabled, and SHALL emit OTLP metrics into VictoriaMetrics when application RED metrics are enabled.
-
-#### Scenario: Service Prometheus endpoints remain unused for RED
-
-- **WHEN** the platform observability stack is deployed
-- **THEN** no Go service is required to add a new `/metrics` endpoint for RED or for platform stack closure
+The observability stack SHALL provide metrics, logs, and traces backends. Marketplace services SHALL emit structured JSON logs to stdout for VLAgent collection when structured logging is enabled, MAY emit OTLP traces into VictoriaTraces when distributed tracing is enabled, and SHALL expose Prometheus `/metrics` for VMAgent scrape when application RED metrics are enabled.
 
 #### Scenario: Application structured logs use existing VL pipeline
 
@@ -83,10 +78,10 @@ The observability stack SHALL provide metrics, logs, and traces backends. Custom
 - **WHEN** distributed tracing is enabled for marketplace workloads
 - **THEN** Go services MAY export OTLP spans to VictoriaTraces for Grafana Explore
 
-#### Scenario: Application metrics use VictoriaMetrics
+#### Scenario: Application metrics use VictoriaMetrics scrape
 
 - **WHEN** application RED metrics are enabled for marketplace workloads
-- **THEN** Go services export OTLP metrics to VictoriaMetrics for Grafana dashboards
+- **THEN** Go services expose `/metrics` and VMAgent scrapes them into VictoriaMetrics for Grafana dashboards
 
 ### Requirement: Grafana datasources and alerting baseline
 
@@ -134,7 +129,7 @@ The repository SHALL document how developers and operators access Grafana, verif
 #### Scenario: Operator views application RED
 
 - **WHEN** application OTEL metrics are enabled
-- **THEN** documentation explains the metrics OTLP destination, the Marketplace RED dashboard, and that Hubble is not the RED path
+- **THEN** documentation explains the `/metrics` scrape path, the Marketplace RED dashboard, and that Hubble is not the RED path
 
 ### Requirement: VictoriaTraces accepts application OTLP
 
@@ -145,13 +140,13 @@ The platform observability stack SHALL remain the destination for distributed tr
 - **WHEN** operators inspect traces after application exporters are enabled
 - **THEN** they use the existing Grafana VictoriaTraces datasource rather than a temporary tracing UI
 
-### Requirement: VictoriaMetrics accepts application OTLP metrics
+### Requirement: VictoriaMetrics stores application RED metrics
 
-The platform observability stack SHALL remain the destination for application OpenTelemetry metrics visualized in Grafana. Marketplace services SHALL push OTLP metrics to VMSingle. An OpenTelemetry Collector is not required for this path.
+The platform observability stack SHALL remain the destination for application RED metrics visualized in Grafana. Marketplace services SHALL expose Prometheus `/metrics` for VMAgent scrape into VMSingle. An OpenTelemetry Collector is not required for this path.
 
 #### Scenario: Grafana uses VictoriaMetrics for app RED
 
-- **WHEN** operators inspect application request/error/duration after metrics export is enabled
+- **WHEN** operators inspect application request/error/duration after metrics scrape is enabled
 - **THEN** they use the existing Grafana VictoriaMetrics datasource rather than Hubble or Istio scrapes
 
 ### Requirement: Marketplace RED dashboard is provisioned
@@ -188,7 +183,7 @@ The observability stack SHALL configure the Grafana VictoriaTraces (Tempo) datas
 
 ### Requirement: Log to traces and metrics correlation in Grafana
 
-The VictoriaLogs datasource SHALL expose derived fields so operators can jump from a log line to the matching trace and to application metrics that share `service` / `service.name`.
+The VictoriaLogs datasource SHALL expose derived fields so operators can jump from a log line to the matching trace and to application metrics that share the service `job` label.
 
 #### Scenario: Operator jumps from log to trace
 

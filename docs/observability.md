@@ -10,17 +10,17 @@ It deploys the first platform baseline for:
 - Dashboards: Grafana
 - Alerts: Alertmanager and stack-managed rules
 
-Application `/metrics` scrape endpoints remain out of scope. Marketplace services export OTLP traces **directly** to VictoriaTraces and OTLP metrics **directly** to VictoriaMetrics. Gateway proxies do not export traces. Hubble is not required (it may be deleted on the cluster). Grafana **Marketplace RED** (`Marketplace` folder) is the application request/error/duration path.
+Application `/metrics` scrape is the RED export path: marketplace services expose Prometheus text on port `9100`, and VMAgent picks them up via `VMPodScrape`. Traces still go OTLP **directly** to VictoriaTraces. Gateway proxies do not export traces. Hubble is not required (it may be deleted on the cluster). Grafana **Marketplace RED** (`Marketplace` folder) is the application request/error/duration path.
 
 ### OTLP endpoints
 
-| Signal  | Protocol         | Endpoint                                                                                 |
-| ------- | ---------------- | ---------------------------------------------------------------------------------------- |
-| Traces  | gRPC (preferred) | `vtsingle-vmks.monitoring.svc.cluster.local:4317` (insecure TLS in-cluster)              |
-| Traces  | HTTP fallback    | `http://vtsingle-vmks.monitoring.svc.cluster.local:10428/insert/opentelemetry/v1/traces` |
-| Metrics | HTTP protobuf    | `http://vmsingle-vmks.monitoring.svc.cluster.local:8428/opentelemetry/v1/metrics`        |
+| Signal  | Protocol          | Endpoint                                                                                 |
+| ------- | ----------------- | ---------------------------------------------------------------------------------------- |
+| Traces  | gRPC (preferred)  | `vtsingle-vmks.monitoring.svc.cluster.local:4317` (insecure TLS in-cluster)              |
+| Traces  | HTTP fallback     | `http://vtsingle-vmks.monitoring.svc.cluster.local:10428/insert/opentelemetry/v1/traces` |
+| Metrics | Prometheus scrape | Pod `:9100/metrics` (VMAgent `VMPodScrape` `marketplace-apps`)                           |
 
-Set `OTEL_EXPORTER_OTLP_ENDPOINT` to the traces gRPC address (or the HTTP traces URL with the `shared/observe/trace` bootstrap’s HTTP mode). Set `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT` to the VMSingle metrics URL. Do not point metrics at VictoriaTraces.
+Set `OTEL_EXPORTER_OTLP_ENDPOINT` to the traces gRPC address (or the HTTP traces URL with the `shared/observe/trace` bootstrap’s HTTP mode). Do not point traces at VictoriaMetrics. App RED is scrape, not OTLP push.
 
 Grafana folder **Marketplace** hosts **Marketplace RED** (HTTP/gRPC rate/error/p95) and **Marketplace logs** (volume + JSON lines from VictoriaLogs). Hubble and Istio series are not the source.
 
@@ -206,7 +206,7 @@ The VictoriaTraces Tempo datasource (`uid: VictoriaTraces`) uses `tracesToLogsV2
 2. Use **Logs for this span** / Trace → logs.
 3. Confirm matching JSON lines include the same `trace_id` (all marketplace services that logged for that TraceId). Do not expect span-id-only matching: access logs often carry the request TraceId on a different span than the one you clicked.
 
-Trace → metrics on the same Tempo datasource queries VictoriaMetrics request-rate series labeled `service.name`.
+Trace → metrics on the same Tempo datasource queries VictoriaMetrics request-rate series labeled `job`.
 
 ### Logs dashboard and log → traces / metrics
 
@@ -214,10 +214,10 @@ Grafana folder **Marketplace** → **Marketplace logs** shows ecommerce JSON vol
 
 VictoriaLogs derived fields (on log rows that have the label):
 
-| Field      | Opens                                           |
-| ---------- | ----------------------------------------------- |
-| `trace_id` | VictoriaTraces for that TraceId                 |
-| `service`  | VictoriaMetrics RED series for `"service.name"` |
-| `order_id` | VictoriaLogs query `order_id:<uuid>`            |
+| Field      | Opens                                |
+| ---------- | ------------------------------------ |
+| `trace_id` | VictoriaTraces for that TraceId      |
+| `service`  | VictoriaMetrics RED series for `job` |
+| `order_id` | VictoriaLogs query `order_id:<uuid>` |
 
 Click the field in Explore or the logs panel, then the derived-field link.
