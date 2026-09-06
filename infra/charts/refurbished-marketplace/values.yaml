@@ -140,6 +140,7 @@ services:
     protocol: grpc
     env:
       KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap.kafka.svc:9092
+      PRODUCTS_SVC_ADDR: products:9092
     migration:
       enabled: true
       image: orders-migrator

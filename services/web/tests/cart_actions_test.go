@@ -79,7 +79,10 @@ func TestCheckoutClearsCartCookieAndRedirectsToOrder(t *testing.T) {
 		},
 	}
 	ordersSvc := &fakes.OrdersService{
-		CreateFn: func(ctx context.Context, buyerUserID, merchantID string, items []*ordersv1.CreateOrderItem, totalCents int64) (*ordersv1.Order, error) {
+		CreateFn: func(ctx context.Context, buyerUserID, merchantID string, items []*ordersv1.CreateOrderItem, totalCents int64, idempotencyKey string) (*ordersv1.Order, error) {
+			if idempotencyKey != "intent-1" {
+				t.Fatalf("idempotencyKey = %q, want intent-1", idempotencyKey)
+			}
 			if buyerUserID != "user-1" {
 				t.Fatalf("buyerUserID = %q, want user-1", buyerUserID)
 			}
@@ -112,7 +115,7 @@ func TestCheckoutClearsCartCookieAndRedirectsToOrder(t *testing.T) {
 		},
 	}
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPost, "/cart/checkout", strings.NewReader(url.Values{"merchant_id": {"merchant-1"}}.Encode()))
+	req := httptest.NewRequest(http.MethodPost, "/cart/checkout", strings.NewReader(url.Values{"merchant_id": {"merchant-1"}, "checkout_intent_key": {"intent-1"}}.Encode()))
 	req.Host = "localhost:8080"
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.AddCookie(&http.Cookie{Name: auth.AccessCookieName, Value: signedAccessToken(t, "user-1")})
@@ -127,11 +130,10 @@ func TestCheckoutClearsCartCookieAndRedirectsToOrder(t *testing.T) {
 	if got := rec.Header().Get("Location"); got != wantLocation {
 		t.Fatalf("location = %q, want %q", got, wantLocation)
 	}
-	assertCookieCleared(t, rec.Result().Cookies(), "cart_id")
 	if len(batchIDs) != 2 || batchIDs[0] != "prod-1" || batchIDs[1] != "prod-2" {
 		t.Fatalf("batch IDs = %v, want [prod-1 prod-2]", batchIDs)
 	}
-	if len(removed) != 2 || removed[0] != "prod-1" || removed[1] != "prod-2" {
-		t.Fatalf("removed = %v, want [prod-1 prod-2]", removed)
+	if len(removed) != 0 {
+		t.Fatalf("removed = %v, want none on checkout", removed)
 	}
 }

@@ -7,19 +7,22 @@ import (
 )
 
 type OrdersService struct {
-	CreateFn func(context.Context, string, string, []*ordersv1.CreateOrderItem, int64) (*ordersv1.Order, error)
+	CreateFn func(context.Context, string, string, []*ordersv1.CreateOrderItem, int64, string) (*ordersv1.Order, error)
 	GetFn    func(context.Context, string) (*ordersv1.Order, error)
 	ListFn   func(context.Context, string, int32, int32) (*ordersv1.ListOrdersByBuyerResponse, error)
 }
 
-func (f *OrdersService) CreateOrder(ctx context.Context, buyerUserID, merchantID string, items []*ordersv1.CreateOrderItem, totalCents int64) (*ordersv1.Order, error) {
+func (f *OrdersService) CreateOrder(ctx context.Context, buyerUserID, merchantID string, items []*ordersv1.CreateOrderItem, totalCents int64, idempotencyKey string) (*ordersv1.Order, error) {
 	if f.CreateFn != nil {
-		return f.CreateFn(ctx, buyerUserID, merchantID, items, totalCents)
+		return f.CreateFn(ctx, buyerUserID, merchantID, items, totalCents, idempotencyKey)
 	}
 	return nil, nil
 }
 
 func (f *OrdersService) GetOrderByID(ctx context.Context, id string) (*ordersv1.Order, error) {
+	if f == nil {
+		return nil, nil
+	}
 	if f.GetFn != nil {
 		return f.GetFn(ctx, id)
 	}

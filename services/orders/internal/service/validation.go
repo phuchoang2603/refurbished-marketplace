@@ -6,7 +6,10 @@ import (
 	"github.com/google/uuid"
 )
 
-func validateCreateOrderInput(buyerUserID, merchantID uuid.UUID, items []OrderItemInput, totalCents int64) error {
+func validateCreateOrderInput(buyerUserID, merchantID, idempotencyKey uuid.UUID, items []OrderItemInput, totalCents int64) error {
+	if idempotencyKey == uuid.Nil {
+		return ErrInvalidIdempotencyKey
+	}
 	if buyerUserID == uuid.Nil {
 		return ErrInvalidBuyerID
 	}

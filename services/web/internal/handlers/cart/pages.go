@@ -50,7 +50,10 @@ func (h *Handler) mapCartView(c *cartv1.Cart) (sharedviews.CartView, error) {
 		items = append(items, view)
 		group, ok := groups[view.MerchantID]
 		if !ok {
-			group = &sharedviews.CartMerchantGroupView{MerchantID: view.MerchantID}
+			group = &sharedviews.CartMerchantGroupView{
+				MerchantID:        view.MerchantID,
+				CheckoutIntentKey: uuid.NewString(),
+			}
 			groups[view.MerchantID] = group
 			groupOrder = append(groupOrder, view.MerchantID)
 		}

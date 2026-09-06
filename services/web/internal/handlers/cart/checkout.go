@@ -24,6 +24,11 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 		shared.WriteBadRequest(w, r, "invalid request body")
 		return
 	}
+	intentKey, err := shared.CheckoutIntentKeyFromForm(r)
+	if err != nil {
+		shared.WriteBadRequest(w, r, "invalid request body")
+		return
+	}
 	cartID := cartIDFromRequest(r)
 	if cartID == "" {
 		shared.WriteBadRequest(w, r, "empty cart")
@@ -39,7 +44,7 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items, selectedProductIDs, totalCents, err := h.buildCheckoutOrderItems(r, cart, merchantID)
+	items, _, totalCents, err := h.buildCheckoutOrderItems(r, cart, merchantID)
 	if err != nil {
 		if checkoutErr, ok := err.(*checkoutError); ok {
 			checkoutErr.Write(w, r)
@@ -53,12 +58,8 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	order, err := h.deps.Orders.CreateOrder(r.Context(), buyerUserID, merchantID, items, totalCents)
+	order, err := h.deps.Orders.CreateOrder(r.Context(), buyerUserID, merchantID, items, totalCents, intentKey)
 	if err != nil {
-		shared.WriteGRPCError(w, r, err)
-		return
-	}
-	if err := h.removeCheckedOutItems(w, r, cartID, selectedProductIDs); err != nil {
 		shared.WriteGRPCError(w, r, err)
 		return
 	}

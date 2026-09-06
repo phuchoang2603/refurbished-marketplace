@@ -54,7 +54,33 @@ func (s *Service) CreateHostedPaymentSession(ctx context.Context, p CreateHosted
 
 	intent, err := loadPaymentIntentByOrderID(ctx, s.queries, p.OrderID)
 	if err == nil {
-		return mapDBHostedPaymentSessionView(intent), nil
+		if intent.Status == HostedPaymentSessionStatusSucceeded {
+			return mapDBHostedPaymentSessionView(intent), nil
+		}
+		unexpiredPending := intent.Status == HostedPaymentSessionStatusPending && intent.ExpiresAt.Valid && intent.ExpiresAt.Time.After(time.Now().UTC())
+		if unexpiredPending {
+			return mapDBHostedPaymentSessionView(intent), nil
+		}
+		expiresAt := time.Now().UTC().Add(30 * time.Minute)
+		refreshed, err := s.queries.RefreshHostedPaymentSession(ctx, database.RefreshHostedPaymentSessionParams{
+			OrderID:          p.OrderID,
+			PaymentSessionID: dberr.OptionalNullString(uuid.NewString()),
+			ReturnUrl:        p.ReturnURL,
+			CancelUrl:        p.CancelURL,
+			ExpiresAt:        dberr.OptionalNullTime(expiresAt),
+		})
+		if err != nil {
+			return HostedPaymentSessionView{}, err
+		}
+		view := mapDBHostedPaymentSessionView(refreshed)
+		sharedlog.InfoContext(
+			ctx, "hosted payment session refreshed",
+			sharedlog.KeyOrderID, view.OrderID,
+			sharedlog.KeyBuyerUserID, p.BuyerUserID.String(),
+			"payment_session_id", view.PaymentSessionID,
+			"currency", view.Currency,
+		)
+		return view, nil
 	}
 	if !errors.Is(err, ErrIntentNotFound) {
 		return HostedPaymentSessionView{}, err

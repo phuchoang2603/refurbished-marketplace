@@ -11,6 +11,19 @@ import (
 	"github.com/google/uuid"
 )
 
+const countInventoryReservationsByOrderID = `-- name: CountInventoryReservationsByOrderID :one
+SELECT count(*)::int AS count
+FROM inventory_reservations
+WHERE order_id = $1
+`
+
+func (q *Queries) CountInventoryReservationsByOrderID(ctx context.Context, orderID uuid.UUID) (int32, error) {
+	row := q.db.QueryRowContext(ctx, countInventoryReservationsByOrderID, orderID)
+	var count int32
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createInventoryReservation = `-- name: CreateInventoryReservation :one
 INSERT INTO inventory_reservations (order_id, product_id, quantity, status)
 VALUES ($1, $2, $3, $4)
@@ -97,7 +110,7 @@ const markInventoryReservationCommitted = `-- name: MarkInventoryReservationComm
 UPDATE inventory_reservations
 SET
     status = 'COMMITTED',
-    updated_at = NOW()
+    updated_at = now()
 WHERE
     order_id = $1
     AND product_id = $2
@@ -134,7 +147,7 @@ const markInventoryReservationReleased = `-- name: MarkInventoryReservationRelea
 UPDATE inventory_reservations
 SET
     status = 'RELEASED',
-    updated_at = NOW()
+    updated_at = now()
 WHERE
     order_id = $1
     AND product_id = $2

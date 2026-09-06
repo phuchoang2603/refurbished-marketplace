@@ -10,6 +10,8 @@ import (
 	"github.com/phuchoang2603/refurbished-marketplace/shared/err/dberr"
 
 	"github.com/google/uuid"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type OrderItemInput struct {
@@ -39,8 +41,8 @@ type OrderItem struct {
 	CreatedAt      time.Time
 }
 
-func (s *Service) CreateOrder(ctx context.Context, buyerUserID, merchantID uuid.UUID, items []OrderItemInput, totalCents int64) (Order, error) {
-	if err := validateCreateOrderInput(buyerUserID, merchantID, items, totalCents); err != nil {
+func (s *Service) CreateOrder(ctx context.Context, buyerUserID, merchantID uuid.UUID, items []OrderItemInput, totalCents int64, idempotencyKey uuid.UUID) (Order, error) {
+	if err := validateCreateOrderInput(buyerUserID, merchantID, idempotencyKey, items, totalCents); err != nil {
 		return Order{}, err
 	}
 
@@ -54,13 +56,18 @@ func (s *Service) CreateOrder(ctx context.Context, buyerUserID, merchantID uuid.
 	}()
 
 	created, err := q.CreateOrder(ctx, database.CreateOrderParams{
-		ID:          uuid.New(),
-		BuyerUserID: buyerUserID,
-		MerchantID:  merchantID,
-		Status:      OrderStatusPending,
-		TotalCents:  totalCents,
+		ID:             uuid.New(),
+		BuyerUserID:    buyerUserID,
+		MerchantID:     merchantID,
+		Status:         OrderStatusPending,
+		TotalCents:     totalCents,
+		IdempotencyKey: idempotencyKey,
 	})
 	if err != nil {
+		_ = tx.Rollback()
+		if dberr.IsUniqueViolation(err) {
+			return s.replayCreateOrder(ctx, buyerUserID, merchantID, items, totalCents, idempotencyKey)
+		}
 		return Order{}, err
 	}
 
@@ -87,7 +94,92 @@ func (s *Service) CreateOrder(ctx context.Context, buyerUserID, merchantID uuid.
 		"total_cents", createdOrder.TotalCents,
 		"item_count", len(createdOrder.Items),
 	)
+	if err := s.reserveStock(ctx, createdOrder); err != nil {
+		return Order{}, err
+	}
 	return createdOrder, nil
+}
+
+func (s *Service) replayCreateOrder(ctx context.Context, buyerUserID, merchantID uuid.UUID, items []OrderItemInput, totalCents int64, idempotencyKey uuid.UUID) (Order, error) {
+	existing, err := s.queries.GetOrderByBuyerIdempotencyKey(ctx, database.GetOrderByBuyerIdempotencyKeyParams{
+		BuyerUserID:    buyerUserID,
+		IdempotencyKey: idempotencyKey,
+	})
+	if err != nil {
+		return Order{}, dberr.MapErrNoRows(err, ErrOrderNotFound)
+	}
+	orders, err := loadOrdersWithItems(ctx, s.queries, []Order{mapDBOrder(existing)})
+	if err != nil {
+		return Order{}, err
+	}
+	if len(orders) == 0 {
+		return Order{}, ErrOrderNotFound
+	}
+	order := orders[0]
+	if order.MerchantID != merchantID || order.TotalCents != totalCents || !orderItemsMatch(order.Items, items) {
+		return Order{}, ErrIdempotencyConflict
+	}
+	if order.Status == OrderStatusFailed {
+		return Order{}, ErrOrderNotPayable
+	}
+	if order.Status == OrderStatusPending {
+		if err := s.reserveStock(ctx, order); err != nil {
+			return Order{}, err
+		}
+	}
+	return order, nil
+}
+
+func orderItemsMatch(existing []OrderItem, input []OrderItemInput) bool {
+	if len(existing) != len(input) {
+		return false
+	}
+	type line struct {
+		qty   int32
+		price int64
+	}
+	want := make(map[uuid.UUID]line, len(input))
+	for _, item := range input {
+		want[item.ProductID] = line{qty: item.Quantity, price: item.UnitPriceCents}
+	}
+	for _, item := range existing {
+		got, ok := want[item.ProductID]
+		if !ok || got.qty != item.Quantity || got.price != item.UnitPriceCents {
+			return false
+		}
+	}
+	return true
+}
+
+func (s *Service) reserveStock(ctx context.Context, order Order) error {
+	if s.stock == nil {
+		return nil
+	}
+	err := s.stock.ReserveStock(ctx, order.ID, order.MerchantID, order.TotalCents, orderItemsToInput(order.Items))
+	if err == nil {
+		return nil
+	}
+	if st, ok := status.FromError(err); ok {
+		switch st.Code() {
+		case codes.FailedPrecondition:
+			return ErrInsufficientStock
+		case codes.InvalidArgument:
+			return ErrInvalidQuantity
+		}
+	}
+	return err
+}
+
+func orderItemsToInput(items []OrderItem) []OrderItemInput {
+	out := make([]OrderItemInput, 0, len(items))
+	for _, item := range items {
+		out = append(out, OrderItemInput{
+			ProductID:      item.ProductID,
+			Quantity:       item.Quantity,
+			UnitPriceCents: item.UnitPriceCents,
+		})
+	}
+	return out
 }
 
 func (s *Service) GetOrderByID(ctx context.Context, id uuid.UUID) (Order, error) {

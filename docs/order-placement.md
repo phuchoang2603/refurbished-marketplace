@@ -26,32 +26,30 @@ sequenceDiagram
     WEB->>CRT: AddCartItem(merchant_id, qty)
     CRT-->>WEB: 200 OK
 
-    Note over WEB, ORD: Order Creation
-    WEB->>ORD: CreateOrder(merchant_id, total)
+    Note over WEB, ORD: PlaceOrder (reserve before pay)
+    WEB->>ORD: CreateOrder(merchant_id, total, idempotency_key)
     ORD->>ORD: Persist Order (Status: Pending)
     ORD->>K: Emit "orders.created"
-    ORD-->>WEB: 201 Created
+    ORD->>INV: ReserveStock gRPC
+    INV->>INV: Hold stock (idempotent with Kafka consumer)
+    INV->>K: Emit "inventory.reserved"
+    ORD-->>WEB: order_id
 
     Note over WEB, SIM: Hosted Payment Setup
-    WEB->>PAY: CreateHostedPaymentSession(order_id, buyer, shipping, return URLs)
-    PAY->>PAY: Persist payment session(order_id)
+    WEB->>PAY: CreateHostedPaymentSession(order_id) get-or-create/refresh
     PAY-->>WEB: payment session metadata
-    WEB->>WEB: Build hosted payment URL
-    WEB->>SIM: Redirect browser to hosted payment URL
+    WEB->>SIM: 303 hosted payment URL
     SIM->>WEB: POST hosted payment callback
     WEB->>PAY: HandleGatewayWebhook
+    WEB->>CRT: Remove paid product IDs if cart_id cookie present
     SIM->>WEB: Redirect browser back to /orders/{id}
 
-    Note over K, INV: Reservation Loop
+    Note over K, INV: Kafka safety net
     K->>INV: Consume "orders.created"
-    INV->>INV: Record inventory_inbox message
-    INV->>INV: Reserve order item stock
-    INV->>K: Emit "inventory.reserved"
+    INV->>INV: No-op if reservations already exist
 
     Note over K, PAY: Payment Loop
     K->>PAY: Consume "inventory.reserved"
-    PAY->>PAY: Record payment_inbox message
-    PAY->>PAY: Load payment_intent(order_id)
     PAY->>PAY: Create payment_transaction(order_id)
     PAY->>K: Emit "payment.succeeded"
     K->>INV: Consume "payment.succeeded"
@@ -69,7 +67,9 @@ sequenceDiagram
 
 ### Web
 
-- Orchestrates browser checkout, order creation, and hosted payment redirect.
+- Orchestrates browser checkout: PlaceOrder with a checkout intent UUID, then hosted payment redirect.
+- Does not drain the cart on checkout POST. After a successful hosted-payment callback (or paid order page), removes paid product IDs when a `cart_id` cookie is present.
+- Resume payment on unpaid pending orders reuses or refreshes the hosted session.
 - Builds the buyer-facing hosted payment URL from payment session metadata and gateway configuration.
 - Accepts hosted gateway callbacks and forwards terminal outcomes to `payment` over gRPC.
 
@@ -81,7 +81,9 @@ sequenceDiagram
 
 ### Orders
 
-- Persists one order per merchant.
+- Accepts merchant-scoped PlaceOrder with required `idempotency_key` unique per buyer.
+- After persist, calls products `ReserveStock` so stock is held before hosted-payment redirect.
+- Emits one `orders.created` outbox event per created order (Kafka remains a safety-net reserve).
 - Stores `merchant_id` on the order record.
 - Stores order items with `product_id`, `quantity`, `unit_price_cents`, and `line_total_cents`.
 - Emits one `orders.created` outbox event per created order, including item lines.
@@ -90,7 +92,8 @@ sequenceDiagram
 ### Inventory
 
 - Stores aggregate stock in `inventory` and reservation ownership in inventory-local reservation records.
-- Consumes `orders.created` and reserves all order item lines idempotently per `order_id`.
+- Consumes `orders.created` and reserves all order item lines idempotently per `order_id` if gRPC has not already held stock.
+- Exposes `ReserveStock` gRPC used by PlaceOrder.
 - Emits `inventory.reserved` when the order is fully reserved.
 - Emits `inventory.reservation-failed` when the order cannot be fully reserved.
 - Consumes `payment.succeeded` and `payment.failed` to commit or release reserved stock.
