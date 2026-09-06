@@ -2,23 +2,32 @@
 
 ## Purpose
 
-Define post-Istio observe path: marketplace OpenTelemetry traces to VictoriaTraces, without Hubble, Cilium L7 visibility policies, or Istio waypoint metrics. Application-level RED metrics are OpenTelemetry metrics in VictoriaMetrics (not Hubble).
+Define post-Istio observe path: marketplace OpenTelemetry traces to VictoriaTraces, without Hubble, Cilium L7 visibility policies, or Istio waypoint metrics. Application-level RED metrics are OpenTelemetry metrics scraped from `/metrics` into VictoriaMetrics (not Hubble).
 
 ## Requirements
 
 ### Requirement: Hubble is not a closure requirement
 
-After Istio removal, marketplace network observability SHALL NOT require Hubble (relay/UI), Hubble HTTP/gRPC metrics, or CiliumNetworkPolicy L7 visibility rules. Hubble MAY remain disabled or deleted on the cluster. Application request/error/duration SLIs SHALL come from marketplace OpenTelemetry metrics in VictoriaMetrics, not from Hubble or Istio.
+After Istio removal, marketplace network observability SHALL NOT require Hubble (relay/UI), Hubble HTTP/gRPC metrics, or CiliumNetworkPolicy L7 visibility rules. Hubble MAY remain disabled or deleted on the cluster. Application request/error/duration SLIs SHALL come from marketplace OpenTelemetry metrics scraped into VictoriaMetrics, not from Hubble or Istio.
 
 #### Scenario: L7 mesh metrics are not required
 
 - **WHEN** marketplace flows are verified after the Cilium cutover
 - **THEN** closure does not depend on `hubble_http_*` metrics, Hubble UI, or Istio `istio_requests_total`
 
-#### Scenario: App RED uses OTEL metrics
+#### Scenario: App RED uses scraped OTEL metrics
 
 - **WHEN** contributors look for request/error/duration SLIs after Istio RED is removed
-- **THEN** they use the Marketplace RED dashboard backed by application OpenTelemetry metrics rather than restoring Hubble scrapes
+- **THEN** they use the Marketplace RED dashboard backed by application OpenTelemetry metrics scraped from `/metrics` rather than restoring Hubble scrapes
+
+### Requirement: Metrics scrape is allowed without mesh mTLS
+
+Marketplace CiliumNetworkPolicy SHALL allow VMAgent in the monitoring namespace (and kubelet) to scrape application `/metrics` on the configured metrics port without SPIRE mutual TLS. This exception SHALL apply only to pods labeled for marketplace metrics scrape.
+
+#### Scenario: Scrape CNP uses the metrics port
+
+- **WHEN** the marketplace Helm chart renders mesh policy with metrics scrape enabled
+- **THEN** `allow-metrics-scrape` permits TCP to each distinct `metricsPort` (default 9100) from `monitoring` and `host`
 
 ### Requirement: Application traces remain OTEL to VictoriaTraces
 

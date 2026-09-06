@@ -110,6 +110,16 @@ spec:
         - ports:
             - port: "8097"
               protocol: TCP
+{{- $metricsPorts := list }}
+{{- range $name, $svc := .Values.services }}
+{{- if and $svc.enabled (ne (index $svc "metrics") false) }}
+{{- $p := printf "%v" (default 9100 $svc.metricsPort) }}
+{{- if not (has $p $metricsPorts) }}
+{{- $metricsPorts = append $metricsPorts $p }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if and .Values.metricsScrape.enabled $metricsPorts }}
 ---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
@@ -128,13 +138,18 @@ spec:
         - host
       toPorts:
         - ports:
-            - port: "9100"
+{{- range $metricsPorts }}
+            - port: {{ . | quote }}
               protocol: TCP
+{{- end }}
     - fromEndpoints:
         - matchLabels:
             k8s:io.kubernetes.pod.namespace: monitoring
       toPorts:
         - ports:
-            - port: "9100"
+{{- range $metricsPorts }}
+            - port: {{ . | quote }}
               protocol: TCP
+{{- end }}
+{{- end }}
 {{- end }}

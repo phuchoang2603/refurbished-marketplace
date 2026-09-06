@@ -102,9 +102,11 @@ spec:
             - name: OTEL_TRACES_SAMPLER_ARG
               value: "1"
 {{- end }}
-{{- if $metricsEnabled }}
             - name: METRICS_ADDR
+{{- if $metricsEnabled }}
               value: {{ printf ":%v" (default 9100 $svc.metricsPort) | quote }}
+{{- else }}
+              value: "-"
 {{- end }}
 {{- if $svc.env }}
 {{- range $key, $value := $svc.env }}
