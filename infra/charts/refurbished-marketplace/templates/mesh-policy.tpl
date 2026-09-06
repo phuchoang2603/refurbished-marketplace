@@ -110,4 +110,46 @@ spec:
         - ports:
             - port: "8097"
               protocol: TCP
+{{- $metricsPorts := list }}
+{{- range $name, $svc := .Values.services }}
+{{- if and $svc.enabled (ne (index $svc "metrics") false) }}
+{{- $p := printf "%v" (default 9100 $svc.metricsPort) }}
+{{- if not (has $p $metricsPorts) }}
+{{- $metricsPorts = append $metricsPorts $p }}
+{{- end }}
+{{- end }}
+{{- end }}
+{{- if and .Values.metricsScrape.enabled $metricsPorts }}
+---
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: allow-metrics-scrape
+  namespace: {{ $ns }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "7"
+spec:
+  description: VMAgent in monitoring scrapes /metrics without SPIRE mTLS.
+  endpointSelector:
+    matchLabels:
+      marketplace.metrics: "true"
+  ingress:
+    - fromEntities:
+        - host
+      toPorts:
+        - ports:
+{{- range $metricsPorts }}
+            - port: {{ . | quote }}
+              protocol: TCP
+{{- end }}
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: monitoring
+      toPorts:
+        - ports:
+{{- range $metricsPorts }}
+            - port: {{ . | quote }}
+              protocol: TCP
+{{- end }}
+{{- end }}
 {{- end }}

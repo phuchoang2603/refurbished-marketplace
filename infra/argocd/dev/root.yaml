@@ -14,7 +14,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
-    targetRevision: add-app-otel-red-metrics
+    targetRevision: scrape-app-prometheus-metrics
     path: infra/argocd/app-of-apps
     helm:
       values: |
