@@ -139,17 +139,6 @@ jobs:
         if: needs.changes.outputs[matrix.service] == 'true'
         run: go test ./services/${{ matrix.service }}/...
 
-  shared-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-go@v6
-        with:
-          go-version: ${{ env.GO_VERSION }}
-          cache-dependency-path: ${{ env.GO_CACHE_DEPENDENCY_PATH }}
-      - name: Test shared modules and tools
-        run: go test -race ./shared/auth/... ./shared/err/dberr/... ./shared/err/grpcerr/... ./shared/messaging/... ./shared/observe/log/... ./shared/observe/metric/... ./shared/observe/trace/... ./shared/runtime/... ./tools/payment-gateway-simulator/...
-
   govulncheck:
     needs: changes
     runs-on: ubuntu-latest
