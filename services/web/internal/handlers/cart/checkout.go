@@ -168,12 +168,3 @@ func (h *Handler) buildCheckoutOrderItems(r *http.Request, cart *cartv1.Cart, me
 	}
 	return items, selectedProductIDs, totalCents, nil
 }
-
-func (h *Handler) removeCheckedOutItems(w http.ResponseWriter, r *http.Request, cartID string, selectedProductIDs []string) error {
-	updatedCart, err := h.deps.Cart.RemoveCartItems(r.Context(), cartID, selectedProductIDs)
-	if err != nil {
-		return err
-	}
-	h.clearCartCookieIfEmpty(w, updatedCart)
-	return nil
-}

@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
@@ -95,7 +96,7 @@ func (s *Service) CreateOrder(ctx context.Context, buyerUserID, merchantID uuid.
 		"item_count", len(createdOrder.Items),
 	)
 	if err := s.reserveStock(ctx, createdOrder); err != nil {
-		return Order{}, err
+		return Order{}, s.failUnreservedOrder(ctx, createdOrder.ID, err)
 	}
 	return createdOrder, nil
 }
@@ -124,7 +125,7 @@ func (s *Service) replayCreateOrder(ctx context.Context, buyerUserID, merchantID
 	}
 	if order.Status == OrderStatusPending {
 		if err := s.reserveStock(ctx, order); err != nil {
-			return Order{}, err
+			return Order{}, s.failUnreservedOrder(ctx, order.ID, err)
 		}
 	}
 	return order, nil
@@ -168,6 +169,13 @@ func (s *Service) reserveStock(ctx context.Context, order Order) error {
 		}
 	}
 	return err
+}
+
+func (s *Service) failUnreservedOrder(ctx context.Context, orderID uuid.UUID, reserveErr error) error {
+	if _, err := s.UpdateOrderStatus(ctx, orderID, OrderStatusFailed); err != nil {
+		return errors.Join(reserveErr, err)
+	}
+	return reserveErr
 }
 
 func orderItemsToInput(items []OrderItem) []OrderItemInput {
