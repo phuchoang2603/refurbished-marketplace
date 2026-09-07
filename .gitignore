@@ -48,3 +48,7 @@ infra/k8s/doppler-token.prd.secret.yaml
 
 # pre-commit
 .pre-commit-config.yaml
+
+# Openspec, Cursor, Codex
+.cursor*
+.agents
