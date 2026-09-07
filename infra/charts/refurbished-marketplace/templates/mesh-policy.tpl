@@ -82,7 +82,6 @@ spec:
               protocol: TCP
 {{- end }}
 {{- end }}
-{{- end }}
 ---
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
