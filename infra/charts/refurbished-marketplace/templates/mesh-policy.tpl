@@ -80,19 +80,6 @@ spec:
         - ports:
             - port: {{ $svc.port | quote }}
               protocol: TCP
-{{- if eq $name "products" }}
-    - fromEndpoints:
-        - matchLabels:
-            app: orders
-{{- if $mutual }}
-      authentication:
-        mode: required
-{{- end }}
-      toPorts:
-        - ports:
-            - port: {{ $svc.port | quote }}
-              protocol: TCP
-{{- end }}
 {{- end }}
 {{- end }}
 ---

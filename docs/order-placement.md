@@ -26,14 +26,14 @@ sequenceDiagram
     WEB->>CRT: AddCartItem(merchant_id, qty)
     CRT-->>WEB: 200 OK
 
-    Note over WEB, ORD: PlaceOrder (reserve before pay)
+    Note over WEB, ORD: CreateOrder then web ReserveStock
     WEB->>ORD: CreateOrder(merchant_id, total, idempotency_key)
     ORD->>ORD: Persist Order (Status: Pending)
     ORD->>K: Emit "orders.created"
-    ORD->>INV: ReserveStock gRPC
+    ORD-->>WEB: order_id
+    WEB->>INV: ReserveStock gRPC
     INV->>INV: Hold stock (idempotent with Kafka consumer)
     INV->>K: Emit "inventory.reserved"
-    ORD-->>WEB: order_id
 
     Note over WEB, SIM: Hosted Payment Setup
     WEB->>PAY: CreateHostedPaymentSession(order_id) get-or-create/refresh
@@ -67,9 +67,9 @@ sequenceDiagram
 
 ### Web
 
-- Orchestrates browser checkout: PlaceOrder with a checkout intent UUID, then hosted payment redirect.
+- Orchestrates browser checkout: `CreateOrder` with a checkout intent UUID, then products `ReserveStock`, then hosted payment redirect. If reserve fails, marks the order failed and does not redirect to pay.
 - Does not drain the cart on checkout POST. After a successful hosted-payment callback (or paid order page), removes paid product IDs when a `cart_id` cookie is present.
-- Resume payment on unpaid pending orders reuses or refreshes the hosted session.
+- Resume payment on unpaid pending orders re-holds stock (idempotent `ReserveStock`) then reuses or refreshes the hosted session.
 - Builds the buyer-facing hosted payment URL from payment session metadata and gateway configuration.
 - Accepts hosted gateway callbacks and forwards terminal outcomes to `payment` over gRPC.
 
@@ -82,18 +82,16 @@ sequenceDiagram
 ### Orders
 
 - Accepts merchant-scoped PlaceOrder with required `idempotency_key` unique per buyer.
-- After persist, calls products `ReserveStock` so stock is held before hosted-payment redirect.
-- Emits one `orders.created` outbox event per created order (Kafka remains a safety-net reserve).
+- Persists the order and emits one `orders.created` outbox event. Does not call products.
 - Stores `merchant_id` on the order record.
 - Stores order items with `product_id`, `quantity`, `unit_price_cents`, and `line_total_cents`.
-- Emits one `orders.created` outbox event per created order, including item lines.
 - Consumes `inventory.reservation-failed`, `payment.succeeded`, and `payment.failed` to update order status.
 
 ### Inventory
 
 - Stores aggregate stock in `inventory` and reservation ownership in inventory-local reservation records.
 - Consumes `orders.created` and reserves all order item lines idempotently per `order_id` if gRPC has not already held stock.
-- Exposes `ReserveStock` gRPC used by PlaceOrder.
+- Exposes `ReserveStock` gRPC used by web checkout before hosted-payment redirect.
 - Emits `inventory.reserved` when the order is fully reserved.
 - Emits `inventory.reservation-failed` when the order cannot be fully reserved.
 - Consumes `payment.succeeded` and `payment.failed` to commit or release reserved stock.

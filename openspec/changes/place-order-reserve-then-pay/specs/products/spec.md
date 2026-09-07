@@ -2,7 +2,7 @@
 
 ### Requirement: Products reserves stock on an internal command
 
-The products service MUST expose an internal gRPC reservation command that holds all lines for one order idempotently so orders can reserve stock on the place-order path.
+The products service MUST expose an internal gRPC reservation command that holds all lines for one order idempotently so web can reserve stock before hosted payment.
 
 #### Scenario: Reserve command succeeds
 

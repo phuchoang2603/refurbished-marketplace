@@ -35,7 +35,7 @@ The web service MUST let a buyer obtain a hosted payment redirect for an existin
 #### Scenario: Buyer resumes payment from the order page
 
 - **WHEN** a buyer requests to continue payment for their unpaid reserved order
-- **THEN** the web service SHALL request a hosted session for that `order_id` and redirect to the hosted payment URL
+- **THEN** the web service SHALL hold stock for that order, request a hosted session for that `order_id`, and redirect to the hosted payment URL
 
 ## MODIFIED Requirements
 
@@ -46,17 +46,17 @@ The web service MUST keep checkout scoped to one merchant group per submit when 
 #### Scenario: Buyer checks out one merchant group from the cart
 
 - **WHEN** a buyer submits checkout for a selected merchant group in the cart
-- **THEN** the web service SHALL place one order for only that merchant's items using the submit intent key, leave items from other merchants in the cart, request a hosted payment session for the created order, and redirect the browser to the hosted payment URL
+- **THEN** the web service SHALL place one order for only that merchant's items using the submit intent key, call products `ReserveStock` for that order, leave items from other merchants in the cart, request a hosted payment session for the created order, and redirect the browser to the hosted payment URL
 
 #### Scenario: Merchant group exceeds products batch size at checkout
 
 - **WHEN** a buyer submits checkout for a merchant group with more distinct product lines than the products batch lookup limit (100)
 - **THEN** the web service SHALL reject checkout with a clear browser-facing error before calling products batch or placing an order
 
-#### Scenario: Place-order fails because stock cannot be reserved
+#### Scenario: Reserve fails after place-order
 
-- **WHEN** place-order fails because products cannot reserve the merchant group
-- **THEN** the web service SHALL return a browser-friendly error and SHALL NOT redirect to hosted payment
+- **WHEN** products cannot reserve the merchant group after the order is created
+- **THEN** the web service SHALL fail the order, return a browser-friendly error, and SHALL NOT redirect to hosted payment
 
 ### Requirement: Web re-validates cart products in one batch at checkout
 

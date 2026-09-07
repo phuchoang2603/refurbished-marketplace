@@ -34,7 +34,7 @@ Ingress policies select marketplace app pods only. Egress is unrestricted so CNP
 | `payment`                   | 9096 | `web`, kubelet                                                                                                    | web → payment            |
 | `payment-gateway-simulator` | 8097 | Cilium Gateway, kubelet                                                                                           | no (browser via Gateway) |
 
-Inventory lives in `products` (catalog). Kafka consumers are those same service pods talking to namespace `kafka` (Strimzi TLS, not mesh mTLS). Cart → Valkey is `127.0.0.1` on the pod. Init/migrate containers talk to `*-db-rw:5432` without a CNP on CNPG.
+Inventory lives in `products` (catalog). Checkout holds stock with `ReserveStock` from `web`, not `orders`. Kafka consumers are those same service pods talking to namespace `kafka` (Strimzi TLS, not mesh mTLS). Cart → Valkey is `127.0.0.1` on the pod. Init/migrate containers talk to `*-db-rw:5432` without a CNP on CNPG.
 
 Chart knobs (`infra/charts/refurbished-marketplace/values.yaml`):
 

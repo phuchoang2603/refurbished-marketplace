@@ -83,7 +83,6 @@ func (s *Server) CreateOrder(ctx context.Context, req *ordersv1.CreateOrderReque
 			grpcerr.Mapping{Err: service.ErrInvalidIdempotencyKey, Code: codes.InvalidArgument},
 			grpcerr.Mapping{Err: service.ErrIdempotencyConflict, Code: codes.AlreadyExists},
 			grpcerr.Mapping{Err: service.ErrOrderNotPayable, Code: codes.FailedPrecondition},
-			grpcerr.Mapping{Err: service.ErrInsufficientStock, Code: codes.FailedPrecondition},
 		)
 	}
 

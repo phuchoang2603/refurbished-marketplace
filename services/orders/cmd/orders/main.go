@@ -7,7 +7,6 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/phuchoang2603/refurbished-marketplace/services/orders/internal/clients"
 	"github.com/phuchoang2603/refurbished-marketplace/services/orders/internal/grpcserver"
 	"github.com/phuchoang2603/refurbished-marketplace/services/orders/internal/service"
 	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
@@ -15,7 +14,6 @@ import (
 
 	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
 
-	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 )
@@ -37,17 +35,7 @@ func main() {
 		}
 	}()
 
-	productsClient, err := clients.NewProducts(cfg.ProductsAddr)
-	if err != nil {
-		sharedlog.Fatal("products client", "err", err)
-	}
-	defer func() {
-		if err := productsClient.Close(); err != nil {
-			sharedlog.Error("close products client", "err", err)
-		}
-	}()
-
-	svc := service.New(db, productsStock{client: productsClient})
+	svc := service.New(db)
 	grpcSvc := grpcserver.New(svc)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -88,16 +76,4 @@ func main() {
 		sharedlog.Fatal("grpc serve", "err", err)
 	}
 	wg.Wait()
-}
-
-type productsStock struct {
-	client *clients.Products
-}
-
-func (p productsStock) ReserveStock(ctx context.Context, orderID, merchantID uuid.UUID, totalCents int64, items []service.OrderItemInput) error {
-	mapped := make([]clients.ReserveItem, 0, len(items))
-	for _, item := range items {
-		mapped = append(mapped, clients.ReserveItem{ProductID: item.ProductID, Quantity: item.Quantity})
-	}
-	return p.client.ReserveStock(ctx, orderID, merchantID, totalCents, mapped)
 }

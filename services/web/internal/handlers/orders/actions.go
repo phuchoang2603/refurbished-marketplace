@@ -55,6 +55,10 @@ func (h *Handler) handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 		shared.WriteGRPCError(w, r, err)
 		return
 	}
+	if err := shared.HoldStockForOrder(r.Context(), h.deps.Products, h.deps.Orders, order); err != nil {
+		shared.WriteGRPCError(w, r, err)
+		return
+	}
 
 	shared.Redirect(w, r, "/orders/"+order.GetId(), http.StatusSeeOther)
 }
@@ -79,6 +83,10 @@ func (h *Handler) handleResumePayment(w http.ResponseWriter, r *http.Request) {
 	}
 	if order.GetStatus() != ordersv1.OrderStatus_ORDER_STATUS_PENDING {
 		shared.WriteBadRequest(w, r, "order cannot be paid")
+		return
+	}
+	if err := shared.HoldStockForOrder(r.Context(), h.deps.Products, h.deps.Orders, order); err != nil {
+		shared.WriteGRPCError(w, r, err)
 		return
 	}
 	if h.deps.Payment == nil {

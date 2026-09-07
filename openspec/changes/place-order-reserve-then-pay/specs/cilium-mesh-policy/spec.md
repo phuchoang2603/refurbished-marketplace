@@ -11,10 +11,5 @@ The system SHALL allow only documented caller identities to reach each marketpla
 
 #### Scenario: Documented callers succeed
 
-- **WHEN** `web` calls `orders` (or other documented pairs) after policies are enforced
+- **WHEN** `web` calls `orders` or `products` (or other documented pairs) after policies are enforced
 - **THEN** checkout and related flows continue to succeed
-
-#### Scenario: Orders reserves stock on products
-
-- **WHEN** `orders` calls `products` gRPC to reserve stock for place-order after policies are enforced
-- **THEN** Cilium policy SHALL allow that documented pair so checkout can hold stock before hosted payment

@@ -37,7 +37,7 @@ func WriteGRPCError(w http.ResponseWriter, r *http.Request, err error) {
 		WritePopup(w, r, http.StatusNotFound, "Not found", st.Message())
 	case codes.PermissionDenied:
 		WritePopup(w, r, http.StatusForbidden, "Forbidden", st.Message())
-	case codes.AlreadyExists:
+	case codes.AlreadyExists, codes.FailedPrecondition:
 		WritePopup(w, r, http.StatusConflict, "Conflict", st.Message())
 	case codes.Unauthenticated:
 		WritePopup(w, r, http.StatusUnauthorized, "Unauthorized", st.Message())

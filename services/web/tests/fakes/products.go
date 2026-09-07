@@ -11,6 +11,7 @@ type ProductsService struct {
 	GetByIDFn  func(context.Context, string) (*productsv1.Product, error)
 	GetByIDsFn func(context.Context, []string) (*productsv1.GetProductsByIDsResponse, error)
 	ListFn     func(context.Context, int32, int32) (*productsv1.ListProductsResponse, error)
+	ReserveFn  func(context.Context, string, string, int64, []*productsv1.ReserveStockItem) error
 }
 
 func (f *ProductsService) CreateProduct(ctx context.Context, name, description string, priceCents int64, merchantID string, initialStock int32) (*productsv1.Product, error) {
@@ -39,4 +40,11 @@ func (f *ProductsService) ListProducts(ctx context.Context, limit, offset int32)
 		return f.ListFn(ctx, limit, offset)
 	}
 	return &productsv1.ListProductsResponse{}, nil
+}
+
+func (f *ProductsService) ReserveStock(ctx context.Context, orderID, merchantID string, totalCents int64, items []*productsv1.ReserveStockItem) error {
+	if f.ReserveFn != nil {
+		return f.ReserveFn(ctx, orderID, merchantID, totalCents, items)
+	}
+	return nil
 }
