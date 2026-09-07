@@ -1,13 +1,10 @@
 package service
 
 import (
-	"context"
 	"database/sql"
 	"errors"
 
 	"github.com/phuchoang2603/refurbished-marketplace/services/orders/internal/database"
-
-	"github.com/google/uuid"
 )
 
 var (
@@ -23,7 +20,6 @@ var (
 	ErrInvalidIdempotencyKey = errors.New("invalid idempotency key")
 	ErrIdempotencyConflict   = errors.New("idempotency key conflict")
 	ErrOrderNotPayable       = errors.New("order cannot be paid")
-	ErrInsufficientStock     = errors.New("insufficient stock")
 )
 
 const (
@@ -33,16 +29,11 @@ const (
 	OrderStatusFailed      = "ORDER_STATUS_FAILED"
 )
 
-type StockReserver interface {
-	ReserveStock(ctx context.Context, orderID, merchantID uuid.UUID, totalCents int64, items []OrderItemInput) error
-}
-
 type Service struct {
 	db      *sql.DB
 	queries *database.Queries
-	stock   StockReserver
 }
 
-func New(db *sql.DB, stock StockReserver) *Service {
-	return &Service{db: db, queries: database.New(db), stock: stock}
+func New(db *sql.DB) *Service {
+	return &Service{db: db, queries: database.New(db)}
 }

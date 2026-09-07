@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"errors"
 	"time"
 
 	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
@@ -11,8 +10,6 @@ import (
 	"github.com/phuchoang2603/refurbished-marketplace/shared/err/dberr"
 
 	"github.com/google/uuid"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 type OrderItemInput struct {
@@ -95,9 +92,6 @@ func (s *Service) CreateOrder(ctx context.Context, buyerUserID, merchantID uuid.
 		"total_cents", createdOrder.TotalCents,
 		"item_count", len(createdOrder.Items),
 	)
-	if err := s.reserveStock(ctx, createdOrder); err != nil {
-		return Order{}, s.failUnreservedOrder(ctx, createdOrder.ID, err)
-	}
 	return createdOrder, nil
 }
 
@@ -123,11 +117,6 @@ func (s *Service) replayCreateOrder(ctx context.Context, buyerUserID, merchantID
 	if order.Status == OrderStatusFailed {
 		return Order{}, ErrOrderNotPayable
 	}
-	if order.Status == OrderStatusPending {
-		if err := s.reserveStock(ctx, order); err != nil {
-			return Order{}, s.failUnreservedOrder(ctx, order.ID, err)
-		}
-	}
 	return order, nil
 }
 
@@ -150,45 +139,6 @@ func orderItemsMatch(existing []OrderItem, input []OrderItemInput) bool {
 		}
 	}
 	return true
-}
-
-func (s *Service) reserveStock(ctx context.Context, order Order) error {
-	if s.stock == nil {
-		return nil
-	}
-	err := s.stock.ReserveStock(ctx, order.ID, order.MerchantID, order.TotalCents, orderItemsToInput(order.Items))
-	if err == nil {
-		return nil
-	}
-	if st, ok := status.FromError(err); ok {
-		switch st.Code() {
-		case codes.FailedPrecondition:
-			return ErrInsufficientStock
-		case codes.InvalidArgument:
-			return ErrInvalidQuantity
-		}
-	}
-	return err
-}
-
-func (s *Service) failUnreservedOrder(ctx context.Context, orderID uuid.UUID, reserveErr error) error {
-	if _, err := s.UpdateOrderStatus(ctx, orderID, OrderStatusFailed); err != nil {
-		sharedlog.ErrorContext(ctx, "failed to mark unreserved order failed", sharedlog.KeyOrderID, orderID.String(), sharedlog.KeyErr, err)
-		return errors.Join(reserveErr, err)
-	}
-	return reserveErr
-}
-
-func orderItemsToInput(items []OrderItem) []OrderItemInput {
-	out := make([]OrderItemInput, 0, len(items))
-	for _, item := range items {
-		out = append(out, OrderItemInput{
-			ProductID:      item.ProductID,
-			Quantity:       item.Quantity,
-			UnitPriceCents: item.UnitPriceCents,
-		})
-	}
-	return out
 }
 
 func (s *Service) GetOrderByID(ctx context.Context, id uuid.UUID) (Order, error) {

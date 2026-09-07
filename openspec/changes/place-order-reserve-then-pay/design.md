@@ -4,14 +4,14 @@ See proposal.md for motivation. Today `services/web/internal/handlers/cart/check
 
 Durable sequence docs live in `docs/order-placement.md` and MUST be updated when this ships (not in this change folder).
 
-Orders has no products gRPC client today. Cilium marketplace authorization is identity allow-lists (`openspec/specs/cilium-mesh-policy/spec.md`); a new `orders` → `products` hop MUST be added there and in the chart CNPs.
+Orders has no products gRPC client. Cilium marketplace authorization is identity allow-lists (`openspec/specs/cilium-mesh-policy/spec.md`); **web** already calls products. Do not add `orders` → `products`.
 
 ## Goals / Non-Goals
 
 **Goals:**
 
-- Place-order is the command: persist + gRPC reserve, then return.
-- Web is a thin edge: intent key, batch price re-validate, PlaceOrder, session get-or-create/refresh, 303.
+- Place-order persists the order; web holds stock over gRPC before hosted redirect.
+- Web orchestrates: intent key, batch price re-validate, CreateOrder, ReserveStock, session get-or-create/refresh, 303.
 - Kafka remains the outcome bus for commit/release and order paid/failed.
 - Cart drain happens after paid, via the existing hosted-payment callback path in web (cart has no Kafka consumer).
 
@@ -24,17 +24,17 @@ Orders has no products gRPC client today. Cilium marketplace authorization is id
 
 ## Decisions
 
-### Decision: Host PlaceOrder in orders, not a new service
+### Decision: Web orchestrates CreateOrder then ReserveStock
 
-Orders already owns the order row and `orders.created` outbox. Adding a products gRPC client there is cheaper than a fourth runtime.
+Orders owns the order row and `orders.created` outbox. Products owns the hold. Web already talks to both, so checkout stays an edge command: persist, then reserve, then pay. Orders MUST NOT depend on products.
 
-Alternatives considered: web calling ReserveStock itself (splits command across two RPCs from the edge; retries can create an order without reserve unless web is perfect). New checkout service (rejected: relocates the same three steps).
+Retries: same intent returns the pending order; web calls ReserveStock again (idempotent). If reserve fails, web marks the order FAILED and rotates the checkout intent.
 
 ### Decision: Unique `(buyer_user_id, idempotency_key)` on orders
 
 Web generates a UUID per checkout form submit (hidden field). Hash-of-cart is not the key (rebuy would collide).
 
-On retry: return existing order if merchant and lines match; conflict otherwise. If the first attempt persisted the order but reserve failed, retry with the same key MUST resume reserve (or fail the order cleanly) rather than insert a new row.
+On retry: return existing order if merchant and lines match; conflict otherwise. If the first attempt persisted the order but reserve failed, the order is FAILED and the same key is not payable; web rotates the intent.
 
 ### Decision: Products `ReserveStock` gRPC is the hold; Kafka is a safety net
 
@@ -58,17 +58,16 @@ Cart is Redis behind web gRPC and has no Kafka consumer. Adding cart Kafka is ou
 
 ## Risks / Trade-offs
 
-- [PlaceOrder latency includes products gRPC + row locks] → Acceptable vs redirect-before-reserve; watch checkout timeout vs Gateway `backendRequest`.
-- [Order row exists then reserve fails] → Same intent retry must resume; do not leave the buyer with a payable unreserved order.
+- [Checkout HTTP includes products ReserveStock] → Acceptable vs redirect-before-reserve; watch checkout timeout vs Gateway `backendRequest`.
+- [Order row exists then reserve fails] → Web marks FAILED and rotates intent; do not redirect to hosted payment.
 - [Webhook success but cart cookie missing] → Stock and order still settle; cart TTL expires leftovers. Document resume UX.
-- [Mesh deny orders→products] → Ship CNP with the app change; fail closed in enforce mode.
 - [Double inventory.reserved] → Outbox/inbox uniqueness per order; payment create-tx already idempotent on `order_id`.
 
 ## Migration Plan
 
 1. Proto + products ReserveStock + orders idempotency column; mesh allow-list.
-2. Wire PlaceOrder to ReserveStock; keep Kafka consumer idempotent.
-3. Switch web checkout; stop checkout multi-remove; add callback multi-remove + resume-payment.
+2. Wire web checkout to ReserveStock after CreateOrder; keep Kafka consumer idempotent.
+3. Strip any orders→products client; web already allowed to call products.
 4. Payment session refresh-if-expired.
 5. Update `docs/order-placement.md`.
 6. Rollback: revert web to CreateOrder-without-reserve only if products ReserveStock is unused; do not mix redirect-before-reserve with a half-deployed unique key.

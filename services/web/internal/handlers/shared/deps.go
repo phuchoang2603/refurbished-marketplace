@@ -21,12 +21,14 @@ type ProductsService interface {
 	GetProductByID(ctx context.Context, id string) (*productsv1.Product, error)
 	GetProductsByIDs(ctx context.Context, ids []string) (*productsv1.GetProductsByIDsResponse, error)
 	ListProducts(ctx context.Context, limit, offset int32) (*productsv1.ListProductsResponse, error)
+	ReserveStock(ctx context.Context, orderID, merchantID string, totalCents int64, items []*productsv1.ReserveStockItem) error
 }
 
 type OrdersService interface {
 	CreateOrder(ctx context.Context, buyerUserID, merchantID string, items []*ordersv1.CreateOrderItem, totalCents int64, idempotencyKey string) (*ordersv1.Order, error)
 	GetOrderByID(ctx context.Context, id string) (*ordersv1.Order, error)
 	ListOrdersByBuyer(ctx context.Context, buyerUserID string, limit, offset int32) (*ordersv1.ListOrdersByBuyerResponse, error)
+	UpdateOrderStatus(ctx context.Context, id string, status ordersv1.OrderStatus) (*ordersv1.Order, error)
 }
 
 type CartService interface {

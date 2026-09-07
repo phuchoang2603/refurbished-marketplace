@@ -4,11 +4,11 @@ Checkout today creates a pending order, optionally empties the cart, then redire
 
 ## What Changes
 
-- Treat **orders `PlaceOrder` / `CreateOrder`** as the checkout command: persist a merchant-scoped order keyed by buyer **`idempotency_key`**, then **`ReserveStock` over gRPC** to products **before** returning to web. Same buyer + key returns the existing order (and does not double-reserve).
-- Web checkout: send the intent key → `PlaceOrder` → **get-or-create / refresh** hosted payment session → 303. **Do not** remove cart lines on this POST.
+- Treat **orders `CreateOrder`** as persist + outbox only (buyer **`idempotency_key`**). **Web** holds stock with products **`ReserveStock` gRPC** after create and **before** hosted-payment redirect. Same buyer + key returns the existing order; web re-calls ReserveStock (idempotent). If reserve fails, web marks the order failed.
+- Web checkout: intent key → `CreateOrder` → **`ReserveStock`** → **get-or-create / refresh** hosted payment session → 303. **Do not** remove cart lines on this POST.
 - Keep Kafka for **payment outcomes**: `payment.succeeded` commits reservations and marks the order paid; `payment.failed` / session expiry **releases** stock and fails the order. Cart clear is a **paid** side effect (web callback after successful webhook), not part of the command path.
-- **BREAKING** (internal): products MUST expose a reserve RPC that orders is allowed to call (Cilium allow-list). `orders.created` consumers MUST treat reserve as already done when the gRPC path succeeded (idempotent no-op), not as a second reserve.
-- No new checkout microservice.
+- **BREAKING** (internal): products MUST expose a reserve RPC that **web** is allowed to call (already on the mesh). `orders.created` consumers MUST treat reserve as already done when the gRPC path succeeded (idempotent no-op), not as a second reserve.
+- No new checkout microservice. Orders MUST NOT call products.
 
 ## Capabilities
 
@@ -18,12 +18,12 @@ Checkout today creates a pending order, optionally empties the cart, then redire
 
 ### Modified Capabilities
 
-- `orders`: idempotent place-order; reserve stock in the command path before success; failed reserve cancels/fails the order without a payment redirect.
+- `orders`: idempotent place-order persist; no products gRPC client.
 - `products`: ReserveStock gRPC as the primary hold; keep commit/release on payment events; Kafka `orders.created` reserve stays idempotent only.
 - `payment`: hosted session get-or-create and refresh-if-expired; outcomes still drive commit/release.
-- `web`: checkout form intent key; PlaceOrder then session then redirect; no cart multi-remove on checkout POST; cart remove after paid webhook; resume-payment UX for pending reserved orders.
+- `web`: checkout form intent key; CreateOrder then ReserveStock then session then redirect; fail the order if reserve fails; no cart multi-remove on checkout POST; cart remove after paid webhook; resume-payment re-holds then session.
 - `cart`: checkout MUST NOT require a successful multi-remove before payment; lines remain until paid (or documented resume if cookie/cart still holds them).
-- `cilium-mesh-policy`: allow `orders` → `products` gRPC for ReserveStock.
+- `cilium-mesh-policy`: `web` → `products` (already allowed) is the ReserveStock hop. Do not add `orders` → `products`.
 
 ## Impact
 

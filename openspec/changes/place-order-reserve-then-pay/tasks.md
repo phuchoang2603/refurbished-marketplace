@@ -12,9 +12,9 @@
 ## 3. Orders PlaceOrder
 
 - [x] 3.1 Goose migration + sqlc: persist `idempotency_key` with unique `(buyer_user_id, idempotency_key)` under `services/orders/db/`
-- [x] 3.2 Add a products gRPC client to orders (`PRODUCTS_SVC_ADDR` in `infra/charts/refurbished-marketplace/values.yaml`)
-- [x] 3.3 Place-order: insert order + items + `orders.created` outbox, then `ReserveStock`; same key returns existing order; conflicting body is an error; reserve failure must not leave a payable unreserved order
-- [x] 3.4 Allow `orders` → `products` gRPC in `infra/charts/refurbished-marketplace/templates/mesh-policy.tpl` (today only `web` may call gRPC services)
+- [x] 3.2 Orders persist + `orders.created` only; no products gRPC client and no `PRODUCTS_SVC_ADDR` on orders
+- [x] 3.3 Same key returns existing order; conflicting body is an error; failed orders are not payable
+- [x] 3.4 Mesh: web already calls products; do not allow `orders` → `products`
 
 ## 4. Payment session reattach
 
@@ -23,10 +23,10 @@
 ## 5. Web edge
 
 - [x] 5.1 Checkout form hidden intent UUID reused on resubmit (`services/web/internal/views/cart/` + checkout handler)
-- [x] 5.2 Checkout: batch re-validate → PlaceOrder with key → session create → 303; remove cart multi-remove from this POST (`checkout.go`)
+- [x] 5.2 Checkout: batch re-validate → CreateOrder → ReserveStock → session create → 303; on reserve failure mark order FAILED and rotate intent; remove cart multi-remove from this POST (`checkout.go`)
 - [x] 5.3 After successful hosted-payment callback, multi-remove paid product IDs when `cart_id` is present
-- [x] 5.4 Resume-payment action on the unpaid order page (get-or-create session + redirect)
+- [x] 5.4 Resume-payment action on the unpaid order page (re-hold stock, get-or-create session + redirect)
 
 ## 6. Docs
 
-- [x] 6.1 Update `docs/order-placement.md` so reserve happens on PlaceOrder gRPC before hosted redirect, and cart drain is after paid
+- [x] 6.1 Update `docs/order-placement.md` so web reserves after CreateOrder and before hosted redirect, and cart drain is after paid

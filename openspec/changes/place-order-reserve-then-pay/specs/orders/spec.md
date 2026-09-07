@@ -24,24 +24,19 @@ The orders capability MUST accept a caller-supplied `idempotency_key` on place-o
 - **WHEN** a caller places an order without an `idempotency_key`
 - **THEN** the service SHALL reject the request as invalid
 
-### Requirement: Place order reserves stock before success
+### Requirement: Place order persists without calling products
 
-The orders capability MUST reserve all order lines through the products catalog **before** treating place-order as successful so the caller does not receive an `order_id` for payment until stock is held.
+The orders capability MUST persist merchant-scoped orders and emit `orders.created`. It MUST NOT call products to reserve stock.
 
 #### Scenario: Stock is available
 
-- **WHEN** place-order persists a new order and products accepts the reservation for every line
-- **THEN** the service SHALL return the order as placed and SHALL leave the order in a pending unpaid state until a payment outcome arrives
+- **WHEN** place-order persists a new order
+- **THEN** the service SHALL return the pending order so the caller can reserve stock and open hosted payment
 
-#### Scenario: Stock is insufficient or reservation fails
+#### Scenario: Retry after successful persist
 
-- **WHEN** products cannot reserve the full order
-- **THEN** the service SHALL NOT return a successful place-order for payment, SHALL NOT leave a partial active reservation for that order, and SHALL fail or cancel the order record created for that intent
-
-#### Scenario: Retry after successful reserve
-
-- **WHEN** place-order is retried with the same buyer and `idempotency_key` after stock was already reserved
-- **THEN** the service SHALL return the existing reserved order without reserving additional quantity
+- **WHEN** place-order is retried with the same buyer and `idempotency_key` after the order was created
+- **THEN** the service SHALL return the existing order without inserting another row
 
 ## MODIFIED Requirements
 
@@ -61,5 +56,5 @@ The orders capability MUST write one outbox row per created order, not one outbo
 
 #### Scenario: Place-order returns before Kafka consume
 
-- **WHEN** place-order has reserved stock over gRPC
-- **THEN** the caller SHALL be able to proceed to hosted payment without waiting for `orders.created` to be consumed
+- **WHEN** place-order has persisted the order
+- **THEN** the caller SHALL be able to reserve stock over gRPC and proceed to hosted payment without waiting for `orders.created` to be consumed

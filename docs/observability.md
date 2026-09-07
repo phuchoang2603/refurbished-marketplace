@@ -140,7 +140,7 @@ Browser → ingress → web ──gRPC──▶ domain services (+ DB / Redis ch
 { resource.service.name =~ "web|orders|payment|products|cart|users|connect-debezium" }
 ```
 
-3. Open a TraceId for service `web`: root should look like `POST /cart/checkout` (or similar route pattern), not the bare string `web`. Expect web → orders (gRPC + DB children) → Debezium/connect → products (messaging + DB). Kafka `orders.created` records should carry a `traceparent` header.
+3. Open a TraceId for service `web`: root should look like `POST /cart/checkout` (or similar route pattern), not the bare string `web`. Expect web → orders (`CreateOrder`) and web → products (`ReserveStock`), then Debezium/connect → products (messaging + DB) as the Kafka safety net. Kafka `orders.created` records should carry a `traceparent` header.
 4. Complete hosted-payment success/fail; confirm callback → payment gRPC → payment outbox path.
 5. Confirm Gateway proxy spans are absent. For request/error/duration, open Grafana folder **Marketplace** → **Marketplace RED** (VictoriaMetrics). For JSON logs, open **Marketplace logs**. Hubble is not required.
 
