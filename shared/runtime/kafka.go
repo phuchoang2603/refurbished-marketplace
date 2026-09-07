@@ -5,6 +5,7 @@ import (
 	"errors"
 	"os"
 	"sync"
+	"time"
 
 	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
 
@@ -25,8 +26,19 @@ func StartKafkaConsumer(ctx context.Context, wg *sync.WaitGroup, run func(ctx co
 	}
 
 	wg.Go(func() {
-		if err := run(ctx, brokers); err != nil && !errors.Is(err, context.Canceled) {
-			sharedlog.Error("kafka consumer stopped", "err", err)
+		for ctx.Err() == nil {
+			err := run(ctx, brokers)
+			if ctx.Err() != nil || errors.Is(err, context.Canceled) {
+				return
+			}
+			sharedlog.Error("kafka consumer stopped; restarting in 5s", "err", err)
+			timer := time.NewTimer(5 * time.Second)
+			select {
+			case <-ctx.Done():
+				timer.Stop()
+				return
+			case <-timer.C:
+			}
 		}
 	})
 }

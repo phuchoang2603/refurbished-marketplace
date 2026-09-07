@@ -37,8 +37,15 @@ type KafkaConsumerConfig struct {
 	TracerName string
 }
 
+// consumerClient keeps polling and acknowledgement behavior independently testable.
+type consumerClient interface {
+	PollFetches(context.Context) kgo.Fetches
+	CommitUncommittedOffsets(context.Context) error
+	Close()
+}
+
 type KafkaConsumer struct {
-	client     *kgo.Client
+	client     consumerClient
 	handler    KafkaHandler
 	tracerName string
 }
@@ -124,10 +131,10 @@ func (c *KafkaConsumer) Run(ctx context.Context) error {
 			})
 		})
 		if err := g.Wait(); err != nil {
-			continue
+			return fmt.Errorf("process kafka batch: %w", err)
 		}
 		if err := c.client.CommitUncommittedOffsets(ctx); err != nil {
-			continue
+			return fmt.Errorf("commit kafka batch: %w", err)
 		}
 	}
 }

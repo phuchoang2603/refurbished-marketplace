@@ -27,6 +27,7 @@ env:
     ./shared/err/dberr/...
     ./shared/err/grpcerr/...
     ./shared/messaging/...
+    ./shared/observe/metric/...
     ./shared/observe/log/...
     ./shared/observe/trace/...
     ./shared/proto/...
@@ -76,60 +77,34 @@ jobs:
           filters: |
             users:
               - 'services/users/**'
-              - 'shared/proto/**'
-              - 'shared/auth/**'
-              - 'shared/err/dberr/**'
-              - 'shared/err/grpcerr/**'
-              - 'shared/runtime/**'
-              - 'shared/observe/log/**'
-              - 'shared/testutil/postgres/**'
+              - 'shared/**'
+              - 'go.work*'
+              - '.github/workflows/ci.yml'
             products:
               - 'services/products/**'
-              - 'shared/proto/**'
-              - 'shared/messaging/**'
-              - 'shared/err/dberr/**'
-              - 'shared/err/grpcerr/**'
-              - 'shared/runtime/**'
-              - 'shared/observe/log/**'
-              - 'shared/observe/trace/**'
-              - 'shared/testutil/postgres/**'
-              - 'shared/testutil/kafka/**'
+              - 'shared/**'
+              - 'go.work*'
+              - '.github/workflows/ci.yml'
             orders:
               - 'services/orders/**'
-              - 'shared/proto/**'
-              - 'shared/messaging/**'
-              - 'shared/err/dberr/**'
-              - 'shared/err/grpcerr/**'
-              - 'shared/runtime/**'
-              - 'shared/observe/log/**'
-              - 'shared/observe/trace/**'
-              - 'shared/testutil/postgres/**'
-              - 'shared/testutil/kafka/**'
+              - 'shared/**'
+              - 'go.work*'
+              - '.github/workflows/ci.yml'
             payment:
               - 'services/payment/**'
-              - 'shared/proto/**'
-              - 'shared/messaging/**'
-              - 'shared/err/dberr/**'
-              - 'shared/err/grpcerr/**'
-              - 'shared/runtime/**'
-              - 'shared/observe/log/**'
-              - 'shared/observe/trace/**'
-              - 'shared/testutil/postgres/**'
-              - 'shared/testutil/kafka/**'
+              - 'shared/**'
+              - 'go.work*'
+              - '.github/workflows/ci.yml'
             cart:
               - 'services/cart/**'
-              - 'shared/proto/**'
-              - 'shared/err/grpcerr/**'
-              - 'shared/runtime/**'
-              - 'shared/observe/log/**'
-              - 'shared/testutil/redis/**'
+              - 'shared/**'
+              - 'go.work*'
+              - '.github/workflows/ci.yml'
             web:
               - 'services/web/**'
-              - 'shared/proto/**'
-              - 'shared/auth/**'
-              - 'shared/runtime/**'
-              - 'shared/observe/log/**'
-              - 'shared/observe/trace/**'
+              - 'shared/**'
+              - 'go.work*'
+              - '.github/workflows/ci.yml'
             helm:
               - 'infra/charts/**'
 
@@ -163,6 +138,17 @@ jobs:
       - name: Test ${{ matrix.service }}
         if: needs.changes.outputs[matrix.service] == 'true'
         run: go test ./services/${{ matrix.service }}/...
+
+  shared-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: ${{ env.GO_CACHE_DEPENDENCY_PATH }}
+      - name: Test shared modules and tools
+        run: go test -race ./shared/auth/... ./shared/err/dberr/... ./shared/err/grpcerr/... ./shared/messaging/... ./shared/observe/log/... ./shared/observe/metric/... ./shared/observe/trace/... ./shared/runtime/... ./tools/payment-gateway-simulator/...
 
   govulncheck:
     needs: changes

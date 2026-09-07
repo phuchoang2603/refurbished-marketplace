@@ -50,7 +50,7 @@ The payment service MUST create or reuse a hosted payment session using `order_i
 #### Scenario: Hosted payment session is requested again for the same order
 
 - **WHEN** the web edge repeats the hosted payment session request for an order that already has a stored session
-- **THEN** the payment service SHALL return the same stored session metadata instead of creating a duplicate
+- **THEN** the payment service SHALL return stored or refreshed session metadata for that `order_id` instead of creating a second independent payment identity
 
 ### Requirement: Payment accepts hosted gateway outcome callbacks
 
@@ -79,3 +79,17 @@ The payment service MUST periodically expire PENDING hosted payment sessions who
 
 - **WHEN** a hosted payment session is marked EXPIRED before `inventory.reserved` creates the payment transaction
 - **THEN** creating that transaction SHALL apply the expired terminal outcome and emit `payment.failed`
+
+### Requirement: Hosted payment session can be refreshed when expired and unpaid
+
+The payment service MUST allow a repeated hosted-session request for an unpaid order whose previous session is expired or otherwise unusable to produce a new or renewed session the web edge can redirect to, without creating a second order.
+
+#### Scenario: Session is requested again while still pending
+
+- **WHEN** the web edge repeats the hosted payment session request for an unpaid order whose session is still pending and unexpired
+- **THEN** the service SHALL return the existing session metadata instead of creating a duplicate pending session
+
+#### Scenario: Session is requested again after expiry while unpaid
+
+- **WHEN** the web edge requests a hosted payment session for an unpaid order whose previous session is expired
+- **THEN** the service SHALL return usable hosted-session metadata for that same `order_id` so checkout can redirect again
