@@ -2,6 +2,8 @@ package runtime
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -19,8 +21,10 @@ type HTTPServerConfig struct {
 
 func ServeHTTP(ctx context.Context, cfg HTTPServerConfig) error {
 	srv := &http.Server{
-		Addr:    cfg.Addr,
-		Handler: cfg.Handler,
+		Addr:              cfg.Addr,
+		Handler:           cfg.Handler,
+		ReadHeaderTimeout: 5 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 
 	shutdownTimeout := cfg.ShutdownTimeout
@@ -31,7 +35,7 @@ func ServeHTTP(ctx context.Context, cfg HTTPServerConfig) error {
 	errCh := make(chan error, 1)
 	go func() {
 		sharedlog.Info("starting http service", "addr", cfg.Addr)
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			errCh <- err
 		}
 	}()
@@ -46,7 +50,7 @@ func ServeHTTP(ctx context.Context, cfg HTTPServerConfig) error {
 	defer cancel()
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
-		sharedlog.Error("server forced to shutdown", "err", err)
+		return errors.Join(fmt.Errorf("http shutdown: %w", err), srv.Close())
 	}
 	return nil
 }

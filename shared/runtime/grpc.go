@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"strings"
@@ -17,9 +18,10 @@ import (
 )
 
 type GRPCServerConfig struct {
-	Addr        string
-	ServiceName string
-	Register    func(*grpc.Server)
+	Addr            string
+	ServiceName     string
+	Register        func(*grpc.Server)
+	ShutdownTimeout time.Duration
 }
 
 func ServeGRPC(ctx context.Context, cfg GRPCServerConfig) error {
@@ -33,13 +35,34 @@ func ServeGRPC(ctx context.Context, cfg GRPCServerConfig) error {
 	cfg.Register(server)
 	reflection.Register(server)
 
-	go func() {
-		<-ctx.Done()
-		server.GracefulStop()
-	}()
-
+	shutdownTimeout := cfg.ShutdownTimeout
+	if shutdownTimeout <= 0 {
+		shutdownTimeout = 30 * time.Second
+	}
+	errCh := make(chan error, 1)
+	go func() { errCh <- server.Serve(lis) }()
 	sharedlog.Info("starting grpc service", "addr", cfg.Addr)
-	return server.Serve(lis)
+	select {
+	case err := <-errCh:
+		server.Stop()
+		return err
+	case <-ctx.Done():
+	}
+	stopped := make(chan struct{})
+	go func() { server.GracefulStop(); close(stopped) }()
+	timer := time.NewTimer(shutdownTimeout)
+	defer timer.Stop()
+	select {
+	case <-stopped:
+	case <-timer.C:
+		server.Stop()
+		<-stopped
+	}
+	err = <-errCh
+	if errors.Is(err, grpc.ErrServerStopped) {
+		return nil
+	}
+	return err
 }
 
 func unaryAccessLog(
