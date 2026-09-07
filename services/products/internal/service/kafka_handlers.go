@@ -60,6 +60,14 @@ func (s *Service) HandleOrdersCreated(ctx context.Context, messageID string, val
 		return err
 	}
 
+	existing, err := q.CountInventoryReservationsByOrderID(ctx, orderID)
+	if err != nil {
+		return err
+	}
+	if existing > 0 {
+		return tx.Commit()
+	}
+
 	if err := reserveOrderItems(ctx, q, orderID, items); err != nil {
 		if errors.Is(err, ErrInventoryNotFound) || errors.Is(err, ErrInsufficientStock) {
 			if outboxErr := createInventoryReservationFailedOutbox(ctx, q, orderID); outboxErr != nil {

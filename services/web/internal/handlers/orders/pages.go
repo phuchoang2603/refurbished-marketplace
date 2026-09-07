@@ -3,6 +3,7 @@ package orders
 import (
 	"net/http"
 
+	carthandlers "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/cart"
 	shared "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
 	orderviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/orders"
 	sharedviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/shared"
@@ -88,6 +89,15 @@ func (h *Handler) handleGetOrderByID(w http.ResponseWriter, r *http.Request) {
 			shared.WriteGRPCError(w, r, err)
 			return
 		}
+	}
+	view.CanResumePayment = order.GetStatus() == ordersv1.OrderStatus_ORDER_STATUS_PENDING && view.PaymentStatus != "SUCCEEDED"
+
+	if view.PaymentStatus == "SUCCEEDED" {
+		ids := make([]string, 0, len(order.GetItems()))
+		for _, item := range order.GetItems() {
+			ids = append(ids, item.GetProductId())
+		}
+		carthandlers.DrainPaidProductIDs(w, r, h.deps.Cart, ids, order.GetMerchantId())
 	}
 
 	shared.WriteHTML(w, r, http.StatusOK, orderviews.OrderDetailPage(view))

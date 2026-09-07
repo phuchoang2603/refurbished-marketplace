@@ -17,19 +17,21 @@ INSERT INTO orders (
     buyer_user_id,
     merchant_id,
     status,
-    total_cents
+    total_cents,
+    idempotency_key
 )
-VALUES ($1, $2, $3, $4, $5)
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING
-    orders.id, orders.buyer_user_id, orders.status, orders.total_cents, orders.created_at, orders.updated_at, orders.merchant_id
+    orders.id, orders.buyer_user_id, orders.status, orders.total_cents, orders.created_at, orders.updated_at, orders.merchant_id, orders.idempotency_key
 `
 
 type CreateOrderParams struct {
-	ID          uuid.UUID
-	BuyerUserID uuid.UUID
-	MerchantID  uuid.UUID
-	Status      string
-	TotalCents  int64
+	ID             uuid.UUID
+	BuyerUserID    uuid.UUID
+	MerchantID     uuid.UUID
+	Status         string
+	TotalCents     int64
+	IdempotencyKey uuid.UUID
 }
 
 func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (Order, error) {
@@ -39,6 +41,7 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (Order
 		arg.MerchantID,
 		arg.Status,
 		arg.TotalCents,
+		arg.IdempotencyKey,
 	)
 	var i Order
 	err := row.Scan(
@@ -49,12 +52,41 @@ func (q *Queries) CreateOrder(ctx context.Context, arg CreateOrderParams) (Order
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.MerchantID,
+		&i.IdempotencyKey,
+	)
+	return i, err
+}
+
+const getOrderByBuyerIdempotencyKey = `-- name: GetOrderByBuyerIdempotencyKey :one
+SELECT id, buyer_user_id, status, total_cents, created_at, updated_at, merchant_id, idempotency_key
+FROM orders
+WHERE buyer_user_id = $1 AND idempotency_key = $2
+LIMIT 1
+`
+
+type GetOrderByBuyerIdempotencyKeyParams struct {
+	BuyerUserID    uuid.UUID
+	IdempotencyKey uuid.UUID
+}
+
+func (q *Queries) GetOrderByBuyerIdempotencyKey(ctx context.Context, arg GetOrderByBuyerIdempotencyKeyParams) (Order, error) {
+	row := q.db.QueryRowContext(ctx, getOrderByBuyerIdempotencyKey, arg.BuyerUserID, arg.IdempotencyKey)
+	var i Order
+	err := row.Scan(
+		&i.ID,
+		&i.BuyerUserID,
+		&i.Status,
+		&i.TotalCents,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.MerchantID,
+		&i.IdempotencyKey,
 	)
 	return i, err
 }
 
 const getOrderByID = `-- name: GetOrderByID :one
-SELECT id, buyer_user_id, status, total_cents, created_at, updated_at, merchant_id
+SELECT id, buyer_user_id, status, total_cents, created_at, updated_at, merchant_id, idempotency_key
 FROM orders
 WHERE id = $1
 LIMIT 1
@@ -71,12 +103,13 @@ func (q *Queries) GetOrderByID(ctx context.Context, id uuid.UUID) (Order, error)
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.MerchantID,
+		&i.IdempotencyKey,
 	)
 	return i, err
 }
 
 const listOrdersByBuyer = `-- name: ListOrdersByBuyer :many
-SELECT id, buyer_user_id, status, total_cents, created_at, updated_at, merchant_id
+SELECT id, buyer_user_id, status, total_cents, created_at, updated_at, merchant_id, idempotency_key
 FROM orders
 WHERE buyer_user_id = $1
 ORDER BY created_at DESC
@@ -106,6 +139,7 @@ func (q *Queries) ListOrdersByBuyer(ctx context.Context, arg ListOrdersByBuyerPa
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.MerchantID,
+			&i.IdempotencyKey,
 		); err != nil {
 			return nil, err
 		}
@@ -127,7 +161,7 @@ SET
     updated_at = NOW()
 WHERE id = $1
 RETURNING
-    orders.id, orders.buyer_user_id, orders.status, orders.total_cents, orders.created_at, orders.updated_at, orders.merchant_id
+    orders.id, orders.buyer_user_id, orders.status, orders.total_cents, orders.created_at, orders.updated_at, orders.merchant_id, orders.idempotency_key
 `
 
 type UpdateOrderStatusParams struct {
@@ -146,6 +180,7 @@ func (q *Queries) UpdateOrderStatus(ctx context.Context, arg UpdateOrderStatusPa
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.MerchantID,
+		&i.IdempotencyKey,
 	)
 	return i, err
 }

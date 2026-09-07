@@ -11,6 +11,7 @@ service ProductsService {
   rpc GetProductByID(GetProductByIDRequest) returns (Product);
   rpc GetProductsByIDs(GetProductsByIDsRequest) returns (GetProductsByIDsResponse);
   rpc ListProducts(ListProductsRequest) returns (ListProductsResponse);
+  rpc ReserveStock(ReserveStockRequest) returns (ReserveStockResponse);
 }
 
 message Product {
@@ -45,3 +46,17 @@ message ListProductsRequest {
 }
 
 message ListProductsResponse { repeated Product products = 1; }
+
+message ReserveStockItem {
+  string product_id = 1;
+  int32 quantity = 2;
+}
+
+message ReserveStockRequest {
+  string order_id = 1;
+  string merchant_id = 2;
+  int64 total_cents = 3;
+  repeated ReserveStockItem items = 4;
+}
+
+message ReserveStockResponse {}

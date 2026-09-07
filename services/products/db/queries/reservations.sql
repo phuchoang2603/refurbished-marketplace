@@ -9,6 +9,11 @@ RETURNING
     inventory_reservations.created_at,
     inventory_reservations.updated_at;
 
+-- name: CountInventoryReservationsByOrderID :one
+SELECT count(*)::int AS count
+FROM inventory_reservations
+WHERE order_id = $1;
+
 -- name: ListActiveInventoryReservationsByOrderID :many
 SELECT
     inventory_reservations.order_id,
@@ -26,7 +31,7 @@ FOR UPDATE;
 UPDATE inventory_reservations
 SET
     status = 'COMMITTED',
-    updated_at = NOW()
+    updated_at = now()
 WHERE
     order_id = $1
     AND product_id = $2
@@ -43,7 +48,7 @@ RETURNING
 UPDATE inventory_reservations
 SET
     status = 'RELEASED',
-    updated_at = NOW()
+    updated_at = now()
 WHERE
     order_id = $1
     AND product_id = $2

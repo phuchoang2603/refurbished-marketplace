@@ -65,8 +65,12 @@ func (s *Server) CreateOrder(ctx context.Context, req *ordersv1.CreateOrderReque
 		}
 		items = append(items, service.OrderItemInput{ProductID: productID, Quantity: item.GetQuantity(), UnitPriceCents: item.GetUnitPriceCents()})
 	}
+	idempotencyKey, err := grpcerr.ParseUUID(req.GetIdempotencyKey(), "idempotency key")
+	if err != nil {
+		return nil, err
+	}
 
-	order, err := s.svc.CreateOrder(ctx, buyerID, merchantID, items, req.TotalCents)
+	order, err := s.svc.CreateOrder(ctx, buyerID, merchantID, items, req.TotalCents, idempotencyKey)
 	if err != nil {
 		return nil, grpcerr.Map(
 			err,
@@ -76,6 +80,10 @@ func (s *Server) CreateOrder(ctx context.Context, req *ordersv1.CreateOrderReque
 			grpcerr.Mapping{Err: service.ErrInvalidQuantity, Code: codes.InvalidArgument},
 			grpcerr.Mapping{Err: service.ErrInvalidUnitPriceCents, Code: codes.InvalidArgument},
 			grpcerr.Mapping{Err: service.ErrInvalidTotalCents, Code: codes.InvalidArgument},
+			grpcerr.Mapping{Err: service.ErrInvalidIdempotencyKey, Code: codes.InvalidArgument},
+			grpcerr.Mapping{Err: service.ErrIdempotencyConflict, Code: codes.AlreadyExists},
+			grpcerr.Mapping{Err: service.ErrOrderNotPayable, Code: codes.FailedPrecondition},
+			grpcerr.Mapping{Err: service.ErrInsufficientStock, Code: codes.FailedPrecondition},
 		)
 	}
 

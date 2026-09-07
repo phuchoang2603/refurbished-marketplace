@@ -8,6 +8,9 @@ import (
 	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
 	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
 	productsv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // maxCheckoutProductLines mirrors services/products GetProductsByIDs max (maxProductsByIDs = 100).
@@ -20,6 +23,11 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	merchantID, err := shared.MerchantIDFromForm(r)
+	if err != nil {
+		shared.WriteBadRequest(w, r, "invalid request body")
+		return
+	}
+	intentKey, err := shared.CheckoutIntentKeyFromForm(r)
 	if err != nil {
 		shared.WriteBadRequest(w, r, "invalid request body")
 		return
@@ -39,7 +47,7 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	items, selectedProductIDs, totalCents, err := h.buildCheckoutOrderItems(r, cart, merchantID)
+	items, _, totalCents, err := h.buildCheckoutOrderItems(r, cart, merchantID)
 	if err != nil {
 		if checkoutErr, ok := err.(*checkoutError); ok {
 			checkoutErr.Write(w, r)
@@ -53,12 +61,11 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	order, err := h.deps.Orders.CreateOrder(r.Context(), buyerUserID, merchantID, items, totalCents)
+	order, err := h.deps.Orders.CreateOrder(r.Context(), buyerUserID, merchantID, items, totalCents, intentKey)
 	if err != nil {
-		shared.WriteGRPCError(w, r, err)
-		return
-	}
-	if err := h.removeCheckedOutItems(w, r, cartID, selectedProductIDs); err != nil {
+		if st, ok := status.FromError(err); ok && st.Code() == codes.FailedPrecondition {
+			rotateCheckoutIntent(w, r, cartID, merchantID)
+		}
 		shared.WriteGRPCError(w, r, err)
 		return
 	}
@@ -166,13 +173,4 @@ func (h *Handler) buildCheckoutOrderItems(r *http.Request, cart *cartv1.Cart, me
 		})
 	}
 	return items, selectedProductIDs, totalCents, nil
-}
-
-func (h *Handler) removeCheckedOutItems(w http.ResponseWriter, r *http.Request, cartID string, selectedProductIDs []string) error {
-	updatedCart, err := h.deps.Cart.RemoveCartItems(r.Context(), cartID, selectedProductIDs)
-	if err != nil {
-		return err
-	}
-	h.clearCartCookieIfEmpty(w, updatedCart)
-	return nil
 }

@@ -14,7 +14,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
-    targetRevision: scrape-app-prometheus-metrics
+    targetRevision: place-order-reserve-then-pay
     path: infra/argocd/app-of-apps
     helm:
       values: |
