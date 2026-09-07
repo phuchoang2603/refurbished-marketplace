@@ -120,10 +120,14 @@ jobs:
           echo "$tags" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
 
+      - uses: docker/setup-buildx-action@v3
+
       - uses: docker/build-push-action@v6
         with:
           context: .
           file: ${{ matrix.dockerfile }}
           build-args: ${{ matrix.build_args }}
+          platforms: linux/amd64
+          provenance: false
           push: true
           tags: ${{ steps.tags.outputs.tags }}

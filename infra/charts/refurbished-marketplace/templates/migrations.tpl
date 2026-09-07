@@ -38,6 +38,11 @@ spec:
         - name: goose
           image: {{ include "refurbished-marketplace.image" (list $ $svc.migration.image $svc.migration.imageTag) }}
           imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+          command: ["/bin/goose"]
+          args:
+            - -dir=/migrations
+            - -env=none
+            - up
 {{- with $migrationResources }}
           resources:
 {{ toYaml . | nindent 12 }}
@@ -54,7 +59,5 @@ spec:
                   key: {{ $svc.db.passwordKey }}
             - name: GOOSE_DBSTRING
               value: {{ printf "host=%s port=%v user=$(DB_USER) password=$(DB_PASSWORD) dbname=%s sslmode=disable" $svc.db.host $svc.db.port $svc.db.name | quote }}
-            - name: GOOSE_COMMAND
-              value: "up"
 {{- end }}
 {{- end }}
