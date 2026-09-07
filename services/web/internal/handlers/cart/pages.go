@@ -93,7 +93,14 @@ func (h *Handler) getOrCreateCartID(w http.ResponseWriter, r *http.Request) stri
 }
 
 func (h *Handler) clearCartCookie(w http.ResponseWriter) {
+	ClearSessionCookies(w)
+}
+
+// ClearSessionCookies drops the anonymous cart_id and checkout-intent cookies so a
+// login, register, or logout does not keep the previous browser cart.
+func ClearSessionCookies(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{Name: cartCookieName, Value: "", Path: "/", HttpOnly: true, MaxAge: -1, SameSite: http.SameSiteLaxMode})
+	http.SetCookie(w, &http.Cookie{Name: checkoutIntentCookieName, Value: "", Path: "/", HttpOnly: true, MaxAge: -1, SameSite: http.SameSiteLaxMode})
 }
 
 // clearCartCookieIfEmpty drops the cart_id cookie when Redis/cart state has no lines so the

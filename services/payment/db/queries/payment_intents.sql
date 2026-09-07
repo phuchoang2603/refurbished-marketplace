@@ -7,11 +7,10 @@ INSERT INTO payment_intents (
     status,
     payment_session_id,
     return_url,
-    cancel_url,
     expires_at,
     failure_reason
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 RETURNING
     payment_intents.order_id,
     payment_intents.buyer_user_id,
@@ -23,7 +22,6 @@ RETURNING
     payment_intents.updated_at,
     payment_intents.payment_session_id,
     payment_intents.return_url,
-    payment_intents.cancel_url,
     payment_intents.expires_at,
     payment_intents.failure_reason;
 
@@ -39,7 +37,6 @@ SELECT
     payment_intents.updated_at,
     payment_intents.payment_session_id,
     payment_intents.return_url,
-    payment_intents.cancel_url,
     payment_intents.expires_at,
     payment_intents.failure_reason
 FROM payment_intents
@@ -57,7 +54,6 @@ SELECT
     payment_intents.updated_at,
     payment_intents.payment_session_id,
     payment_intents.return_url,
-    payment_intents.cancel_url,
     payment_intents.expires_at,
     payment_intents.failure_reason
 FROM payment_intents
@@ -85,7 +81,6 @@ RETURNING
     payment_intents.updated_at,
     payment_intents.payment_session_id,
     payment_intents.return_url,
-    payment_intents.cancel_url,
     payment_intents.expires_at,
     payment_intents.failure_reason;
 
@@ -101,7 +96,6 @@ SELECT
     payment_intents.updated_at,
     payment_intents.payment_session_id,
     payment_intents.return_url,
-    payment_intents.cancel_url,
     payment_intents.expires_at,
     payment_intents.failure_reason
 FROM payment_intents
@@ -132,7 +126,6 @@ RETURNING
     payment_intents.updated_at,
     payment_intents.payment_session_id,
     payment_intents.return_url,
-    payment_intents.cancel_url,
     payment_intents.expires_at,
     payment_intents.failure_reason;
 
@@ -147,13 +140,12 @@ SET
     status = 'PENDING',
     payment_session_id = $2,
     return_url = $3,
-    cancel_url = $4,
-    expires_at = $5,
+    expires_at = $4,
     failure_reason = '',
     updated_at = NOW()
 WHERE
     order_id = $1
-    AND status IN ('PENDING', 'EXPIRED', 'FAILED', 'CANCELLED')
+    AND status IN ('PENDING', 'EXPIRED', 'FAILED')
 RETURNING
     payment_intents.order_id,
     payment_intents.buyer_user_id,
@@ -165,6 +157,5 @@ RETURNING
     payment_intents.updated_at,
     payment_intents.payment_session_id,
     payment_intents.return_url,
-    payment_intents.cancel_url,
     payment_intents.expires_at,
     payment_intents.failure_reason;

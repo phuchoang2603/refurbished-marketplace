@@ -31,6 +31,8 @@ func TestLoginSetsCookiesAndRedirects(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/auth/login?next=%2Forders", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.AddCookie(&http.Cookie{Name: "cart_id", Value: "cart-from-other-user"})
+	req.AddCookie(&http.Cookie{Name: "checkout_intent", Value: "stale-intent"})
 
 	newTestRouter(t, routerDeps{users: usersSvc}).ServeHTTP(rec, req)
 
@@ -42,6 +44,8 @@ func TestLoginSetsCookiesAndRedirects(t *testing.T) {
 	}
 	assertCookieSet(t, rec.Result().Cookies(), auth.AccessCookieName)
 	assertCookieSet(t, rec.Result().Cookies(), auth.RefreshCookieName)
+	assertCookieCleared(t, rec.Result().Cookies(), "cart_id")
+	assertCookieCleared(t, rec.Result().Cookies(), "checkout_intent")
 }
 
 func TestRegisterSetsCookiesAndRedirects(t *testing.T) {
@@ -103,6 +107,8 @@ func TestLogoutClearsCookiesAndRedirects(t *testing.T) {
 	}
 	assertCookieCleared(t, rec.Result().Cookies(), auth.AccessCookieName)
 	assertCookieCleared(t, rec.Result().Cookies(), auth.RefreshCookieName)
+	assertCookieCleared(t, rec.Result().Cookies(), "cart_id")
+	assertCookieCleared(t, rec.Result().Cookies(), "checkout_intent")
 }
 
 func assertCookieSet(t *testing.T, cookies []*http.Cookie, name string) {

@@ -22,11 +22,10 @@ INSERT INTO payment_intents (
     status,
     payment_session_id,
     return_url,
-    cancel_url,
     expires_at,
     failure_reason
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 RETURNING
     payment_intents.order_id,
     payment_intents.buyer_user_id,
@@ -38,7 +37,6 @@ RETURNING
     payment_intents.updated_at,
     payment_intents.payment_session_id,
     payment_intents.return_url,
-    payment_intents.cancel_url,
     payment_intents.expires_at,
     payment_intents.failure_reason
 `
@@ -51,7 +49,6 @@ type CreateHostedPaymentSessionParams struct {
 	Status           string
 	PaymentSessionID sql.NullString
 	ReturnUrl        string
-	CancelUrl        string
 	ExpiresAt        sql.NullTime
 	FailureReason    sql.NullString
 }
@@ -65,7 +62,6 @@ func (q *Queries) CreateHostedPaymentSession(ctx context.Context, arg CreateHost
 		arg.Status,
 		arg.PaymentSessionID,
 		arg.ReturnUrl,
-		arg.CancelUrl,
 		arg.ExpiresAt,
 		arg.FailureReason,
 	)
@@ -81,7 +77,6 @@ func (q *Queries) CreateHostedPaymentSession(ctx context.Context, arg CreateHost
 		&i.UpdatedAt,
 		&i.PaymentSessionID,
 		&i.ReturnUrl,
-		&i.CancelUrl,
 		&i.ExpiresAt,
 		&i.FailureReason,
 	)
@@ -108,7 +103,6 @@ RETURNING
     payment_intents.updated_at,
     payment_intents.payment_session_id,
     payment_intents.return_url,
-    payment_intents.cancel_url,
     payment_intents.expires_at,
     payment_intents.failure_reason
 `
@@ -127,7 +121,6 @@ func (q *Queries) ExpireHostedPaymentSession(ctx context.Context, orderID uuid.U
 		&i.UpdatedAt,
 		&i.PaymentSessionID,
 		&i.ReturnUrl,
-		&i.CancelUrl,
 		&i.ExpiresAt,
 		&i.FailureReason,
 	)
@@ -146,7 +139,6 @@ SELECT
     payment_intents.updated_at,
     payment_intents.payment_session_id,
     payment_intents.return_url,
-    payment_intents.cancel_url,
     payment_intents.expires_at,
     payment_intents.failure_reason
 FROM payment_intents
@@ -167,7 +159,6 @@ func (q *Queries) GetPaymentIntentByOrderID(ctx context.Context, orderID uuid.UU
 		&i.UpdatedAt,
 		&i.PaymentSessionID,
 		&i.ReturnUrl,
-		&i.CancelUrl,
 		&i.ExpiresAt,
 		&i.FailureReason,
 	)
@@ -186,7 +177,6 @@ SELECT
     payment_intents.updated_at,
     payment_intents.payment_session_id,
     payment_intents.return_url,
-    payment_intents.cancel_url,
     payment_intents.expires_at,
     payment_intents.failure_reason
 FROM payment_intents
@@ -208,7 +198,6 @@ func (q *Queries) GetPaymentIntentByOrderIDForUpdate(ctx context.Context, orderI
 		&i.UpdatedAt,
 		&i.PaymentSessionID,
 		&i.ReturnUrl,
-		&i.CancelUrl,
 		&i.ExpiresAt,
 		&i.FailureReason,
 	)
@@ -227,7 +216,6 @@ SELECT
     payment_intents.updated_at,
     payment_intents.payment_session_id,
     payment_intents.return_url,
-    payment_intents.cancel_url,
     payment_intents.expires_at,
     payment_intents.failure_reason
 FROM payment_intents
@@ -259,7 +247,6 @@ func (q *Queries) ListExpiredPendingHostedSessions(ctx context.Context, limit in
 			&i.UpdatedAt,
 			&i.PaymentSessionID,
 			&i.ReturnUrl,
-			&i.CancelUrl,
 			&i.ExpiresAt,
 			&i.FailureReason,
 		); err != nil {
@@ -282,13 +269,12 @@ SET
     status = 'PENDING',
     payment_session_id = $2,
     return_url = $3,
-    cancel_url = $4,
-    expires_at = $5,
+    expires_at = $4,
     failure_reason = '',
     updated_at = NOW()
 WHERE
     order_id = $1
-    AND status IN ('PENDING', 'EXPIRED', 'FAILED', 'CANCELLED')
+    AND status IN ('PENDING', 'EXPIRED', 'FAILED')
 RETURNING
     payment_intents.order_id,
     payment_intents.buyer_user_id,
@@ -300,7 +286,6 @@ RETURNING
     payment_intents.updated_at,
     payment_intents.payment_session_id,
     payment_intents.return_url,
-    payment_intents.cancel_url,
     payment_intents.expires_at,
     payment_intents.failure_reason
 `
@@ -309,7 +294,6 @@ type RefreshHostedPaymentSessionParams struct {
 	OrderID          uuid.UUID
 	PaymentSessionID sql.NullString
 	ReturnUrl        string
-	CancelUrl        string
 	ExpiresAt        sql.NullTime
 }
 
@@ -318,7 +302,6 @@ func (q *Queries) RefreshHostedPaymentSession(ctx context.Context, arg RefreshHo
 		arg.OrderID,
 		arg.PaymentSessionID,
 		arg.ReturnUrl,
-		arg.CancelUrl,
 		arg.ExpiresAt,
 	)
 	var i PaymentIntent
@@ -333,7 +316,6 @@ func (q *Queries) RefreshHostedPaymentSession(ctx context.Context, arg RefreshHo
 		&i.UpdatedAt,
 		&i.PaymentSessionID,
 		&i.ReturnUrl,
-		&i.CancelUrl,
 		&i.ExpiresAt,
 		&i.FailureReason,
 	)
@@ -377,7 +359,6 @@ RETURNING
     payment_intents.updated_at,
     payment_intents.payment_session_id,
     payment_intents.return_url,
-    payment_intents.cancel_url,
     payment_intents.expires_at,
     payment_intents.failure_reason
 `
@@ -408,7 +389,6 @@ func (q *Queries) UpdateHostedPaymentSessionOutcome(ctx context.Context, arg Upd
 		&i.UpdatedAt,
 		&i.PaymentSessionID,
 		&i.ReturnUrl,
-		&i.CancelUrl,
 		&i.ExpiresAt,
 		&i.FailureReason,
 	)

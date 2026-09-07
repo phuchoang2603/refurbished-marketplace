@@ -22,7 +22,6 @@ const (
 	HostedPaymentSessionStatusPending   = "PENDING"
 	HostedPaymentSessionStatusSucceeded = "SUCCEEDED"
 	HostedPaymentSessionStatusFailed    = "FAILED"
-	HostedPaymentSessionStatusCancelled = "CANCELLED"
 	HostedPaymentSessionStatusExpired   = "EXPIRED"
 )
 

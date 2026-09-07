@@ -134,7 +134,6 @@ func TestCheckoutRedirectsToHostedPaymentWithoutClearingCart(t *testing.T) {
 				OrderId:          "order-1",
 				PaymentSessionId: "sess-1",
 				ReturnUrl:        req.GetReturnUrl(),
-				CancelUrl:        req.GetCancelUrl(),
 			}, nil
 		},
 	}
@@ -150,7 +149,7 @@ func TestCheckoutRedirectsToHostedPaymentWithoutClearingCart(t *testing.T) {
 	if rec.Code != http.StatusSeeOther {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusSeeOther)
 	}
-	wantLocation := "http://localhost:8097/pay?callback_url=http%3A%2F%2Flocalhost%3A8080%2Fcallbacks%2Fhosted-payment&cancel_url=http%3A%2F%2Flocalhost%3A8080%2Forders%2Forder-1&order_id=order-1&payment_session_id=sess-1&return_url=http%3A%2F%2Flocalhost%3A8080%2Forders%2Forder-1"
+	wantLocation := "http://localhost:8097/pay?callback_url=http%3A%2F%2Flocalhost%3A8080%2Fcallbacks%2Fhosted-payment&order_id=order-1&payment_session_id=sess-1&return_url=http%3A%2F%2Flocalhost%3A8080%2Forders%2Forder-1"
 	if got := rec.Header().Get("Location"); got != wantLocation {
 		t.Fatalf("location = %q, want %q", got, wantLocation)
 	}

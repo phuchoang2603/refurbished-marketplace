@@ -87,7 +87,6 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 		BuyerUserId: buyerUserID,
 		Currency:    "USD",
 		ReturnUrl:   orderPageURL,
-		CancelUrl:   orderPageURL,
 	})
 	if err != nil {
 		shared.WriteGRPCError(w, r, err)

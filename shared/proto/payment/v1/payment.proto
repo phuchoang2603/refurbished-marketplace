@@ -23,8 +23,7 @@ enum HostedPaymentSessionStatus {
   HOSTED_PAYMENT_SESSION_STATUS_PENDING = 1;
   HOSTED_PAYMENT_SESSION_STATUS_SUCCEEDED = 2;
   HOSTED_PAYMENT_SESSION_STATUS_FAILED = 3;
-  HOSTED_PAYMENT_SESSION_STATUS_CANCELLED = 4;
-  HOSTED_PAYMENT_SESSION_STATUS_EXPIRED = 5;
+  HOSTED_PAYMENT_SESSION_STATUS_EXPIRED = 4;
 }
 
 message Address {
@@ -43,14 +42,12 @@ message CreateHostedPaymentSessionRequest {
   string currency = 3;
   Address shipping_address = 4;
   string return_url = 5;
-  string cancel_url = 6;
 }
 
 message CreateHostedPaymentSessionResponse {
   string order_id = 1;
   string payment_session_id = 2;
   string return_url = 3;
-  string cancel_url = 4;
 }
 
 message GetHostedPaymentSessionByOrderRequest { string order_id = 1; }

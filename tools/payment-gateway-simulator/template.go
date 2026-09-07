@@ -22,7 +22,6 @@ var payTemplate = template.Must(template.New("pay").Parse(`<!doctype html>
       button { border: 0; border-radius: .5rem; padding: .75rem 1rem; cursor: pointer; }
       .primary { background: #2563eb; color: white; }
       .danger { background: #dc2626; color: white; }
-      .muted { background: #e2e8f0; color: #0f172a; }
       .warning { background: #f59e0b; color: white; }
       .error { color: #b91c1c; }
       code { background: #f1f5f9; padding: .15rem .35rem; border-radius: .25rem; }
@@ -41,7 +40,6 @@ var payTemplate = template.Must(template.New("pay").Parse(`<!doctype html>
         <input type="hidden" name="order_id" value="{{ .OrderID }}">
         <input type="hidden" name="payment_session_id" value="{{ .PaymentSessionID }}">
         <input type="hidden" name="return_url" value="{{ .ReturnURL }}">
-        <input type="hidden" name="cancel_url" value="{{ .CancelURL }}">
         <input type="hidden" name="callback_url" value="{{ .CallbackURL }}">
         <div class="grid">
           <label for="card-number">Card number</label>
@@ -51,7 +49,6 @@ var payTemplate = template.Must(template.New("pay").Parse(`<!doctype html>
           <button class="primary" type="submit" name="action" value="succeeded">Pay successfully</button>
           <button class="danger" type="submit" name="action" value="failed">Fail payment</button>
           <button class="warning" type="submit" name="action" value="expired">Expire session</button>
-          <button class="muted" type="submit" name="action" value="cancelled">Cancel and return</button>
         </div>
       </form>
     </main>

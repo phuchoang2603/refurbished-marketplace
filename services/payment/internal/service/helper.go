@@ -34,7 +34,6 @@ func mapDBHostedPaymentSessionView(intent database.PaymentIntent) HostedPaymentS
 		Currency:  intent.Currency,
 		Status:    intent.Status,
 		ReturnURL: intent.ReturnUrl,
-		CancelURL: intent.CancelUrl,
 		CreatedAt: intent.CreatedAt,
 		UpdatedAt: intent.UpdatedAt,
 		FailureReason: func() string {
@@ -90,7 +89,7 @@ func paymentTransactionIsTerminal(status string) bool {
 }
 
 func hostedPaymentSessionIsTerminal(status string) bool {
-	return status == HostedPaymentSessionStatusSucceeded || status == HostedPaymentSessionStatusFailed || status == HostedPaymentSessionStatusCancelled || status == HostedPaymentSessionStatusExpired
+	return status == HostedPaymentSessionStatusSucceeded || status == HostedPaymentSessionStatusFailed || status == HostedPaymentSessionStatusExpired
 }
 
 func hostedPaymentSessionMapsToSuccess(status string) bool {

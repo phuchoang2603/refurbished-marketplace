@@ -41,7 +41,6 @@ func TestKafkaInventoryReservedHandler_EndToEnd(t *testing.T) {
 		Currency:        "USD",
 		ShippingAddress: json.RawMessage(`{}`),
 		ReturnURL:       "/orders/" + orderID.String(),
-		CancelURL:       "/orders/" + orderID.String(),
 	})
 	if err != nil {
 		t.Fatalf("CreateHostedPaymentSession: %v", err)

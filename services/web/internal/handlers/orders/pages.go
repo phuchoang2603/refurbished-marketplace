@@ -47,8 +47,6 @@ func hostedPaymentStatusLabel(status paymentv1.HostedPaymentSessionStatus) strin
 		return "SUCCEEDED"
 	case paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_FAILED:
 		return "FAILED"
-	case paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_CANCELLED:
-		return "CANCELLED"
 	case paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_EXPIRED:
 		return "EXPIRED"
 	default:

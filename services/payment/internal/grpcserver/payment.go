@@ -28,8 +28,6 @@ func hostedPaymentStatusStringToProto(dbStatus string) paymentv1.HostedPaymentSe
 		return paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_SUCCEEDED
 	case service.HostedPaymentSessionStatusFailed:
 		return paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_FAILED
-	case service.HostedPaymentSessionStatusCancelled:
-		return paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_CANCELLED
 	case service.HostedPaymentSessionStatusExpired:
 		return paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_EXPIRED
 	default:
@@ -82,10 +80,6 @@ func (s *Server) CreateHostedPaymentSession(ctx context.Context, req *paymentv1.
 	if returnURL == "" {
 		return nil, grpcerr.InvalidArgument("return_url is required")
 	}
-	cancelURL := strings.TrimSpace(req.GetCancelUrl())
-	if cancelURL == "" {
-		cancelURL = returnURL
-	}
 	shipping, err := addressToJSON(req.GetShippingAddress())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "shipping_address: %v", err)
@@ -97,7 +91,6 @@ func (s *Server) CreateHostedPaymentSession(ctx context.Context, req *paymentv1.
 		Currency:        strings.TrimSpace(req.GetCurrency()),
 		ShippingAddress: shipping,
 		ReturnURL:       returnURL,
-		CancelURL:       cancelURL,
 	})
 	if err != nil {
 		return nil, grpcerr.Internal()
@@ -107,7 +100,6 @@ func (s *Server) CreateHostedPaymentSession(ctx context.Context, req *paymentv1.
 		OrderId:          session.OrderID,
 		PaymentSessionId: session.PaymentSessionID,
 		ReturnUrl:        session.ReturnURL,
-		CancelUrl:        session.CancelURL,
 	}, nil
 }
 
@@ -129,8 +121,6 @@ func hostedPaymentStatusProtoToString(v paymentv1.HostedPaymentSessionStatus) (s
 		return service.HostedPaymentSessionStatusSucceeded, nil
 	case paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_FAILED:
 		return service.HostedPaymentSessionStatusFailed, nil
-	case paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_CANCELLED:
-		return service.HostedPaymentSessionStatusCancelled, nil
 	case paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_EXPIRED:
 		return service.HostedPaymentSessionStatusExpired, nil
 	case paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_UNSPECIFIED,

@@ -12,7 +12,7 @@ import (
 type HostedPaymentConfig struct {
 	GatewayBaseURL string
 	// PublicBaseURL optionally overrides request-derived absolute web URLs
-	// (return/cancel/callback). Use https://shop.example when TLS terminates
+	// (return/callback). Use https://shop.example when TLS terminates
 	// at the edge and the origin only sees plain HTTP.
 	PublicBaseURL string
 	// CallbackBaseURL optionally overrides only the simulator→web callback
@@ -118,7 +118,6 @@ func BuildHostedPaymentURL(cfg HostedPaymentConfig, r *http.Request, session *pa
 	v.Set("order_id", session.GetOrderId())
 	v.Set("payment_session_id", session.GetPaymentSessionId())
 	v.Set("return_url", absolutizeWebURL(cfg, r, session.GetReturnUrl()))
-	v.Set("cancel_url", absolutizeWebURL(cfg, r, session.GetCancelUrl()))
 	callbackBase := strings.TrimRight(strings.TrimSpace(cfg.CallbackBaseURL), "/")
 	if callbackBase == "" {
 		callbackBase = webBaseURL(cfg, r)

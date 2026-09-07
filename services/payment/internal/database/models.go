@@ -28,7 +28,6 @@ type PaymentIntent struct {
 	UpdatedAt        time.Time
 	PaymentSessionID sql.NullString
 	ReturnUrl        string
-	CancelUrl        string
 	ExpiresAt        sql.NullTime
 	FailureReason    sql.NullString
 }

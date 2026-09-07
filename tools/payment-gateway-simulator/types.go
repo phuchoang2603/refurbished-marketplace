@@ -4,7 +4,6 @@ type pageData struct {
 	OrderID          string
 	PaymentSessionID string
 	ReturnURL        string
-	CancelURL        string
 	CallbackURL      string
 	Error            string
 }

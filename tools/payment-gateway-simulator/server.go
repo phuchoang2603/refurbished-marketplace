@@ -18,7 +18,6 @@ func handlePay(w http.ResponseWriter, r *http.Request) {
 			OrderID:          r.URL.Query().Get("order_id"),
 			PaymentSessionID: r.URL.Query().Get("payment_session_id"),
 			ReturnURL:        r.URL.Query().Get("return_url"),
-			CancelURL:        r.URL.Query().Get("cancel_url"),
 			CallbackURL:      r.URL.Query().Get("callback_url"),
 		})
 	case http.MethodPost:
@@ -39,7 +38,6 @@ func handlePaySubmit(w http.ResponseWriter, r *http.Request) {
 		OrderID:          r.FormValue("order_id"),
 		PaymentSessionID: r.FormValue("payment_session_id"),
 		ReturnURL:        r.FormValue("return_url"),
-		CancelURL:        r.FormValue("cancel_url"),
 		CallbackURL:      r.FormValue("callback_url"),
 	}
 
@@ -54,10 +52,6 @@ func handlePaySubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if action == "cancelled" {
-		http.Redirect(w, r, data.CancelURL, http.StatusSeeOther)
-		return
-	}
 	http.Redirect(w, r, data.ReturnURL, http.StatusSeeOther)
 }
 
@@ -67,8 +61,6 @@ func failureReasonForAction(action string) string {
 		return "Card declined"
 	case "expired":
 		return "Hosted payment session expired"
-	case "cancelled":
-		return "Buyer cancelled hosted payment"
 	default:
 		return ""
 	}

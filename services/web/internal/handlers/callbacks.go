@@ -91,8 +91,6 @@ func parseHostedPaymentCallbackStatus(v string) (paymentv1.HostedPaymentSessionS
 		return paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_SUCCEEDED, true
 	case "FAILED":
 		return paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_FAILED, true
-	case "CANCELLED":
-		return paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_CANCELLED, true
 	case "EXPIRED":
 		return paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_EXPIRED, true
 	default:

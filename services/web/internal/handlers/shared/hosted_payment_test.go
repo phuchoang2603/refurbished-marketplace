@@ -42,10 +42,9 @@ func TestBuildHostedPaymentURLUsesCallbackBaseURL(t *testing.T) {
 		OrderId:          "order-1",
 		PaymentSessionId: "sess-1",
 		ReturnUrl:        "https://shop.example/orders/order-1",
-		CancelUrl:        "https://shop.example/orders/order-1",
 	})
 
-	want := "https://pay.example/pay?callback_url=http%3A%2F%2Fweb%3A8080%2Fcallbacks%2Fhosted-payment&cancel_url=https%3A%2F%2Fshop.example%2Forders%2Forder-1&order_id=order-1&payment_session_id=sess-1&return_url=https%3A%2F%2Fshop.example%2Forders%2Forder-1"
+	want := "https://pay.example/pay?callback_url=http%3A%2F%2Fweb%3A8080%2Fcallbacks%2Fhosted-payment&order_id=order-1&payment_session_id=sess-1&return_url=https%3A%2F%2Fshop.example%2Forders%2Forder-1"
 	if got != want {
 		t.Fatalf("BuildHostedPaymentURL = %q, want %q", got, want)
 	}

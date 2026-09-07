@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	webAuth "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/auth"
+	carthandlers "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/cart"
 	shared "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
 
 	"github.com/go-chi/chi/v5"
@@ -27,6 +28,7 @@ func (h *Handler) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	webAuth.SetTokenCookies(w, r, tokens.AccessToken, tokens.RefreshToken, tokens.ExpiresIn, tokens.RefreshExpiresIn)
+	carthandlers.ClearSessionCookies(w)
 	shared.Redirect(w, r, shared.NextTargetFromRequest(r, "/products"), http.StatusSeeOther)
 }
 
@@ -47,6 +49,7 @@ func (h *Handler) handleRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	webAuth.SetTokenCookies(w, r, tokens.AccessToken, tokens.RefreshToken, tokens.ExpiresIn, tokens.RefreshExpiresIn)
+	carthandlers.ClearSessionCookies(w)
 	shared.Redirect(w, r, shared.NextTargetFromRequest(r, "/products"), http.StatusSeeOther)
 }
 
@@ -57,11 +60,13 @@ func (h *Handler) handleLogout(w http.ResponseWriter, r *http.Request) {
 	}
 	if refreshToken == "" {
 		webAuth.ClearTokenCookies(w, r)
+		carthandlers.ClearSessionCookies(w)
 		shared.Redirect(w, r, "/products", http.StatusSeeOther)
 		return
 	}
 	_, err = h.deps.Users.Logout(r.Context(), refreshToken)
 	webAuth.ClearTokenCookies(w, r)
+	carthandlers.ClearSessionCookies(w)
 	if err != nil {
 		shared.WriteGRPCError(w, r, err)
 		return

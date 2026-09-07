@@ -28,8 +28,7 @@ const (
 	HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_PENDING     HostedPaymentSessionStatus = 1
 	HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_SUCCEEDED   HostedPaymentSessionStatus = 2
 	HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_FAILED      HostedPaymentSessionStatus = 3
-	HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_CANCELLED   HostedPaymentSessionStatus = 4
-	HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_EXPIRED     HostedPaymentSessionStatus = 5
+	HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_EXPIRED     HostedPaymentSessionStatus = 4
 )
 
 // Enum value maps for HostedPaymentSessionStatus.
@@ -39,16 +38,14 @@ var (
 		1: "HOSTED_PAYMENT_SESSION_STATUS_PENDING",
 		2: "HOSTED_PAYMENT_SESSION_STATUS_SUCCEEDED",
 		3: "HOSTED_PAYMENT_SESSION_STATUS_FAILED",
-		4: "HOSTED_PAYMENT_SESSION_STATUS_CANCELLED",
-		5: "HOSTED_PAYMENT_SESSION_STATUS_EXPIRED",
+		4: "HOSTED_PAYMENT_SESSION_STATUS_EXPIRED",
 	}
 	HostedPaymentSessionStatus_value = map[string]int32{
 		"HOSTED_PAYMENT_SESSION_STATUS_UNSPECIFIED": 0,
 		"HOSTED_PAYMENT_SESSION_STATUS_PENDING":     1,
 		"HOSTED_PAYMENT_SESSION_STATUS_SUCCEEDED":   2,
 		"HOSTED_PAYMENT_SESSION_STATUS_FAILED":      3,
-		"HOSTED_PAYMENT_SESSION_STATUS_CANCELLED":   4,
-		"HOSTED_PAYMENT_SESSION_STATUS_EXPIRED":     5,
+		"HOSTED_PAYMENT_SESSION_STATUS_EXPIRED":     4,
 	}
 )
 
@@ -178,7 +175,6 @@ type CreateHostedPaymentSessionRequest struct {
 	Currency        string                 `protobuf:"bytes,3,opt,name=currency,proto3" json:"currency,omitempty"`
 	ShippingAddress *Address               `protobuf:"bytes,4,opt,name=shipping_address,json=shippingAddress,proto3" json:"shipping_address,omitempty"`
 	ReturnUrl       string                 `protobuf:"bytes,5,opt,name=return_url,json=returnUrl,proto3" json:"return_url,omitempty"`
-	CancelUrl       string                 `protobuf:"bytes,6,opt,name=cancel_url,json=cancelUrl,proto3" json:"cancel_url,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
@@ -248,19 +244,11 @@ func (x *CreateHostedPaymentSessionRequest) GetReturnUrl() string {
 	return ""
 }
 
-func (x *CreateHostedPaymentSessionRequest) GetCancelUrl() string {
-	if x != nil {
-		return x.CancelUrl
-	}
-	return ""
-}
-
 type CreateHostedPaymentSessionResponse struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	OrderId          string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
 	PaymentSessionId string                 `protobuf:"bytes,2,opt,name=payment_session_id,json=paymentSessionId,proto3" json:"payment_session_id,omitempty"`
 	ReturnUrl        string                 `protobuf:"bytes,3,opt,name=return_url,json=returnUrl,proto3" json:"return_url,omitempty"`
-	CancelUrl        string                 `protobuf:"bytes,4,opt,name=cancel_url,json=cancelUrl,proto3" json:"cancel_url,omitempty"`
 	unknownFields    protoimpl.UnknownFields
 	sizeCache        protoimpl.SizeCache
 }
@@ -312,13 +300,6 @@ func (x *CreateHostedPaymentSessionResponse) GetPaymentSessionId() string {
 func (x *CreateHostedPaymentSessionResponse) GetReturnUrl() string {
 	if x != nil {
 		return x.ReturnUrl
-	}
-	return ""
-}
-
-func (x *CreateHostedPaymentSessionResponse) GetCancelUrl() string {
-	if x != nil {
-		return x.CancelUrl
 	}
 	return ""
 }
@@ -537,23 +518,19 @@ const file_shared_proto_payment_v1_payment_proto_rawDesc = "" +
 	"\x06region\x18\x05 \x01(\tR\x06region\x12\x1f\n" +
 	"\vpostal_code\x18\x06 \x01(\tR\n" +
 	"postalCode\x12\x18\n" +
-	"\acountry\x18\a \x01(\tR\acountry\"\xfc\x01\n" +
+	"\acountry\x18\a \x01(\tR\acountry\"\xdd\x01\n" +
 	"!CreateHostedPaymentSessionRequest\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12\"\n" +
 	"\rbuyer_user_id\x18\x02 \x01(\tR\vbuyerUserId\x12\x1a\n" +
 	"\bcurrency\x18\x03 \x01(\tR\bcurrency\x12>\n" +
 	"\x10shipping_address\x18\x04 \x01(\v2\x13.payment.v1.AddressR\x0fshippingAddress\x12\x1d\n" +
 	"\n" +
-	"return_url\x18\x05 \x01(\tR\treturnUrl\x12\x1d\n" +
-	"\n" +
-	"cancel_url\x18\x06 \x01(\tR\tcancelUrl\"\xab\x01\n" +
+	"return_url\x18\x05 \x01(\tR\treturnUrl\"\x8c\x01\n" +
 	"\"CreateHostedPaymentSessionResponse\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12,\n" +
 	"\x12payment_session_id\x18\x02 \x01(\tR\x10paymentSessionId\x12\x1d\n" +
 	"\n" +
-	"return_url\x18\x03 \x01(\tR\treturnUrl\x12\x1d\n" +
-	"\n" +
-	"cancel_url\x18\x04 \x01(\tR\tcancelUrl\"B\n" +
+	"return_url\x18\x03 \x01(\tR\treturnUrl\"B\n" +
 	"%GetHostedPaymentSessionByOrderRequest\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\"}\n" +
 	"\x14HostedPaymentSession\x12>\n" +
@@ -564,14 +541,13 @@ const file_shared_proto_payment_v1_payment_proto_rawDesc = "" +
 	"\x12payment_session_id\x18\x02 \x01(\tR\x10paymentSessionId\x12>\n" +
 	"\x06status\x18\x03 \x01(\x0e2&.payment.v1.HostedPaymentSessionStatusR\x06status\x12%\n" +
 	"\x0efailure_reason\x18\x04 \x01(\tR\rfailureReason\"\x1e\n" +
-	"\x1cHandleGatewayWebhookResponse*\xa5\x02\n" +
+	"\x1cHandleGatewayWebhookResponse*\xf8\x01\n" +
 	"\x1aHostedPaymentSessionStatus\x12-\n" +
 	")HOSTED_PAYMENT_SESSION_STATUS_UNSPECIFIED\x10\x00\x12)\n" +
 	"%HOSTED_PAYMENT_SESSION_STATUS_PENDING\x10\x01\x12+\n" +
 	"'HOSTED_PAYMENT_SESSION_STATUS_SUCCEEDED\x10\x02\x12(\n" +
-	"$HOSTED_PAYMENT_SESSION_STATUS_FAILED\x10\x03\x12+\n" +
-	"'HOSTED_PAYMENT_SESSION_STATUS_CANCELLED\x10\x04\x12)\n" +
-	"%HOSTED_PAYMENT_SESSION_STATUS_EXPIRED\x10\x052\xef\x02\n" +
+	"$HOSTED_PAYMENT_SESSION_STATUS_FAILED\x10\x03\x12)\n" +
+	"%HOSTED_PAYMENT_SESSION_STATUS_EXPIRED\x10\x042\xef\x02\n" +
 	"\x0ePaymentService\x12{\n" +
 	"\x1aCreateHostedPaymentSession\x12-.payment.v1.CreateHostedPaymentSessionRequest\x1a..payment.v1.CreateHostedPaymentSessionResponse\x12u\n" +
 	"\x1eGetHostedPaymentSessionByOrder\x121.payment.v1.GetHostedPaymentSessionByOrderRequest\x1a .payment.v1.HostedPaymentSession\x12i\n" +

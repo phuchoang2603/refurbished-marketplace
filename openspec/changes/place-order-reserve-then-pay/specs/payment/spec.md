@@ -23,7 +23,7 @@ The payment service MUST create or reuse a hosted payment session using `order_i
 #### Scenario: Hosted payment session is requested for a new order
 
 - **WHEN** the web edge requests a hosted payment session for an order with buyer, optional shipping, and return context
-- **THEN** the payment service SHALL persist the hosted session state and return session metadata including `order_id`, `payment_session_id`, and return or cancel URLs
+- **THEN** the payment service SHALL persist the hosted session state and return session metadata including `order_id`, `payment_session_id`, and the return URL
 
 #### Scenario: Hosted payment session is requested again for the same order
 

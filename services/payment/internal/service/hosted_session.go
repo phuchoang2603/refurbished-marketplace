@@ -33,7 +33,6 @@ type HostedPaymentSessionView struct {
 	Currency         string
 	Status           string
 	ReturnURL        string
-	CancelURL        string
 	FailureReason    string
 	ExpiresAt        time.Time
 	CreatedAt        time.Time
@@ -46,7 +45,6 @@ type CreateHostedPaymentSessionParams struct {
 	Currency        string
 	ShippingAddress json.RawMessage
 	ReturnURL       string
-	CancelURL       string
 }
 
 func (s *Service) CreateHostedPaymentSession(ctx context.Context, p CreateHostedPaymentSessionParams) (HostedPaymentSessionView, error) {
@@ -66,7 +64,6 @@ func (s *Service) CreateHostedPaymentSession(ctx context.Context, p CreateHosted
 			OrderID:          p.OrderID,
 			PaymentSessionID: dberr.OptionalNullString(uuid.NewString()),
 			ReturnUrl:        p.ReturnURL,
-			CancelUrl:        p.CancelURL,
 			ExpiresAt:        dberr.OptionalNullTime(expiresAt),
 		})
 		if err != nil {
@@ -95,7 +92,6 @@ func (s *Service) CreateHostedPaymentSession(ctx context.Context, p CreateHosted
 		Status:           HostedPaymentSessionStatusPending,
 		PaymentSessionID: dberr.OptionalNullString(uuid.NewString()),
 		ReturnUrl:        p.ReturnURL,
-		CancelUrl:        p.CancelURL,
 		ExpiresAt:        dberr.OptionalNullTime(expiresAt),
 	})
 	if err != nil {
