@@ -27,11 +27,12 @@ func (h *Handler) RegisterPages(r chi.Router) {
 	r.Get("/cart", h.handleGetCart)
 }
 
-func (h *Handler) mapCartView(c *cartv1.Cart) (sharedviews.CartView, error) {
+func (h *Handler) mapCartView(w http.ResponseWriter, r *http.Request, c *cartv1.Cart) (sharedviews.CartView, error) {
 	items := make([]sharedviews.CartItemView, 0, len(c.GetItems()))
 	groups := make(map[string]*sharedviews.CartMerchantGroupView, len(c.GetItems()))
 	groupOrder := make([]string, 0, len(c.GetItems()))
 	var estimatedTotalCents int64
+	intents := readCheckoutIntentStore(r)
 	for _, item := range c.GetItems() {
 		view := sharedviews.CartItemView{
 			ProductID:  item.GetProductId(),
@@ -52,7 +53,7 @@ func (h *Handler) mapCartView(c *cartv1.Cart) (sharedviews.CartView, error) {
 		if !ok {
 			group = &sharedviews.CartMerchantGroupView{
 				MerchantID:        view.MerchantID,
-				CheckoutIntentKey: uuid.NewString(),
+				CheckoutIntentKey: intentForMerchant(&intents, c.GetCartId(), view.MerchantID),
 			}
 			groups[view.MerchantID] = group
 			groupOrder = append(groupOrder, view.MerchantID)
@@ -60,6 +61,7 @@ func (h *Handler) mapCartView(c *cartv1.Cart) (sharedviews.CartView, error) {
 		group.Items = append(group.Items, view)
 		group.SubtotalCents += view.LineTotalCents
 	}
+	writeCheckoutIntentStore(w, intents)
 	merchantGroups := make([]sharedviews.CartMerchantGroupView, 0, len(groupOrder))
 	for _, merchantID := range groupOrder {
 		merchantGroups = append(merchantGroups, *groups[merchantID])
@@ -113,7 +115,7 @@ func (h *Handler) handleGetCart(w http.ResponseWriter, r *http.Request) {
 		shared.WriteGRPCError(w, r, err)
 		return
 	}
-	view, err := h.mapCartView(cart)
+	view, err := h.mapCartView(w, r, cart)
 	if err != nil {
 		shared.WriteGRPCError(w, r, err)
 		return

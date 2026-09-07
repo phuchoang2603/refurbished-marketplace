@@ -8,6 +8,9 @@ import (
 	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
 	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
 	productsv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // maxCheckoutProductLines mirrors services/products GetProductsByIDs max (maxProductsByIDs = 100).
@@ -60,6 +63,9 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 
 	order, err := h.deps.Orders.CreateOrder(r.Context(), buyerUserID, merchantID, items, totalCents, intentKey)
 	if err != nil {
+		if st, ok := status.FromError(err); ok && st.Code() == codes.FailedPrecondition {
+			rotateCheckoutIntent(w, r, cartID, merchantID)
+		}
 		shared.WriteGRPCError(w, r, err)
 		return
 	}

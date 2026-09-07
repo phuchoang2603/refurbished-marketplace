@@ -173,6 +173,7 @@ func (s *Service) reserveStock(ctx context.Context, order Order) error {
 
 func (s *Service) failUnreservedOrder(ctx context.Context, orderID uuid.UUID, reserveErr error) error {
 	if _, err := s.UpdateOrderStatus(ctx, orderID, OrderStatusFailed); err != nil {
+		sharedlog.ErrorContext(ctx, "failed to mark unreserved order failed", sharedlog.KeyOrderID, orderID.String(), sharedlog.KeyErr, err)
 		return errors.Join(reserveErr, err)
 	}
 	return reserveErr

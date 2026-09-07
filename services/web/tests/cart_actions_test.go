@@ -51,7 +51,7 @@ func TestAddCartItemRedirectsToCart(t *testing.T) {
 	}
 }
 
-func TestCheckoutClearsCartCookieAndRedirectsToOrder(t *testing.T) {
+func TestCheckoutRedirectsToHostedPaymentWithoutClearingCart(t *testing.T) {
 	var removed []string
 	var batchIDs []string
 	cartSvc := &fakes.CartService{
@@ -136,4 +136,59 @@ func TestCheckoutClearsCartCookieAndRedirectsToOrder(t *testing.T) {
 	if len(removed) != 0 {
 		t.Fatalf("removed = %v, want none on checkout", removed)
 	}
+}
+
+func TestCartCheckoutIntentStableAcrossReloads(t *testing.T) {
+	cartSvc := &fakes.CartService{
+		GetFn: func(ctx context.Context, cartID string) (*cartv1.Cart, error) {
+			return &cartv1.Cart{
+				CartId: cartID,
+				Items: []*cartv1.CartItem{
+					{ProductId: "prod-1", Quantity: 1, MerchantId: "merchant-1", ProductName: "Phone", UnitPriceCents: 1200},
+				},
+			}, nil
+		},
+	}
+	router := newTestRouter(t, routerDeps{cart: cartSvc})
+
+	first := httptest.NewRecorder()
+	req1 := httptest.NewRequest(http.MethodGet, "/cart", nil)
+	req1.AddCookie(&http.Cookie{Name: "cart_id", Value: "cart-1"})
+	router.ServeHTTP(first, req1)
+	if first.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", first.Code, http.StatusOK)
+	}
+	key1 := checkoutIntentFromHTML(first.Body.String())
+	if key1 == "" {
+		t.Fatal("missing checkout_intent_key on first cart render")
+	}
+
+	second := httptest.NewRecorder()
+	req2 := httptest.NewRequest(http.MethodGet, "/cart", nil)
+	req2.AddCookie(&http.Cookie{Name: "cart_id", Value: "cart-1"})
+	for _, c := range first.Result().Cookies() {
+		req2.AddCookie(c)
+	}
+	router.ServeHTTP(second, req2)
+	if second.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", second.Code, http.StatusOK)
+	}
+	key2 := checkoutIntentFromHTML(second.Body.String())
+	if key2 != key1 {
+		t.Fatalf("checkout intent rotated on reload: %q vs %q", key1, key2)
+	}
+}
+
+func checkoutIntentFromHTML(body string) string {
+	const marker = `name="checkout_intent_key" value="`
+	i := strings.Index(body, marker)
+	if i < 0 {
+		return ""
+	}
+	rest := body[i+len(marker):]
+	j := strings.Index(rest, `"`)
+	if j < 0 {
+		return ""
+	}
+	return rest[:j]
 }

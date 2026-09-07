@@ -97,7 +97,7 @@ func (h *Handler) handleGetOrderByID(w http.ResponseWriter, r *http.Request) {
 		for _, item := range order.GetItems() {
 			ids = append(ids, item.GetProductId())
 		}
-		carthandlers.DrainPaidProductIDs(w, r, h.deps.Cart, ids)
+		carthandlers.DrainPaidProductIDs(w, r, h.deps.Cart, ids, order.GetMerchantId())
 	}
 
 	shared.WriteHTML(w, r, http.StatusOK, orderviews.OrderDetailPage(view))

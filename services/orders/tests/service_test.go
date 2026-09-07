@@ -234,3 +234,31 @@ func TestCreateOrderMarksFailedWhenReserveFails(t *testing.T) {
 		t.Fatalf("expected ErrOrderNotPayable on retry, got %v", err)
 	}
 }
+
+func TestCreateOrderReplaysSameIntentKey(t *testing.T) {
+	svc := newOrdersService(t)
+	ctx := t.Context()
+	buyerID := uuid.New()
+	merchantID := uuid.New()
+	key := uuid.New()
+	items := []service.OrderItemInput{{ProductID: uuid.New(), Quantity: 1, UnitPriceCents: 1000}}
+
+	first, err := svc.CreateOrder(ctx, buyerID, merchantID, items, 1000, key)
+	if err != nil {
+		t.Fatalf("create order: %v", err)
+	}
+	second, err := svc.CreateOrder(ctx, buyerID, merchantID, items, 1000, key)
+	if err != nil {
+		t.Fatalf("replay create order: %v", err)
+	}
+	if first.ID != second.ID {
+		t.Fatalf("expected same order id, got %s and %s", first.ID, second.ID)
+	}
+	list, err := svc.ListOrdersByBuyer(ctx, buyerID, 20, 0)
+	if err != nil {
+		t.Fatalf("list orders: %v", err)
+	}
+	if len(list) != 1 {
+		t.Fatalf("expected 1 order, got %d", len(list))
+	}
+}
