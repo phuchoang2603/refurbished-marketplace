@@ -1,0 +1,10 @@
+apiVersion: v2
+name: mongodb-operator
+description: MongoDB Controllers for Kubernetes (MCK) Community operator wrapper
+type: application
+version: 0.1.0
+appVersion: "1.12.0"
+dependencies:
+  - name: mongodb-kubernetes
+    version: 1.12.0
+    repository: https://mongodb.github.io/helm-charts
