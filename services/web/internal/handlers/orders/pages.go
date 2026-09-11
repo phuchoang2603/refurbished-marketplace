@@ -88,7 +88,7 @@ func (h *Handler) handleGetOrderByID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	if view.PaymentStatus == "SUCCEEDED" {
+	if carthandlers.HostedSessionDrainsCart(view.PaymentStatus) {
 		ids := make([]string, 0, len(order.GetItems()))
 		for _, item := range order.GetItems() {
 			ids = append(ids, item.GetProductId())

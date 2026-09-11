@@ -28,6 +28,15 @@ The web service MUST provide browser routes that let a buyer return from the hos
 - **WHEN** the hosted payment gateway redirects the browser back after a successful, failed, or expired payment attempt
 - **THEN** the web service SHALL redirect or render the buyer into a usable marketplace page for that order without issuing another checkout mutation or hosted-session create
 
+### Requirement: Web removes cart lines after a terminal hosted payment
+
+The web service MUST remove the order's product IDs from the buyer cart after a terminal hosted payment (SUCCEEDED, FAILED, or EXPIRED) when a cart identity is available, so a one-shot failed attempt does not leave those lines for a duplicate checkout of the same reservation.
+
+#### Scenario: Buyer returns after a failed hosted payment
+
+- **WHEN** the buyer opens the order page after hosted payment FAILED or EXPIRED and a `cart_id` cookie is present
+- **THEN** the web service SHALL multi-remove that order's product IDs from the cart
+
 ## REMOVED Requirements
 
 ### Requirement: Web can resume hosted payment for a pending reserved order
