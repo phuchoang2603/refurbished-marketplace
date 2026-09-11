@@ -47,4 +47,7 @@ func TestOrderPageShowsHostedPaymentStatus(t *testing.T) {
 	if !strings.Contains(html, "FAILED") || !strings.Contains(html, "Card declined") {
 		t.Fatalf("expected failed hosted payment state in %q", html)
 	}
+	if strings.Contains(html, "Resume payment") {
+		t.Fatalf("did not expect resume payment after failed hosted session in %q", html)
+	}
 }

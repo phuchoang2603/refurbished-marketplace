@@ -6,7 +6,6 @@ import (
 
 	shared "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
 	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
-	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
@@ -14,7 +13,6 @@ import (
 
 func (h *Handler) RegisterActions(r chi.Router) {
 	r.Post("/orders", h.handleCreateOrder)
-	r.Post("/orders/{id}/pay", h.handleResumePayment)
 }
 
 func (h *Handler) buildCreateOrderItem(w http.ResponseWriter, r *http.Request, productID string, quantity int32) (*ordersv1.CreateOrderItem, string, int64, bool) {
@@ -61,57 +59,4 @@ func (h *Handler) handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 	}
 
 	shared.Redirect(w, r, "/orders/"+order.GetId(), http.StatusSeeOther)
-}
-
-func (h *Handler) handleResumePayment(w http.ResponseWriter, r *http.Request) {
-	buyerUserID, ok := shared.RequireUserID(w, r)
-	if !ok {
-		return
-	}
-	id, ok := shared.RequirePathValue(w, r, "id", "invalid order id")
-	if !ok {
-		return
-	}
-	order, err := h.deps.Orders.GetOrderByID(r.Context(), id)
-	if err != nil {
-		shared.WriteGRPCError(w, r, err)
-		return
-	}
-	if order.GetBuyerUserId() != buyerUserID {
-		shared.WritePopup(w, r, http.StatusForbidden, "Forbidden", "order does not belong to the current user")
-		return
-	}
-	if order.GetStatus() != ordersv1.OrderStatus_ORDER_STATUS_PENDING {
-		shared.WriteBadRequest(w, r, "order cannot be paid")
-		return
-	}
-	if err := shared.HoldStockForOrder(r.Context(), h.deps.Products, h.deps.Orders, order); err != nil {
-		shared.WriteGRPCError(w, r, err)
-		return
-	}
-	if h.deps.Payment == nil {
-		shared.WriteBadRequest(w, r, "hosted payment unavailable")
-		return
-	}
-	orderPageURL := shared.OrderPageURLWithConfig(h.deps.HostedPayment, r, order.GetId())
-	if orderPageURL == "" {
-		shared.WriteBadRequest(w, r, "hosted payment unavailable")
-		return
-	}
-	hostedSession, err := h.deps.Payment.CreateHostedPaymentSession(r.Context(), &paymentv1.CreateHostedPaymentSessionRequest{
-		OrderId:     order.GetId(),
-		BuyerUserId: buyerUserID,
-		Currency:    "USD",
-		ReturnUrl:   orderPageURL,
-	})
-	if err != nil {
-		shared.WriteGRPCError(w, r, err)
-		return
-	}
-	hostedPaymentURL := shared.BuildHostedPaymentURL(h.deps.HostedPayment, r, hostedSession)
-	if hostedPaymentURL == "" {
-		shared.WriteBadRequest(w, r, "hosted payment unavailable")
-		return
-	}
-	shared.Redirect(w, r, hostedPaymentURL, http.StatusSeeOther)
 }

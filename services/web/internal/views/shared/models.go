@@ -118,7 +118,6 @@ type OrderView struct {
 	Status               string
 	PaymentStatus        string
 	PaymentFailureReason string
-	CanResumePayment     bool
 	TotalCents           int64
 	Items                []OrderItemView
 	CreatedAt            string

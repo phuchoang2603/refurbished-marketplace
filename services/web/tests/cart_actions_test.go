@@ -127,8 +127,14 @@ func TestCheckoutRedirectsToHostedPaymentWithoutClearingCart(t *testing.T) {
 			if req.GetOrderId() != "order-1" {
 				t.Fatalf("orderID = %q, want order-1", req.GetOrderId())
 			}
-			if req.GetReturnUrl() != "http://localhost:8080/orders/order-1" {
-				t.Fatalf("return_url = %q", req.GetReturnUrl())
+			if req.GetMerchantId() != "merchant-1" {
+				t.Fatalf("merchant_id = %q, want merchant-1", req.GetMerchantId())
+			}
+			if req.GetTotalCents() != 1700 {
+				t.Fatalf("total_cents = %d, want 1700", req.GetTotalCents())
+			}
+			if len(req.GetItems()) != 2 {
+				t.Fatalf("items = %d, want 2", len(req.GetItems()))
 			}
 			return &paymentv1.CreateHostedPaymentSessionResponse{
 				OrderId:          "order-1",

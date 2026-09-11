@@ -88,8 +88,6 @@ func (h *Handler) handleGetOrderByID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	view.CanResumePayment = order.GetStatus() == ordersv1.OrderStatus_ORDER_STATUS_PENDING && view.PaymentStatus != "SUCCEEDED"
-
 	if view.PaymentStatus == "SUCCEEDED" {
 		ids := make([]string, 0, len(order.GetItems()))
 		for _, item := range order.GetItems() {
