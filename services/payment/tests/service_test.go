@@ -38,7 +38,7 @@ func createTestSession(t *testing.T, svc *service.Service, orderID uuid.UUID) se
 		MerchantID:      uuid.New(),
 		TotalCents:      3000,
 		Currency:        "USD",
-		ShippingAddress: json.RawMessage(`{}`),
+		ShippingAddress: json.RawMessage(`{"line1":"1 Main St","city":"New York","postal_code":"10001","country":"US"}`),
 		LineItems:       json.RawMessage(`[]`),
 		ReturnURL:       "/orders/" + orderID.String(),
 	})
@@ -273,5 +273,20 @@ func TestPaymentService_CreateHostedPaymentSession_OneShot(t *testing.T) {
 	})
 	if !errors.Is(err, service.ErrSessionTerminal) {
 		t.Fatalf("expected ErrSessionTerminal, got %v", err)
+	}
+}
+
+func TestPaymentService_CreateHostedPaymentSession_RequiresShipping(t *testing.T) {
+	svc, _ := newPaymentFixture(t)
+	_, err := svc.CreateHostedPaymentSession(t.Context(), service.CreateHostedPaymentSessionParams{
+		OrderID:     uuid.New(),
+		BuyerUserID: uuid.New(),
+		MerchantID:  uuid.New(),
+		TotalCents:  3000,
+		Currency:    "USD",
+		ReturnURL:   "/orders/x",
+	})
+	if !errors.Is(err, service.ErrInvalidSessionFacts) {
+		t.Fatalf("expected ErrInvalidSessionFacts, got %v", err)
 	}
 }

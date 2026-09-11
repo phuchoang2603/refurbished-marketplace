@@ -9,9 +9,11 @@ INSERT INTO payment_intents (
     return_url,
     expires_at,
     failure_reason,
-    line_items
+    line_items,
+    buyer,
+    merchant
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 RETURNING
     payment_intents.order_id,
     payment_intents.buyer_user_id,
@@ -25,7 +27,9 @@ RETURNING
     payment_intents.return_url,
     payment_intents.expires_at,
     payment_intents.failure_reason,
-    payment_intents.line_items;
+    payment_intents.line_items,
+    payment_intents.buyer,
+    payment_intents.merchant;
 
 -- name: GetPaymentIntentByOrderID :one
 SELECT
@@ -41,7 +45,9 @@ SELECT
     payment_intents.return_url,
     payment_intents.expires_at,
     payment_intents.failure_reason,
-    payment_intents.line_items
+    payment_intents.line_items,
+    payment_intents.buyer,
+    payment_intents.merchant
 FROM payment_intents
 WHERE order_id = $1;
 
@@ -59,7 +65,9 @@ SELECT
     payment_intents.return_url,
     payment_intents.expires_at,
     payment_intents.failure_reason,
-    payment_intents.line_items
+    payment_intents.line_items,
+    payment_intents.buyer,
+    payment_intents.merchant
 FROM payment_intents
 WHERE order_id = $1
 FOR UPDATE;
@@ -87,7 +95,9 @@ RETURNING
     payment_intents.return_url,
     payment_intents.expires_at,
     payment_intents.failure_reason,
-    payment_intents.line_items;
+    payment_intents.line_items,
+    payment_intents.buyer,
+    payment_intents.merchant;
 
 -- name: ListExpiredPendingHostedSessions :many
 SELECT
@@ -103,7 +113,9 @@ SELECT
     payment_intents.return_url,
     payment_intents.expires_at,
     payment_intents.failure_reason,
-    payment_intents.line_items
+    payment_intents.line_items,
+    payment_intents.buyer,
+    payment_intents.merchant
 FROM payment_intents
 WHERE
     status = 'PENDING'
@@ -134,7 +146,9 @@ RETURNING
     payment_intents.return_url,
     payment_intents.expires_at,
     payment_intents.failure_reason,
-    payment_intents.line_items;
+    payment_intents.line_items,
+    payment_intents.buyer,
+    payment_intents.merchant;
 
 -- name: SetPaymentIntentExpiresAt :exec
 UPDATE payment_intents

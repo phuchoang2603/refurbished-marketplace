@@ -24,9 +24,11 @@ INSERT INTO payment_intents (
     return_url,
     expires_at,
     failure_reason,
-    line_items
+    line_items,
+    buyer,
+    merchant
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
 RETURNING
     payment_intents.order_id,
     payment_intents.buyer_user_id,
@@ -40,7 +42,9 @@ RETURNING
     payment_intents.return_url,
     payment_intents.expires_at,
     payment_intents.failure_reason,
-    payment_intents.line_items
+    payment_intents.line_items,
+    payment_intents.buyer,
+    payment_intents.merchant
 `
 
 type CreateHostedPaymentSessionParams struct {
@@ -54,6 +58,8 @@ type CreateHostedPaymentSessionParams struct {
 	ExpiresAt        sql.NullTime
 	FailureReason    sql.NullString
 	LineItems        json.RawMessage
+	Buyer            json.RawMessage
+	Merchant         json.RawMessage
 }
 
 func (q *Queries) CreateHostedPaymentSession(ctx context.Context, arg CreateHostedPaymentSessionParams) (PaymentIntent, error) {
@@ -68,6 +74,8 @@ func (q *Queries) CreateHostedPaymentSession(ctx context.Context, arg CreateHost
 		arg.ExpiresAt,
 		arg.FailureReason,
 		arg.LineItems,
+		arg.Buyer,
+		arg.Merchant,
 	)
 	var i PaymentIntent
 	err := row.Scan(
@@ -84,6 +92,8 @@ func (q *Queries) CreateHostedPaymentSession(ctx context.Context, arg CreateHost
 		&i.ExpiresAt,
 		&i.FailureReason,
 		&i.LineItems,
+		&i.Buyer,
+		&i.Merchant,
 	)
 	return i, err
 }
@@ -110,7 +120,9 @@ RETURNING
     payment_intents.return_url,
     payment_intents.expires_at,
     payment_intents.failure_reason,
-    payment_intents.line_items
+    payment_intents.line_items,
+    payment_intents.buyer,
+    payment_intents.merchant
 `
 
 func (q *Queries) ExpireHostedPaymentSession(ctx context.Context, orderID uuid.UUID) (PaymentIntent, error) {
@@ -130,6 +142,8 @@ func (q *Queries) ExpireHostedPaymentSession(ctx context.Context, orderID uuid.U
 		&i.ExpiresAt,
 		&i.FailureReason,
 		&i.LineItems,
+		&i.Buyer,
+		&i.Merchant,
 	)
 	return i, err
 }
@@ -148,7 +162,9 @@ SELECT
     payment_intents.return_url,
     payment_intents.expires_at,
     payment_intents.failure_reason,
-    payment_intents.line_items
+    payment_intents.line_items,
+    payment_intents.buyer,
+    payment_intents.merchant
 FROM payment_intents
 WHERE order_id = $1
 `
@@ -170,6 +186,8 @@ func (q *Queries) GetPaymentIntentByOrderID(ctx context.Context, orderID uuid.UU
 		&i.ExpiresAt,
 		&i.FailureReason,
 		&i.LineItems,
+		&i.Buyer,
+		&i.Merchant,
 	)
 	return i, err
 }
@@ -188,7 +206,9 @@ SELECT
     payment_intents.return_url,
     payment_intents.expires_at,
     payment_intents.failure_reason,
-    payment_intents.line_items
+    payment_intents.line_items,
+    payment_intents.buyer,
+    payment_intents.merchant
 FROM payment_intents
 WHERE order_id = $1
 FOR UPDATE
@@ -211,6 +231,8 @@ func (q *Queries) GetPaymentIntentByOrderIDForUpdate(ctx context.Context, orderI
 		&i.ExpiresAt,
 		&i.FailureReason,
 		&i.LineItems,
+		&i.Buyer,
+		&i.Merchant,
 	)
 	return i, err
 }
@@ -229,7 +251,9 @@ SELECT
     payment_intents.return_url,
     payment_intents.expires_at,
     payment_intents.failure_reason,
-    payment_intents.line_items
+    payment_intents.line_items,
+    payment_intents.buyer,
+    payment_intents.merchant
 FROM payment_intents
 WHERE
     status = 'PENDING'
@@ -262,6 +286,8 @@ func (q *Queries) ListExpiredPendingHostedSessions(ctx context.Context, limit in
 			&i.ExpiresAt,
 			&i.FailureReason,
 			&i.LineItems,
+			&i.Buyer,
+			&i.Merchant,
 		); err != nil {
 			return nil, err
 		}
@@ -315,7 +341,9 @@ RETURNING
     payment_intents.return_url,
     payment_intents.expires_at,
     payment_intents.failure_reason,
-    payment_intents.line_items
+    payment_intents.line_items,
+    payment_intents.buyer,
+    payment_intents.merchant
 `
 
 type UpdateHostedPaymentSessionOutcomeParams struct {
@@ -347,6 +375,8 @@ func (q *Queries) UpdateHostedPaymentSessionOutcome(ctx context.Context, arg Upd
 		&i.ExpiresAt,
 		&i.FailureReason,
 		&i.LineItems,
+		&i.Buyer,
+		&i.Merchant,
 	)
 	return i, err
 }

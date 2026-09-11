@@ -31,6 +31,8 @@ type PaymentIntent struct {
 	ExpiresAt        sql.NullTime
 	FailureReason    sql.NullString
 	LineItems        json.RawMessage
+	Buyer            json.RawMessage
+	Merchant         json.RawMessage
 }
 
 type PaymentOutbox struct {

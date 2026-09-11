@@ -47,24 +47,12 @@ type CreateHostedPaymentSessionParams struct {
 	Currency        string
 	ShippingAddress json.RawMessage
 	LineItems       json.RawMessage
+	Buyer           json.RawMessage
+	Merchant        json.RawMessage
 	ReturnURL       string
 }
 
 func (s *Service) CreateHostedPaymentSession(ctx context.Context, p CreateHostedPaymentSessionParams) (HostedPaymentSessionView, error) {
-	if p.MerchantID == uuid.Nil {
-		return HostedPaymentSessionView{}, ErrInvalidSessionFacts
-	}
-	if p.TotalCents <= 0 {
-		return HostedPaymentSessionView{}, ErrInvalidSessionFacts
-	}
-	p.Currency = defaultPaymentCurrency(p.Currency)
-	if len(p.ShippingAddress) == 0 {
-		p.ShippingAddress = json.RawMessage(`{}`)
-	}
-	if len(p.LineItems) == 0 {
-		p.LineItems = json.RawMessage(`[]`)
-	}
-
 	intent, err := loadPaymentIntentByOrderID(ctx, s.queries, p.OrderID)
 	if err == nil {
 		if hostedPaymentSessionIsTerminal(intent.Status) {
@@ -74,6 +62,34 @@ func (s *Service) CreateHostedPaymentSession(ctx context.Context, p CreateHosted
 	}
 	if !errors.Is(err, ErrIntentNotFound) {
 		return HostedPaymentSessionView{}, err
+	}
+
+	if p.BuyerUserID == uuid.Nil || p.MerchantID == uuid.Nil {
+		return HostedPaymentSessionView{}, ErrInvalidSessionFacts
+	}
+	if p.TotalCents <= 0 {
+		return HostedPaymentSessionView{}, ErrInvalidSessionFacts
+	}
+	p.Currency = defaultPaymentCurrency(p.Currency)
+	if !usableShippingAddress(p.ShippingAddress) {
+		return HostedPaymentSessionView{}, ErrInvalidSessionFacts
+	}
+	if len(p.LineItems) == 0 {
+		p.LineItems = json.RawMessage(`[]`)
+	}
+	if len(p.Buyer) == 0 {
+		buyer, err := partySnapshotJSON(p.BuyerUserID.String(), "")
+		if err != nil {
+			return HostedPaymentSessionView{}, err
+		}
+		p.Buyer = buyer
+	}
+	if len(p.Merchant) == 0 {
+		merchant, err := partySnapshotJSON(p.MerchantID.String(), "")
+		if err != nil {
+			return HostedPaymentSessionView{}, err
+		}
+		p.Merchant = merchant
 	}
 
 	expiresAt := time.Now().UTC().Add(30 * time.Minute)
@@ -96,6 +112,8 @@ func (s *Service) CreateHostedPaymentSession(ctx context.Context, p CreateHosted
 		ReturnUrl:        p.ReturnURL,
 		ExpiresAt:        dberr.OptionalNullTime(expiresAt),
 		LineItems:        p.LineItems,
+		Buyer:            p.Buyer,
+		Merchant:         p.Merchant,
 	})
 	if err != nil {
 		return HostedPaymentSessionView{}, err
