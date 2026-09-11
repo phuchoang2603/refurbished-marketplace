@@ -96,10 +96,6 @@ func hostedPaymentSessionMapsToSuccess(status string) bool {
 	return status == HostedPaymentSessionStatusSucceeded
 }
 
-func isPostgresUniqueViolation(err error) bool {
-	return dberr.IsUniqueViolation(err)
-}
-
 func defaultPaymentCurrency(currency string) string {
 	if currency == "" {
 		return "USD"
