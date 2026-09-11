@@ -26,4 +26,4 @@
 
 - [ ] 5.1 Operator Application Healthy; `MongoDBCommunity` Running; `rs.status()` is a replica set
 - [ ] 5.2 Empty change stream opens; products-path probe connects; unenrolled probe fails
-- [ ] 5.3 Shop browse/checkout still works without a Mongo driver
+- [x] 5.3 Shop browse/checkout still works without a Mongo driver
