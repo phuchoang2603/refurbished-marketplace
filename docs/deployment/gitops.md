@@ -23,7 +23,9 @@ Child Applications inherit `targetRevision` via `$ARGOCD_APP_SOURCE_TARGET_REVIS
 | External Secrets Operator | Wrapper chart | upstream chart + Doppler `ClusterSecretStore`        | `operators`         |
 | CloudNativePG             | Wrapper chart | upstream chart                                       | `operators`         |
 | Strimzi                   | Wrapper chart | `watchAnyNamespace=true`                             | `operators`         |
+| MCK (MongoDB operator)    | Wrapper chart | `mongodb/mongodb-kubernetes` 1.12.0, Community watch | `operators`         |
 | `observability`           | Wrapper chart | `victoria-metrics-k8s-stack` `0.86.0`                | `monitoring`        |
+| `mongodb`                 | This repo     | `MongoDBCommunity` replica set + CNP + ESO           | `ecommerce`         |
 | `refurbished-marketplace` | This repo     | CNPG, ExternalSecrets, migrations, services, Gateway | `ecommerce`         |
 | `kafka`                   | This repo     | Debezium reads secrets/DBs in `ecommerce`            | `kafka`             |
 | `cloudflare-tunnel`       | This repo     | `cloudflared`; token via Doppler ExternalSecret      | `cloudflare-tunnel` |
@@ -34,7 +36,9 @@ Cilium is cluster-owned in **talos-proxmox**, not an Argo app. See [cilium.md](c
 
 **Bootstrap:** Doppler service token Secret in `operators` — see [secrets](../development/secrets.md).
 
-Sync waves: operators (0) → observability (1) → marketplace (3) → kafka (4) → cloudflare-tunnel (5).
+Sync waves: operators (0, including MCK) → observability (1) → MongoDBCommunity (2) → marketplace (3) → kafka (4) → cloudflare-tunnel (5).
+
+Mongo is MCK **Community** in `ecommerce` (`catalog-mongodb`). Shop traffic does not use it until catalog cutover. Community MCK does not include Ops Manager continuous backup. Products may have unused `MONGO_ADDR=catalog-mongodb-svc:27017`.
 
 ```
 infra/argocd/

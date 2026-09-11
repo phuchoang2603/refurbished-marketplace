@@ -17,6 +17,7 @@ Application secrets are **not** committed to Git. External Secrets Operator sync
 | `PAYMENT_APP_PASSWORD`    | `payment-app`                                      | `password`   |
 | `JWT_SECRET`              | `users-auth`                                       | `JWT_SECRET` |
 | `CLOUDFLARE_TUNNEL_TOKEN` | `cloudflare-tunnel-token` (ns `cloudflare-tunnel`) | `token`      |
+| `MONGODB_APP_PASSWORD`    | `mongodb-catalog-app` (ns `ecommerce`)             | `password`   |
 
 `CLOUDFLARE_TUNNEL_TOKEN` is the Zero Trust tunnel whose Public Hostnames point at `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`.
 
@@ -36,4 +37,5 @@ Do not commit tokens. Do not set Doppler `dev`/`prd` in Helm or Argo values.
 ```bash
 kubectl get clustersecretstore doppler
 kubectl get externalsecrets,secrets -n ecommerce
+kubectl get secret mongodb-catalog-app -n ecommerce
 ```
