@@ -11,6 +11,8 @@ var (
 	ErrIntentNotFound      = errors.New("payment intent not found")
 	ErrTransactionNotFound = errors.New("payment transaction not found")
 	ErrSessionMismatch     = errors.New("payment session does not match order")
+	ErrSessionTerminal     = errors.New("hosted payment session is already terminal")
+	ErrInvalidSessionFacts = errors.New("merchant_id and total_cents are required")
 )
 
 const (

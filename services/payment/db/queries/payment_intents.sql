@@ -8,9 +8,10 @@ INSERT INTO payment_intents (
     payment_session_id,
     return_url,
     expires_at,
-    failure_reason
+    failure_reason,
+    line_items
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 RETURNING
     payment_intents.order_id,
     payment_intents.buyer_user_id,
@@ -23,7 +24,8 @@ RETURNING
     payment_intents.payment_session_id,
     payment_intents.return_url,
     payment_intents.expires_at,
-    payment_intents.failure_reason;
+    payment_intents.failure_reason,
+    payment_intents.line_items;
 
 -- name: GetPaymentIntentByOrderID :one
 SELECT
@@ -38,7 +40,8 @@ SELECT
     payment_intents.payment_session_id,
     payment_intents.return_url,
     payment_intents.expires_at,
-    payment_intents.failure_reason
+    payment_intents.failure_reason,
+    payment_intents.line_items
 FROM payment_intents
 WHERE order_id = $1;
 
@@ -55,7 +58,8 @@ SELECT
     payment_intents.payment_session_id,
     payment_intents.return_url,
     payment_intents.expires_at,
-    payment_intents.failure_reason
+    payment_intents.failure_reason,
+    payment_intents.line_items
 FROM payment_intents
 WHERE order_id = $1
 FOR UPDATE;
@@ -82,7 +86,8 @@ RETURNING
     payment_intents.payment_session_id,
     payment_intents.return_url,
     payment_intents.expires_at,
-    payment_intents.failure_reason;
+    payment_intents.failure_reason,
+    payment_intents.line_items;
 
 -- name: ListExpiredPendingHostedSessions :many
 SELECT
@@ -97,7 +102,8 @@ SELECT
     payment_intents.payment_session_id,
     payment_intents.return_url,
     payment_intents.expires_at,
-    payment_intents.failure_reason
+    payment_intents.failure_reason,
+    payment_intents.line_items
 FROM payment_intents
 WHERE
     status = 'PENDING'
@@ -127,35 +133,10 @@ RETURNING
     payment_intents.payment_session_id,
     payment_intents.return_url,
     payment_intents.expires_at,
-    payment_intents.failure_reason;
+    payment_intents.failure_reason,
+    payment_intents.line_items;
 
 -- name: SetPaymentIntentExpiresAt :exec
 UPDATE payment_intents
 SET expires_at = $2
 WHERE order_id = $1;
-
--- name: RefreshHostedPaymentSession :one
-UPDATE payment_intents
-SET
-    status = 'PENDING',
-    payment_session_id = $2,
-    return_url = $3,
-    expires_at = $4,
-    failure_reason = '',
-    updated_at = NOW()
-WHERE
-    order_id = $1
-    AND status IN ('PENDING', 'EXPIRED', 'FAILED')
-RETURNING
-    payment_intents.order_id,
-    payment_intents.buyer_user_id,
-    payment_intents.currency,
-    payment_intents.billing_address,
-    payment_intents.shipping_address,
-    payment_intents.status,
-    payment_intents.created_at,
-    payment_intents.updated_at,
-    payment_intents.payment_session_id,
-    payment_intents.return_url,
-    payment_intents.expires_at,
-    payment_intents.failure_reason;

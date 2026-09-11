@@ -8,7 +8,6 @@ import (
 
 	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
 
-	"github.com/phuchoang2603/refurbished-marketplace/services/payment/internal/database"
 	"github.com/phuchoang2603/refurbished-marketplace/shared/err/dberr"
 	"github.com/phuchoang2603/refurbished-marketplace/shared/messaging"
 
@@ -32,49 +31,26 @@ func (s *Service) KafkaInventoryReservedHandler() messaging.KafkaHandler {
 			return errors.New("invalid inventory.reserved payload: missing order_id")
 		}
 
-		orderID, merchantID, err := parseOrderUUIDs(&payload)
+		orderID, _, err := parseOrderUUIDs(&payload)
 		if err != nil {
 			return err
 		}
 
-		intent, err := loadPaymentIntentByOrderID(ctx, s.queries, orderID)
-		if err != nil {
+		if _, err := loadPaymentIntentByOrderID(ctx, s.queries, orderID); err != nil {
 			return err
 		}
-
-		created, err := s.queries.CreatePaymentTransaction(ctx, database.CreatePaymentTransactionParams{
-			ID:             uuid.New(),
-			OrderID:        orderID,
-			MerchantID:     merchantID,
-			AmountCents:    payload.GetTotalCents(),
-			Currency:       intent.Currency,
-			Status:         PaymentTxStatusInitialized,
-			IdempotencyKey: "order:" + orderID.String(),
-		})
-		if err != nil && !errors.Is(err, sql.ErrNoRows) && !isPostgresUniqueViolation(err) {
-			return err
-		}
-		if err == nil {
-			sharedlog.InfoContext(
-				ctx, "payment transaction initialized from inventory.reserved",
-				sharedlog.KeyOrderID, orderID.String(),
-				sharedlog.KeyMerchantID, merchantID.String(),
-				"payment_transaction_id", created.ID.String(),
-				"amount_cents", payload.GetTotalCents(),
-				"currency", intent.Currency,
-			)
+		if _, err := s.queries.GetPaymentTransactionByOrderID(ctx, orderID); err != nil {
+			return dberr.MapErrNoRows(err, ErrTransactionNotFound)
 		}
 
-		// Lock the intent row so we wait for an in-flight expiry sweep, then
-		// apply any terminal outcome. Also covers retries where the tx exists.
 		if err := s.ensureTerminalOutcomeForOrder(ctx, orderID); err != nil {
 			return err
 		}
 
-		// Ack only after create + catch-up so Kafka retries remain durable.
 		if _, err := s.queries.InsertPaymentInboxMessage(ctx, messageID); err != nil && !errors.Is(err, sql.ErrNoRows) {
 			return err
 		}
+		sharedlog.InfoContext(ctx, "inventory.reserved acknowledged", sharedlog.KeyOrderID, orderID.String())
 		return nil
 	}
 }

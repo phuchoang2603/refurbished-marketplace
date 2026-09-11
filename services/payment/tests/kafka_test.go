@@ -34,10 +34,13 @@ func TestKafkaInventoryReservedHandler_EndToEnd(t *testing.T) {
 
 	orderID := uuid.New()
 	buyerID := uuid.New()
+	merchantID := uuid.New()
 	var err error
 	_, err = svc.CreateHostedPaymentSession(ctx, service.CreateHostedPaymentSessionParams{
 		OrderID:         orderID,
 		BuyerUserID:     buyerID,
+		MerchantID:      merchantID,
+		TotalCents:      7500,
 		Currency:        "USD",
 		ShippingAddress: json.RawMessage(`{}`),
 		ReturnURL:       "/orders/" + orderID.String(),
@@ -46,7 +49,6 @@ func TestKafkaInventoryReservedHandler_EndToEnd(t *testing.T) {
 		t.Fatalf("CreateHostedPaymentSession: %v", err)
 	}
 
-	merchantID := uuid.New()
 	payload := inventoryReservedPayload(orderID, merchantID, 7500)
 
 	k := testkafka.SetupKafka(t)
@@ -59,11 +61,11 @@ func TestKafkaInventoryReservedHandler_EndToEnd(t *testing.T) {
 	testkafka.ProduceKafkaRecord(t, ctx, brokers, topic, payload)
 	cancel, errRun := testkafka.StartKafkaConsumer(t, ctx, brokers, fmt.Sprintf("payment-kafka-e2e-%s", uuid.New().String()), []string{topic}, svc.KafkaInventoryReservedHandler())
 	defer cancel()
-	testkafka.WaitForKafkaCondition(t, errRun, cancel, 30*time.Second, 500*time.Millisecond, "timeout waiting for payment transaction", func() (bool, error) {
-		row, err := queries.GetPaymentTransactionByOrderID(ctx, orderID)
+	testkafka.WaitForKafkaCondition(t, errRun, cancel, 30*time.Second, 500*time.Millisecond, "timeout waiting for payment inbox", func() (bool, error) {
+		n, err := queries.CountPaymentInbox(ctx)
 		if err != nil {
 			return false, nil
 		}
-		return row.OrderID == orderID && row.Status == service.PaymentTxStatusInitialized, nil
+		return n >= 1, nil
 	})
 }

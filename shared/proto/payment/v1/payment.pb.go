@@ -168,20 +168,83 @@ func (x *Address) GetCountry() string {
 	return ""
 }
 
+type HostedPaymentLineItem struct {
+	state          protoimpl.MessageState `protogen:"open.v1"`
+	ProductId      string                 `protobuf:"bytes,1,opt,name=product_id,json=productId,proto3" json:"product_id,omitempty"`
+	Quantity       int32                  `protobuf:"varint,2,opt,name=quantity,proto3" json:"quantity,omitempty"`
+	UnitPriceCents int64                  `protobuf:"varint,3,opt,name=unit_price_cents,json=unitPriceCents,proto3" json:"unit_price_cents,omitempty"`
+	unknownFields  protoimpl.UnknownFields
+	sizeCache      protoimpl.SizeCache
+}
+
+func (x *HostedPaymentLineItem) Reset() {
+	*x = HostedPaymentLineItem{}
+	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HostedPaymentLineItem) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HostedPaymentLineItem) ProtoMessage() {}
+
+func (x *HostedPaymentLineItem) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HostedPaymentLineItem.ProtoReflect.Descriptor instead.
+func (*HostedPaymentLineItem) Descriptor() ([]byte, []int) {
+	return file_shared_proto_payment_v1_payment_proto_rawDescGZIP(), []int{1}
+}
+
+func (x *HostedPaymentLineItem) GetProductId() string {
+	if x != nil {
+		return x.ProductId
+	}
+	return ""
+}
+
+func (x *HostedPaymentLineItem) GetQuantity() int32 {
+	if x != nil {
+		return x.Quantity
+	}
+	return 0
+}
+
+func (x *HostedPaymentLineItem) GetUnitPriceCents() int64 {
+	if x != nil {
+		return x.UnitPriceCents
+	}
+	return 0
+}
+
 type CreateHostedPaymentSessionRequest struct {
-	state           protoimpl.MessageState `protogen:"open.v1"`
-	OrderId         string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
-	BuyerUserId     string                 `protobuf:"bytes,2,opt,name=buyer_user_id,json=buyerUserId,proto3" json:"buyer_user_id,omitempty"`
-	Currency        string                 `protobuf:"bytes,3,opt,name=currency,proto3" json:"currency,omitempty"`
-	ShippingAddress *Address               `protobuf:"bytes,4,opt,name=shipping_address,json=shippingAddress,proto3" json:"shipping_address,omitempty"`
-	ReturnUrl       string                 `protobuf:"bytes,5,opt,name=return_url,json=returnUrl,proto3" json:"return_url,omitempty"`
+	state           protoimpl.MessageState   `protogen:"open.v1"`
+	OrderId         string                   `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	BuyerUserId     string                   `protobuf:"bytes,2,opt,name=buyer_user_id,json=buyerUserId,proto3" json:"buyer_user_id,omitempty"`
+	Currency        string                   `protobuf:"bytes,3,opt,name=currency,proto3" json:"currency,omitempty"`
+	ShippingAddress *Address                 `protobuf:"bytes,4,opt,name=shipping_address,json=shippingAddress,proto3" json:"shipping_address,omitempty"`
+	ReturnUrl       string                   `protobuf:"bytes,5,opt,name=return_url,json=returnUrl,proto3" json:"return_url,omitempty"`
+	MerchantId      string                   `protobuf:"bytes,6,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
+	TotalCents      int64                    `protobuf:"varint,7,opt,name=total_cents,json=totalCents,proto3" json:"total_cents,omitempty"`
+	Items           []*HostedPaymentLineItem `protobuf:"bytes,8,rep,name=items,proto3" json:"items,omitempty"`
 	unknownFields   protoimpl.UnknownFields
 	sizeCache       protoimpl.SizeCache
 }
 
 func (x *CreateHostedPaymentSessionRequest) Reset() {
 	*x = CreateHostedPaymentSessionRequest{}
-	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[1]
+	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -193,7 +256,7 @@ func (x *CreateHostedPaymentSessionRequest) String() string {
 func (*CreateHostedPaymentSessionRequest) ProtoMessage() {}
 
 func (x *CreateHostedPaymentSessionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[1]
+	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -206,7 +269,7 @@ func (x *CreateHostedPaymentSessionRequest) ProtoReflect() protoreflect.Message 
 
 // Deprecated: Use CreateHostedPaymentSessionRequest.ProtoReflect.Descriptor instead.
 func (*CreateHostedPaymentSessionRequest) Descriptor() ([]byte, []int) {
-	return file_shared_proto_payment_v1_payment_proto_rawDescGZIP(), []int{1}
+	return file_shared_proto_payment_v1_payment_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *CreateHostedPaymentSessionRequest) GetOrderId() string {
@@ -244,6 +307,27 @@ func (x *CreateHostedPaymentSessionRequest) GetReturnUrl() string {
 	return ""
 }
 
+func (x *CreateHostedPaymentSessionRequest) GetMerchantId() string {
+	if x != nil {
+		return x.MerchantId
+	}
+	return ""
+}
+
+func (x *CreateHostedPaymentSessionRequest) GetTotalCents() int64 {
+	if x != nil {
+		return x.TotalCents
+	}
+	return 0
+}
+
+func (x *CreateHostedPaymentSessionRequest) GetItems() []*HostedPaymentLineItem {
+	if x != nil {
+		return x.Items
+	}
+	return nil
+}
+
 type CreateHostedPaymentSessionResponse struct {
 	state            protoimpl.MessageState `protogen:"open.v1"`
 	OrderId          string                 `protobuf:"bytes,1,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
@@ -255,7 +339,7 @@ type CreateHostedPaymentSessionResponse struct {
 
 func (x *CreateHostedPaymentSessionResponse) Reset() {
 	*x = CreateHostedPaymentSessionResponse{}
-	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[2]
+	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -267,7 +351,7 @@ func (x *CreateHostedPaymentSessionResponse) String() string {
 func (*CreateHostedPaymentSessionResponse) ProtoMessage() {}
 
 func (x *CreateHostedPaymentSessionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[2]
+	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -280,7 +364,7 @@ func (x *CreateHostedPaymentSessionResponse) ProtoReflect() protoreflect.Message
 
 // Deprecated: Use CreateHostedPaymentSessionResponse.ProtoReflect.Descriptor instead.
 func (*CreateHostedPaymentSessionResponse) Descriptor() ([]byte, []int) {
-	return file_shared_proto_payment_v1_payment_proto_rawDescGZIP(), []int{2}
+	return file_shared_proto_payment_v1_payment_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *CreateHostedPaymentSessionResponse) GetOrderId() string {
@@ -313,7 +397,7 @@ type GetHostedPaymentSessionByOrderRequest struct {
 
 func (x *GetHostedPaymentSessionByOrderRequest) Reset() {
 	*x = GetHostedPaymentSessionByOrderRequest{}
-	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[3]
+	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -325,7 +409,7 @@ func (x *GetHostedPaymentSessionByOrderRequest) String() string {
 func (*GetHostedPaymentSessionByOrderRequest) ProtoMessage() {}
 
 func (x *GetHostedPaymentSessionByOrderRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[3]
+	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -338,7 +422,7 @@ func (x *GetHostedPaymentSessionByOrderRequest) ProtoReflect() protoreflect.Mess
 
 // Deprecated: Use GetHostedPaymentSessionByOrderRequest.ProtoReflect.Descriptor instead.
 func (*GetHostedPaymentSessionByOrderRequest) Descriptor() ([]byte, []int) {
-	return file_shared_proto_payment_v1_payment_proto_rawDescGZIP(), []int{3}
+	return file_shared_proto_payment_v1_payment_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *GetHostedPaymentSessionByOrderRequest) GetOrderId() string {
@@ -358,7 +442,7 @@ type HostedPaymentSession struct {
 
 func (x *HostedPaymentSession) Reset() {
 	*x = HostedPaymentSession{}
-	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[4]
+	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -370,7 +454,7 @@ func (x *HostedPaymentSession) String() string {
 func (*HostedPaymentSession) ProtoMessage() {}
 
 func (x *HostedPaymentSession) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[4]
+	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -383,7 +467,7 @@ func (x *HostedPaymentSession) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HostedPaymentSession.ProtoReflect.Descriptor instead.
 func (*HostedPaymentSession) Descriptor() ([]byte, []int) {
-	return file_shared_proto_payment_v1_payment_proto_rawDescGZIP(), []int{4}
+	return file_shared_proto_payment_v1_payment_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *HostedPaymentSession) GetStatus() HostedPaymentSessionStatus {
@@ -412,7 +496,7 @@ type HandleGatewayWebhookRequest struct {
 
 func (x *HandleGatewayWebhookRequest) Reset() {
 	*x = HandleGatewayWebhookRequest{}
-	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[5]
+	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -424,7 +508,7 @@ func (x *HandleGatewayWebhookRequest) String() string {
 func (*HandleGatewayWebhookRequest) ProtoMessage() {}
 
 func (x *HandleGatewayWebhookRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[5]
+	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -437,7 +521,7 @@ func (x *HandleGatewayWebhookRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HandleGatewayWebhookRequest.ProtoReflect.Descriptor instead.
 func (*HandleGatewayWebhookRequest) Descriptor() ([]byte, []int) {
-	return file_shared_proto_payment_v1_payment_proto_rawDescGZIP(), []int{5}
+	return file_shared_proto_payment_v1_payment_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *HandleGatewayWebhookRequest) GetOrderId() string {
@@ -476,7 +560,7 @@ type HandleGatewayWebhookResponse struct {
 
 func (x *HandleGatewayWebhookResponse) Reset() {
 	*x = HandleGatewayWebhookResponse{}
-	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[6]
+	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -488,7 +572,7 @@ func (x *HandleGatewayWebhookResponse) String() string {
 func (*HandleGatewayWebhookResponse) ProtoMessage() {}
 
 func (x *HandleGatewayWebhookResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[6]
+	mi := &file_shared_proto_payment_v1_payment_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -501,7 +585,7 @@ func (x *HandleGatewayWebhookResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use HandleGatewayWebhookResponse.ProtoReflect.Descriptor instead.
 func (*HandleGatewayWebhookResponse) Descriptor() ([]byte, []int) {
-	return file_shared_proto_payment_v1_payment_proto_rawDescGZIP(), []int{6}
+	return file_shared_proto_payment_v1_payment_proto_rawDescGZIP(), []int{7}
 }
 
 var File_shared_proto_payment_v1_payment_proto protoreflect.FileDescriptor
@@ -518,14 +602,24 @@ const file_shared_proto_payment_v1_payment_proto_rawDesc = "" +
 	"\x06region\x18\x05 \x01(\tR\x06region\x12\x1f\n" +
 	"\vpostal_code\x18\x06 \x01(\tR\n" +
 	"postalCode\x12\x18\n" +
-	"\acountry\x18\a \x01(\tR\acountry\"\xdd\x01\n" +
+	"\acountry\x18\a \x01(\tR\acountry\"|\n" +
+	"\x15HostedPaymentLineItem\x12\x1d\n" +
+	"\n" +
+	"product_id\x18\x01 \x01(\tR\tproductId\x12\x1a\n" +
+	"\bquantity\x18\x02 \x01(\x05R\bquantity\x12(\n" +
+	"\x10unit_price_cents\x18\x03 \x01(\x03R\x0eunitPriceCents\"\xd8\x02\n" +
 	"!CreateHostedPaymentSessionRequest\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12\"\n" +
 	"\rbuyer_user_id\x18\x02 \x01(\tR\vbuyerUserId\x12\x1a\n" +
 	"\bcurrency\x18\x03 \x01(\tR\bcurrency\x12>\n" +
 	"\x10shipping_address\x18\x04 \x01(\v2\x13.payment.v1.AddressR\x0fshippingAddress\x12\x1d\n" +
 	"\n" +
-	"return_url\x18\x05 \x01(\tR\treturnUrl\"\x8c\x01\n" +
+	"return_url\x18\x05 \x01(\tR\treturnUrl\x12\x1f\n" +
+	"\vmerchant_id\x18\x06 \x01(\tR\n" +
+	"merchantId\x12\x1f\n" +
+	"\vtotal_cents\x18\a \x01(\x03R\n" +
+	"totalCents\x127\n" +
+	"\x05items\x18\b \x03(\v2!.payment.v1.HostedPaymentLineItemR\x05items\"\x8c\x01\n" +
 	"\"CreateHostedPaymentSessionResponse\x12\x19\n" +
 	"\border_id\x18\x01 \x01(\tR\aorderId\x12,\n" +
 	"\x12payment_session_id\x18\x02 \x01(\tR\x10paymentSessionId\x12\x1d\n" +
@@ -566,32 +660,34 @@ func file_shared_proto_payment_v1_payment_proto_rawDescGZIP() []byte {
 }
 
 var file_shared_proto_payment_v1_payment_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_shared_proto_payment_v1_payment_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_shared_proto_payment_v1_payment_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_shared_proto_payment_v1_payment_proto_goTypes = []any{
 	(HostedPaymentSessionStatus)(0),               // 0: payment.v1.HostedPaymentSessionStatus
 	(*Address)(nil),                               // 1: payment.v1.Address
-	(*CreateHostedPaymentSessionRequest)(nil),     // 2: payment.v1.CreateHostedPaymentSessionRequest
-	(*CreateHostedPaymentSessionResponse)(nil),    // 3: payment.v1.CreateHostedPaymentSessionResponse
-	(*GetHostedPaymentSessionByOrderRequest)(nil), // 4: payment.v1.GetHostedPaymentSessionByOrderRequest
-	(*HostedPaymentSession)(nil),                  // 5: payment.v1.HostedPaymentSession
-	(*HandleGatewayWebhookRequest)(nil),           // 6: payment.v1.HandleGatewayWebhookRequest
-	(*HandleGatewayWebhookResponse)(nil),          // 7: payment.v1.HandleGatewayWebhookResponse
+	(*HostedPaymentLineItem)(nil),                 // 2: payment.v1.HostedPaymentLineItem
+	(*CreateHostedPaymentSessionRequest)(nil),     // 3: payment.v1.CreateHostedPaymentSessionRequest
+	(*CreateHostedPaymentSessionResponse)(nil),    // 4: payment.v1.CreateHostedPaymentSessionResponse
+	(*GetHostedPaymentSessionByOrderRequest)(nil), // 5: payment.v1.GetHostedPaymentSessionByOrderRequest
+	(*HostedPaymentSession)(nil),                  // 6: payment.v1.HostedPaymentSession
+	(*HandleGatewayWebhookRequest)(nil),           // 7: payment.v1.HandleGatewayWebhookRequest
+	(*HandleGatewayWebhookResponse)(nil),          // 8: payment.v1.HandleGatewayWebhookResponse
 }
 var file_shared_proto_payment_v1_payment_proto_depIdxs = []int32{
 	1, // 0: payment.v1.CreateHostedPaymentSessionRequest.shipping_address:type_name -> payment.v1.Address
-	0, // 1: payment.v1.HostedPaymentSession.status:type_name -> payment.v1.HostedPaymentSessionStatus
-	0, // 2: payment.v1.HandleGatewayWebhookRequest.status:type_name -> payment.v1.HostedPaymentSessionStatus
-	2, // 3: payment.v1.PaymentService.CreateHostedPaymentSession:input_type -> payment.v1.CreateHostedPaymentSessionRequest
-	4, // 4: payment.v1.PaymentService.GetHostedPaymentSessionByOrder:input_type -> payment.v1.GetHostedPaymentSessionByOrderRequest
-	6, // 5: payment.v1.PaymentService.HandleGatewayWebhook:input_type -> payment.v1.HandleGatewayWebhookRequest
-	3, // 6: payment.v1.PaymentService.CreateHostedPaymentSession:output_type -> payment.v1.CreateHostedPaymentSessionResponse
-	5, // 7: payment.v1.PaymentService.GetHostedPaymentSessionByOrder:output_type -> payment.v1.HostedPaymentSession
-	7, // 8: payment.v1.PaymentService.HandleGatewayWebhook:output_type -> payment.v1.HandleGatewayWebhookResponse
-	6, // [6:9] is the sub-list for method output_type
-	3, // [3:6] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	2, // 1: payment.v1.CreateHostedPaymentSessionRequest.items:type_name -> payment.v1.HostedPaymentLineItem
+	0, // 2: payment.v1.HostedPaymentSession.status:type_name -> payment.v1.HostedPaymentSessionStatus
+	0, // 3: payment.v1.HandleGatewayWebhookRequest.status:type_name -> payment.v1.HostedPaymentSessionStatus
+	3, // 4: payment.v1.PaymentService.CreateHostedPaymentSession:input_type -> payment.v1.CreateHostedPaymentSessionRequest
+	5, // 5: payment.v1.PaymentService.GetHostedPaymentSessionByOrder:input_type -> payment.v1.GetHostedPaymentSessionByOrderRequest
+	7, // 6: payment.v1.PaymentService.HandleGatewayWebhook:input_type -> payment.v1.HandleGatewayWebhookRequest
+	4, // 7: payment.v1.PaymentService.CreateHostedPaymentSession:output_type -> payment.v1.CreateHostedPaymentSessionResponse
+	6, // 8: payment.v1.PaymentService.GetHostedPaymentSessionByOrder:output_type -> payment.v1.HostedPaymentSession
+	8, // 9: payment.v1.PaymentService.HandleGatewayWebhook:output_type -> payment.v1.HandleGatewayWebhookResponse
+	7, // [7:10] is the sub-list for method output_type
+	4, // [4:7] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_shared_proto_payment_v1_payment_proto_init() }
@@ -605,7 +701,7 @@ func file_shared_proto_payment_v1_payment_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_shared_proto_payment_v1_payment_proto_rawDesc), len(file_shared_proto_payment_v1_payment_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   7,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

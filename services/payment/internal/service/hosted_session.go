@@ -42,49 +42,51 @@ type HostedPaymentSessionView struct {
 type CreateHostedPaymentSessionParams struct {
 	OrderID         uuid.UUID
 	BuyerUserID     uuid.UUID
+	MerchantID      uuid.UUID
+	TotalCents      int64
 	Currency        string
 	ShippingAddress json.RawMessage
+	LineItems       json.RawMessage
 	ReturnURL       string
 }
 
 func (s *Service) CreateHostedPaymentSession(ctx context.Context, p CreateHostedPaymentSessionParams) (HostedPaymentSessionView, error) {
+	if p.MerchantID == uuid.Nil {
+		return HostedPaymentSessionView{}, ErrInvalidSessionFacts
+	}
+	if p.TotalCents <= 0 {
+		return HostedPaymentSessionView{}, ErrInvalidSessionFacts
+	}
 	p.Currency = defaultPaymentCurrency(p.Currency)
+	if len(p.ShippingAddress) == 0 {
+		p.ShippingAddress = json.RawMessage(`{}`)
+	}
+	if len(p.LineItems) == 0 {
+		p.LineItems = json.RawMessage(`[]`)
+	}
 
 	intent, err := loadPaymentIntentByOrderID(ctx, s.queries, p.OrderID)
 	if err == nil {
-		if intent.Status == HostedPaymentSessionStatusSucceeded {
-			return mapDBHostedPaymentSessionView(intent), nil
+		if hostedPaymentSessionIsTerminal(intent.Status) {
+			return HostedPaymentSessionView{}, ErrSessionTerminal
 		}
-		unexpiredPending := intent.Status == HostedPaymentSessionStatusPending && intent.ExpiresAt.Valid && intent.ExpiresAt.Time.After(time.Now().UTC())
-		if unexpiredPending {
-			return mapDBHostedPaymentSessionView(intent), nil
-		}
-		expiresAt := time.Now().UTC().Add(30 * time.Minute)
-		refreshed, err := s.queries.RefreshHostedPaymentSession(ctx, database.RefreshHostedPaymentSessionParams{
-			OrderID:          p.OrderID,
-			PaymentSessionID: dberr.OptionalNullString(uuid.NewString()),
-			ReturnUrl:        p.ReturnURL,
-			ExpiresAt:        dberr.OptionalNullTime(expiresAt),
-		})
-		if err != nil {
-			return HostedPaymentSessionView{}, err
-		}
-		view := mapDBHostedPaymentSessionView(refreshed)
-		sharedlog.InfoContext(
-			ctx, "hosted payment session refreshed",
-			sharedlog.KeyOrderID, view.OrderID,
-			sharedlog.KeyBuyerUserID, p.BuyerUserID.String(),
-			"payment_session_id", view.PaymentSessionID,
-			"currency", view.Currency,
-		)
-		return view, nil
+		return mapDBHostedPaymentSessionView(intent), nil
 	}
 	if !errors.Is(err, ErrIntentNotFound) {
 		return HostedPaymentSessionView{}, err
 	}
 
 	expiresAt := time.Now().UTC().Add(30 * time.Minute)
-	created, err := s.queries.CreateHostedPaymentSession(ctx, database.CreateHostedPaymentSessionParams{
+	tx, err := s.db.BeginTx(ctx, nil)
+	if err != nil {
+		return HostedPaymentSessionView{}, err
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+	q := s.queries.WithTx(tx)
+
+	created, err := q.CreateHostedPaymentSession(ctx, database.CreateHostedPaymentSessionParams{
 		OrderID:          p.OrderID,
 		BuyerUserID:      p.BuyerUserID,
 		Currency:         p.Currency,
@@ -93,8 +95,23 @@ func (s *Service) CreateHostedPaymentSession(ctx context.Context, p CreateHosted
 		PaymentSessionID: dberr.OptionalNullString(uuid.NewString()),
 		ReturnUrl:        p.ReturnURL,
 		ExpiresAt:        dberr.OptionalNullTime(expiresAt),
+		LineItems:        p.LineItems,
 	})
 	if err != nil {
+		return HostedPaymentSessionView{}, err
+	}
+	if _, err := q.CreatePaymentTransaction(ctx, database.CreatePaymentTransactionParams{
+		ID:             uuid.New(),
+		OrderID:        p.OrderID,
+		MerchantID:     p.MerchantID,
+		AmountCents:    p.TotalCents,
+		Currency:       p.Currency,
+		Status:         PaymentTxStatusInitialized,
+		IdempotencyKey: "order:" + p.OrderID.String(),
+	}); err != nil {
+		return HostedPaymentSessionView{}, err
+	}
+	if err := tx.Commit(); err != nil {
 		return HostedPaymentSessionView{}, err
 	}
 
@@ -103,8 +120,10 @@ func (s *Service) CreateHostedPaymentSession(ctx context.Context, p CreateHosted
 		ctx, "hosted payment session created",
 		sharedlog.KeyOrderID, view.OrderID,
 		sharedlog.KeyBuyerUserID, p.BuyerUserID.String(),
+		sharedlog.KeyMerchantID, p.MerchantID.String(),
 		"payment_session_id", view.PaymentSessionID,
 		"currency", view.Currency,
+		"total_cents", p.TotalCents,
 	)
 	return view, nil
 }

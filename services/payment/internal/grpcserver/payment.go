@@ -35,6 +35,24 @@ func hostedPaymentStatusStringToProto(dbStatus string) paymentv1.HostedPaymentSe
 	}
 }
 
+func lineItemsToJSON(items []*paymentv1.HostedPaymentLineItem) (json.RawMessage, error) {
+	if len(items) == 0 {
+		return []byte("[]"), nil
+	}
+	out := make([]map[string]any, 0, len(items))
+	for _, item := range items {
+		if item == nil {
+			continue
+		}
+		out = append(out, map[string]any{
+			"product_id":       strings.TrimSpace(item.GetProductId()),
+			"quantity":         item.GetQuantity(),
+			"unit_price_cents": item.GetUnitPriceCents(),
+		})
+	}
+	return json.Marshal(out)
+}
+
 func addressToJSON(a *paymentv1.Address) (json.RawMessage, error) {
 	if a == nil {
 		return []byte("{}"), nil
@@ -80,20 +98,38 @@ func (s *Server) CreateHostedPaymentSession(ctx context.Context, req *paymentv1.
 	if returnURL == "" {
 		return nil, grpcerr.InvalidArgument("return_url is required")
 	}
+	merchantID, err := grpcerr.ParseUUID(req.GetMerchantId(), "merchant id")
+	if err != nil {
+		return nil, err
+	}
+	if req.GetTotalCents() <= 0 {
+		return nil, grpcerr.InvalidArgument("total_cents must be greater than zero")
+	}
 	shipping, err := addressToJSON(req.GetShippingAddress())
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "shipping_address: %v", err)
+	}
+	lineItems, err := lineItemsToJSON(req.GetItems())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "items: %v", err)
 	}
 
 	session, err := s.svc.CreateHostedPaymentSession(ctx, service.CreateHostedPaymentSessionParams{
 		OrderID:         orderID,
 		BuyerUserID:     buyerID,
+		MerchantID:      merchantID,
+		TotalCents:      req.GetTotalCents(),
 		Currency:        strings.TrimSpace(req.GetCurrency()),
 		ShippingAddress: shipping,
+		LineItems:       lineItems,
 		ReturnURL:       returnURL,
 	})
 	if err != nil {
-		return nil, grpcerr.Internal()
+		return nil, grpcerr.Map(
+			err,
+			grpcerr.Mapping{Err: service.ErrInvalidSessionFacts, Code: codes.InvalidArgument, Message: "merchant_id and total_cents are required"},
+			grpcerr.Mapping{Err: service.ErrSessionTerminal, Code: codes.FailedPrecondition, Message: "hosted payment session is already terminal"},
+		)
 	}
 
 	return &paymentv1.CreateHostedPaymentSessionResponse{
