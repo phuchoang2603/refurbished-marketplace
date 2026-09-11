@@ -40,15 +40,21 @@ message HostedPaymentLineItem {
   string product_id = 1;
   int32 quantity = 2;
   int64 unit_price_cents = 3;
+  string name = 4;
+}
+
+message PartySnapshot {
+  string id = 1;
+  string email = 2;
 }
 
 message CreateHostedPaymentSessionRequest {
   string order_id = 1;
-  string buyer_user_id = 2;
+  PartySnapshot buyer = 2;
   string currency = 3;
   Address shipping_address = 4;
   string return_url = 5;
-  string merchant_id = 6;
+  PartySnapshot merchant = 6;
   int64 total_cents = 7;
   repeated HostedPaymentLineItem items = 8;
 }
