@@ -49,7 +49,7 @@ The payment service MUST create a hosted payment session using `order_id` as the
 
 #### Scenario: Hosted payment session is requested for a new order
 
-- **WHEN** the web edge requests a hosted payment session for an order with buyer, merchant, amount, optional shipping, and return context
+- **WHEN** the web edge requests a hosted payment session for an order with buyer id, merchant id, amount, shipping address, and return context
 - **THEN** the payment service SHALL persist the hosted session and payment transaction and return session metadata including `order_id`, `payment_session_id`, and the return URL
 
 #### Scenario: Hosted payment session is requested again for the same order
@@ -87,17 +87,17 @@ The payment service MUST periodically expire PENDING hosted payment sessions who
 
 ### Requirement: Payment snapshots commerce facts when creating a hosted session
 
-The payment service MUST persist buyer, merchant, amount, currency, optional shipping address, and optional line-item snapshot on hosted-session create so a later fraud gateway can score the attempt without waiting for Kafka.
+The payment service MUST persist nested buyer and merchant snapshots (marketplace ids, optional buyer email), amount, currency, shipping address, and line items (product id, name, quantity, unit price) on hosted-session create so a later fraud gateway can score from stored commerce facts without waiting for Kafka. The payment service MUST NOT call the users service to hydrate party fields.
 
-#### Scenario: Session create includes charge facts
+#### Scenario: Session create includes charge and party facts
 
-- **WHEN** the web edge requests a hosted payment session with `order_id`, buyer, merchant, total cents, currency, and return URL
+- **WHEN** the web edge requests a hosted payment session with `order_id`, nested buyer and merchant ids, total cents, currency, shipping address, named line items, and return URL
 - **THEN** the payment service SHALL store those facts with the session and SHALL create the order payment transaction in the same operation
 
-#### Scenario: Session create includes shipping when provided
+#### Scenario: Session create omits required commerce facts
 
-- **WHEN** the web edge supplies a shipping address on hosted-session create
-- **THEN** the payment service SHALL persist that shipping address on the session
+- **WHEN** the web edge requests a hosted payment session without a usable shipping address (at least line1, city, postal code, and country) or without buyer or merchant id
+- **THEN** the payment service SHALL reject the request and SHALL NOT create a session
 
 ### Requirement: Hosted payment session is one-shot per order
 

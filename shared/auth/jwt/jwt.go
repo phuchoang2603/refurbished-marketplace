@@ -17,6 +17,7 @@ type Claims struct {
 	ID       string
 	Issuer   string
 	Audience string
+	Email    string
 }
 
 func ParseAndValidate(raw, secret, expectedType, expectedIssuer, expectedAudience string) (Claims, error) {
@@ -43,10 +44,11 @@ func ParseAndValidate(raw, secret, expectedType, expectedIssuer, expectedAudienc
 	aud, _ := claimsMap["aud"].(string)
 	sub, _ := claimsMap["sub"].(string)
 	jti, _ := claimsMap["jti"].(string)
+	eml, _ := claimsMap["eml"].(string)
 
 	if typ != expectedType || iss != expectedIssuer || aud != expectedAudience || sub == "" || jti == "" {
 		return Claims{}, ErrInvalidToken
 	}
 
-	return Claims{Subject: sub, Type: typ, ID: jti, Issuer: iss, Audience: aud}, nil
+	return Claims{Subject: sub, Type: typ, ID: jti, Issuer: iss, Audience: aud, Email: eml}, nil
 }

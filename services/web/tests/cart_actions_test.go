@@ -127,14 +127,26 @@ func TestCheckoutRedirectsToHostedPaymentWithoutClearingCart(t *testing.T) {
 			if req.GetOrderId() != "order-1" {
 				t.Fatalf("orderID = %q, want order-1", req.GetOrderId())
 			}
-			if req.GetMerchantId() != "merchant-1" {
-				t.Fatalf("merchant_id = %q, want merchant-1", req.GetMerchantId())
+			if req.GetMerchant().GetId() != "merchant-1" {
+				t.Fatalf("merchant_id = %q, want merchant-1", req.GetMerchant().GetId())
+			}
+			if req.GetBuyer().GetId() != "user-1" {
+				t.Fatalf("buyer_id = %q, want user-1", req.GetBuyer().GetId())
+			}
+			if req.GetBuyer().GetEmail() != "buyer@example.com" {
+				t.Fatalf("buyer email = %q", req.GetBuyer().GetEmail())
+			}
+			if req.GetShippingAddress().GetCountry() != "US" || req.GetShippingAddress().GetLine1() == "" {
+				t.Fatalf("shipping = %+v", req.GetShippingAddress())
 			}
 			if req.GetTotalCents() != 1700 {
 				t.Fatalf("total_cents = %d, want 1700", req.GetTotalCents())
 			}
 			if len(req.GetItems()) != 2 {
 				t.Fatalf("items = %d, want 2", len(req.GetItems()))
+			}
+			if req.GetItems()[0].GetName() != "Phone" || req.GetItems()[1].GetName() != "Case" {
+				t.Fatalf("item names = %q %q", req.GetItems()[0].GetName(), req.GetItems()[1].GetName())
 			}
 			return &paymentv1.CreateHostedPaymentSessionResponse{
 				OrderId:          "order-1",
@@ -144,7 +156,7 @@ func TestCheckoutRedirectsToHostedPaymentWithoutClearingCart(t *testing.T) {
 		},
 	}
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPost, "/cart/checkout", strings.NewReader(url.Values{"merchant_id": {"merchant-1"}, "checkout_intent_key": {"intent-1"}}.Encode()))
+	req := httptest.NewRequest(http.MethodPost, "/cart/checkout", strings.NewReader(checkoutForm(url.Values{"merchant_id": {"merchant-1"}, "checkout_intent_key": {"intent-1"}})))
 	req.Host = "localhost:8080"
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.AddCookie(&http.Cookie{Name: auth.AccessCookieName, Value: signedAccessToken(t, "user-1")})
@@ -271,7 +283,7 @@ func TestCartCheckoutMarksOrderFailedWhenReserveFails(t *testing.T) {
 		},
 	}
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPost, "/cart/checkout", strings.NewReader(url.Values{"merchant_id": {"merchant-1"}, "checkout_intent_key": {"intent-fail"}}.Encode()))
+	req := httptest.NewRequest(http.MethodPost, "/cart/checkout", strings.NewReader(checkoutForm(url.Values{"merchant_id": {"merchant-1"}, "checkout_intent_key": {"intent-fail"}})))
 	req.Host = "localhost:8080"
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.AddCookie(&http.Cookie{Name: auth.AccessCookieName, Value: signedAccessToken(t, "user-1")})
@@ -288,4 +300,49 @@ func TestCartCheckoutMarksOrderFailedWhenReserveFails(t *testing.T) {
 	if paymentCalled {
 		t.Fatal("hosted payment session should not be created when reserve fails")
 	}
+}
+
+func TestCheckoutRejectsMissingShipping(t *testing.T) {
+	created := false
+	cartSvc := &fakes.CartService{
+		GetFn: func(ctx context.Context, cartID string) (*cartv1.Cart, error) {
+			return &cartv1.Cart{
+				CartId: cartID,
+				Items:  []*cartv1.CartItem{{ProductId: "prod-1", Quantity: 1, MerchantId: "merchant-1"}},
+			}, nil
+		},
+	}
+	ordersSvc := &fakes.OrdersService{
+		CreateFn: func(ctx context.Context, buyerUserID, merchantID string, items []*ordersv1.CreateOrderItem, totalCents int64, idempotencyKey string) (*ordersv1.Order, error) {
+			created = true
+			return &ordersv1.Order{Id: "order-1"}, nil
+		},
+	}
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/cart/checkout", strings.NewReader(url.Values{"merchant_id": {"merchant-1"}, "checkout_intent_key": {"intent-1"}}.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.AddCookie(&http.Cookie{Name: auth.AccessCookieName, Value: signedAccessToken(t, "user-1")})
+	req.AddCookie(&http.Cookie{Name: "cart_id", Value: "cart-1"})
+
+	newTestRouter(t, routerDeps{cart: cartSvc, orders: ordersSvc}).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusBadRequest)
+	}
+	if created {
+		t.Fatal("order should not be created without shipping")
+	}
+}
+
+func checkoutForm(extra url.Values) string {
+	v := url.Values{
+		"shipping_line1":       {"1 Main St"},
+		"shipping_city":        {"New York"},
+		"shipping_postal_code": {"10001"},
+		"shipping_country":     {"US"},
+	}
+	for k, vals := range extra {
+		v[k] = vals
+	}
+	return v.Encode()
 }

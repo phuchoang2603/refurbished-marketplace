@@ -48,6 +48,7 @@ func signedAccessToken(t *testing.T, subject string) string {
 		"iss": authconfig.DefaultJWTIssuer,
 		"aud": authconfig.DefaultJWTAudience,
 		"sub": subject,
+		"eml": "buyer@example.com",
 		"jti": "test-token",
 		"exp": time.Now().Add(time.Hour).Unix(),
 	}

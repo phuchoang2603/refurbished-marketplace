@@ -44,13 +44,34 @@ func lineItemsToJSON(items []*paymentv1.HostedPaymentLineItem) (json.RawMessage,
 		if item == nil {
 			continue
 		}
-		out = append(out, map[string]any{
+		row := map[string]any{
 			"product_id":       strings.TrimSpace(item.GetProductId()),
 			"quantity":         item.GetQuantity(),
 			"unit_price_cents": item.GetUnitPriceCents(),
-		})
+		}
+		if name := strings.TrimSpace(item.GetName()); name != "" {
+			row["name"] = name
+		}
+		out = append(out, row)
 	}
 	return json.Marshal(out)
+}
+
+func partyToJSON(p *paymentv1.PartySnapshot) (json.RawMessage, error) {
+	if p == nil {
+		return []byte("{}"), nil
+	}
+	m := map[string]string{}
+	if v := strings.TrimSpace(p.GetId()); v != "" {
+		m["id"] = v
+	}
+	if v := strings.TrimSpace(p.GetEmail()); v != "" {
+		m["email"] = v
+	}
+	if len(m) == 0 {
+		return []byte("{}"), nil
+	}
+	return json.Marshal(m)
 }
 
 func addressToJSON(a *paymentv1.Address) (json.RawMessage, error) {
@@ -90,7 +111,7 @@ func (s *Server) CreateHostedPaymentSession(ctx context.Context, req *paymentv1.
 	if err != nil {
 		return nil, err
 	}
-	buyerID, err := grpcerr.ParseUUID(req.GetBuyerUserId(), "buyer user id")
+	buyerID, err := grpcerr.ParseUUID(req.GetBuyer().GetId(), "buyer id")
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +119,7 @@ func (s *Server) CreateHostedPaymentSession(ctx context.Context, req *paymentv1.
 	if returnURL == "" {
 		return nil, grpcerr.InvalidArgument("return_url is required")
 	}
-	merchantID, err := grpcerr.ParseUUID(req.GetMerchantId(), "merchant id")
+	merchantID, err := grpcerr.ParseUUID(req.GetMerchant().GetId(), "merchant id")
 	if err != nil {
 		return nil, err
 	}
@@ -113,6 +134,14 @@ func (s *Server) CreateHostedPaymentSession(ctx context.Context, req *paymentv1.
 	if err != nil {
 		return nil, status.Errorf(codes.InvalidArgument, "items: %v", err)
 	}
+	buyer, err := partyToJSON(req.GetBuyer())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "buyer: %v", err)
+	}
+	merchant, err := partyToJSON(req.GetMerchant())
+	if err != nil {
+		return nil, status.Errorf(codes.InvalidArgument, "merchant: %v", err)
+	}
 
 	session, err := s.svc.CreateHostedPaymentSession(ctx, service.CreateHostedPaymentSessionParams{
 		OrderID:         orderID,
@@ -122,12 +151,14 @@ func (s *Server) CreateHostedPaymentSession(ctx context.Context, req *paymentv1.
 		Currency:        strings.TrimSpace(req.GetCurrency()),
 		ShippingAddress: shipping,
 		LineItems:       lineItems,
+		Buyer:           buyer,
+		Merchant:        merchant,
 		ReturnURL:       returnURL,
 	})
 	if err != nil {
 		return nil, grpcerr.Map(
 			err,
-			grpcerr.Mapping{Err: service.ErrInvalidSessionFacts, Code: codes.InvalidArgument, Message: "merchant_id and total_cents are required"},
+			grpcerr.Mapping{Err: service.ErrInvalidSessionFacts, Code: codes.InvalidArgument, Message: "buyer, merchant, amount, and shipping are required"},
 			grpcerr.Mapping{Err: service.ErrSessionTerminal, Code: codes.FailedPrecondition, Message: "hosted payment session is already terminal"},
 		)
 	}

@@ -1,0 +1,8 @@
+-- +goose Up
+ALTER TABLE payment_intents
+ADD COLUMN IF NOT EXISTS buyer JSONB NOT NULL DEFAULT '{}'::JSONB,
+ADD COLUMN IF NOT EXISTS merchant JSONB NOT NULL DEFAULT '{}'::JSONB;
+
+-- +goose Down
+ALTER TABLE payment_intents DROP COLUMN IF EXISTS buyer;
+ALTER TABLE payment_intents DROP COLUMN IF EXISTS merchant;

@@ -2,7 +2,9 @@ package cart
 
 import (
 	"net/http"
+	"strings"
 
+	webAuth "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/auth"
 	shared "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
 	cartv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/cart/v1"
 	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
@@ -46,8 +48,13 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 		shared.WriteBadRequest(w, r, "empty cart")
 		return
 	}
+	shipping, ok := shippingAddressFromForm(r)
+	if !ok {
+		shared.WritePopup(w, r, http.StatusBadRequest, "Shipping required", "Enter a shipping address with line 1, city, postal code, and country.")
+		return
+	}
 
-	items, _, totalCents, err := h.buildCheckoutOrderItems(r, cart, merchantID)
+	items, productNames, totalCents, err := h.buildCheckoutOrderItems(r, cart, merchantID)
 	if err != nil {
 		if checkoutErr, ok := err.(*checkoutError); ok {
 			checkoutErr.Write(w, r)
@@ -86,18 +93,23 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 	for _, item := range items {
 		lineItems = append(lineItems, &paymentv1.HostedPaymentLineItem{
 			ProductId:      item.GetProductId(),
+			Name:           productNames[item.GetProductId()],
 			Quantity:       item.GetQuantity(),
 			UnitPriceCents: item.GetUnitPriceCents(),
 		})
 	}
 	hostedSession, err := h.deps.Payment.CreateHostedPaymentSession(r.Context(), &paymentv1.CreateHostedPaymentSessionRequest{
-		OrderId:     order.GetId(),
-		BuyerUserId: buyerUserID,
-		MerchantId:  merchantID,
-		TotalCents:  totalCents,
-		Currency:    "USD",
-		ReturnUrl:   orderPageURL,
-		Items:       lineItems,
+		OrderId: order.GetId(),
+		Buyer: &paymentv1.PartySnapshot{
+			Id:    buyerUserID,
+			Email: webAuth.EmailFromContext(r.Context()),
+		},
+		Merchant:        &paymentv1.PartySnapshot{Id: merchantID},
+		TotalCents:      totalCents,
+		Currency:        "USD",
+		ReturnUrl:       orderPageURL,
+		ShippingAddress: shipping,
+		Items:           lineItems,
 	})
 	if err != nil {
 		shared.WriteGRPCError(w, r, err)
@@ -125,7 +137,7 @@ func (e *checkoutError) Write(w http.ResponseWriter, r *http.Request) {
 	shared.WritePopup(w, r, e.status, e.title, e.message)
 }
 
-func (h *Handler) buildCheckoutOrderItems(r *http.Request, cart *cartv1.Cart, merchantID string) ([]*ordersv1.CreateOrderItem, []string, int64, error) {
+func (h *Handler) buildCheckoutOrderItems(r *http.Request, cart *cartv1.Cart, merchantID string) ([]*ordersv1.CreateOrderItem, map[string]string, int64, error) {
 	selected := make([]*cartv1.CartItem, 0, len(cart.GetItems()))
 	selectedProductIDs := make([]string, 0, len(cart.GetItems()))
 	for _, item := range cart.GetItems() {
@@ -164,6 +176,7 @@ func (h *Handler) buildCheckoutOrderItems(r *http.Request, cart *cartv1.Cart, me
 	}
 
 	items := make([]*ordersv1.CreateOrderItem, 0, len(selected))
+	names := make(map[string]string, len(selected))
 	var totalCents int64
 	for _, item := range selected {
 		product, ok := byID[item.GetProductId()]
@@ -183,11 +196,28 @@ func (h *Handler) buildCheckoutOrderItems(r *http.Request, cart *cartv1.Cart, me
 		}
 		lineTotal := product.GetPriceCents() * int64(item.GetQuantity())
 		totalCents += lineTotal
+		names[item.GetProductId()] = product.GetName()
 		items = append(items, &ordersv1.CreateOrderItem{
 			ProductId:      item.GetProductId(),
 			Quantity:       item.GetQuantity(),
 			UnitPriceCents: product.GetPriceCents(),
 		})
 	}
-	return items, selectedProductIDs, totalCents, nil
+	return items, names, totalCents, nil
+}
+
+func shippingAddressFromForm(r *http.Request) (*paymentv1.Address, bool) {
+	addr := &paymentv1.Address{
+		Name:       strings.TrimSpace(r.FormValue("shipping_name")),
+		Line1:      strings.TrimSpace(r.FormValue("shipping_line1")),
+		Line2:      strings.TrimSpace(r.FormValue("shipping_line2")),
+		City:       strings.TrimSpace(r.FormValue("shipping_city")),
+		Region:     strings.TrimSpace(r.FormValue("shipping_region")),
+		PostalCode: strings.TrimSpace(r.FormValue("shipping_postal_code")),
+		Country:    strings.TrimSpace(r.FormValue("shipping_country")),
+	}
+	if addr.Line1 == "" || addr.City == "" || addr.PostalCode == "" || addr.Country == "" {
+		return nil, false
+	}
+	return addr, true
 }

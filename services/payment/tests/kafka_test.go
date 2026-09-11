@@ -42,7 +42,7 @@ func TestKafkaInventoryReservedHandler_EndToEnd(t *testing.T) {
 		MerchantID:      merchantID,
 		TotalCents:      7500,
 		Currency:        "USD",
-		ShippingAddress: json.RawMessage(`{}`),
+		ShippingAddress: json.RawMessage(`{"line1":"1 Main St","city":"New York","postal_code":"10001","country":"US"}`),
 		ReturnURL:       "/orders/" + orderID.String(),
 	})
 	if err != nil {

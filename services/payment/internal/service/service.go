@@ -12,7 +12,7 @@ var (
 	ErrTransactionNotFound = errors.New("payment transaction not found")
 	ErrSessionMismatch     = errors.New("payment session does not match order")
 	ErrSessionTerminal     = errors.New("hosted payment session is already terminal")
-	ErrInvalidSessionFacts = errors.New("merchant_id and total_cents are required")
+	ErrInvalidSessionFacts = errors.New("buyer, merchant, amount, and shipping are required")
 )
 
 const (

@@ -110,6 +110,11 @@ The web service MUST render cart items grouped by `merchant_id` and expose a sep
 - **WHEN** a buyer submits a merchant-scoped checkout action successfully
 - **THEN** the browser flow SHALL continue into the hosted payment redirect for that created order instead of rendering a marketplace-hosted payment form
 
+#### Scenario: Checkout form collects shipping
+
+- **WHEN** the web service renders a merchant-group checkout action
+- **THEN** the form SHALL include postal shipping fields (name, line1, line2, city, region, postal code, country) submitted with that checkout
+
 ### Requirement: Web renders usable hosted payment return pages
 
 The web service MUST render or redirect to a usable marketplace page when the buyer returns from the hosted payment gateway.
