@@ -14,7 +14,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
-    targetRevision: one-shot-hosted-payment
+    targetRevision: enrich-hosted-session-snapshot
     path: infra/argocd/app-of-apps
     helm:
       values: |
