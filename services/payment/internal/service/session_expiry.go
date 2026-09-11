@@ -14,8 +14,8 @@ import (
 const sessionExpiryBatchSize int32 = 100
 
 // ExpireDueSessions marks PENDING hosted sessions past expires_at as EXPIRED
-// and, when a payment transaction exists, emits payment.failed in the same DB
-// transaction. If no transaction exists yet, inventory.reserved catch-up applies it later.
+// and emits payment.failed in the same DB transaction (the payment row is
+// created with the hosted session).
 func (s *Service) ExpireDueSessions(ctx context.Context) error {
 	due, err := s.queries.ListExpiredPendingHostedSessions(ctx, sessionExpiryBatchSize)
 	if err != nil {
