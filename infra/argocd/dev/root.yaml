@@ -14,7 +14,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
-    targetRevision: place-order-reserve-then-pay
+    targetRevision: one-shot-hosted-payment
     path: infra/argocd/app-of-apps
     helm:
       values: |

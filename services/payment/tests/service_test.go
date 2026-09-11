@@ -30,36 +30,31 @@ func newPaymentFixture(t *testing.T) (*service.Service, *database.Queries) {
 	return service.New(db), queries
 }
 
+func createTestSession(t *testing.T, svc *service.Service, orderID uuid.UUID) service.HostedPaymentSessionView {
+	t.Helper()
+	session, err := svc.CreateHostedPaymentSession(t.Context(), service.CreateHostedPaymentSessionParams{
+		OrderID:         orderID,
+		BuyerUserID:     uuid.New(),
+		MerchantID:      uuid.New(),
+		TotalCents:      3000,
+		Currency:        "USD",
+		ShippingAddress: json.RawMessage(`{}`),
+		LineItems:       json.RawMessage(`[]`),
+		ReturnURL:       "/orders/" + orderID.String(),
+	})
+	if err != nil {
+		t.Fatalf("CreateHostedPaymentSession: %v", err)
+	}
+	return session
+}
+
 func TestPaymentService_ApplyGatewayWebhook(t *testing.T) {
 	t.Run("succeeded updates transaction writes outbox and ignores duplicate apply", func(t *testing.T) {
 		svc, queries := newPaymentFixture(t)
 		ctx := t.Context()
 
 		orderID := uuid.New()
-		buyerID := uuid.New()
-		session, err := svc.CreateHostedPaymentSession(ctx, service.CreateHostedPaymentSessionParams{
-			OrderID:         orderID,
-			BuyerUserID:     buyerID,
-			Currency:        "USD",
-			ShippingAddress: json.RawMessage(`{}`),
-			ReturnURL:       "/orders/" + orderID.String(),
-		})
-		if err != nil {
-			t.Fatalf("CreateHostedPaymentSession: %v", err)
-		}
-
-		_, err = queries.CreatePaymentTransaction(ctx, database.CreatePaymentTransactionParams{
-			ID:             uuid.New(),
-			OrderID:        orderID,
-			MerchantID:     uuid.New(),
-			AmountCents:    3000,
-			Currency:       "USD",
-			Status:         service.PaymentTxStatusInitialized,
-			IdempotencyKey: "order:" + orderID.String(),
-		})
-		if err != nil {
-			t.Fatalf("CreatePaymentTransaction: %v", err)
-		}
+		session := createTestSession(t, svc, orderID)
 
 		txRow, err := queries.GetPaymentTransactionByOrderID(ctx, orderID)
 		if err != nil {
@@ -100,16 +95,7 @@ func TestPaymentService_ExpireDueSessions(t *testing.T) {
 		ctx := t.Context()
 
 		orderID := uuid.New()
-		_, err := svc.CreateHostedPaymentSession(ctx, service.CreateHostedPaymentSessionParams{
-			OrderID:         orderID,
-			BuyerUserID:     uuid.New(),
-			Currency:        "USD",
-			ShippingAddress: json.RawMessage(`{}`),
-			ReturnURL:       "/orders/" + orderID.String(),
-		})
-		if err != nil {
-			t.Fatalf("CreateHostedPaymentSession: %v", err)
-		}
+		_ = createTestSession(t, svc, orderID)
 
 		past := time.Now().UTC().Add(-time.Minute)
 		if err := queries.SetPaymentIntentExpiresAt(ctx, database.SetPaymentIntentExpiresAtParams{
@@ -117,19 +103,6 @@ func TestPaymentService_ExpireDueSessions(t *testing.T) {
 			ExpiresAt: dberr.OptionalNullTime(past),
 		}); err != nil {
 			t.Fatalf("SetPaymentIntentExpiresAt: %v", err)
-		}
-
-		_, err = queries.CreatePaymentTransaction(ctx, database.CreatePaymentTransactionParams{
-			ID:             uuid.New(),
-			OrderID:        orderID,
-			MerchantID:     uuid.New(),
-			AmountCents:    3000,
-			Currency:       "USD",
-			Status:         service.PaymentTxStatusInitialized,
-			IdempotencyKey: "order:" + orderID.String(),
-		})
-		if err != nil {
-			t.Fatalf("CreatePaymentTransaction: %v", err)
 		}
 
 		if err := svc.ExpireDueSessions(ctx); err != nil {
@@ -175,67 +148,13 @@ func TestPaymentService_ExpireDueSessions(t *testing.T) {
 		}
 	})
 
-	t.Run("expired pending without transaction leaves intent expired only", func(t *testing.T) {
-		svc, queries := newPaymentFixture(t)
-		ctx := t.Context()
-
-		orderID := uuid.New()
-		_, err := svc.CreateHostedPaymentSession(ctx, service.CreateHostedPaymentSessionParams{
-			OrderID:         orderID,
-			BuyerUserID:     uuid.New(),
-			Currency:        "USD",
-			ShippingAddress: json.RawMessage(`{}`),
-			ReturnURL:       "/orders/" + orderID.String(),
-		})
-		if err != nil {
-			t.Fatalf("CreateHostedPaymentSession: %v", err)
-		}
-
-		past := time.Now().UTC().Add(-time.Minute)
-		if err := queries.SetPaymentIntentExpiresAt(ctx, database.SetPaymentIntentExpiresAtParams{
-			OrderID:   orderID,
-			ExpiresAt: dberr.OptionalNullTime(past),
-		}); err != nil {
-			t.Fatalf("SetPaymentIntentExpiresAt: %v", err)
-		}
-
-		if err := svc.ExpireDueSessions(ctx); err != nil {
-			t.Fatalf("ExpireDueSessions: %v", err)
-		}
-
-		intent, err := queries.GetPaymentIntentByOrderID(ctx, orderID)
-		if err != nil {
-			t.Fatalf("GetPaymentIntentByOrderID: %v", err)
-		}
-		if intent.Status != service.HostedPaymentSessionStatusExpired {
-			t.Fatalf("intent status: got %q want EXPIRED", intent.Status)
-		}
-
-		outbox, err := queries.ListPaymentOutboxByAggregateID(ctx, orderID)
-		if err != nil {
-			t.Fatalf("ListPaymentOutboxByAggregateID: %v", err)
-		}
-		if len(outbox) != 0 {
-			t.Fatalf("outbox rows: got %d want 0", len(outbox))
-		}
-	})
-
-	t.Run("expired before inventory.reserved emits payment.failed on catch-up", func(t *testing.T) {
+	t.Run("expired before inventory.reserved catch-up is idempotent", func(t *testing.T) {
 		svc, queries := newPaymentFixture(t)
 		ctx := t.Context()
 
 		orderID := uuid.New()
 		merchantID := uuid.New()
-		_, err := svc.CreateHostedPaymentSession(ctx, service.CreateHostedPaymentSessionParams{
-			OrderID:         orderID,
-			BuyerUserID:     uuid.New(),
-			Currency:        "USD",
-			ShippingAddress: json.RawMessage(`{}`),
-			ReturnURL:       "/orders/" + orderID.String(),
-		})
-		if err != nil {
-			t.Fatalf("CreateHostedPaymentSession: %v", err)
-		}
+		_ = createTestSession(t, svc, orderID)
 
 		past := time.Now().UTC().Add(-time.Minute)
 		if err := queries.SetPaymentIntentExpiresAt(ctx, database.SetPaymentIntentExpiresAtParams{
@@ -273,11 +192,7 @@ func TestPaymentService_ExpireDueSessions(t *testing.T) {
 		if len(outbox) != 1 {
 			t.Fatalf("outbox rows: got %d want 1", len(outbox))
 		}
-		if outbox[0].EventType != messaging.EventTypePaymentFailed {
-			t.Fatalf("outbox event: got %q want %q", outbox[0].EventType, messaging.EventTypePaymentFailed)
-		}
 
-		// Retry after inbox ack must remain idempotent.
 		if err := handler(ctx, messaging.KafkaMessage{
 			Topic:     messaging.EventTypeInventoryReserved,
 			Partition: 0,
@@ -300,16 +215,7 @@ func TestPaymentService_ExpireDueSessions(t *testing.T) {
 		ctx := t.Context()
 
 		orderID := uuid.New()
-		session, err := svc.CreateHostedPaymentSession(ctx, service.CreateHostedPaymentSessionParams{
-			OrderID:         orderID,
-			BuyerUserID:     uuid.New(),
-			Currency:        "USD",
-			ShippingAddress: json.RawMessage(`{}`),
-			ReturnURL:       "/orders/" + orderID.String(),
-		})
-		if err != nil {
-			t.Fatalf("CreateHostedPaymentSession: %v", err)
-		}
+		session := createTestSession(t, svc, orderID)
 		past := time.Now().UTC().Add(-time.Minute)
 		if err := queries.SetPaymentIntentExpiresAt(ctx, database.SetPaymentIntentExpiresAtParams{
 			OrderID:   orderID,
@@ -332,4 +238,40 @@ func TestPaymentService_ExpireDueSessions(t *testing.T) {
 			t.Fatalf("intent status: got %q want EXPIRED", intent.Status)
 		}
 	})
+}
+
+func TestPaymentService_CreateHostedPaymentSession_OneShot(t *testing.T) {
+	svc, _ := newPaymentFixture(t)
+	orderID := uuid.New()
+	first := createTestSession(t, svc, orderID)
+	second, err := svc.CreateHostedPaymentSession(t.Context(), service.CreateHostedPaymentSessionParams{
+		OrderID:         orderID,
+		BuyerUserID:     uuid.New(),
+		MerchantID:      uuid.New(),
+		TotalCents:      3000,
+		Currency:        "USD",
+		ShippingAddress: json.RawMessage(`{}`),
+		ReturnURL:       first.ReturnURL,
+	})
+	if err != nil {
+		t.Fatalf("repeat pending create: %v", err)
+	}
+	if second.PaymentSessionID != first.PaymentSessionID {
+		t.Fatalf("session id rotated: %q vs %q", second.PaymentSessionID, first.PaymentSessionID)
+	}
+
+	if err := svc.ApplyGatewayWebhook(t.Context(), orderID, first.PaymentSessionID, service.HostedPaymentSessionStatusFailed, "declined"); err != nil {
+		t.Fatalf("ApplyGatewayWebhook: %v", err)
+	}
+	_, err = svc.CreateHostedPaymentSession(t.Context(), service.CreateHostedPaymentSessionParams{
+		OrderID:     orderID,
+		BuyerUserID: uuid.New(),
+		MerchantID:  uuid.New(),
+		TotalCents:  3000,
+		Currency:    "USD",
+		ReturnURL:   first.ReturnURL,
+	})
+	if !errors.Is(err, service.ErrSessionTerminal) {
+		t.Fatalf("expected ErrSessionTerminal, got %v", err)
+	}
 }

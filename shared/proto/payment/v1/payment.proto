@@ -36,12 +36,21 @@ message Address {
   string country = 7;
 }
 
+message HostedPaymentLineItem {
+  string product_id = 1;
+  int32 quantity = 2;
+  int64 unit_price_cents = 3;
+}
+
 message CreateHostedPaymentSessionRequest {
   string order_id = 1;
   string buyer_user_id = 2;
   string currency = 3;
   Address shipping_address = 4;
   string return_url = 5;
+  string merchant_id = 6;
+  int64 total_cents = 7;
+  repeated HostedPaymentLineItem items = 8;
 }
 
 message CreateHostedPaymentSessionResponse {

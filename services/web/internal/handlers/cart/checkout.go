@@ -82,11 +82,22 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 		shared.WriteBadRequest(w, r, "hosted payment unavailable")
 		return
 	}
+	lineItems := make([]*paymentv1.HostedPaymentLineItem, 0, len(items))
+	for _, item := range items {
+		lineItems = append(lineItems, &paymentv1.HostedPaymentLineItem{
+			ProductId:      item.GetProductId(),
+			Quantity:       item.GetQuantity(),
+			UnitPriceCents: item.GetUnitPriceCents(),
+		})
+	}
 	hostedSession, err := h.deps.Payment.CreateHostedPaymentSession(r.Context(), &paymentv1.CreateHostedPaymentSessionRequest{
 		OrderId:     order.GetId(),
 		BuyerUserId: buyerUserID,
+		MerchantId:  merchantID,
+		TotalCents:  totalCents,
 		Currency:    "USD",
 		ReturnUrl:   orderPageURL,
+		Items:       lineItems,
 	})
 	if err != nil {
 		shared.WriteGRPCError(w, r, err)

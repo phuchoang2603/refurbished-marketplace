@@ -8,17 +8,22 @@ The payment capability defines how reserved orders are charged, how payment outc
 
 ### Requirement: Payment consumes order-created events
 
-The payment service MUST consume successful inventory reservation events and create one payment transaction per order.
+The payment service MUST consume successful inventory reservation events and MUST NOT create a second payment transaction from that path when the transaction already exists from hosted-session create.
 
 #### Scenario: Inventory reservation is received
 
-- **WHEN** the service receives an inventory-reserved event for an order
-- **THEN** it SHALL deduplicate the message and create or update the order payment transaction
+- **WHEN** the service receives an inventory-reserved event for an order that already has a payment transaction
+- **THEN** it SHALL deduplicate the message and SHALL NOT insert another payment transaction for that order
 
 #### Scenario: Inventory reservation fails upstream
 
 - **WHEN** inventory emits a reservation-failed event for an order
 - **THEN** the payment service SHALL NOT create a payment transaction for that order from the failed reservation path
+
+#### Scenario: Terminal session already recorded when reservation arrives
+
+- **WHEN** the hosted session is already FAILED or EXPIRED and `inventory.reserved` is processed
+- **THEN** the service SHALL apply the terminal payment outcome for that order if it has not already been emitted
 
 ### Requirement: Payment emits order-level outcome events after reservation
 
@@ -40,17 +45,17 @@ The payment service MUST store inbox and outbox records in PostgreSQL.
 
 ### Requirement: Payment creates hosted payment sessions by order identifier
 
-The payment service MUST create or reuse a hosted payment session using `order_id` as the idempotency anchor and MUST return hosted-session metadata that the web edge can use to redirect the buyer.
+The payment service MUST create a hosted payment session using `order_id` as the idempotency anchor and MUST return hosted-session metadata that the web edge can use to redirect the buyer.
 
 #### Scenario: Hosted payment session is requested for a new order
 
-- **WHEN** the web edge requests a hosted payment session for an order with buyer, optional shipping, and return context
-- **THEN** the payment service SHALL persist the hosted session state and return session metadata including `order_id`, `payment_session_id`, and the return URL
+- **WHEN** the web edge requests a hosted payment session for an order with buyer, merchant, amount, optional shipping, and return context
+- **THEN** the payment service SHALL persist the hosted session and payment transaction and return session metadata including `order_id`, `payment_session_id`, and the return URL
 
 #### Scenario: Hosted payment session is requested again for the same order
 
-- **WHEN** the web edge repeats the hosted payment session request for an order that already has a stored session
-- **THEN** the payment service SHALL return stored or refreshed session metadata for that `order_id` instead of creating a second independent payment identity
+- **WHEN** the web edge repeats the hosted payment session request for an order that already has a stored PENDING session
+- **THEN** the payment service SHALL return stored session metadata for that `order_id` instead of creating a second independent payment identity
 
 ### Requirement: Payment accepts hosted gateway outcome callbacks
 
@@ -68,28 +73,42 @@ The payment service MUST accept hosted gateway payment outcomes over its interna
 
 ### Requirement: Payment expires abandoned hosted sessions
 
-The payment service MUST periodically expire PENDING hosted payment sessions whose `expires_at` is in the past, mark them EXPIRED, and emit `payment.failed` when a payment transaction exists so downstream services can release reserved stock and fail the order. If no payment transaction exists yet, the service MUST still mark the session EXPIRED and SHALL emit the failure outcome when the transaction is later created from `inventory.reserved`.
+The payment service MUST periodically expire PENDING hosted payment sessions whose `expires_at` is in the past, mark them EXPIRED (distinct from FAILED), and emit `payment.failed` so downstream services can release reserved stock and fail the order.
 
 #### Scenario: Pending session past expires_at is swept
 
 - **WHEN** a hosted payment session remains PENDING after its `expires_at` timestamp
-- **THEN** the payment service SHALL mark the session EXPIRED and, when a payment transaction exists for that order, emit an order-level `payment.failed` outbox event
+- **THEN** the payment service SHALL mark the session EXPIRED and emit an order-level `payment.failed` outbox event
 
-#### Scenario: Session expires before payment transaction exists
+#### Scenario: Gateway reports expired as distinct from declined
 
-- **WHEN** a hosted payment session is marked EXPIRED before `inventory.reserved` creates the payment transaction
-- **THEN** creating that transaction SHALL apply the expired terminal outcome and emit `payment.failed`
+- **WHEN** the hosted gateway posts an EXPIRED outcome for a PENDING session
+- **THEN** the payment service SHALL store status EXPIRED (not FAILED) and SHALL emit `payment.failed` for downstream consumers
 
-### Requirement: Hosted payment session can be refreshed when expired and unpaid
+### Requirement: Payment snapshots commerce facts when creating a hosted session
 
-The payment service MUST allow a repeated hosted-session request for an unpaid order whose previous session is expired or otherwise unusable to produce a new or renewed session the web edge can redirect to, without creating a second order.
+The payment service MUST persist buyer, merchant, amount, currency, optional shipping address, and optional line-item snapshot on hosted-session create so a later fraud gateway can score the attempt without waiting for Kafka.
 
-#### Scenario: Session is requested again while still pending
+#### Scenario: Session create includes charge facts
 
-- **WHEN** the web edge repeats the hosted payment session request for an unpaid order whose session is still pending and unexpired
-- **THEN** the service SHALL return the existing session metadata instead of creating a duplicate pending session
+- **WHEN** the web edge requests a hosted payment session with `order_id`, buyer, merchant, total cents, currency, and return URL
+- **THEN** the payment service SHALL store those facts with the session and SHALL create the order payment transaction in the same operation
 
-#### Scenario: Session is requested again after expiry while unpaid
+#### Scenario: Session create includes shipping when provided
 
-- **WHEN** the web edge requests a hosted payment session for an unpaid order whose previous session is expired
-- **THEN** the service SHALL return usable hosted-session metadata for that same `order_id` so checkout can redirect again
+- **WHEN** the web edge supplies a shipping address on hosted-session create
+- **THEN** the payment service SHALL persist that shipping address on the session
+
+### Requirement: Hosted payment session is one-shot per order
+
+The payment service MUST treat `order_id` as a single payment attempt. It MUST NOT mint a new `payment_session_id` after the session is FAILED, EXPIRED, or SUCCEEDED.
+
+#### Scenario: Repeat create while pending
+
+- **WHEN** the web edge repeats hosted-session create for an order whose session is still PENDING
+- **THEN** the service SHALL return the existing session metadata without creating a second payment identity
+
+#### Scenario: Repeat create after terminal session
+
+- **WHEN** the web edge requests hosted-session create for an order whose session is SUCCEEDED, FAILED, or EXPIRED
+- **THEN** the service SHALL reject the request and SHALL NOT refresh or replace the session

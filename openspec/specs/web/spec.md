@@ -95,7 +95,7 @@ The web service MUST keep checkout scoped to one merchant group per submit when 
 #### Scenario: Buyer checks out one merchant group from the cart
 
 - **WHEN** a buyer submits checkout for a selected merchant group in the cart
-- **THEN** the web service SHALL place one order for only that merchant's items using the submit intent key, call products `ReserveStock` for that order, leave items from other merchants in the cart, request a hosted payment session for the created order, and redirect the browser to the hosted payment URL
+- **THEN** the web service SHALL place one order for only that merchant's items using the submit intent key, call products `ReserveStock` for that order, leave items from other merchants in the cart, request a hosted payment session for the created order including merchant, total cents, optional shipping when present, and optional line items, and redirect the browser to the hosted payment URL
 
 #### Scenario: Merchant group exceeds products batch size at checkout
 
@@ -123,12 +123,12 @@ The web service MUST use the authenticated user's ID as the `merchant_id` value 
 
 ### Requirement: Web handles hosted payment return paths safely
 
-The web service MUST provide browser routes that let a buyer return from the hosted payment gateway into a usable marketplace flow without replaying checkout.
+The web service MUST provide browser routes that let a buyer return from the hosted payment gateway into a usable marketplace flow without replaying checkout or opening a new payment session for that order.
 
 #### Scenario: Buyer returns after hosted payment completion
 
-- **WHEN** the hosted payment gateway redirects the browser back after a successful or failed payment attempt
-- **THEN** the web service SHALL redirect or render the buyer into a usable marketplace page for that order without issuing another checkout mutation
+- **WHEN** the hosted payment gateway redirects the browser back after a successful, failed, or expired payment attempt
+- **THEN** the web service SHALL redirect or render the buyer into a usable marketplace page for that order without issuing another checkout mutation or hosted-session create
 
 #### Scenario: Buyer returns after canceling hosted payment
 
@@ -257,11 +257,11 @@ The web service MUST NOT require cart multi-remove to succeed before redirecting
 - **WHEN** the web service processes a successful terminal hosted-payment callback for an order
 - **THEN** it SHALL remove the corresponding paid product IDs from the buyer cart with a multi-remove when a cart identity is available
 
-### Requirement: Web can resume hosted payment for a pending reserved order
+### Requirement: Web removes cart lines after a terminal hosted payment
 
-The web service MUST let a buyer obtain a hosted payment redirect for an existing unpaid reserved order without placing a second order.
+The web service MUST remove the order's product IDs from the buyer cart after a terminal hosted payment (SUCCEEDED, FAILED, or EXPIRED) when a cart identity is available, so a one-shot failed attempt does not leave those lines for a duplicate checkout of the same reservation.
 
-#### Scenario: Buyer resumes payment from the order page
+#### Scenario: Buyer returns after a failed hosted payment
 
-- **WHEN** a buyer requests to continue payment for their unpaid reserved order
-- **THEN** the web service SHALL hold stock for that order, request a hosted session for that `order_id`, and redirect to the hosted payment URL
+- **WHEN** the buyer opens the order page after hosted payment FAILED or EXPIRED and a `cart_id` cookie is present
+- **THEN** the web service SHALL multi-remove that order's product IDs from the cart

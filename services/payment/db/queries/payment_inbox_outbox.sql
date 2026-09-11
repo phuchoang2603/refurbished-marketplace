@@ -4,6 +4,9 @@ VALUES ($1)
 ON CONFLICT (message_id) DO NOTHING
 RETURNING TRUE;
 
+-- name: CountPaymentInbox :one
+SELECT COUNT(*)::bigint FROM payment_inbox;
+
 -- name: CreatePaymentOutbox :one
 INSERT INTO payment_outbox (
     id, aggregate_id, event_type, payload, tracingspancontext

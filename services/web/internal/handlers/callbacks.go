@@ -71,7 +71,7 @@ func (h *Handler) handleHostedPaymentCallback(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	if statusValue == paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_SUCCEEDED && h.deps.Orders != nil {
+	if carthandlers.HostedSessionDrainsCartStatus(statusValue) && h.deps.Orders != nil {
 		order, err := h.deps.Orders.GetOrderByID(r.Context(), strings.TrimSpace(req.OrderID))
 		if err == nil && order != nil {
 			ids := make([]string, 0, len(order.GetItems()))

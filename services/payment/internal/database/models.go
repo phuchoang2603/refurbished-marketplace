@@ -30,6 +30,7 @@ type PaymentIntent struct {
 	ReturnUrl        string
 	ExpiresAt        sql.NullTime
 	FailureReason    sql.NullString
+	LineItems        json.RawMessage
 }
 
 type PaymentOutbox struct {

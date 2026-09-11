@@ -2,9 +2,7 @@ package orders
 
 import templpkg "github.com/a-h/templ"
 import badge "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/components/badge"
-import button "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/components/button"
 import card "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/components/card"
-import form "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/components/form"
 import page "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/components/page"
 import sharedviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/shared"
 
@@ -64,13 +62,6 @@ templ OrderDetailSection(order sharedviews.OrderView) {
 				}
 			}
 			<p class="text-4xl font-semibold tracking-tight sm:text-5xl">{ sharedviews.FormatCents(order.TotalCents) }</p>
-			if order.CanResumePayment {
-				@form.Form(form.FormArgs{Action: "/orders/" + order.ID + "/pay"}) {
-					@button.Button(button.ButtonArgs{Type: "submit"}) {
-						Resume payment
-					}
-				}
-			}
 			<p><small>Buyer { order.BuyerUserID }</small></p>
 			if len(order.Items) > 0 {
 				<div class="overflow-x-auto rounded-lg border bg-card/40">

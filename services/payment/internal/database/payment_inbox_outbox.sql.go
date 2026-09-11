@@ -11,6 +11,17 @@ import (
 	"github.com/google/uuid"
 )
 
+const countPaymentInbox = `-- name: CountPaymentInbox :one
+SELECT COUNT(*)::bigint FROM payment_inbox
+`
+
+func (q *Queries) CountPaymentInbox(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countPaymentInbox)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const createPaymentOutbox = `-- name: CreatePaymentOutbox :one
 INSERT INTO payment_outbox (
     id, aggregate_id, event_type, payload, tracingspancontext

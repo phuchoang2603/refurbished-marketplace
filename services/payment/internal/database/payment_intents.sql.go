@@ -23,9 +23,10 @@ INSERT INTO payment_intents (
     payment_session_id,
     return_url,
     expires_at,
-    failure_reason
+    failure_reason,
+    line_items
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 RETURNING
     payment_intents.order_id,
     payment_intents.buyer_user_id,
@@ -38,7 +39,8 @@ RETURNING
     payment_intents.payment_session_id,
     payment_intents.return_url,
     payment_intents.expires_at,
-    payment_intents.failure_reason
+    payment_intents.failure_reason,
+    payment_intents.line_items
 `
 
 type CreateHostedPaymentSessionParams struct {
@@ -51,6 +53,7 @@ type CreateHostedPaymentSessionParams struct {
 	ReturnUrl        string
 	ExpiresAt        sql.NullTime
 	FailureReason    sql.NullString
+	LineItems        json.RawMessage
 }
 
 func (q *Queries) CreateHostedPaymentSession(ctx context.Context, arg CreateHostedPaymentSessionParams) (PaymentIntent, error) {
@@ -64,6 +67,7 @@ func (q *Queries) CreateHostedPaymentSession(ctx context.Context, arg CreateHost
 		arg.ReturnUrl,
 		arg.ExpiresAt,
 		arg.FailureReason,
+		arg.LineItems,
 	)
 	var i PaymentIntent
 	err := row.Scan(
@@ -79,6 +83,7 @@ func (q *Queries) CreateHostedPaymentSession(ctx context.Context, arg CreateHost
 		&i.ReturnUrl,
 		&i.ExpiresAt,
 		&i.FailureReason,
+		&i.LineItems,
 	)
 	return i, err
 }
@@ -104,7 +109,8 @@ RETURNING
     payment_intents.payment_session_id,
     payment_intents.return_url,
     payment_intents.expires_at,
-    payment_intents.failure_reason
+    payment_intents.failure_reason,
+    payment_intents.line_items
 `
 
 func (q *Queries) ExpireHostedPaymentSession(ctx context.Context, orderID uuid.UUID) (PaymentIntent, error) {
@@ -123,6 +129,7 @@ func (q *Queries) ExpireHostedPaymentSession(ctx context.Context, orderID uuid.U
 		&i.ReturnUrl,
 		&i.ExpiresAt,
 		&i.FailureReason,
+		&i.LineItems,
 	)
 	return i, err
 }
@@ -140,7 +147,8 @@ SELECT
     payment_intents.payment_session_id,
     payment_intents.return_url,
     payment_intents.expires_at,
-    payment_intents.failure_reason
+    payment_intents.failure_reason,
+    payment_intents.line_items
 FROM payment_intents
 WHERE order_id = $1
 `
@@ -161,6 +169,7 @@ func (q *Queries) GetPaymentIntentByOrderID(ctx context.Context, orderID uuid.UU
 		&i.ReturnUrl,
 		&i.ExpiresAt,
 		&i.FailureReason,
+		&i.LineItems,
 	)
 	return i, err
 }
@@ -178,7 +187,8 @@ SELECT
     payment_intents.payment_session_id,
     payment_intents.return_url,
     payment_intents.expires_at,
-    payment_intents.failure_reason
+    payment_intents.failure_reason,
+    payment_intents.line_items
 FROM payment_intents
 WHERE order_id = $1
 FOR UPDATE
@@ -200,6 +210,7 @@ func (q *Queries) GetPaymentIntentByOrderIDForUpdate(ctx context.Context, orderI
 		&i.ReturnUrl,
 		&i.ExpiresAt,
 		&i.FailureReason,
+		&i.LineItems,
 	)
 	return i, err
 }
@@ -217,7 +228,8 @@ SELECT
     payment_intents.payment_session_id,
     payment_intents.return_url,
     payment_intents.expires_at,
-    payment_intents.failure_reason
+    payment_intents.failure_reason,
+    payment_intents.line_items
 FROM payment_intents
 WHERE
     status = 'PENDING'
@@ -249,6 +261,7 @@ func (q *Queries) ListExpiredPendingHostedSessions(ctx context.Context, limit in
 			&i.ReturnUrl,
 			&i.ExpiresAt,
 			&i.FailureReason,
+			&i.LineItems,
 		); err != nil {
 			return nil, err
 		}
@@ -261,65 +274,6 @@ func (q *Queries) ListExpiredPendingHostedSessions(ctx context.Context, limit in
 		return nil, err
 	}
 	return items, nil
-}
-
-const refreshHostedPaymentSession = `-- name: RefreshHostedPaymentSession :one
-UPDATE payment_intents
-SET
-    status = 'PENDING',
-    payment_session_id = $2,
-    return_url = $3,
-    expires_at = $4,
-    failure_reason = '',
-    updated_at = NOW()
-WHERE
-    order_id = $1
-    AND status IN ('PENDING', 'EXPIRED', 'FAILED')
-RETURNING
-    payment_intents.order_id,
-    payment_intents.buyer_user_id,
-    payment_intents.currency,
-    payment_intents.billing_address,
-    payment_intents.shipping_address,
-    payment_intents.status,
-    payment_intents.created_at,
-    payment_intents.updated_at,
-    payment_intents.payment_session_id,
-    payment_intents.return_url,
-    payment_intents.expires_at,
-    payment_intents.failure_reason
-`
-
-type RefreshHostedPaymentSessionParams struct {
-	OrderID          uuid.UUID
-	PaymentSessionID sql.NullString
-	ReturnUrl        string
-	ExpiresAt        sql.NullTime
-}
-
-func (q *Queries) RefreshHostedPaymentSession(ctx context.Context, arg RefreshHostedPaymentSessionParams) (PaymentIntent, error) {
-	row := q.db.QueryRowContext(ctx, refreshHostedPaymentSession,
-		arg.OrderID,
-		arg.PaymentSessionID,
-		arg.ReturnUrl,
-		arg.ExpiresAt,
-	)
-	var i PaymentIntent
-	err := row.Scan(
-		&i.OrderID,
-		&i.BuyerUserID,
-		&i.Currency,
-		&i.BillingAddress,
-		&i.ShippingAddress,
-		&i.Status,
-		&i.CreatedAt,
-		&i.UpdatedAt,
-		&i.PaymentSessionID,
-		&i.ReturnUrl,
-		&i.ExpiresAt,
-		&i.FailureReason,
-	)
-	return i, err
 }
 
 const setPaymentIntentExpiresAt = `-- name: SetPaymentIntentExpiresAt :exec
@@ -360,7 +314,8 @@ RETURNING
     payment_intents.payment_session_id,
     payment_intents.return_url,
     payment_intents.expires_at,
-    payment_intents.failure_reason
+    payment_intents.failure_reason,
+    payment_intents.line_items
 `
 
 type UpdateHostedPaymentSessionOutcomeParams struct {
@@ -391,6 +346,7 @@ func (q *Queries) UpdateHostedPaymentSessionOutcome(ctx context.Context, arg Upd
 		&i.ReturnUrl,
 		&i.ExpiresAt,
 		&i.FailureReason,
+		&i.LineItems,
 	)
 	return i, err
 }
