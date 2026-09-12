@@ -24,6 +24,6 @@
 
 ## 5. Verify on talos-dev
 
-- [ ] 5.1 Operator Application Healthy; `MongoDBCommunity` Running; `rs.status()` is a replica set
-- [ ] 5.2 Empty change stream opens; products-path probe connects; unenrolled probe fails
+- [x] 5.1 Operator Application Healthy; `MongoDBCommunity` Running; `rs.status()` is a replica set
+- [x] 5.2 Empty change stream opens; products-path probe connects; unenrolled probe fails
 - [x] 5.3 Shop browse/checkout still works without a Mongo driver
