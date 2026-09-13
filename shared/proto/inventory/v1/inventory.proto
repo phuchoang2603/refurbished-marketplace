@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package inventory.v1;
+
+option go_package = "github.com/phuchoang2603/refurbished-marketplace/shared/proto/inventory/v1;inventoryv1";
+
+service InventoryService {
+  rpc GetStock(GetStockRequest) returns (Stock);
+  rpc GetStocksByIDs(GetStocksByIDsRequest) returns (GetStocksByIDsResponse);
+  rpc ReserveStock(ReserveStockRequest) returns (ReserveStockResponse);
+}
+
+message Stock {
+  string product_id = 1;
+  int32 available_qty = 2;
+  int32 reserved_qty = 3;
+}
+
+message GetStockRequest { string product_id = 1; }
+
+message GetStocksByIDsRequest { repeated string product_ids = 1; }
+
+message GetStocksByIDsResponse { repeated Stock stocks = 1; }
+
+message ReserveStockItem {
+  string product_id = 1;
+  int32 quantity = 2;
+}
+
+message ReserveStockRequest {
+  string order_id = 1;
+  string merchant_id = 2;
+  int64 total_cents = 3;
+  repeated ReserveStockItem items = 4;
+}
+
+message ReserveStockResponse {}

@@ -53,7 +53,7 @@ func (h *Handler) handleCreateOrder(w http.ResponseWriter, r *http.Request) {
 		shared.WriteGRPCError(w, r, err)
 		return
 	}
-	if err := shared.HoldStockForOrder(r.Context(), h.deps.Products, h.deps.Orders, order); err != nil {
+	if err := shared.HoldStockForOrder(r.Context(), h.deps.Inventory, h.deps.Orders, order); err != nil {
 		shared.WriteGRPCError(w, r, err)
 		return
 	}

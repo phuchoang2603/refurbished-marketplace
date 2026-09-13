@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/database"
+	"github.com/phuchoang2603/refurbished-marketplace/services/inventory/internal/database"
 	"github.com/phuchoang2603/refurbished-marketplace/shared/messaging"
 	sharedtrace "github.com/phuchoang2603/refurbished-marketplace/shared/observe/trace"
 	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"

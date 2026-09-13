@@ -7,19 +7,21 @@ import (
 )
 
 type Config struct {
-	UsersAddr    string
-	ProductsAddr string
-	OrdersAddr   string
-	CartAddr     string
-	PaymentAddr  string
+	UsersAddr     string
+	ProductsAddr  string
+	InventoryAddr string
+	OrdersAddr    string
+	CartAddr      string
+	PaymentAddr   string
 }
 
 type Clients struct {
-	Users    *UsersClient
-	Products *ProductsClient
-	Orders   *OrdersClient
-	Cart     *CartClient
-	Payment  *PaymentClient
+	Users     *UsersClient
+	Products  *ProductsClient
+	Inventory *InventoryClient
+	Orders    *OrdersClient
+	Cart      *CartClient
+	Payment   *PaymentClient
 }
 
 func New(cfg Config) (*Clients, error) {
@@ -34,10 +36,18 @@ func New(cfg Config) (*Clients, error) {
 		return nil, fmt.Errorf("products grpc client: %w", err)
 	}
 
+	inventoryClient, err := newInventoryClient(cfg.InventoryAddr)
+	if err != nil {
+		closeClient(usersClient)
+		closeClient(productsClient)
+		return nil, fmt.Errorf("inventory grpc client: %w", err)
+	}
+
 	ordersClient, err := newOrdersClient(cfg.OrdersAddr)
 	if err != nil {
 		closeClient(usersClient)
 		closeClient(productsClient)
+		closeClient(inventoryClient)
 		return nil, fmt.Errorf("orders grpc client: %w", err)
 	}
 
@@ -45,6 +55,7 @@ func New(cfg Config) (*Clients, error) {
 	if err != nil {
 		closeClient(usersClient)
 		closeClient(productsClient)
+		closeClient(inventoryClient)
 		closeClient(ordersClient)
 		return nil, fmt.Errorf("cart grpc client: %w", err)
 	}
@@ -53,17 +64,19 @@ func New(cfg Config) (*Clients, error) {
 	if err != nil {
 		closeClient(usersClient)
 		closeClient(productsClient)
+		closeClient(inventoryClient)
 		closeClient(ordersClient)
 		closeClient(cartClient)
 		return nil, fmt.Errorf("payment grpc client: %w", err)
 	}
 
 	return &Clients{
-		Users:    usersClient,
-		Products: productsClient,
-		Orders:   ordersClient,
-		Cart:     cartClient,
-		Payment:  paymentClient,
+		Users:     usersClient,
+		Products:  productsClient,
+		Inventory: inventoryClient,
+		Orders:    ordersClient,
+		Cart:      cartClient,
+		Payment:   paymentClient,
 	}, nil
 }
 
@@ -73,6 +86,7 @@ func (c *Clients) Close() {
 	}
 	closeClient(c.Users)
 	closeClient(c.Products)
+	closeClient(c.Inventory)
 	closeClient(c.Orders)
 	closeClient(c.Cart)
 	closeClient(c.Payment)

@@ -9,9 +9,9 @@ Cilium policy SHALL allow `web` to dial inventory’s gRPC port. The products id
 - **WHEN** web calls inventory ReserveStock after policies are enforced
 - **THEN** the connection is allowed
 
-#### Scenario: Web can seed and read stock
+#### Scenario: Web can read stock
 
-- **WHEN** web calls EnsureStock or stock-read RPCs after policies are enforced
+- **WHEN** web calls stock-read RPCs after policies are enforced
 - **THEN** the connection is allowed
 
 #### Scenario: Unrelated pod is denied

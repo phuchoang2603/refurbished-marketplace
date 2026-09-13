@@ -8,7 +8,7 @@ import (
 
 	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
 
-	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/database"
+	"github.com/phuchoang2603/refurbished-marketplace/services/inventory/internal/database"
 	"github.com/phuchoang2603/refurbished-marketplace/shared/messaging"
 	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
 	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
@@ -19,6 +19,8 @@ import (
 func (s *Service) KafkaReservationHandler() messaging.KafkaHandler {
 	return func(ctx context.Context, msg messaging.KafkaMessage) error {
 		switch msg.Topic {
+		case messaging.EventTypeProductCreated:
+			return s.HandleProductCreated(ctx, msg.Value)
 		case messaging.EventTypeOrderCreated:
 			return s.HandleOrdersCreated(ctx, messaging.KafkaMessageID(msg), msg.Value)
 		case messaging.EventTypePaymentSucceeded, messaging.EventTypePaymentFailed:

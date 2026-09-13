@@ -75,6 +75,46 @@ func (q *Queries) CreateInventory(ctx context.Context, arg CreateInventoryParams
 	return i, err
 }
 
+const getInventoriesByProductIDs = `-- name: GetInventoriesByProductIDs :many
+SELECT
+    inventory.product_id,
+    inventory.available_qty,
+    inventory.reserved_qty,
+    inventory.created_at,
+    inventory.updated_at
+FROM inventory
+WHERE product_id = ANY($1::uuid [])
+`
+
+func (q *Queries) GetInventoriesByProductIDs(ctx context.Context, dollar_1 []uuid.UUID) ([]Inventory, error) {
+	rows, err := q.db.QueryContext(ctx, getInventoriesByProductIDs, pq.Array(dollar_1))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Inventory
+	for rows.Next() {
+		var i Inventory
+		if err := rows.Scan(
+			&i.ProductID,
+			&i.AvailableQty,
+			&i.ReservedQty,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getInventoriesByProductIDsForUpdate = `-- name: GetInventoriesByProductIDsForUpdate :many
 SELECT
     inventory.product_id,

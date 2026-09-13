@@ -7,8 +7,6 @@ package database
 
 import (
 	"context"
-	"database/sql"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -70,30 +68,21 @@ func (q *Queries) CreateProduct(ctx context.Context, arg CreateProductParams) (P
 
 const getProductByID = `-- name: GetProductByID :one
 SELECT
-    products.id, products.name, products.description, products.price_cents, products.merchant_id, products.created_at, products.updated_at,
-    inventory.available_qty,
-    inventory.reserved_qty
+    products.id,
+    products.name,
+    products.description,
+    products.price_cents,
+    products.merchant_id,
+    products.created_at,
+    products.updated_at
 FROM products
-LEFT JOIN inventory ON inventory.product_id = products.id
 WHERE
     id = $1
 `
 
-type GetProductByIDRow struct {
-	ID           uuid.UUID
-	Name         string
-	Description  string
-	PriceCents   int64
-	MerchantID   uuid.UUID
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-	AvailableQty sql.NullInt32
-	ReservedQty  sql.NullInt32
-}
-
-func (q *Queries) GetProductByID(ctx context.Context, id uuid.UUID) (GetProductByIDRow, error) {
+func (q *Queries) GetProductByID(ctx context.Context, id uuid.UUID) (Product, error) {
 	row := q.db.QueryRowContext(ctx, getProductByID, id)
-	var i GetProductByIDRow
+	var i Product
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
@@ -102,44 +91,33 @@ func (q *Queries) GetProductByID(ctx context.Context, id uuid.UUID) (GetProductB
 		&i.MerchantID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.AvailableQty,
-		&i.ReservedQty,
 	)
 	return i, err
 }
 
 const getProductsByIDs = `-- name: GetProductsByIDs :many
 SELECT
-    products.id, products.name, products.description, products.price_cents, products.merchant_id, products.created_at, products.updated_at,
-    inventory.available_qty,
-    inventory.reserved_qty
+    products.id,
+    products.name,
+    products.description,
+    products.price_cents,
+    products.merchant_id,
+    products.created_at,
+    products.updated_at
 FROM products
-LEFT JOIN inventory ON inventory.product_id = products.id
 WHERE
     products.id = ANY($1::uuid [])
 `
 
-type GetProductsByIDsRow struct {
-	ID           uuid.UUID
-	Name         string
-	Description  string
-	PriceCents   int64
-	MerchantID   uuid.UUID
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
-	AvailableQty sql.NullInt32
-	ReservedQty  sql.NullInt32
-}
-
-func (q *Queries) GetProductsByIDs(ctx context.Context, dollar_1 []uuid.UUID) ([]GetProductsByIDsRow, error) {
+func (q *Queries) GetProductsByIDs(ctx context.Context, dollar_1 []uuid.UUID) ([]Product, error) {
 	rows, err := q.db.QueryContext(ctx, getProductsByIDs, pq.Array(dollar_1))
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetProductsByIDsRow
+	var items []Product
 	for rows.Next() {
-		var i GetProductsByIDsRow
+		var i Product
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -148,8 +126,6 @@ func (q *Queries) GetProductsByIDs(ctx context.Context, dollar_1 []uuid.UUID) ([
 			&i.MerchantID,
 			&i.CreatedAt,
 			&i.UpdatedAt,
-			&i.AvailableQty,
-			&i.ReservedQty,
 		); err != nil {
 			return nil, err
 		}

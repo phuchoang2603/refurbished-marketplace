@@ -5,7 +5,7 @@ import (
 
 	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
 
-	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/service"
+	"github.com/phuchoang2603/refurbished-marketplace/services/inventory/internal/service"
 	"github.com/phuchoang2603/refurbished-marketplace/shared/messaging"
 )
 
@@ -14,11 +14,12 @@ func runReservationConsumer(ctx context.Context, svc *service.Service, bootstrap
 		BootstrapServers: bootstrap,
 		GroupID:          groupID,
 		Topics: []string{
+			messaging.EventTypeProductCreated,
 			messaging.EventTypeOrderCreated,
 			messaging.EventTypePaymentSucceeded,
 			messaging.EventTypePaymentFailed,
 		},
-		TracerName: "products",
+		TracerName: "inventory",
 	}, svc.KafkaReservationHandler())
 	if err != nil {
 		return err
@@ -31,7 +32,7 @@ func runReservationConsumer(ctx context.Context, svc *service.Service, bootstrap
 
 	sharedlog.Info(
 		"kafka consumer started",
-		"topics", "orders.created,payment.*",
+		"topics", "products.created,orders.created,payment.*",
 		"group", groupID,
 	)
 	return consumer.Run(ctx)

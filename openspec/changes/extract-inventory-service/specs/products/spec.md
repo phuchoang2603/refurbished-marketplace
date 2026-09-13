@@ -16,21 +16,21 @@ The products service MUST own listing identity and catalog fields. It MUST NOT p
 
 ### Requirement: Products creates listings with initial stock in one logical operation
 
-The products service MUST persist the catalog record for seller-managed listing creation. It MUST NOT seed inventory. Explicit initial stock is required at the web/inventory boundary, not inside products.
+The products service MUST persist the catalog record for seller-managed listing creation. It MUST NOT seed inventory. It SHALL require explicit non-negative initial quantity as creation intent and atomically persist a ProductCreated outbox event with the listing. This intent SHALL NOT be exposed as live catalog stock.
 
 #### Scenario: Seller-managed listing is created
 
 - **WHEN** a trusted internal caller creates a product for an authenticated seller-managed listing
-- **THEN** the service SHALL persist the catalog fields and return the listing identity without writing stock
+- **THEN** the service SHALL persist the catalog fields and creation outbox event atomically, then return the listing identity without waiting for inventory or search
 
 #### Scenario: Seller-managed listing is created without explicit stock
 
 - **WHEN** a caller attempts to create a seller-managed listing without explicit initial stock at the web boundary
-- **THEN** web SHALL reject the request instead of silently defaulting stock; products SHALL NOT invent a quantity
+- **THEN** web and products SHALL reject missing initial quantity instead of silently defaulting it; explicit zero SHALL be accepted and negative quantity rejected
 
 ### Requirement: Products exposes internal gRPC methods
 
-The products service MUST expose internal gRPC methods for catalog reads and listing creation and deletion. It MUST NOT expose ReserveStock.
+The products service MUST expose internal gRPC methods for catalog reads and listing creation. It MUST NOT expose ReserveStock.
 
 #### Scenario: Product lookup occurs
 
@@ -68,14 +68,29 @@ The products service MUST expose a batch read that returns catalog rows for a se
 
 ## ADDED Requirements
 
-### Requirement: Products deletes a listing
+### Requirement: Products durably publishes ProductCreated
 
-The products service MUST delete a catalog listing by id so web can compensate a failed EnsureStock.
+Products SHALL write a ProductCreated outbox record in the same transaction as catalog creation and publish it via CDC to `products.created`, keyed by product id. The event SHALL contain a stable event id, schema version, occurrence time, product id, initial product version, catalog name/description/price/merchant fields, and explicit initial quantity. Retries SHALL preserve event identity. Inventory and the future Meilisearch projector SHALL be able to consume the topic independently.
 
-#### Scenario: Compensating delete after inventory seed fails
+#### Scenario: Listing and event commit together
 
-- **WHEN** web requests delete for a listing id it just created because EnsureStock failed
-- **THEN** the listing SHALL be removed from the catalog store and SHALL NOT remain visible on subsequent Get by id
+- **WHEN** CreateProduct succeeds
+- **THEN** both listing and durable event SHALL exist, even if Kafka or a consumer is temporarily unavailable
+
+#### Scenario: Outbox persistence fails
+
+- **WHEN** either the listing write or outbox write fails
+- **THEN** the transaction SHALL roll back both and CreateProduct SHALL fail
+
+#### Scenario: Publication resumes after an outage
+
+- **WHEN** Kafka publication resumes after a committed creation was delayed
+- **THEN** the retained outbox event SHALL be published with its original identity without requiring the seller to recreate the listing
+
+#### Scenario: Consumers progress independently
+
+- **WHEN** one consumer group is delayed or replays ProductCreated
+- **THEN** that group's progress SHALL NOT acknowledge or advance another group's consumption
 
 ## REMOVED Requirements
 

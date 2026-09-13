@@ -72,6 +72,8 @@ type ProductView struct {
 	Description string
 	PriceCents  int64
 	Stock       int32
+	StockState  string
+	JustCreated bool
 	CreatedAt   string
 	UpdatedAt   string
 }

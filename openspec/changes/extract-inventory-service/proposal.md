@@ -1,38 +1,36 @@
 ## Why
 
-Epic [#55](https://github.com/phuchoang2603/refurbished-marketplace/issues/55) split **data** (Mongo listings vs Postgres stock) but kept one products binary. That collocation is the wrong runtime boundary now: reservations, Kafka inventory outbox, and catalog documents should scale and fail independently. This change extracts **inventory as its own service** and leaves products as catalog (Mongo in P1 of the epic). Shop-dev data MAY be wiped; browse stays dark until Meilisearch (#7).
+Inventory reservations and catalog documents need independent runtimes. Listing creation also needs a durable event that inventory and the future Meilisearch projector can consume independently. `ProductCreated` replaces the synchronous web stock-seeding saga; a persisted listing can remain pending while consumers catch up.
 
 ## What Changes
 
-- Add `services/inventory` (gRPC, own `inventory_db`, goose/sqlc, reservation Kafka consumer + `inventory_outbox`).
-- Move `ReserveStock`, reservation records, and inventory qty out of the products process. **BREAKING** for callers that hit `products.v1.ReserveStock`.
-- Products is catalog only. It SHALL NOT gRPC inventory. `CreateProduct` persists the listing and returns; web then `EnsureStock`. On inventory failure web compensating-deletes the listing.
-- `GetProductByID` / `GetProductsByIDs` return catalog fields only (no live qty join). PDP qty comes from a later read model (`InventoryUpdated` → Mongo/Meili) or an optional **web→inventory** GetStock until that projector exists.
-- Add-to-cart copies name/price from the page snapshot; no second GetProduct. Checkout re-batch products for price SoR and calls inventory `ReserveStock`.
-- Drop `inventory.product_id` FK to `products`. Wipe talos-dev catalog/inventory rather than backfill.
-- `ListProducts` is not replaced here; storefront list stays dark until #7.
-- Helm, GHCR, Cilium, Doppler/ESO, CNPG cluster, and mesh policy for the new Deployment.
+- Add `services/inventory` with its own `inventory_db`, gRPC stock reads and ReserveStock, reservation Kafka consumer, inbox, and outbox. Remove reservations and live stock from products.
+- Products atomically persists the catalog listing and a `ProductCreated` outbox event on `products.created`. The event carries catalog fields, explicit non-negative initial quantity, event identity, schema version, product version, and occurrence time; Kafka records are keyed by product id.
+- Inventory consumes ProductCreated in its own consumer group and seeds stock transactionally and idempotently. EnsureStock is an internal operation, not a gRPC API.
+- Web creates the listing with the requested initial quantity and reports creation with availability pending. Remove web EnsureStock and compensating deletion. Products never calls inventory.
+- Catalog reads have no live stock join. Web may GetStock on the PDP until the projected read model exists; missing stock is pending and read failures are unavailable, never invented zero stock.
+- Add-to-cart stamps the PDP snapshot. Checkout re-batches catalog prices and synchronously calls inventory ReserveStock.
+- The future Meilisearch projector consumes the same catalog event independently, plus InventoryUpdated for availability. Implementing Meilisearch and catalog update/delete events remains #7.
+- Retarget inventory CDC to inventory_db; add the products outbox connector/topic, Helm/runtime configuration, GHCR images, Cilium policy, secrets, and CI enrollment.
+- Shop-dev data may be wiped; no backfill. Browse stays dark until #7.
 
 ## Capabilities
 
 ### New Capabilities
 
-- `inventory`: Stock ledger, reservations, EnsureStock, ReserveStock, Kafka reservation path, own Postgres. No catalog documents.
+- `inventory`: Independent stock ledger, idempotent ProductCreated initialization, reservations, stock reads, and reservation Kafka.
 
 ### Modified Capabilities
 
-- `products`: Catalog only; no ReserveStock; no inventory RPC; Get* has no stock join; compensating delete for failed EnsureStock.
-- `web`: Orchestrates create (products then inventory) and checkout reserve; stamps cart from the PDP snapshot; may GetStock for PDP until the read model exists.
-- `argocd-gitops`: Marketplace chart deploys inventory alongside products.
-- `cilium-mesh-policy`: Documented identities for web→inventory only (not products→inventory).
-- `external-secrets`: Doppler keys for `inventory_db` / inventory app secret.
+- `products`: Catalog-only reads and durable ProductCreated publication; no inventory RPC or live quantity ownership.
+- `web`: Asynchronous listing readiness, snapshot stamping, and synchronous checkout reserve.
+- `argocd-gitops`: Inventory workload plus products creation-event transport.
+- `cilium-mesh-policy`: Web stock reads/reserve only; no products-to-inventory access.
+- `external-secrets`: Inventory database credentials through Doppler/ESO.
+- `github-actions-ci`: Inventory lint, path filters, tests, and vulnerability scans.
 
 ## Impact
 
-- New proto `shared/proto/inventory/v1`, products proto drops reservation RPCs.
-- `services/products` loses inventory SQL, Kafka consumer, ReserveStock.
-- `services/web` clients and Cilium CNPs.
-- CNPG: new Cluster; products_db migrations drop `products` FK and move/drop inventory tables (wipe).
-- CI module tests, GHCR image, `docs/` ownership notes.
-- Architecture: `docs/catalog-inventory-search.md`. Does **not** implement Meilisearch. Does **not** require Mongo outbox for stock.
-- Reverses “no inventory microservice” in epic #55 / archived merge-catalog-service notes; update those issues/docs when applying.
+Use the current SQL catalog plus a transactional products outbox and Debezium now. The Mongo catalog cutover (#57) must preserve atomic listing/event persistence with an equivalent durable mechanism. Requested initial quantity is creation intent, not live catalog stock. Meilisearch (#7) remains a future consumer; this change establishes its catalog event source without building the projector.
+
+Architecture and migration decisions are in `docs/catalog-inventory-search.md`. This supersedes the synchronous EnsureStock/compensating-delete plan and the earlier decision against ProductCreated. Reservation event contracts remain compatible while ownership moves to inventory.

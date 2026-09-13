@@ -2,6 +2,7 @@ go 1.26.5
 
 use (
 	./services/cart
+	./services/inventory
 	./services/orders
 	./services/payment
 	./services/products

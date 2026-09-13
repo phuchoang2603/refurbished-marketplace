@@ -10,7 +10,7 @@ The inventory service SHALL persist `available_qty` and `reserved_qty` per produ
 
 #### Scenario: Stock row exists without a SQL catalog table
 
-- **WHEN** EnsureStock is called with a product id that exists only as a catalog document elsewhere
+- **WHEN** ProductCreated is consumed with a product id that exists only as a catalog document elsewhere
 - **THEN** inventory persists a stock row keyed by that id
 
 #### Scenario: Unknown identity cannot mutate stock
@@ -18,24 +18,39 @@ The inventory service SHALL persist `available_qty` and `reserved_qty` per produ
 - **WHEN** a caller other than documented internal identities invokes mutating inventory RPCs
 - **THEN** the request is rejected at the mesh or service boundary
 
-### Requirement: EnsureStock seeds initial quantity
+### Requirement: Inventory seeds stock from ProductCreated
 
-Inventory SHALL expose an internal RPC that creates (or is idempotent for) a stock row for a product id with an explicit non-negative initial available quantity.
+Inventory SHALL consume ProductCreated on `products.created` in a consumer group independent of the future search projector. It SHALL validate an explicit non-negative initial quantity and atomically persist the event id in its inbox with a stock row whose reserved quantity is zero. EnsureStock SHALL remain an internal operation and SHALL NOT be exposed over gRPC.
 
 #### Scenario: First seed succeeds
 
-- **WHEN** web calls EnsureStock after persisting a listing with a valid initial quantity
-- **THEN** inventory stores that available quantity and reserved quantity zero
+- **WHEN** inventory consumes a valid ProductCreated for an unseeded product
+- **THEN** it SHALL commit the inbox record and initial stock together before acknowledging processing
 
 #### Scenario: Duplicate seed for the same product
 
-- **WHEN** EnsureStock is retried for an id that already has a row
-- **THEN** inventory SHALL NOT double the quantity and SHALL treat the call as success if the existing row matches the seed intent (same product id already seeded)
+- **WHEN** a creation event is redelivered or replayed after the product has been seeded, including after reservations have changed its quantities
+- **THEN** inventory SHALL NOT add, reset, or overwrite stock and SHALL treat a matching seed intent as successfully processed
 
-#### Scenario: Missing initial quantity
+#### Scenario: Conflicting seed intent
 
-- **WHEN** EnsureStock is called without an explicit initial quantity
-- **THEN** inventory SHALL reject the request
+- **WHEN** a creation event attempts to seed an existing product with conflicting creation intent
+- **THEN** inventory SHALL preserve the existing ledger and surface a processing error rather than reset quantity
+
+#### Scenario: Missing or invalid initial quantity
+
+- **WHEN** ProductCreated omits initial quantity or carries a negative quantity
+- **THEN** inventory SHALL reject processing without seeding stock or recording successful consumption
+
+#### Scenario: Consumer fails before commit
+
+- **WHEN** creation-event processing fails before its database transaction commits
+- **THEN** neither successful inbox consumption nor initial stock SHALL be committed, and transient failures SHALL remain retryable without deleting the catalog listing
+
+#### Scenario: Consumer retries after commit
+
+- **WHEN** the stock transaction committed but delivery is retried before acknowledgement completed
+- **THEN** inventory SHALL recognize the committed event and SHALL NOT seed stock again
 
 ### Requirement: Inventory manages reservations
 

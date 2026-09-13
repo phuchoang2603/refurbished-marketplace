@@ -14,7 +14,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
-    targetRevision: deploy-mongodb-mck-catalog
+    targetRevision: split-runtime
     path: infra/argocd/app-of-apps
     helm:
       values: |

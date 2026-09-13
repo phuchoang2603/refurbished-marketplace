@@ -17,11 +17,11 @@ The web service MUST expose protected browser routes that let an authenticated u
 #### Scenario: Authenticated seller submits a product form
 
 - **WHEN** an authenticated browser submits valid product details and an initial quantity
-- **THEN** the web service SHALL call products to persist the catalog record, then inventory EnsureStock with that quantity, and on EnsureStock failure SHALL delete the listing and SHALL NOT return success
+- **THEN** the web service SHALL call products with catalog details and explicit initial quantity, and after the listing and creation event commit SHALL report listing creation with availability processing; it SHALL NOT call EnsureStock or compensating-delete the listing
 
 #### Scenario: Seller creation dependencies are unavailable
 
-- **WHEN** a seller product creation request reaches the web service and a required downstream service is unavailable
+- **WHEN** a seller product creation request reaches the web service and products cannot durably persist the listing and creation event
 - **THEN** the web service SHALL return a browser-friendly error response that matches the current popup-or-fragment mutation conventions
 
 ### Requirement: Web keeps checkout scoped to one merchant group
@@ -66,3 +66,29 @@ The web service MUST write product name and unit price onto the cart item from t
 
 - **WHEN** a cart mutation (remove or set quantity to zero) leaves the cart with no items
 - **THEN** the web service SHALL clear the browser `cart_id` cookie so the next cart action does not keep an empty cart document identity
+
+## ADDED Requirements
+
+### Requirement: Web distinguishes pending stock from unavailable stock
+
+Web SHALL allow listing creation to succeed independently of inventory consumption. Until a read model exists, web MAY call GetStock once on PDP. A missing row SHALL be shown as availability processing, a read failure as availability unavailable, and an existing zero-quantity row as out of stock. Purchase controls SHALL be disabled while availability is pending or unavailable.
+
+#### Scenario: Inventory has not consumed creation
+
+- **WHEN** a newly created listing exists but its stock row is not found
+- **THEN** web SHALL display pending availability without inventing zero stock or deleting the listing
+
+#### Scenario: Stock read fails
+
+- **WHEN** inventory cannot serve the PDP stock read
+- **THEN** web SHALL display unavailable availability without claiming the product is out of stock
+
+#### Scenario: Checkout arrives before stock initialization
+
+- **WHEN** a buyer attempts checkout before the inventory row exists
+- **THEN** synchronous ReserveStock SHALL fail, web SHALL fail the created order, and web SHALL NOT initiate hosted payment
+
+#### Scenario: Inventory consumer is delayed during creation
+
+- **WHEN** products commits the listing and ProductCreated while inventory consumption is delayed
+- **THEN** web SHALL report listing creation without waiting for stock initialization or invoking compensation
