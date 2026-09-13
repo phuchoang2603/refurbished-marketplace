@@ -33,6 +33,9 @@ spec:
           kafka:
             valueFiles:
               - values-prod.yaml
+          mongodb:
+            valueFiles:
+              - values-prod.yaml
           cloudflare-tunnel:
             valueFiles:
               - values-prod.yaml

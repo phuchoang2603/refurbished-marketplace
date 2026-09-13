@@ -33,6 +33,16 @@ apps:
     path: infra/charts/operators/strimzi
     releaseName: strimzi-cluster-operator
     namespace: operators
+  mongodb-operator:
+    syncWave: "0"
+    path: infra/charts/operators/mongodb
+    releaseName: mongodb-operator
+    namespace: operators
+  mongodb:
+    syncWave: "2"
+    path: infra/charts/mongodb
+    releaseName: catalog-mongodb
+    namespace: ecommerce
   observability:
     syncWave: "1"
     path: infra/charts/observability

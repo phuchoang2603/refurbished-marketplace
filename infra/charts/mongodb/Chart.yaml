@@ -1,0 +1,6 @@
+apiVersion: v2
+name: mongodb
+description: MongoDB Community replica set (MCK MongoDBCommunity) for catalog documents
+type: application
+version: 0.1.0
+appVersion: "8.0.9"

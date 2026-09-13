@@ -1,0 +1,35 @@
+# Talos-dev shape. Do not put Doppler config names here.
+name: catalog-mongodb
+version: "8.0.9"
+members: 1
+
+user:
+  name: catalog
+  database: catalog
+  passwordSecretName: mongodb-catalog-app
+  passwordSecretKey: password
+  scramCredentialsSecretName: catalog-mongodb-scram
+
+persistence:
+  size: 2Gi
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 512Mi
+
+wiredTigerCacheSizeGB: 0.25
+
+externalSecrets:
+  enabled: true
+  refreshInterval: 1h
+  remoteKey: MONGODB_APP_PASSWORD
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: doppler
+
+meshPolicy:
+  enforce: true
