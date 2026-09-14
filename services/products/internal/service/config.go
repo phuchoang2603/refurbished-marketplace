@@ -33,7 +33,7 @@ func ValidateConfig(cfg Config) error {
 		return errors.New("GRPC_ADDR is required")
 	}
 	if strings.TrimSpace(cfg.MongoURI) == "" {
-		return errors.New("Mongo connection (MONGO_URI or MONGO_ADDR, MONGO_USER, MONGO_PASSWORD) is required")
+		return errors.New("mongo connection (MONGO_URI or MONGO_ADDR, MONGO_USER, MONGO_PASSWORD) is required")
 	}
 	return nil
 }
