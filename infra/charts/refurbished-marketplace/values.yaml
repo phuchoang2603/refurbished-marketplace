@@ -128,6 +128,13 @@ services:
       replicaSet: catalog-mongodb
       secretName: mongodb-catalog-app
       passwordKey: password
+    initResources:
+      requests:
+        cpu: 25m
+        memory: 128Mi
+      limits:
+        cpu: 200m
+        memory: 256Mi
 
   search:
     enabled: true

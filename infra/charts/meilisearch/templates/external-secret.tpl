@@ -5,7 +5,7 @@ metadata:
   name: {{ .Values.externalSecrets.secretName }}
   namespace: {{ .Release.Namespace }}
   annotations:
-    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-wave: "-1"
 spec:
   refreshInterval: {{ .Values.externalSecrets.refreshInterval | quote }}
   secretStoreRef:
