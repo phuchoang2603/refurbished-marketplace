@@ -36,6 +36,7 @@ func productManagementUnavailableView() sharedviews.UnavailableView {
 func (h *Handler) RegisterPages(r chi.Router) {
 	r.Get("/", h.handleListProducts)
 	r.Get("/products", h.handleListProducts)
+	r.Get("/products/suggest", h.handleCatalogSuggest)
 	r.Get("/products/{id}", h.handleGetProductByID)
 }
 
@@ -106,7 +107,29 @@ func (h *Handler) handleListProducts(w http.ResponseWriter, r *http.Request) {
 	shared.WriteHTML(w, r, http.StatusOK, productviews.ProductsPage(items, query))
 }
 
-const maxCatalogQueryRunes = 200
+const (
+	maxCatalogQueryRunes   = 200
+	minCatalogSuggestRunes = 2
+	catalogSuggestLimit    = 8
+)
+
+func (h *Handler) handleCatalogSuggest(w http.ResponseWriter, r *http.Request) {
+	query := catalogSearchQuery(r)
+	if utf8.RuneCountInString(query) < minCatalogSuggestRunes || h.deps.Search == nil {
+		shared.WriteFragment(w, r, http.StatusOK, "#catalog-suggest", productviews.CatalogSuggest(nil))
+		return
+	}
+	resp, err := h.deps.Search.SearchProducts(r.Context(), query, "", catalogSuggestLimit, 0)
+	if err != nil {
+		shared.WriteFragment(w, r, http.StatusOK, "#catalog-suggest", productviews.CatalogSuggest(nil))
+		return
+	}
+	items := make([]sharedviews.ProductView, 0, len(resp.Listings))
+	for _, hit := range resp.Listings {
+		items = append(items, mapListingHit(hit, false))
+	}
+	shared.WriteFragment(w, r, http.StatusOK, "#catalog-suggest", productviews.CatalogSuggest(items))
+}
 
 func catalogSearchQuery(r *http.Request) string {
 	query := strings.TrimSpace(r.URL.Query().Get("q"))

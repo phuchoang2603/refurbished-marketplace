@@ -309,6 +309,16 @@ The web service MUST render the public catalog and the authenticated seller prod
 - **WHEN** a browser submits a text query on the public catalog
 - **THEN** the web service SHALL call search SearchProducts with that text, without a merchant filter, and render matching catalog hits
 
+#### Scenario: Public catalog suggests listings while typing
+
+- **WHEN** a browser types at least two characters into the public catalog search box
+- **THEN** the web service SHALL call search SearchProducts with that text, limit at most eight hits, and render listing name suggestions without replacing the catalog grid
+
+#### Scenario: Short catalog prefix does not suggest
+
+- **WHEN** a browser types fewer than two characters into the public catalog search box
+- **THEN** the web service SHALL NOT query search for suggestions
+
 #### Scenario: Browse cards omit stock
 
 - **WHEN** the public catalog page renders listing cards

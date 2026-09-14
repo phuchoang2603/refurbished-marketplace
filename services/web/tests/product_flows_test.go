@@ -162,6 +162,48 @@ func TestProductsPageForwardsCatalogQuery(t *testing.T) {
 	}
 }
 
+func TestCatalogSuggestReturnsNamesWithoutGrid(t *testing.T) {
+	searchSvc := &fakes.SearchService{
+		SearchFn: func(ctx context.Context, query, merchantID string, limit, offset int32) (*searchv1.SearchProductsResponse, error) {
+			if query != "phone" || merchantID != "" || limit != 8 {
+				t.Fatalf("query=%q merchant=%q limit=%d", query, merchantID, limit)
+			}
+			return &searchv1.SearchProductsResponse{Listings: []*searchv1.ListingHit{
+				{Id: "prod-1", Name: "Refurbished Phone", PriceCents: 25999},
+			}}, nil
+		},
+	}
+	rec := httptest.NewRecorder()
+	newTestRouter(t, routerDeps{search: searchSvc}).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/products/suggest?q=phone", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, "Refurbished Phone") || !strings.Contains(body, "/products/prod-1") {
+		t.Fatalf("body missing suggestion in %q", body)
+	}
+	if strings.Contains(body, "Browse quality refurbished") {
+		t.Fatalf("suggest must not render the catalog grid in %q", body)
+	}
+}
+
+func TestCatalogSuggestSkipsShortQuery(t *testing.T) {
+	searchSvc := &fakes.SearchService{
+		SearchFn: func(ctx context.Context, query, merchantID string, limit, offset int32) (*searchv1.SearchProductsResponse, error) {
+			t.Fatalf("search called for short query=%q", query)
+			return nil, nil
+		},
+	}
+	rec := httptest.NewRecorder()
+	newTestRouter(t, routerDeps{search: searchSvc}).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/products/suggest?q=p", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+	if !strings.Contains(rec.Body.String(), `id="catalog-suggest"`) {
+		t.Fatalf("missing suggest root in %q", rec.Body.String())
+	}
+}
+
 func TestProductDetailHidesCartFormForOwner(t *testing.T) {
 	stock := int32(4)
 	productsSvc := &fakes.ProductsService{

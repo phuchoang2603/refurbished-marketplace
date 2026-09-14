@@ -31,11 +31,26 @@ templ ProductListSection(products []sharedviews.ProductView, query string) {
 		@page.Header("Products", "Browse quality refurbished tech, verified devices, and sustainable deals from trusted sellers.")
 		@card.CardContent(card.CardContentArgs{Class: "grid gap-4"}) {
 			<form method="get" action="/products" class="flex flex-wrap items-end gap-3" role="search">
-				@form.FormItem(form.FormItemArgs{Class: "min-w-60 flex-1"}) {
+				@form.FormItem(form.FormItemArgs{Class: "relative min-w-60 flex-1"}) {
 					@form.FormLabel(form.FormLabelArgs{For: "catalog-query"}) {
 						Search listings
 					}
-					@input.Input(input.InputArgs{ID: "catalog-query", Name: "q", Type: "search", Value: query, Placeholder: "Name or description", Autocomplete: "off"})
+					@input.Input(input.InputArgs{
+						ID:           "catalog-query",
+						Name:         "q",
+						Type:         "search",
+						Value:        query,
+						Placeholder:  "Name or description",
+						Autocomplete: "off",
+						Attributes: templpkg.Attributes{
+							"role":                          "combobox",
+							"aria-autocomplete":             "list",
+							"aria-controls":                 "catalog-suggest",
+							"aria-haspopup":                 "listbox",
+							"data-on:input__debounce.200ms": "@get('/products/suggest?q=' + encodeURIComponent(el.value.trim()))",
+						},
+					})
+					@CatalogSuggest(nil)
 				}
 				@button.Button(button.ButtonArgs{Type: "submit", Class: "w-full sm:w-fit"}) {
 					Search
@@ -72,6 +87,23 @@ templ ProductListSection(products []sharedviews.ProductView, query string) {
 			}
 		}
 	}
+}
+
+templ CatalogSuggest(products []sharedviews.ProductView) {
+	<ul
+		id="catalog-suggest"
+		role="listbox"
+		class={ "absolute z-10 mt-1 max-h-72 w-full overflow-auto rounded-md border bg-popover p-1 text-sm shadow-md", templ.KV("hidden", len(products) == 0) }
+	>
+		for _, product := range products {
+			<li role="option">
+				<a class="flex items-center justify-between gap-3 rounded-sm px-3 py-2 hover:bg-accent hover:text-accent-foreground" href={ "/products/" + product.ID }>
+					<span class="truncate font-medium">{ product.Name }</span>
+					<span class="shrink-0 text-muted-foreground">{ sharedviews.FormatCents(product.PriceCents) }</span>
+				</a>
+			</li>
+		}
+	</ul>
 }
 
 templ ProductDetailSection(product sharedviews.ProductView) {

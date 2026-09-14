@@ -61,7 +61,7 @@ Broker or consumer downtime may delay stock readiness or browse visibility, but 
 
 ## Browse vs PDP
 
-Public `/` and `/products` call search `SearchProducts`. An empty `q` browses; a non-empty `q` is a text query against indexed name and description. Seller `/seller/products` calls `SearchProducts` with the authenticated merchant filter. Browse and seller cards show catalog fields only (no live stock). If search or Meilisearch is down, web shows a localized catalog unavailable page and does not fall back to a Mongo listing scan.
+Public `/` and `/products` call search `SearchProducts`. An empty `q` browses; a non-empty `q` is a text query against indexed name and description. Typing in the catalog box GETs `/products/suggest` (two or more characters, at most eight hits) for name suggestions; the grid updates only on submit. Seller `/seller/products` calls `SearchProducts` with the authenticated merchant filter. Browse and seller cards show catalog fields only (no live stock). If search or Meilisearch is down, web shows a localized catalog unavailable page and does not fall back to a Mongo listing scan.
 
 Product detail stays on products `GetProductByID` plus inventory `GetStock`. A missing stock row means initialization is pending, a transport failure means availability is unavailable, and an existing row with zero available quantity means out of stock. Do not collapse these into zero. Disable purchase controls while availability is pending or unavailable.
 
