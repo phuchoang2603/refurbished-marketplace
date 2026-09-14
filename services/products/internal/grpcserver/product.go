@@ -83,21 +83,3 @@ func (s *Server) GetProductsByIDs(ctx context.Context, req *productsv1.GetProduc
 	}
 	return &productsv1.GetProductsByIDsResponse{Products: out}, nil
 }
-
-func (s *Server) ListProducts(ctx context.Context, req *productsv1.ListProductsRequest) (*productsv1.ListProductsResponse, error) {
-	products, err := s.svc.ListProducts(ctx, req.GetLimit(), req.GetOffset())
-	if err != nil {
-		return nil, grpcerr.Map(
-			err,
-			grpcerr.Mapping{Err: service.ErrInvalidListLimit, Code: codes.InvalidArgument},
-			grpcerr.Mapping{Err: service.ErrInvalidListOffset, Code: codes.InvalidArgument},
-		)
-	}
-
-	out := make([]*productsv1.Product, 0, len(products))
-	for _, p := range products {
-		out = append(out, mapProduct(p))
-	}
-
-	return &productsv1.ListProductsResponse{Products: out}, nil
-}

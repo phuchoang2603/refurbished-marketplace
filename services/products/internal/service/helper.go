@@ -38,13 +38,3 @@ func validateProductID(productID uuid.UUID) error {
 	}
 	return nil
 }
-
-func validateListPagination(limit, offset int32) error {
-	if limit <= 0 || limit > 100 {
-		return ErrInvalidListLimit
-	}
-	if offset < 0 {
-		return ErrInvalidListOffset
-	}
-	return nil
-}

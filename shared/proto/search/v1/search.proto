@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package search.v1;
+
+option go_package = "github.com/phuchoang2603/refurbished-marketplace/shared/proto/search/v1;searchv1";
+
+import "google/protobuf/timestamp.proto";
+
+service SearchService {
+  rpc SearchProducts(SearchProductsRequest) returns (SearchProductsResponse);
+}
+
+message SearchProductsRequest {
+  string query = 1;
+  string merchant_id = 2;
+  int32 limit = 3;
+  int32 offset = 4;
+}
+
+message ListingHit {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  int64 price_cents = 4;
+  string merchant_id = 5;
+  google.protobuf.Timestamp created_at = 6;
+}
+
+message SearchProductsResponse {
+  repeated ListingHit listings = 1;
+}
