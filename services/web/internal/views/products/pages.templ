@@ -46,8 +46,10 @@ templ ProductListSection(products []sharedviews.ProductView, query string) {
 							"role":                          "combobox",
 							"aria-autocomplete":             "list",
 							"aria-controls":                 "catalog-suggest",
+							"aria-expanded":                 "false",
 							"aria-haspopup":                 "listbox",
-							"data-on:input__debounce.200ms": "@get('/products/suggest?q=' + encodeURIComponent(el.value.trim()))",
+							"data-on:input":                 "el.value.trim().length < 2 && (document.getElementById('catalog-suggest')?.classList.add('hidden'), el.setAttribute('aria-expanded','false'))",
+							"data-on:input__debounce.200ms": "el.value.trim().length >= 2 && @get('/products/suggest?q=' + encodeURIComponent(el.value.trim()))",
 						},
 					})
 					@CatalogSuggest(nil)
