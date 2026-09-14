@@ -19,6 +19,7 @@ use (
 	./shared/proto
 	./shared/runtime
 	./shared/testutil/kafka
+	./shared/testutil/meilisearch
 	./shared/testutil/mongo
 	./shared/testutil/postgres
 	./shared/testutil/redis
@@ -36,6 +37,7 @@ replace (
 	github.com/phuchoang2603/refurbished-marketplace/shared/proto v0.0.0 => ./shared/proto
 	github.com/phuchoang2603/refurbished-marketplace/shared/runtime v0.0.0 => ./shared/runtime
 	github.com/phuchoang2603/refurbished-marketplace/shared/testutil/kafka v0.0.0 => ./shared/testutil/kafka
+	github.com/phuchoang2603/refurbished-marketplace/shared/testutil/meilisearch v0.0.0 => ./shared/testutil/meilisearch
 	github.com/phuchoang2603/refurbished-marketplace/shared/testutil/mongo v0.0.0 => ./shared/testutil/mongo
 	github.com/phuchoang2603/refurbished-marketplace/shared/testutil/postgres v0.0.0 => ./shared/testutil/postgres
 	github.com/phuchoang2603/refurbished-marketplace/shared/testutil/redis v0.0.0 => ./shared/testutil/redis
