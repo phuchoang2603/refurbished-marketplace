@@ -174,7 +174,22 @@ func consumeCreation(t *testing.T, svc *service.Service, event *productsv1.Produ
 	if err != nil {
 		t.Fatal(err)
 	}
-	return svc.KafkaReservationHandler()(t.Context(), messaging.KafkaMessage{Topic: messaging.EventTypeProductCreated, Value: payload})
+	return svc.KafkaProductCreatedHandler()(t.Context(), messaging.KafkaMessage{Topic: messaging.EventTypeProductCreated, Value: payload})
+}
+
+func TestReservationHandlerIgnoresProductCreated(t *testing.T) {
+	svc := newInventoryService(t)
+	event := creationEvent(proto.Int32(4))
+	payload, err := proto.Marshal(event)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := svc.KafkaReservationHandler()(t.Context(), messaging.KafkaMessage{Topic: messaging.EventTypeProductCreated, Value: payload}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.GetInventoryByProductID(t.Context(), uuid.MustParse(event.ProductId)); !errors.Is(err, service.ErrInventoryNotFound) {
+		t.Fatalf("reservation handler seeded stock: %v", err)
+	}
 }
 
 func TestProductCreatedIdempotencyAndValidation(t *testing.T) {

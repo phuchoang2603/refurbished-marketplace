@@ -19,8 +19,6 @@ import (
 func (s *Service) KafkaReservationHandler() messaging.KafkaHandler {
 	return func(ctx context.Context, msg messaging.KafkaMessage) error {
 		switch msg.Topic {
-		case messaging.EventTypeProductCreated:
-			return s.HandleProductCreated(ctx, msg.Value)
 		case messaging.EventTypeOrderCreated:
 			return s.HandleOrdersCreated(ctx, messaging.KafkaMessageID(msg), msg.Value)
 		case messaging.EventTypePaymentSucceeded, messaging.EventTypePaymentFailed:
@@ -28,6 +26,15 @@ func (s *Service) KafkaReservationHandler() messaging.KafkaHandler {
 		default:
 			return nil
 		}
+	}
+}
+
+func (s *Service) KafkaProductCreatedHandler() messaging.KafkaHandler {
+	return func(ctx context.Context, msg messaging.KafkaMessage) error {
+		if msg.Topic != messaging.EventTypeProductCreated {
+			return nil
+		}
+		return s.HandleProductCreated(ctx, msg.Value)
 	}
 }
 

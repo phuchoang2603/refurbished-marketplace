@@ -10,17 +10,29 @@ import (
 )
 
 func runReservationConsumer(ctx context.Context, svc *service.Service, bootstrap []string, groupID string) error {
-	consumer, err := messaging.NewKafkaConsumer(messaging.KafkaConsumerConfig{
+	return runInventoryConsumer(ctx, messaging.KafkaConsumerConfig{
 		BootstrapServers: bootstrap,
 		GroupID:          groupID,
 		Topics: []string{
-			messaging.EventTypeProductCreated,
 			messaging.EventTypeOrderCreated,
 			messaging.EventTypePaymentSucceeded,
 			messaging.EventTypePaymentFailed,
 		},
 		TracerName: "inventory",
-	}, svc.KafkaReservationHandler())
+	}, svc.KafkaReservationHandler(), "orders.created,payment.*")
+}
+
+func runProductCreatedConsumer(ctx context.Context, svc *service.Service, bootstrap []string, groupID string) error {
+	return runInventoryConsumer(ctx, messaging.KafkaConsumerConfig{
+		BootstrapServers: bootstrap,
+		GroupID:          groupID,
+		Topics:           []string{messaging.EventTypeProductCreated},
+		TracerName:       "inventory",
+	}, svc.KafkaProductCreatedHandler(), messaging.EventTypeProductCreated)
+}
+
+func runInventoryConsumer(ctx context.Context, cfg messaging.KafkaConsumerConfig, handler messaging.KafkaHandler, topics string) error {
+	consumer, err := messaging.NewKafkaConsumer(cfg, handler)
 	if err != nil {
 		return err
 	}
@@ -30,10 +42,6 @@ func runReservationConsumer(ctx context.Context, svc *service.Service, bootstrap
 		}
 	}()
 
-	sharedlog.Info(
-		"kafka consumer started",
-		"topics", "products.created,orders.created,payment.*",
-		"group", groupID,
-	)
+	sharedlog.Info("kafka consumer started", "topics", topics, "group", cfg.GroupID)
 	return consumer.Run(ctx)
 }

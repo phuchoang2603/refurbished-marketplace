@@ -8,6 +8,7 @@ Product creation commits catalog and ProductCreated outbox records together. The
 
 - Affected inventory, products, and web Go suites pass with the Colima `docker` profile. Coverage includes transactional rollback/retry, command-to-Kafka replay, single reservation event, failure release, missing/batch stock reads, pending availability, and independent Kafka consumer groups.
 - Existing `TestPaymentService_ExpireDueSessions` passes, verifying expiry produces payment.failed; inventory tests verify that event releases stock idempotently.
+- Inventory runs two Kafka consumer groups: `inventory-service` on `orders.created`/`payment.*`, and `inventory-product-created` on `products.created`, so a poison creation event cannot stall reservation settlement.
 - Products tests verify listing/outbox atomicity and retained event identity/payload while no publisher is available. Actual Debezium delivery remains part of live cutover verification.
 - Marketplace and Kafka Helm lint/render pass. The rendered products connector targets products_db/public.products_outbox and uses id, aggregate_id, payload, and tracingspancontext. The products.created topic is retained for replay. Inventory CDC targets inventory_db in the rendered configuration.
 - OpenSpec strict validation passes. CI configuration includes inventory in each required list/matrix.

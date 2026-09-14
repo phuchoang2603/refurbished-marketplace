@@ -191,7 +191,7 @@ func TestKafkaProductCreatedIndependentConsumers(t *testing.T) {
 	}
 	topic := messaging.EventTypeProductCreated
 	testkafka.ProduceKafkaRecord(t, t.Context(), brokers, topic, payload)
-	cancel, runErr := testkafka.StartKafkaConsumer(t, t.Context(), brokers, "inventory-created-"+uuid.NewString(), []string{topic}, svc.KafkaReservationHandler())
+	cancel, runErr := testkafka.StartKafkaConsumer(t, t.Context(), brokers, "inventory-created-"+uuid.NewString(), []string{topic}, svc.KafkaProductCreatedHandler())
 	defer cancel()
 	testkafka.WaitForKafkaCondition(t, runErr, cancel, 30*time.Second, 200*time.Millisecond, "creation was not consumed", func() (bool, error) {
 		var count int

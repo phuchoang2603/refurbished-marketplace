@@ -20,7 +20,7 @@ The inventory service SHALL persist `available_qty` and `reserved_qty` per produ
 
 ### Requirement: Inventory seeds stock from ProductCreated
 
-Inventory SHALL consume ProductCreated on `products.created` in a consumer group independent of the future search projector. It SHALL validate an explicit non-negative initial quantity and atomically persist the event id in its inbox with a stock row whose reserved quantity is zero. EnsureStock SHALL remain an internal operation and SHALL NOT be exposed over gRPC.
+Inventory SHALL consume ProductCreated on `products.created` in a consumer group independent of the future search projector and of inventory's reservation/payment consumer. It SHALL validate an explicit non-negative initial quantity and atomically persist the event id in its inbox with a stock row whose reserved quantity is zero. EnsureStock SHALL remain an internal operation and SHALL NOT be exposed over gRPC.
 
 #### Scenario: First seed succeeds
 
@@ -51,6 +51,11 @@ Inventory SHALL consume ProductCreated on `products.created` in a consumer group
 
 - **WHEN** the stock transaction committed but delivery is retried before acknowledgement completed
 - **THEN** inventory SHALL recognize the committed event and SHALL NOT seed stock again
+
+#### Scenario: Creation consumption is isolated from reservation topics
+
+- **WHEN** ProductCreated processing returns a retryable or validation error
+- **THEN** inventory's `orders.created` and payment-outcome consumer SHALL continue independently and SHALL NOT stall reservation settlement on that error
 
 ### Requirement: Inventory manages reservations
 

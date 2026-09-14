@@ -65,6 +65,9 @@ func main() {
 	runtime.StartKafkaConsumer(ctx, &wg, func(ctx context.Context, brokers []string) error {
 		return runReservationConsumer(ctx, svc, brokers, cfg.KafkaGroupID)
 	})
+	runtime.StartKafkaConsumer(ctx, &wg, func(ctx context.Context, brokers []string) error {
+		return runProductCreatedConsumer(ctx, svc, brokers, cfg.ProductCreatedKafkaGroupID)
+	})
 
 	if err := runtime.ServeGRPC(ctx, runtime.GRPCServerConfig{
 		Addr:        cfg.GRPCAddr,

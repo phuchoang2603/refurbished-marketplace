@@ -15,7 +15,7 @@ Web sends catalog fields and explicit non-negative initial quantity to CreatePro
 
 The event contains a stable event id, schema version, occurrence time, product id, initial product version, catalog fields, and explicit initial quantity. Outbox retries retain the same event identity. When catalog moves to Mongo, listing/event persistence must retain an equivalent atomic durability guarantee.
 
-Inventory consumes the event in its own group, validates it, and commits inbox identity and initial stock in one transaction before acknowledging it. EnsureStock is internal inventory logic, not an RPC. Duplicate/replayed creation must never overwrite stock changed by reservations; conflicting seed intent is rejected. Transient failures remain retryable and do not delete the listing.
+Inventory consumes the event in its own `inventory-product-created` group, separate from reservation/payment consumption, validates it, and commits inbox identity and initial stock in one transaction before acknowledging it. EnsureStock is internal inventory logic, not an RPC. Duplicate/replayed creation must never overwrite stock changed by reservations; conflicting seed intent is rejected. Transient failures remain retryable and do not delete the listing.
 
 ```mermaid
 flowchart LR

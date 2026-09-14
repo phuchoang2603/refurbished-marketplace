@@ -20,7 +20,7 @@ ProductCreated contains event_id, schema_version, occurred_at, product_id, produ
 
 ### 2. Inventory seeds through its own consumer
 
-Inventory uses a consumer group separate from the future search projector. It validates ProductCreated, then records event_id in its inbox and seeds available_qty with reserved_qty zero in one transaction. EnsureStock remains an internal operation; remove its gRPC method and web client. Duplicate event delivery or replay for an already seeded product must not reset stock after reservations, commits, or releases. Store enough seed identity/intent to reject conflicting seeds without overwriting the ledger.
+Inventory uses a consumer group separate from the future search projector and a second group for reservation/payment topics so a poison ProductCreated cannot stall checkout settlement. It validates ProductCreated, then records event_id in its inbox and seeds available_qty with reserved_qty zero in one transaction. EnsureStock remains an internal operation; remove its gRPC method and web client. Duplicate event delivery or replay for an already seeded product must not reset stock after reservations, commits, or releases. Store enough seed identity/intent to reject conflicting seeds without overwriting the ledger.
 
 Transient failures roll back and remain retryable; acknowledge only after commit. Invalid events must not create stock or be treated as successfully seeded: expose the error for operational recovery using the repository's consumer error path. Consumer failure never triggers catalog deletion.
 

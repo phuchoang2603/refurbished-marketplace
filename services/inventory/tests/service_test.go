@@ -71,3 +71,17 @@ func TestEnsureAndReserveStock(t *testing.T) {
 		t.Fatalf("idempotent reserve changed stock %+v", got)
 	}
 }
+
+func TestValidateConfigDistinctKafkaGroups(t *testing.T) {
+	cfg := service.LoadConfig()
+	if cfg.KafkaGroupID == "" || cfg.ProductCreatedKafkaGroupID == "" || cfg.KafkaGroupID == cfg.ProductCreatedKafkaGroupID {
+		t.Fatalf("groups = %q %q", cfg.KafkaGroupID, cfg.ProductCreatedKafkaGroupID)
+	}
+	if err := service.ValidateConfig(cfg); err != nil {
+		t.Fatal(err)
+	}
+	cfg.ProductCreatedKafkaGroupID = cfg.KafkaGroupID
+	if err := service.ValidateConfig(cfg); err == nil {
+		t.Fatal("expected distinct kafka group error")
+	}
+}

@@ -13,6 +13,7 @@
 - [x] 2.4 Helm: inventory Deployment/Service, CNPG Cluster, ESO, Cilium allow web only, Doppler key docs
 - [x] 2.5 Consume ProductCreated in inventory's independent group; validate explicit non-negative initial quantity; transactionally record event identity and seed stock before acknowledgement
 - [x] 2.6 Preserve seed intent for product-level replay/conflict detection; duplicates must never reset stock after reservations; roll back transient failures and retry through the existing consumer error path
+- [x] 2.7 Run ProductCreated on a dedicated consumer group so invalid creation events cannot stall orders.created or payment settlement
 
 ## 3. Products and web cutover
 
