@@ -21,4 +21,4 @@
 ## 4. Docs and cutover
 
 - [x] 4.1 Update `docs/catalog-inventory-search.md` for Mongo listing+outbox and Debezium Mongo CDC
-- [ ] 4.2 Wipe talos-dev SQL listings; deploy Mongo-backed products and the Mongo connector; verify create → CDC → inventory seed and seller list; then delete leftover `products-db` if still present
+- [x] 4.2 Wipe talos-dev SQL listings; deploy Mongo-backed products and the Mongo connector; verify create → CDC → inventory seed and seller list; then delete leftover `products-db` if still present
