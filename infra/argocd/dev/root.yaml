@@ -14,7 +14,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
-    targetRevision: cut-catalog-to-mongodb
+    targetRevision: add-meilisearch-catalog-read-model
     path: infra/argocd/app-of-apps
     helm:
       values: |
