@@ -1,8 +1,8 @@
 ## 1. Meilisearch GitOps
 
 - [x] 1.1 Add wrapper chart `infra/charts/meilisearch/` (upstream meilisearch-kubernetes, single-node PVC, Doppler ExternalSecret `MEILI_MASTER_KEY`, Cilium CNP 7700 from search + kubelet, no SPIRE)
-- [ ] 1.2 Register an app-of-apps child destining `ecommerce` at sync wave `2`; do not template an `ecommerce` Namespace
-- [ ] 1.3 Document Doppler key, GitOps row, and Cilium path in secrets/gitops/cilium docs
+- [x] 1.2 Register an app-of-apps child destining `ecommerce` at sync wave `2`; do not template an `ecommerce` Namespace
+- [x] 1.3 Document Doppler key, GitOps row, and Cilium path in secrets/gitops/cilium docs
 
 ## 2. Search service
 

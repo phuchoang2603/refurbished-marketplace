@@ -265,6 +265,7 @@ jobs:
             "infra/charts/operators/strimzi:operators"
             "infra/charts/observability:monitoring"
             "infra/charts/cloudflare-tunnel:cloudflare-tunnel"
+            "infra/charts/meilisearch:ecommerce"
           )
           for item in "${wrapper_charts[@]}"; do
             chart="${item%%:*}"
@@ -286,4 +287,5 @@ jobs:
             /tmp/cnpg.yaml \
             /tmp/strimzi.yaml \
             /tmp/observability.yaml \
-            /tmp/cloudflare-tunnel.yaml
+            /tmp/cloudflare-tunnel.yaml \
+            /tmp/meilisearch.yaml

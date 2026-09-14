@@ -43,6 +43,11 @@ apps:
     path: infra/charts/mongodb
     releaseName: catalog-mongodb
     namespace: ecommerce
+  meilisearch:
+    syncWave: "2"
+    path: infra/charts/meilisearch
+    releaseName: catalog-meilisearch
+    namespace: ecommerce
   observability:
     syncWave: "1"
     path: infra/charts/observability
