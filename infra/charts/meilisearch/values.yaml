@@ -1,0 +1,36 @@
+# Talos-dev shape. Do not put Doppler config names here.
+name: catalog-meilisearch
+
+meilisearch:
+  fullnameOverride: catalog-meilisearch
+  customLabels:
+    app: catalog-meilisearch
+  podLabels:
+    app: catalog-meilisearch
+  environment:
+    MEILI_NO_ANALYTICS: true
+    MEILI_ENV: production
+  auth:
+    existingMasterKeySecret: meilisearch-master-key
+  persistence:
+    enabled: true
+    size: 2Gi
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 256Mi
+
+externalSecrets:
+  enabled: true
+  refreshInterval: 1h
+  remoteKey: MEILI_MASTER_KEY
+  secretName: meilisearch-master-key
+  secretStoreRef:
+    kind: ClusterSecretStore
+    name: doppler
+
+meshPolicy:
+  enforce: true
