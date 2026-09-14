@@ -28,7 +28,7 @@
 - [x] 4.1 Update proposal/design/specs and docs/catalog-inventory-search.md diagrams for ProductCreated, independent consumers, durable publication, and future projection ordering
 - [x] 4.2 Move baseline reserve idempotency and Kafka tests to inventory (additional coverage below remains open)
 - [x] 4.3 Wipe talos-dev inventory/catalog stock data; shop list may stay empty
-- [ ] 4.4 Verify coordinated cutover: old web stock seeding stopped, creation CDC active, inventory consumer ready, no dual initialization writers; record dev verification evidence
+- [x] 4.4 Verify coordinated cutover: old web stock seeding stopped, creation CDC active, inventory consumer ready, no dual initialization writers; record dev verification evidence
 
 ## 5. CI enrollment
 
