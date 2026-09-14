@@ -81,6 +81,7 @@ func (s *Server) ReserveStock(ctx context.Context, req *inventoryv1.ReserveStock
 			grpcerr.Mapping{Err: service.ErrInvalidProductID, Code: codes.InvalidArgument},
 			grpcerr.Mapping{Err: service.ErrInventoryNotFound, Code: codes.FailedPrecondition},
 			grpcerr.Mapping{Err: service.ErrInsufficientStock, Code: codes.FailedPrecondition},
+			grpcerr.Mapping{Err: service.ErrReservationAlreadyFailed, Code: codes.FailedPrecondition},
 		)
 	}
 	return &inventoryv1.ReserveStockResponse{}, nil

@@ -44,6 +44,7 @@
 - [x] 6.4 Test stock reads for existing and missing ids, batch omission of missing ids, and batch limits
 - [x] 6.5 Fix TestKafkaOrdersCreatedFailure_EndToEnd to wait for a committed inbox/outbox record proving consumption before asserting unchanged stock; assert the failure event
 - [x] 6.6 Test ProductCreated first seed (including explicit zero), absent/negative quantity rejection, duplicate event replay after stock changes, conflicting seed intent, rollback on processing failure, and retry after commit
+- [x] 6.7 Test command ReserveStock failure, later stock seed, and `orders.created` replay; assert no hold, no `inventory.reserved`, and command retry remains failed
 
 ## 7. Pivot verification
 

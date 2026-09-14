@@ -19,6 +19,10 @@ type ReservationItemInput struct {
 	Quantity  int32
 }
 
+func commandReserveInboxID(orderID uuid.UUID) string {
+	return "inventory.reserve-command/" + orderID.String()
+}
+
 func parseOrderCreatedReservation(msg *ordersv1.OrderCreated) (uuid.UUID, uuid.UUID, int64, []ReservationItemInput, error) {
 	orderID, err := uuid.Parse(msg.GetOrderId())
 	if err != nil {

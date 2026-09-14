@@ -90,6 +90,11 @@ The inventory service MUST consume order-level `orders.created` events that incl
 - **WHEN** the service cannot reserve one or more item lines for an order on the Kafka path and no prior successful command-path reservation exists
 - **THEN** it SHALL avoid leaving a partial active reservation for that order and emit an order-level `inventory.reservation_failed` event
 
+#### Scenario: Command-path failure is terminal for Kafka replay
+
+- **WHEN** ReserveStock has already failed for an order and ProductCreated later seeds stock
+- **THEN** a subsequent `orders.created` delivery SHALL NOT hold quantity or emit `inventory.reserved` for that order
+
 ### Requirement: Inventory exposes ReserveStock over gRPC
 
 The inventory service MUST expose an internal gRPC reservation command that holds all lines for one order idempotently so web can reserve stock before hosted payment.
@@ -108,6 +113,11 @@ The inventory service MUST expose an internal gRPC reservation command that hold
 
 - **WHEN** one or more lines cannot be reserved
 - **THEN** the service SHALL NOT leave a partial active reservation for that order, SHALL fail the command, and SHALL emit `inventory.reservation_failed` when an order-level failure signal is required for downstream consumers
+
+#### Scenario: Reserve command is retried after failure
+
+- **WHEN** the same order is reserved again after a failed hold, including after stock later becomes available
+- **THEN** the service SHALL NOT hold quantity for that order and SHALL fail the command
 
 ### Requirement: Inventory exposes stock reads
 

@@ -13,12 +13,13 @@ import (
 )
 
 var (
-	ErrInvalidProductID  = errors.New("invalid product id")
-	ErrInvalidQuantity   = errors.New("invalid quantity")
-	ErrInvalidMerchantID = errors.New("invalid merchant id")
-	ErrInventoryNotFound = errors.New("inventory not found")
-	ErrInsufficientStock = errors.New("insufficient stock")
-	ErrInvalidBatchSize  = errors.New("invalid product batch size")
+	ErrInvalidProductID         = errors.New("invalid product id")
+	ErrInvalidQuantity          = errors.New("invalid quantity")
+	ErrInvalidMerchantID        = errors.New("invalid merchant id")
+	ErrInventoryNotFound        = errors.New("inventory not found")
+	ErrInsufficientStock        = errors.New("insufficient stock")
+	ErrReservationAlreadyFailed = errors.New("inventory reservation already failed")
+	ErrInvalidBatchSize         = errors.New("invalid product batch size")
 )
 
 const (

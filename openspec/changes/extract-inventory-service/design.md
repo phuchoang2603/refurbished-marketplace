@@ -36,7 +36,7 @@ In #7, a separate projector group consumes ProductCreated for catalog fields and
 
 ### 5. Preserve reservation semantics and runtime isolation
 
-Inventory owns inventory/reservations/inbox/outbox tables without a catalog FK. It consumes orders.created and payment outcomes and exposes ReserveStock on :9097. Command-to-Kafka replay must not double-hold or emit a second successful reservation event. Full-order failure leaves no partial hold. Payment failure/expiry releases stock.
+Inventory owns inventory/reservations/inbox/outbox tables without a catalog FK. It consumes orders.created and payment outcomes and exposes ReserveStock on :9097. Command-to-Kafka replay must not double-hold or emit a second successful reservation event. A failed ReserveStock is terminal for that order: later `orders.created` delivery must not hold stock after ProductCreated seeds the row. Full-order failure leaves no partial hold. Payment failure/expiry releases stock.
 
 Web is the only application gRPC caller, with the same Cilium mutual authentication as other marketplace services. Products never calls inventory. Keep GetStock/GetStocksByIDs/ReserveStock and remove the temporary compensation-only DeleteProduct API unless a separate catalog deletion requirement is approved.
 

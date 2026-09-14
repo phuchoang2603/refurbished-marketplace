@@ -107,6 +107,36 @@ func TestReserveFullOrderFailureIsAtomic(t *testing.T) {
 	}
 }
 
+func TestCommandReserveFailureBlocksKafkaAfterSeed(t *testing.T) {
+	db := newInventoryDB(t)
+	svc := service.New(db)
+	id, order, merchant := uuid.New(), uuid.New(), uuid.New()
+	items := []service.ReservationItemInput{{ProductID: id, Quantity: 2}}
+	if err := svc.ReserveStock(t.Context(), order, merchant, 1000, items); !errors.Is(err, service.ErrInventoryNotFound) {
+		t.Fatalf("command reserve = %v, want not found", err)
+	}
+	if _, err := svc.EnsureStock(t.Context(), id, 5); err != nil {
+		t.Fatal(err)
+	}
+	if err := svc.ReserveStock(t.Context(), order, merchant, 1000, items); !errors.Is(err, service.ErrReservationAlreadyFailed) {
+		t.Fatalf("command retry = %v, want already failed", err)
+	}
+	payload := orderCreatedPayload(order, merchant, 1000, &ordersv1.OrderCreatedItem{ProductId: id.String(), Quantity: 2})
+	if err := svc.HandleOrdersCreated(t.Context(), order.String()+"/created", payload); err != nil {
+		t.Fatal(err)
+	}
+	assertStock(t, svc, id, 5, 0)
+	if n := scalar(t, db, "SELECT count(*) FROM inventory_reservations WHERE order_id=$1", order); n != 0 {
+		t.Fatalf("reservations = %d", n)
+	}
+	if n := scalar(t, db, "SELECT count(*) FROM inventory_outbox WHERE aggregate_id=$1 AND event_type=$2", order, messaging.EventTypeInventoryReserved); n != 0 {
+		t.Fatalf("reserved events = %d", n)
+	}
+	if n := scalar(t, db, "SELECT count(*) FROM inventory_outbox WHERE aggregate_id=$1 AND event_type=$2", order, messaging.EventTypeInventoryReservationFailed); n != 1 {
+		t.Fatalf("failure events = %d", n)
+	}
+}
+
 func TestStockReadRPCs(t *testing.T) {
 	svc := newInventoryService(t)
 	server := grpcserver.New(svc)

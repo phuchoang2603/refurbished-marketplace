@@ -55,6 +55,10 @@ func (s *Service) HandleOrdersCreated(ctx context.Context, messageID string, val
 		_ = tx.Rollback()
 	}()
 
+	if err := q.LockInventoryReservationOrder(ctx, orderID); err != nil {
+		return err
+	}
+
 	if _, err := q.InsertInventoryInboxMessage(ctx, messageID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return tx.Commit()
@@ -67,6 +71,14 @@ func (s *Service) HandleOrdersCreated(ctx context.Context, messageID string, val
 		return err
 	}
 	if existing > 0 {
+		return tx.Commit()
+	}
+
+	commandAttempted, err := q.InventoryInboxExists(ctx, commandReserveInboxID(orderID))
+	if err != nil {
+		return err
+	}
+	if commandAttempted {
 		return tx.Commit()
 	}
 
