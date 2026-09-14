@@ -48,8 +48,9 @@ templ ProductListSection(products []sharedviews.ProductView, query string) {
 							"aria-controls":                 "catalog-suggest",
 							"aria-expanded":                 "false",
 							"aria-haspopup":                 "listbox",
-							"data-on:input":                 "el.value.trim().length < 2 && (document.getElementById('catalog-suggest')?.classList.add('hidden'), el.setAttribute('aria-expanded','false'))",
-							"data-on:input__debounce.200ms": "el.value.trim().length >= 2 && @get('/products/suggest?q=' + encodeURIComponent(el.value.trim()))",
+							"data-on:input":                 "el.value.trim().length < 2 && (el._catalogSuggestAbort?.abort(), document.getElementById('catalog-suggest')?.classList.add('hidden'), el.setAttribute('aria-expanded','false'))",
+							"data-on:input__debounce.200ms": "el.value.trim().length >= 2 && (el._catalogSuggestAbort?.abort(), el._catalogSuggestAbort = new AbortController(), @get('/products/suggest?q=' + encodeURIComponent(el.value.trim()), {requestCancellation: el._catalogSuggestAbort}))",
+							"data-on:datastar-fetch":        "evt.detail.el === el && evt.detail.type === 'finished' && (el.value.trim().length < 2 ? (document.getElementById('catalog-suggest')?.classList.add('hidden'), el.setAttribute('aria-expanded','false')) : el.setAttribute('aria-expanded', String(!!document.getElementById('catalog-suggest')?.querySelector('[role=option]'))))",
 						},
 					})
 					@CatalogSuggest(nil)
