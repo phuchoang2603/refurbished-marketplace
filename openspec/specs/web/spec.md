@@ -297,12 +297,17 @@ Web SHALL allow listing creation to succeed independently of inventory consumpti
 
 ### Requirement: Web catalog and seller lists use SearchProducts
 
-The web service MUST render the public catalog and the authenticated seller product list from the search service SearchProducts. Public browse SHALL show catalog fields (name, price, detail links) and SHALL NOT show live stock. Seller list SHALL filter by the authenticated merchant on the search request rather than loading all listings and filtering in the web process. Product detail SHALL keep using products GetProductByID and inventory GetStock. Search unavailability SHALL use a localized catalog unavailable page and SHALL NOT fall back to products ListProducts.
+The web service MUST render the public catalog and the authenticated seller product list from the search service SearchProducts. Public catalog SHALL accept an optional text query, show catalog fields (name, price, detail links), and SHALL NOT show live stock. An empty query SHALL browse. Seller list SHALL filter by the authenticated merchant on the search request rather than loading all listings and filtering in the web process. Product detail SHALL keep using products GetProductByID and inventory GetStock. Search unavailability SHALL use a localized catalog unavailable page and SHALL NOT fall back to products ListProducts.
 
 #### Scenario: Public catalog is requested
 
-- **WHEN** a browser requests the catalog route
-- **THEN** the web service SHALL call search SearchProducts without a merchant filter and render catalog hits, or the catalog unavailable page if search cannot be served
+- **WHEN** a browser requests the catalog route without a text query
+- **THEN** the web service SHALL call search SearchProducts with empty text, without a merchant filter, and render catalog hits, or the catalog unavailable page if search cannot be served
+
+#### Scenario: Public catalog is searched
+
+- **WHEN** a browser submits a text query on the public catalog
+- **THEN** the web service SHALL call search SearchProducts with that text, without a merchant filter, and render matching catalog hits
 
 #### Scenario: Browse cards omit stock
 

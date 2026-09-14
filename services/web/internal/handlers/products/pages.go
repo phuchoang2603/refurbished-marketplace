@@ -88,7 +88,8 @@ func (h *Handler) handleListProducts(w http.ResponseWriter, r *http.Request) {
 		shared.WriteUnavailablePage(w, r, http.StatusServiceUnavailable, catalogUnavailableView())
 		return
 	}
-	resp, err := h.deps.Search.SearchProducts(r.Context(), "", "", 100, 0)
+	query := catalogSearchQuery(r)
+	resp, err := h.deps.Search.SearchProducts(r.Context(), query, "", 100, 0)
 	if err != nil {
 		if shared.IsUnavailableError(err) {
 			shared.WriteUnavailablePage(w, r, http.StatusServiceUnavailable, catalogUnavailableView())
@@ -101,7 +102,15 @@ func (h *Handler) handleListProducts(w http.ResponseWriter, r *http.Request) {
 	for _, hit := range resp.Listings {
 		items = append(items, mapListingHit(hit, false))
 	}
-	shared.WriteHTML(w, r, http.StatusOK, productviews.ProductsPage(items))
+	shared.WriteHTML(w, r, http.StatusOK, productviews.ProductsPage(items, query))
+}
+
+func catalogSearchQuery(r *http.Request) string {
+	query := strings.TrimSpace(r.URL.Query().Get("q"))
+	if len(query) > 200 {
+		return query[:200]
+	}
+	return query
 }
 
 func (h *Handler) handleNewProductPage(w http.ResponseWriter, r *http.Request) {

@@ -10,8 +10,8 @@ import page "github.com/phuchoang2603/refurbished-marketplace/services/web/inter
 import textarea "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/components/textarea"
 import sharedviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/shared"
 
-templ ProductsPage(products []sharedviews.ProductView) {
-	@sharedviews.AppShell("Products", sharedviews.DefaultNav, ProductListSection(products))
+templ ProductsPage(products []sharedviews.ProductView, query string) {
+	@sharedviews.AppShell("Products", sharedviews.DefaultNav, ProductListSection(products, query))
 }
 
 templ ProductDetailPage(product sharedviews.ProductView) {
@@ -26,12 +26,30 @@ templ SellerProductsPage(products []sharedviews.ProductView) {
 	@sharedviews.AppShell("Your products", sharedviews.DefaultNav, SellerProductsSection(products))
 }
 
-templ ProductListSection(products []sharedviews.ProductView) {
+templ ProductListSection(products []sharedviews.ProductView, query string) {
 	@card.Card(card.CardArgs{Attributes: templpkg.Attributes{"id": "products"}}) {
 		@page.Header("Products", "Browse quality refurbished tech, verified devices, and sustainable deals from trusted sellers.")
 		@card.CardContent(card.CardContentArgs{Class: "grid gap-4"}) {
+			<form method="get" action="/products" class="flex flex-wrap items-end gap-3" role="search">
+				@form.FormItem(form.FormItemArgs{Class: "min-w-60 flex-1"}) {
+					@form.FormLabel(form.FormLabelArgs{For: "catalog-query"}) {
+						Search listings
+					}
+					@input.Input(input.InputArgs{ID: "catalog-query", Name: "q", Type: "search", Value: query, Placeholder: "Name or description", Autocomplete: "off"})
+				}
+				@button.Button(button.ButtonArgs{Type: "submit", Class: "w-full sm:w-fit"}) {
+					Search
+				}
+				if query != "" {
+					<a class="inline-flex h-9 items-center text-sm text-muted-foreground hover:underline" href="/products">Clear</a>
+				}
+			</form>
 			if len(products) == 0 {
-				@page.EmptyState("No products are available yet.")
+				if query != "" {
+					@page.EmptyState("No listings match that search.")
+				} else {
+					@page.EmptyState("No products are available yet.")
+				}
 			} else {
 				<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 					for _, product := range products {

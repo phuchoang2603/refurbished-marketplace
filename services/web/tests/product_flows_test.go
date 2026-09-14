@@ -137,6 +137,31 @@ func TestProductsPageRendersSearchHitsWithoutStock(t *testing.T) {
 	}
 }
 
+func TestProductsPageForwardsCatalogQuery(t *testing.T) {
+	searchSvc := &fakes.SearchService{
+		SearchFn: func(ctx context.Context, query, merchantID string, limit, offset int32) (*searchv1.SearchProductsResponse, error) {
+			if query != "pixel" || merchantID != "" {
+				t.Fatalf("query=%q merchant=%q", query, merchantID)
+			}
+			return &searchv1.SearchProductsResponse{Listings: []*searchv1.ListingHit{
+				{Id: "prod-1", MerchantId: "22222222-2222-2222-2222-222222222222", Name: "Pixel 8", PriceCents: 24900},
+			}}, nil
+		},
+	}
+	rec := httptest.NewRecorder()
+	newTestRouter(t, routerDeps{search: searchSvc}).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/products?q=pixel", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, "Pixel 8") {
+		t.Fatalf("body missing listing in %q", body)
+	}
+	if !strings.Contains(body, `value="pixel"`) {
+		t.Fatalf("search input should keep query in %q", body)
+	}
+}
+
 func TestProductDetailHidesCartFormForOwner(t *testing.T) {
 	stock := int32(4)
 	productsSvc := &fakes.ProductsService{

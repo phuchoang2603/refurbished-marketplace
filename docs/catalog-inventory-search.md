@@ -27,7 +27,7 @@ flowchart LR
   I -->|One transaction| L[(Stock and inventory inbox)]
   K -->|search-product-created| S[Search]
   S --> M[(Meilisearch listings)]
-  W -->|SearchProducts browse and seller list| S
+  W -->|SearchProducts browse, text query, seller list| S
   W -->|GetProductByID| P
   W -->|GetStock / ReserveStock| I
 ```
@@ -61,7 +61,7 @@ Broker or consumer downtime may delay stock readiness or browse visibility, but 
 
 ## Browse vs PDP
 
-Public `/` and `/products` call search `SearchProducts` with an empty query. Seller `/seller/products` calls `SearchProducts` with the authenticated merchant filter. Browse and seller cards show catalog fields only (no live stock). If search or Meilisearch is down, web shows a localized catalog unavailable page and does not fall back to a Mongo listing scan.
+Public `/` and `/products` call search `SearchProducts`. An empty `q` browses; a non-empty `q` is a text query against indexed name and description. Seller `/seller/products` calls `SearchProducts` with the authenticated merchant filter. Browse and seller cards show catalog fields only (no live stock). If search or Meilisearch is down, web shows a localized catalog unavailable page and does not fall back to a Mongo listing scan.
 
 Product detail stays on products `GetProductByID` plus inventory `GetStock`. A missing stock row means initialization is pending, a transport failure means availability is unavailable, and an existing row with zero available quantity means out of stock. Do not collapse these into zero. Disable purchase controls while availability is pending or unavailable.
 
@@ -75,8 +75,8 @@ sequenceDiagram
   participant P as Products
   participant I as Inventory
   participant C as Cart Redis
-  B->>W: GET catalog
-  W->>S: SearchProducts empty query
+  B->>W: GET catalog (optional q)
+  W->>S: SearchProducts empty or text query
   W-->>B: Catalog cards without stock
   B->>W: GET product detail
   W->>P: GetProductByID
@@ -92,7 +92,7 @@ sequenceDiagram
 
 ## Later follow-up
 
-`InventoryUpdated` / live quantity in Meilisearch, catalog update/delete events, and a Mongo rebuild path are out of this change. Create-only indexing means edits and deletes will not update the projection until those events exist.
+`InventoryUpdated` / live quantity in Meilisearch, catalog update/delete events, and a Mongo rebuild path are out of this change. Create-only indexing means edits and deletes will not update the projection until those events exist. Seller-list text search and shopper sort/facets are also out.
 
 ## Deployment and verification
 
