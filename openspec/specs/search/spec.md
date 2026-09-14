@@ -27,7 +27,7 @@ Search SHALL consume ProductCreated on `products.created` in a consumer group th
 
 ### Requirement: Search exposes SearchProducts
 
-The search service MUST expose SearchProducts over gRPC. Search SHALL query Meilisearch using optional text, optional merchant filter, and offset/limit. An empty text query SHALL return a browsable page of listings. Results SHALL be catalog fields only and SHALL NOT include live stock. Search SHALL fail when the projection is unavailable rather than scanning Mongo.
+The search service MUST expose SearchProducts over gRPC. Search SHALL query Meilisearch using optional text, optional merchant filter, and offset/limit. An empty text query SHALL return a browsable page of listings ordered by created time descending. A non-empty text query SHALL rank by Meilisearch relevance and SHALL NOT apply a recency sort. Results SHALL be catalog fields only and SHALL NOT include live stock. Search SHALL fail when the projection is unavailable rather than scanning Mongo.
 
 #### Scenario: Empty query is browse
 

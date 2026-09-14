@@ -58,6 +58,9 @@ func TestSearchProductsBrowseAndMerchantFilter(t *testing.T) {
 	if !containsListing(browse, phoneID) || !containsListing(browse, laptopID) {
 		t.Fatalf("browse missing listings: %+v", browse)
 	}
+	if browse[0].GetId() != laptopID {
+		t.Fatalf("browse should rank newest first, got %+v", browse)
+	}
 
 	seller, err := svc.SearchProducts(ctx, "", merchantA, 20, 0)
 	if err != nil {
@@ -65,6 +68,44 @@ func TestSearchProductsBrowseAndMerchantFilter(t *testing.T) {
 	}
 	if !containsListing(seller, phoneID) || containsListing(seller, laptopID) {
 		t.Fatalf("merchant filter = %+v", seller)
+	}
+}
+
+func TestSearchProductsTextMatchesNameAndDescription(t *testing.T) {
+	svc := newSearchService(t)
+	ctx := t.Context()
+	phoneID := uuid.NewString()
+	laptopID := uuid.NewString()
+
+	if err := svc.HandleProductCreated(ctx, mustMarshal(t, &productsv1.ProductCreated{
+		EventId: uuid.NewString(), ProductId: phoneID, SchemaVersion: 1, ProductVersion: 1,
+		OccurredAt: timestamppb.New(time.Now().Add(-time.Hour)), Name: "Refurbished Phone",
+		Description: "Battery replaced", PriceCents: 25999, MerchantId: uuid.NewString(), InitialQty: proto.Int32(4),
+	})); err != nil {
+		t.Fatalf("index phone: %v", err)
+	}
+	if err := svc.HandleProductCreated(ctx, mustMarshal(t, &productsv1.ProductCreated{
+		EventId: uuid.NewString(), ProductId: laptopID, SchemaVersion: 1, ProductVersion: 1,
+		OccurredAt: timestamppb.Now(), Name: "Other Laptop", Description: "Seller B listing",
+		PriceCents: 99999, MerchantId: uuid.NewString(), InitialQty: proto.Int32(1),
+	})); err != nil {
+		t.Fatalf("index laptop: %v", err)
+	}
+
+	byName, err := svc.SearchProducts(ctx, "Phone", "", 20, 0)
+	if err != nil {
+		t.Fatalf("name query: %v", err)
+	}
+	if !containsListing(byName, phoneID) || containsListing(byName, laptopID) {
+		t.Fatalf("name query = %+v", byName)
+	}
+
+	byDesc, err := svc.SearchProducts(ctx, "Battery", "", 20, 0)
+	if err != nil {
+		t.Fatalf("description query: %v", err)
+	}
+	if !containsListing(byDesc, phoneID) || containsListing(byDesc, laptopID) {
+		t.Fatalf("description query = %+v", byDesc)
 	}
 }
 

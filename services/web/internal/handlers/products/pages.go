@@ -3,6 +3,7 @@ package products
 import (
 	"net/http"
 	"strings"
+	"unicode/utf8"
 
 	webAuth "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/auth"
 	shared "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
@@ -105,12 +106,14 @@ func (h *Handler) handleListProducts(w http.ResponseWriter, r *http.Request) {
 	shared.WriteHTML(w, r, http.StatusOK, productviews.ProductsPage(items, query))
 }
 
+const maxCatalogQueryRunes = 200
+
 func catalogSearchQuery(r *http.Request) string {
 	query := strings.TrimSpace(r.URL.Query().Get("q"))
-	if len(query) > 200 {
-		return query[:200]
+	if utf8.RuneCountInString(query) <= maxCatalogQueryRunes {
+		return query
 	}
-	return query
+	return string([]rune(query)[:maxCatalogQueryRunes])
 }
 
 func (h *Handler) handleNewProductPage(w http.ResponseWriter, r *http.Request) {

@@ -23,10 +23,13 @@ func (s *Service) SearchProducts(ctx context.Context, query, merchantID string, 
 		}
 	}
 
+	query = strings.TrimSpace(query)
 	req := &meilisearch.SearchRequest{
 		Limit:  int64(limit),
 		Offset: int64(offset),
-		Sort:   []string{"created_at:desc"},
+	}
+	if query == "" {
+		req.Sort = []string{"created_at:desc"}
 	}
 	if merchantID != "" {
 		req.Filter = fmt.Sprintf(`merchant_id = "%s"`, merchantID)
