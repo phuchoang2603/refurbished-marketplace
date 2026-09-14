@@ -2,12 +2,12 @@
 
 ### Requirement: Meilisearch master key from Doppler
 
-The repository SHALL sync a Doppler-backed master key that Meilisearch and the products projector/search client use. Plaintext Meilisearch keys SHALL NOT be committed.
+The repository SHALL sync a Doppler-backed master key that Meilisearch and the search service use. Plaintext Meilisearch keys SHALL NOT be committed.
 
 #### Scenario: Search secret exists in ecommerce
 
 - **WHEN** ExternalSecrets for Meilisearch have synced successfully
-- **THEN** a Secret in `ecommerce` exists with the key Meilisearch and products need to authenticate to the search HTTP API
+- **THEN** a Secret in `ecommerce` exists with the key Meilisearch and the search service need to authenticate to the search HTTP API
 
 #### Scenario: No Meilisearch keys in Git
 

@@ -1,53 +1,8 @@
-## ADDED Requirements
-
-### Requirement: Products searches the catalog projection
-
-The products service MUST expose SearchProducts over gRPC. Search SHALL query the Meilisearch catalog projection using optional text, optional merchant filter, and offset/limit. An empty text query SHALL return a browsable page of listings. Results SHALL be catalog fields only and SHALL NOT include live stock. Search SHALL fail when the projection is unavailable rather than scanning Mongo as a list fallback.
-
-#### Scenario: Empty query is browse
-
-- **WHEN** a caller invokes SearchProducts with empty text, no merchant filter, and a valid limit
-- **THEN** the service SHALL return catalog hits from the projection ordered for browse, without available or reserved quantity
-
-#### Scenario: Text query matches listings
-
-- **WHEN** a caller invokes SearchProducts with text that matches indexed name or description
-- **THEN** the service SHALL return matching catalog hits from the projection
-
-#### Scenario: Merchant filter is applied server-side
-
-- **WHEN** a caller invokes SearchProducts with a merchant filter
-- **THEN** every returned hit SHALL belong to that merchant
-
-#### Scenario: Projection is down
-
-- **WHEN** Meilisearch is unavailable during SearchProducts
-- **THEN** the service SHALL return an unavailable error and SHALL NOT answer the list from a Mongo collection scan
-
-### Requirement: Products projects ProductCreated into search
-
-Products SHALL consume ProductCreated on `products.created` in a consumer group that is not inventory's creation group and is not inventory's reservation/payment group. Successful consumption SHALL upsert the listing's catalog fields into Meilisearch. Projection lag or Meilisearch errors SHALL NOT stall inventory consumers. CreateProduct SHALL NOT wait for the index upsert. The projector SHALL be able to rebuild the index from Mongo listings.
-
-#### Scenario: Creation appears in the index
-
-- **WHEN** ProductCreated is published and the search consumer processes it
-- **THEN** SearchProducts SHALL be able to return that listing without a Mongo list scan
-
-#### Scenario: Inventory consumption is isolated
-
-- **WHEN** search projection fails or lags
-- **THEN** inventory's ProductCreated and reservation consumers SHALL continue independently
-
-#### Scenario: Rebuild restores the index
-
-- **WHEN** operators rebuild search from Mongo
-- **THEN** indexed documents SHALL match current listing documents for identity and catalog fields
-
 ## MODIFIED Requirements
 
 ### Requirement: Products owns colocated stock state
 
-The products service MUST own listing identity and catalog fields in MongoDB. It MUST NOT persist available or reserved quantity. It MUST NOT call the inventory service. Product reads by id and batch SHALL return catalog fields only from MongoDB. Storefront and seller lists SHALL use SearchProducts, not a Mongo listing scan.
+The products service MUST own listing identity and catalog fields in MongoDB. It MUST NOT persist available or reserved quantity. It MUST NOT call the inventory service. Product reads by id and batch SHALL return catalog fields only from MongoDB. Storefront and seller lists SHALL use the search service, not a Mongo listing scan and not ListProducts.
 
 #### Scenario: Product is read with stock summary
 
@@ -56,12 +11,12 @@ The products service MUST own listing identity and catalog fields in MongoDB. It
 
 #### Scenario: Product list is read
 
-- **WHEN** a caller fetches a catalog product list
-- **THEN** the service SHALL return SearchProducts hits from the catalog projection and SHALL NOT expose ListProducts
+- **WHEN** a caller needs a catalog product list
+- **THEN** products SHALL NOT expose ListProducts; the caller SHALL use search SearchProducts
 
 ### Requirement: Products exposes internal gRPC methods
 
-The products service MUST expose internal gRPC methods for catalog reads by id, batch reads, SearchProducts, and listing creation. It MUST NOT expose ReserveStock. It MUST NOT expose ListProducts.
+The products service MUST expose internal gRPC methods for catalog reads by id, batch reads, and listing creation. It MUST NOT expose ReserveStock. It MUST NOT expose ListProducts or SearchProducts.
 
 #### Scenario: Product lookup occurs
 
@@ -81,11 +36,11 @@ The products service MUST expose internal gRPC methods for catalog reads by id, 
 #### Scenario: ListProducts is requested
 
 - **WHEN** a caller invokes ListProducts on the products API
-- **THEN** the method is absent; list and search SHALL go to SearchProducts
+- **THEN** the method is absent; list and search SHALL go to the search service
 
 ### Requirement: Products durably publishes ProductCreated
 
-Products SHALL write a ProductCreated outbox document in the same MongoDB replica-set transaction as catalog creation. CDC SHALL publish that document to `products.created`, keyed by product id. The event SHALL contain a stable event id, schema version, occurrence time, product id, initial product version, catalog name/description/price/merchant fields, and explicit initial quantity. Retries SHALL preserve event identity. Inventory and the search projector SHALL consume the topic in independent consumer groups. Products SHALL NOT use a Postgres `products_outbox` table and SHALL NOT publish the creation event from the products process.
+Products SHALL write a ProductCreated outbox document in the same MongoDB replica-set transaction as catalog creation. CDC SHALL publish that document to `products.created`, keyed by product id. The event SHALL contain a stable event id, schema version, occurrence time, product id, initial product version, catalog name/description/price/merchant fields, and explicit initial quantity. Retries SHALL preserve event identity. Inventory and search SHALL consume the topic in independent consumer groups. Products SHALL NOT use a Postgres `products_outbox` table and SHALL NOT publish the creation event from the products process.
 
 #### Scenario: Listing and event commit together
 
