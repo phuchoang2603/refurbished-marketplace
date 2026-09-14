@@ -3,6 +3,9 @@ name: catalog-meilisearch
 
 meilisearch:
   fullnameOverride: catalog-meilisearch
+  image:
+    repository: getmeili/meilisearch
+    tag: v1.53.1
   customLabels:
     app: catalog-meilisearch
   podLabels:
