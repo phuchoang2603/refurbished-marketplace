@@ -15,13 +15,11 @@ spec:
         - SCRAM
   users:
     - name: {{ .Values.user.name }}
-      db: admin
+      db: {{ .Values.user.database | quote }}
       passwordSecretRef:
         name: {{ .Values.user.passwordSecretName }}
       roles:
         - name: readWrite
-          db: {{ .Values.user.database | quote }}
-        - name: dbAdmin
           db: {{ .Values.user.database | quote }}
       scramCredentialsSecretName: {{ .Values.user.scramCredentialsSecretName }}
   additionalMongodConfig:

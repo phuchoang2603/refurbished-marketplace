@@ -1,10 +1,9 @@
 package service
 
 import (
-	"database/sql"
 	"errors"
 
-	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/database"
+	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/catalog"
 )
 
 var (
@@ -20,10 +19,9 @@ var (
 )
 
 type Service struct {
-	db      *sql.DB
-	queries *database.Queries
+	store *catalog.Store
 }
 
-func New(db *sql.DB) *Service {
-	return &Service{db: db, queries: database.New(db)}
+func New(store *catalog.Store) *Service {
+	return &Service{store: store}
 }

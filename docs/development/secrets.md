@@ -9,16 +9,17 @@ Application secrets are **not** committed to Git. External Secrets Operator sync
 
 ## Application secrets
 
-| Doppler key               | K8s Secret                                         | K8s key      |
-| ------------------------- | -------------------------------------------------- | ------------ |
-| `USERS_APP_PASSWORD`      | `users-app`                                        | `password`   |
-| `PRODUCTS_APP_PASSWORD`   | `products-app`                                     | `password`   |
-| `INVENTORY_APP_PASSWORD`  | `inventory-app`                                    | `password`   |
-| `ORDERS_APP_PASSWORD`     | `orders-app`                                       | `password`   |
-| `PAYMENT_APP_PASSWORD`    | `payment-app`                                      | `password`   |
-| `JWT_SECRET`              | `users-auth`                                       | `JWT_SECRET` |
-| `CLOUDFLARE_TUNNEL_TOKEN` | `cloudflare-tunnel-token` (ns `cloudflare-tunnel`) | `token`      |
-| `MONGODB_APP_PASSWORD`    | `mongodb-catalog-app` (ns `ecommerce`)             | `password`   |
+| Doppler key               | K8s Secret                                         | K8s key                            |
+| ------------------------- | -------------------------------------------------- | ---------------------------------- |
+| `USERS_APP_PASSWORD`      | `users-app`                                        | `password`                         |
+| `PRODUCTS_APP_PASSWORD`   | `mongodb-catalog-app` (ns `ecommerce`)             | `password`, `username` (`catalog`) |
+| `INVENTORY_APP_PASSWORD`  | `inventory-app`                                    | `password`                         |
+| `ORDERS_APP_PASSWORD`     | `orders-app`                                       | `password`                         |
+| `PAYMENT_APP_PASSWORD`    | `payment-app`                                      | `password`                         |
+| `JWT_SECRET`              | `users-auth`                                       | `JWT_SECRET`                       |
+| `CLOUDFLARE_TUNNEL_TOKEN` | `cloudflare-tunnel-token` (ns `cloudflare-tunnel`) | `token`                            |
+
+`mongodb-catalog-app` is mounted on products and read by the Kafka Connect products-outbox Mongo connector (Role in `ecommerce`). The SCRAM user is `catalog`, authenticated against database `catalog` (same DB as listings/outbox), with `readWrite` there. There is no products Postgres secret after catalog cutover.
 
 `CLOUDFLARE_TUNNEL_TOKEN` is the Zero Trust tunnel whose Public Hostnames point at `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`.
 

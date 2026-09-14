@@ -148,7 +148,7 @@ Browser → ingress → web ──gRPC──▶ domain services (+ DB / Redis ch
 
 Marketplace services emit **JSON slog** lines to stdout via `shared/observe/log` (wired by `shared/runtime.InitLogging`). Call sites use that package’s helpers — prefer `InfoContext` / `WarnContext` / `ErrorContext` on request paths so `trace_id` / `span_id` are injected; use `Key*` constants with key/value pairs (or `Attr*` with `LogAttrs`). Do not use raw `log/slog`. VLAgent scrapes those lines into VictoriaLogs.
 
-VLAgent scrapes the `ecommerce` namespace (apps + CNPG DB pods) and skips `wait-for-db` init containers.
+VLAgent scrapes the `ecommerce` namespace (apps + CNPG DB pods) and skips `wait-for-db` and `wait-for-mongo` init containers.
 
 HTTP/gRPC access logs put the useful bits in `msg` (e.g. `GET /orders/... 200`, `ListOrdersByBuyer OK`) while keeping structured attrs for filters. Log `level` is emitted lowercase (`info`, `error`, …) so Grafana Explore does not mark marketplace JSON as `unknown`.
 

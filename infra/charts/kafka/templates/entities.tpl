@@ -49,13 +49,43 @@ metadata:
   labels:
     strimzi.io/cluster: {{ $.Values.connect.clusterName }}
 spec:
+{{- $kind := default "postgres" $entity.connector.kind }}
+{{- if eq $kind "mongodb" }}
+  class: io.debezium.connector.mongodb.MongoDbConnector
+{{- else }}
   class: io.debezium.connector.postgresql.PostgresConnector
+{{- end }}
   tasksMax: 1
   # Self-heal transient startup failures (e.g. DB not ready yet). Restarts the
   # connector/task with exponential back-off, indefinitely by default.
   autoRestart:
     enabled: true
   config:
+{{- if eq $kind "mongodb" }}
+    mongodb.connection.string: mongodb://${secrets:{{ $appNamespace }}/{{ $entity.connector.sourceSecretName }}:username}:${secrets:{{ $appNamespace }}/{{ $entity.connector.sourceSecretName }}:password}@{{ printf "%s.%s.svc" $entity.connector.databaseHost $appNamespace }}:{{ $entity.connector.databasePort }}/?authSource={{ default $entity.connector.databaseName $entity.connector.authSource }}&replicaSet={{ $entity.connector.replicaSet }}
+    topic.prefix: {{ $entityName | quote }}
+    collection.include.list: {{ $entity.connector.outboxCollection }}
+    capture.scope: database
+    capture.target: {{ $entity.connector.databaseName }}
+    snapshot.mode: no_data
+    tombstones.on.delete: "false"
+    transforms: outbox
+    transforms.outbox.type: io.debezium.connector.mongodb.transforms.outbox.MongoEventRouter
+    transforms.outbox.collection.field.event.id: "id"
+    transforms.outbox.collection.field.event.key: "aggregate_id"
+    transforms.outbox.collection.field.event.payload: "payload"
+    transforms.outbox.route.by.field: "event_type"
+    transforms.outbox.route.topic.replacement: "${routedByValue}"
+    transforms.outbox.tracing.span.context.field: tracingspancontext
+    transforms.outbox.tracing.operation.name: debezium-read
+    transforms.outbox.tracing.with.context.field.only: "true"
+    producer.override.interceptor.classes: ""
+    key.converter: org.apache.kafka.connect.storage.StringConverter
+    transforms.outbox.collection.expand.json.payload: "false"
+    value.converter: org.apache.kafka.connect.converters.ByteArrayConverter
+    value.converter.delegate.converter.type: org.apache.kafka.connect.json.JsonConverter
+    value.converter.delegate.converter.type.schemas.enable: "false"
+{{- else }}
     # --- Database Connection ---
     database.hostname: {{ printf "%s.%s.svc" $entity.connector.databaseHost $appNamespace }}
     database.port: {{ $entity.connector.databasePort }}
@@ -93,4 +123,5 @@ spec:
     key.converter: org.apache.kafka.connect.storage.StringConverter
     transforms.outbox.table.expand.json.payload: "false"
     value.converter: org.apache.kafka.connect.converters.ByteArrayConverter
+{{- end }}
 {{- end }}

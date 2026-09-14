@@ -20,14 +20,24 @@ The system SHALL deploy a MongoDB Community replica set (not a standalone mongod
 - **WHEN** a client authenticated to the replica set opens a change stream on an empty collection
 - **THEN** the watch starts without requiring a standalone-to-replica-set conversion
 
-### Requirement: Shop does not depend on Mongo after deploy
+### Requirement: Products catalog traffic uses the replica set
 
-Marketplace HTTP and gRPC shop flows SHALL continue to succeed without reading or writing Mongo. Products MAY receive an unused Mongo host address in environment configuration.
+Authenticated products SHALL read and write catalog documents on the MongoDB Community replica set in `ecommerce`. Shop create, detail, batch, and seller list SHALL fail if Mongo is unavailable rather than falling back to Postgres.
 
-#### Scenario: Browse and checkout still work
+#### Scenario: Listing create requires Mongo
 
-- **WHEN** Mongo is Healthy in `ecommerce` and products does not yet implement a Mongo driver
-- **THEN** storefront browse, product detail, and checkout against Postgres continue to succeed
+- **WHEN** products handles CreateProduct after this cutover
+- **THEN** it SHALL persist the listing on the replica set and SHALL NOT insert a SQL `products` row
+
+#### Scenario: Catalog reads require Mongo
+
+- **WHEN** products handles GetProductByID, GetProductsByIDs, or ListProducts after this cutover
+- **THEN** it SHALL load documents from the replica set
+
+#### Scenario: Outbox change streams are available to CDC
+
+- **WHEN** the catalog outbox collection exists on the replica set
+- **THEN** an authenticated CDC client SHALL be able to watch inserts without converting standalone mongod to a replica set
 
 ### Requirement: Community path only
 

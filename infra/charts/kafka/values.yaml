@@ -3,7 +3,7 @@ global:
   imageTag: main
 
 # Namespace that hosts marketplace CNPG databases and app secrets
-# (orders-app, payment-app, products-app, inventory-app). Kafka itself deploys to Release.Namespace.
+# (orders-app, payment-app, inventory-app, mongodb-catalog-app). Kafka itself deploys to Release.Namespace.
 appNamespace: ecommerce
 
 kafka:
@@ -84,12 +84,14 @@ entities:
         retention: -1 # Retain creation history for independent consumers and replay.
     connector:
       name: products-outbox
-      sourceSecretName: products-app
-      databaseName: products_db
-      databaseHost: products-db-rw
-      databasePort: 5432
-      outboxTable: public.products_outbox
-      publicationAutocreateMode: filtered
+      kind: mongodb
+      sourceSecretName: mongodb-catalog-app
+      databaseHost: catalog-mongodb-svc
+      databasePort: 27017
+      databaseName: catalog
+      authSource: catalog
+      replicaSet: catalog-mongodb
+      outboxCollection: catalog.catalog_outbox
   orders:
     topics:
       - name: orders.created

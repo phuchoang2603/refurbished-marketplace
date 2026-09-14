@@ -1,12 +1,12 @@
 package tests
 
 import (
-	"database/sql"
 	"errors"
 	"testing"
 
+	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/catalog"
 	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/service"
-	testpostgres "github.com/phuchoang2603/refurbished-marketplace/shared/testutil/postgres"
+	testmongo "github.com/phuchoang2603/refurbished-marketplace/shared/testutil/mongo"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
@@ -14,22 +14,12 @@ import (
 
 func newProductsService(t *testing.T) *service.Service {
 	t.Helper()
-	return service.New(newProductsDB(t))
+	return service.New(newProductsStore(t))
 }
 
-func newProductsDB(t *testing.T) *sql.DB {
+func newProductsStore(t *testing.T) *catalog.Store {
 	t.Helper()
-	db := testpostgres.SetupPostgresWithMigrations(
-		t,
-		testpostgres.Config{
-			Database: "products_db",
-			Username: "products_app",
-			Password: "products_app_dev_password",
-		},
-		"../db/migrations",
-	)
-
-	return db
+	return catalog.New(testmongo.SetupReplicaSet(t))
 }
 
 func TestCreateAndReadProducts(t *testing.T) {

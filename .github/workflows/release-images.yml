@@ -53,9 +53,6 @@ jobs:
               BUILD_PKG=./services/products/cmd/products
               BUILD_BIN=products
               EXPOSE_PORT=9092
-          - image: products-migrator
-            dockerfile: infra/docker/goose-migrator.Dockerfile
-            build_args: MIGRATIONS_DIR=services/products/db/migrations
           - image: inventory
             dockerfile: infra/docker/go-service.Dockerfile
             build_args: |

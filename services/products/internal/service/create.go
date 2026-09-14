@@ -2,9 +2,10 @@ package service
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
-	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/database"
+	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/catalog"
 	"github.com/phuchoang2603/refurbished-marketplace/shared/messaging"
 	sharedtrace "github.com/phuchoang2603/refurbished-marketplace/shared/observe/trace"
 	productsv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1"
@@ -26,37 +27,35 @@ func (s *Service) CreateProduct(ctx context.Context, name, description string, p
 	if initialStock == nil || *initialStock < 0 {
 		return Product{}, ErrInvalidInitialStock
 	}
-	tx, err := s.db.BeginTx(ctx, nil)
-	if err != nil {
-		return Product{}, err
-	}
-	defer func() { _ = tx.Rollback() }()
-	q := s.queries.WithTx(tx)
-	created, err := q.CreateProduct(ctx, database.CreateProductParams{
-		ID: uuid.New(), Name: name, Description: normalizeProductDescription(description, name),
-		PriceCents: priceCents, MerchantID: merchantID,
-	})
-	if err != nil {
-		return Product{}, err
+
+	now := time.Now().UTC()
+	listing := catalog.Listing{
+		ID:          uuid.New(),
+		Name:        name,
+		Description: normalizeProductDescription(description, name),
+		PriceCents:  priceCents,
+		MerchantID:  merchantID,
+		CreatedAt:   now,
+		UpdatedAt:   now,
 	}
 	eventID := uuid.New()
 	payload, err := proto.Marshal(&productsv1.ProductCreated{
-		EventId: eventID.String(), SchemaVersion: 1, OccurredAt: timestamppb.New(created.CreatedAt),
-		ProductId: created.ID.String(), ProductVersion: 1, Name: created.Name,
-		Description: created.Description, PriceCents: created.PriceCents, MerchantId: merchantID.String(),
+		EventId: eventID.String(), SchemaVersion: 1, OccurredAt: timestamppb.New(listing.CreatedAt),
+		ProductId: listing.ID.String(), ProductVersion: 1, Name: listing.Name,
+		Description: listing.Description, PriceCents: listing.PriceCents, MerchantId: merchantID.String(),
 		InitialQty: initialStock,
 	})
 	if err != nil {
 		return Product{}, err
 	}
-	if err := q.CreateProductOutbox(ctx, database.CreateProductOutboxParams{
-		ID: eventID, AggregateID: created.ID, EventType: messaging.EventTypeProductCreated,
-		Payload: payload, Tracingspancontext: sharedtrace.SerializeContext(ctx),
+	if err := s.store.CreateListingAndOutbox(ctx, listing, catalog.OutboxEvent{
+		ID:             eventID,
+		AggregateID:    listing.ID,
+		EventType:      messaging.EventTypeProductCreated,
+		Payload:        payload,
+		TracingContext: sharedtrace.SerializeContext(ctx),
 	}); err != nil {
 		return Product{}, err
 	}
-	if err := tx.Commit(); err != nil {
-		return Product{}, err
-	}
-	return mapDBProduct(created), nil
+	return mapListing(listing), nil
 }

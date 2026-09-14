@@ -36,12 +36,12 @@ Root Applications on the gpu cluster SHALL enable the marketplace chart via Argo
 
 ### Requirement: Marketplace release owns databases
 
-CNPG Clusters for marketplace services SHALL be resources of the Argo-managed marketplace Helm release. The repository SHALL NOT apply databases out-of-band to protect them from `tilt down`.
+CNPG Clusters for marketplace services that still use Postgres SHALL be resources of the Argo-managed marketplace Helm release. The marketplace release SHALL NOT deploy a `products-db` Cluster after catalog cutover. The repository SHALL NOT apply remaining databases out-of-band to protect them from `tilt down`.
 
 #### Scenario: Clusters sync with the chart
 
 - **WHEN** the marketplace Application syncs
-- **THEN** CNPG Cluster objects are applied from the chart templates
+- **THEN** CNPG Cluster objects for remaining Postgres services are applied from the chart templates and no products Cluster is rendered
 
 ### Requirement: App-of-apps per environment
 
@@ -263,9 +263,9 @@ The marketplace Helm release SHALL deploy an `inventory` Service and Deployment 
 
 ### Requirement: Product creation event transport
 
-The GitOps configuration SHALL provision a `products.created` topic and a products outbox CDC connector using catalog database credentials, alongside the inventory outbox connector targeting inventory_db. Inventory SHALL subscribe to creation events with its own consumer group. The products connector SHALL have the required secret access and preserve event identity, product key, and tracing metadata.
+The GitOps configuration SHALL retain the `products.created` topic and SHALL deploy a Debezium MongoDB outbox connector against the catalog outbox collection, using Mongo credentials and the same EventRouter identity/key/payload/tracing mapping as other outbox connectors. It SHALL NOT deploy a Postgres products-outbox CDC connector. Inventory SHALL continue to subscribe to creation events with its own consumer group.
 
 #### Scenario: Creation transport syncs
 
 - **WHEN** the Kafka and marketplace Applications sync
-- **THEN** the products creation topic/connector and inventory subscription SHALL be configured without replacing the inventory reservation event transport
+- **THEN** the products creation topic, Mongo outbox connector, and inventory subscription SHALL be configured without a Postgres `products-outbox` connector and without replacing the inventory reservation event transport

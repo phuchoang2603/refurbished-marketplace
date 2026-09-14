@@ -14,8 +14,13 @@ spec:
   target:
     name: {{ .Values.user.passwordSecretName }}
     creationPolicy: Owner
+    template:
+      engineVersion: v2
+      data:
+        username: {{ .Values.user.name | quote }}
+        password: "{{`{{ .password }}`}}"
   data:
-    - secretKey: {{ .Values.user.passwordSecretKey }}
+    - secretKey: password
       remoteRef:
         key: {{ .Values.externalSecrets.remoteKey }}
 {{- end }}

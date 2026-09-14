@@ -7,9 +7,11 @@ FROM quay.io/strimzi/kafka:1.0.0-kafka-4.2.0
 
 USER root
 # Flatten plugin jars into one Connect plugin directory (avoid nested tarball dir slow scans).
-RUN mkdir -p /opt/kafka/plugins/debezium-connector-postgres && \
+RUN mkdir -p /opt/kafka/plugins/debezium-connector-postgres /opt/kafka/plugins/debezium-connector-mongodb && \
   curl -L https://repo1.maven.org/maven2/io/debezium/debezium-connector-postgres/3.5.0.Final/debezium-connector-postgres-3.5.0.Final-plugin.tar.gz | \
     tar -xzf - -C /opt/kafka/plugins/debezium-connector-postgres --strip-components=1 && \
-  chown -R 1001:0 /opt/kafka/plugins/debezium-connector-postgres
+  curl -L https://repo1.maven.org/maven2/io/debezium/debezium-connector-mongodb/3.5.0.Final/debezium-connector-mongodb-3.5.0.Final-plugin.tar.gz | \
+    tar -xzf - -C /opt/kafka/plugins/debezium-connector-mongodb --strip-components=1 && \
+  chown -R 1001:0 /opt/kafka/plugins/debezium-connector-postgres /opt/kafka/plugins/debezium-connector-mongodb
 
 USER 1001
