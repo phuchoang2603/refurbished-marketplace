@@ -13,6 +13,7 @@ context: |
   - HTML-first web edge using chi, templ, Tailwind CSS, Datastar. Generate templ/Tailwind locally and commit; CI builds images
   - gRPC for internal service-to-service traffic. Prefer devenv `generate-proto` for protobuf codegen
   - PostgreSQL with goose migrations and sqlc queries. Prefer devenv `sqlc-gen`
+  - Keep commit small and frequent
   - GitOps: `infra/argocd/dev/root.yaml` (talos-dev + Doppler `dev`) and `infra/argocd/prod/root.yaml` (prod Talos + Doppler `prd`). Cilium is cluster-owned in talos-proxmox, not Argo. Do not put Doppler config in Argo values
 
   Repo conventions:

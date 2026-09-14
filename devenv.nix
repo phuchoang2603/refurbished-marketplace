@@ -1,13 +1,18 @@
 {
   pkgs,
   config,
-  lib,
   ...
 }:
+
+let
+  homeDir = builtins.getEnv "HOME";
+  colimaSocket = "${homeDir}/.config/colima/default/docker.sock";
+in
 
 {
   env = {
     TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE = "/var/run/docker.sock";
+    DOCKER_HOST = "unix://${colimaSocket}";
     DOPPLER_PROJECT = "refurbished-marketplace";
     DOPPLER_CONFIG = "dev";
   };
