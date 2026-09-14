@@ -33,7 +33,7 @@ spec:
         marketplace.metrics: "true"
 {{- end }}
     spec:
-{{- if or $svc.db $svc.mongo }}
+{{- if or $svc.db $svc.mongo $svc.meili }}
       initContainers:
 {{- if $svc.db }}
         - name: wait-for-db
@@ -66,6 +66,19 @@ spec:
                 secretKeyRef:
                   name: {{ $svc.mongo.secretName }}
                   key: {{ default "password" $svc.mongo.passwordKey }}
+{{- with $initResources }}
+          resources:
+{{ toYaml . | nindent 12 }}
+{{- end }}
+{{- end }}
+{{- if $svc.meili }}
+        - name: wait-for-meili
+          image: busybox:1.37
+          command: ["sh", "-c"]
+          args:
+            - >-
+              until wget -q -O /dev/null http://{{ $svc.meili.host }}:{{ $svc.meili.port }}/health;
+              do echo "waiting for meilisearch {{ $svc.meili.host }}"; sleep 2; done
 {{- with $initResources }}
           resources:
 {{ toYaml . | nindent 12 }}
@@ -128,6 +141,15 @@ spec:
               value: {{ default $svc.mongo.database $svc.mongo.authSource | quote }}
             - name: MONGO_REPLICA_SET
               value: {{ $svc.mongo.replicaSet | quote }}
+{{- end }}
+{{- if $svc.meili }}
+            - name: MEILI_URL
+              value: {{ printf "http://%s:%v" $svc.meili.host $svc.meili.port | quote }}
+            - name: MEILI_MASTER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $svc.meili.secretName }}
+                  key: {{ default "MEILI_MASTER_KEY" $svc.meili.secretKey }}
 {{- end }}
 {{- if $svc.auth }}
             - name: JWT_SECRET
