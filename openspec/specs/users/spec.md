@@ -1,4 +1,10 @@
-## ADDED Requirements
+# Users
+
+## Purpose
+
+Define authentication session ownership for login, refresh, and logout, including PostgreSQL persistence of refresh sessions.
+
+## Requirements
 
 ### Requirement: Users service owns auth sessions
 

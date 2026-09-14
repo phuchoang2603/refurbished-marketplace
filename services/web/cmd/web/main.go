@@ -46,11 +46,12 @@ func main() {
 	}()
 
 	deps, err := webclients.New(webclients.Config{
-		UsersAddr:    cfg.UsersAddr,
-		ProductsAddr: cfg.ProductsAddr,
-		OrdersAddr:   cfg.OrdersAddr,
-		CartAddr:     cfg.CartAddr,
-		PaymentAddr:  cfg.PaymentAddr,
+		UsersAddr:     cfg.UsersAddr,
+		ProductsAddr:  cfg.ProductsAddr,
+		InventoryAddr: cfg.InventoryAddr,
+		OrdersAddr:    cfg.OrdersAddr,
+		CartAddr:      cfg.CartAddr,
+		PaymentAddr:   cfg.PaymentAddr,
 	})
 	if err != nil {
 		sharedlog.Fatal("clients", "err", err)
@@ -60,6 +61,7 @@ func main() {
 	h := handlers.New(
 		deps.Users,
 		deps.Products,
+		deps.Inventory,
 		deps.Orders,
 		deps.Cart,
 		deps.Payment,

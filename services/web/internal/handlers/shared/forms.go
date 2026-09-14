@@ -45,6 +45,19 @@ func ProductQuantityMerchantFromForm(r *http.Request) (string, string, int32, er
 	return r.FormValue("product_id"), r.FormValue("merchant_id"), quantity, nil
 }
 
+func CartItemStampFromForm(r *http.Request) (productID, merchantID, productName string, quantity int32, unitPriceCents int64, err error) {
+	productID, merchantID, quantity, err = ProductQuantityMerchantFromForm(r)
+	if err != nil {
+		return "", "", "", 0, 0, err
+	}
+	productName = strings.TrimSpace(r.FormValue("product_name"))
+	unitPriceCents, err = strconv.ParseInt(strings.TrimSpace(r.FormValue("unit_price_cents")), 10, 64)
+	if err != nil || unitPriceCents < 0 {
+		return "", "", "", 0, 0, ErrInvalidRequestBody
+	}
+	return productID, merchantID, productName, quantity, unitPriceCents, nil
+}
+
 func ProductCreateFromForm(r *http.Request) (string, string, int64, int32, error) {
 	if !parseForm(r) {
 		return "", "", 0, 0, ErrInvalidRequestBody

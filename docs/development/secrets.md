@@ -13,6 +13,7 @@ Application secrets are **not** committed to Git. External Secrets Operator sync
 | ------------------------- | -------------------------------------------------- | ------------ |
 | `USERS_APP_PASSWORD`      | `users-app`                                        | `password`   |
 | `PRODUCTS_APP_PASSWORD`   | `products-app`                                     | `password`   |
+| `INVENTORY_APP_PASSWORD`  | `inventory-app`                                    | `password`   |
 | `ORDERS_APP_PASSWORD`     | `orders-app`                                       | `password`   |
 | `PAYMENT_APP_PASSWORD`    | `payment-app`                                      | `password`   |
 | `JWT_SECRET`              | `users-auth`                                       | `JWT_SECRET` |

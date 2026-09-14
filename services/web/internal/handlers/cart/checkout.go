@@ -76,7 +76,7 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 		shared.WriteGRPCError(w, r, err)
 		return
 	}
-	if err := shared.HoldStockForOrder(r.Context(), h.deps.Products, h.deps.Orders, order); err != nil {
+	if err := shared.HoldStockForOrder(r.Context(), h.deps.Inventory, h.deps.Orders, order); err != nil {
 		if st, ok := status.FromError(err); ok && st.Code() == codes.FailedPrecondition {
 			rotateCheckoutIntent(w, r, cartID, merchantID)
 		}

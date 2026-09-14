@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 
 	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
@@ -26,12 +27,30 @@ func (s *Service) ReserveStock(ctx context.Context, orderID, merchantID uuid.UUI
 		_ = tx.Rollback()
 	}()
 
+	if err := q.LockInventoryReservationOrder(ctx, orderID); err != nil {
+		return err
+	}
+
 	existing, err := q.CountInventoryReservationsByOrderID(ctx, orderID)
 	if err != nil {
 		return err
 	}
 	if existing > 0 {
 		return tx.Commit()
+	}
+
+	if _, err := q.InsertInventoryInboxMessage(ctx, commandReserveInboxID(orderID)); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			existing, err := q.CountInventoryReservationsByOrderID(ctx, orderID)
+			if err != nil {
+				return err
+			}
+			if existing > 0 {
+				return tx.Commit()
+			}
+			return ErrReservationAlreadyFailed
+		}
+		return err
 	}
 
 	if err := reserveOrderItems(ctx, q, orderID, items); err != nil {

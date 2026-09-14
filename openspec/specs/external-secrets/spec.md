@@ -46,7 +46,7 @@ The repository SHALL render `ExternalSecret` resources from the `refurbished-mar
 #### Scenario: Debezium connector secrets
 
 - **WHEN** ExternalSecrets have synced successfully
-- **THEN** `orders-app` and `payment-app` secrets exist for Strimzi `${secrets:…}` references in the kafka chart
+- **THEN** `orders-app`, `payment-app`, `products-app`, and `inventory-app` secrets exist for Strimzi `${secrets:…}` references in the kafka chart
 
 ### Requirement: No committed plaintext cluster secrets
 
@@ -125,3 +125,12 @@ Secrets documentation SHALL list the Doppler remote keys and Kubernetes Secret n
 
 - **WHEN** an operator prepares Doppler configs `dev` and `prd`
 - **THEN** documentation names the Mongo-related Doppler keys to set before the database Application can become Ready
+
+### Requirement: Inventory database secret from Doppler
+
+The marketplace chart SHALL render an ExternalSecret for inventory’s CNPG credentials from Doppler using the same `{SECRET_NAME}_PASSWORD` pattern as other service databases. Plaintext inventory passwords SHALL NOT be committed.
+
+#### Scenario: Inventory app secret exists
+
+- **WHEN** ExternalSecrets have synced successfully
+- **THEN** an inventory app Secret exists in `ecommerce` with keys usable by CloudNativePG and the inventory Deployment

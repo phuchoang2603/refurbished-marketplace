@@ -56,6 +56,15 @@ jobs:
           - image: products-migrator
             dockerfile: infra/docker/goose-migrator.Dockerfile
             build_args: MIGRATIONS_DIR=services/products/db/migrations
+          - image: inventory
+            dockerfile: infra/docker/go-service.Dockerfile
+            build_args: |
+              BUILD_PKG=./services/inventory/cmd/inventory
+              BUILD_BIN=inventory
+              EXPOSE_PORT=9097
+          - image: inventory-migrator
+            dockerfile: infra/docker/goose-migrator.Dockerfile
+            build_args: MIGRATIONS_DIR=services/inventory/db/migrations
           - image: orders
             dockerfile: infra/docker/go-service.Dockerfile
             build_args: |

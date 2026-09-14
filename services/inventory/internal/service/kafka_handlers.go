@@ -8,7 +8,7 @@ import (
 
 	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
 
-	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/database"
+	"github.com/phuchoang2603/refurbished-marketplace/services/inventory/internal/database"
 	"github.com/phuchoang2603/refurbished-marketplace/shared/messaging"
 	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
 	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
@@ -26,6 +26,15 @@ func (s *Service) KafkaReservationHandler() messaging.KafkaHandler {
 		default:
 			return nil
 		}
+	}
+}
+
+func (s *Service) KafkaProductCreatedHandler() messaging.KafkaHandler {
+	return func(ctx context.Context, msg messaging.KafkaMessage) error {
+		if msg.Topic != messaging.EventTypeProductCreated {
+			return nil
+		}
+		return s.HandleProductCreated(ctx, msg.Value)
 	}
 }
 
@@ -53,6 +62,10 @@ func (s *Service) HandleOrdersCreated(ctx context.Context, messageID string, val
 		_ = tx.Rollback()
 	}()
 
+	if err := q.LockInventoryReservationOrder(ctx, orderID); err != nil {
+		return err
+	}
+
 	if _, err := q.InsertInventoryInboxMessage(ctx, messageID); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return tx.Commit()
@@ -65,6 +78,14 @@ func (s *Service) HandleOrdersCreated(ctx context.Context, messageID string, val
 		return err
 	}
 	if existing > 0 {
+		return tx.Commit()
+	}
+
+	commandAttempted, err := q.InventoryInboxExists(ctx, commandReserveInboxID(orderID))
+	if err != nil {
+		return err
+	}
+	if commandAttempted {
 		return tx.Commit()
 	}
 

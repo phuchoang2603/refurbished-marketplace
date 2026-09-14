@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/database"
+	"github.com/phuchoang2603/refurbished-marketplace/services/inventory/internal/database"
 	"github.com/phuchoang2603/refurbished-marketplace/shared/messaging"
 	sharedtrace "github.com/phuchoang2603/refurbished-marketplace/shared/observe/trace"
 	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
@@ -17,6 +17,10 @@ import (
 type ReservationItemInput struct {
 	ProductID uuid.UUID
 	Quantity  int32
+}
+
+func commandReserveInboxID(orderID uuid.UUID) string {
+	return "inventory.reserve-command/" + orderID.String()
 }
 
 func parseOrderCreatedReservation(msg *ordersv1.OrderCreated) (uuid.UUID, uuid.UUID, int64, []ReservationItemInput, error) {

@@ -19,6 +19,7 @@ env:
   GO_MODULE_GLOBS: >-
     ./services/users/...
     ./services/products/...
+    ./services/inventory/...
     ./services/orders/...
     ./services/cart/...
     ./services/payment/...
@@ -64,6 +65,7 @@ jobs:
     outputs:
       users: ${{ steps.filter.outputs.users }}
       products: ${{ steps.filter.outputs.products }}
+      inventory: ${{ steps.filter.outputs.inventory }}
       orders: ${{ steps.filter.outputs.orders }}
       payment: ${{ steps.filter.outputs.payment }}
       cart: ${{ steps.filter.outputs.cart }}
@@ -82,6 +84,11 @@ jobs:
               - '.github/workflows/ci.yml'
             products:
               - 'services/products/**'
+              - 'shared/**'
+              - 'go.work*'
+              - '.github/workflows/ci.yml'
+            inventory:
+              - 'services/inventory/**'
               - 'shared/**'
               - 'go.work*'
               - '.github/workflows/ci.yml'
@@ -117,6 +124,7 @@ jobs:
         service:
           - users
           - products
+          - inventory
           - orders
           - payment
           - cart
@@ -151,6 +159,7 @@ jobs:
         service:
           - users
           - products
+          - inventory
           - orders
           - payment
           - cart

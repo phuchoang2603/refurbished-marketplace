@@ -10,6 +10,8 @@ import (
 	sharedviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/shared"
 
 	"github.com/go-chi/chi/v5"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -23,10 +25,6 @@ func productsUnavailableView() sharedviews.UnavailableView {
 
 func productManagementUnavailableView() sharedviews.UnavailableView {
 	return shared.NewUnavailableView("Create product", "create-product", "Product management unavailable", "Seller product management is temporarily unavailable. Please try again shortly.")
-}
-
-func productDetailUnavailableView() sharedviews.UnavailableView {
-	return shared.NewUnavailableView("Product unavailable", "product-detail-unavailable", "Product unavailable", "Product availability is temporarily unavailable. Please try again shortly.")
 }
 
 func (h *Handler) RegisterPages(r chi.Router) {
@@ -60,44 +58,25 @@ func (h *Handler) handleGetProductByID(w http.ResponseWriter, r *http.Request) {
 		shared.WriteGRPCError(w, r, err)
 		return
 	}
-	if p.AvailableQty == nil {
-		shared.WriteUnavailablePage(w, r, http.StatusServiceUnavailable, productDetailUnavailableView())
-		return
+	view := mapProductView(p.Id, p.MerchantId, p.Name, p.Description, p.PriceCents, 0, viewerUserID != "" && viewerUserID == p.GetMerchantId(), p.CreatedAt, p.UpdatedAt)
+	view.JustCreated = view.IsOwner && r.URL.Query().Get("created") == "1"
+	view.StockState = "unavailable"
+	if h.deps.Inventory != nil {
+		row, stockErr := h.deps.Inventory.GetStock(r.Context(), id)
+		switch {
+		case stockErr == nil && row != nil:
+			view.StockState = "ready"
+			view.Stock = row.GetAvailableQty()
+		case status.Code(stockErr) == codes.NotFound:
+			view.StockState = "pending"
+		}
 	}
-
-	shared.WriteHTML(w, r, http.StatusOK, productviews.ProductDetailPage(mapProductView(p.Id, p.MerchantId, p.Name, p.Description, p.PriceCents, p.GetAvailableQty(), viewerUserID != "" && viewerUserID == p.GetMerchantId(), p.CreatedAt, p.UpdatedAt)))
+	shared.WriteHTML(w, r, http.StatusOK, productviews.ProductDetailPage(view))
 }
 
 func (h *Handler) handleListProducts(w http.ResponseWriter, r *http.Request) {
-	limit, ok := shared.QueryInt32Param(w, r, "limit", 20, 1, "invalid limit")
-	if !ok {
-		return
-	}
-	offset, ok := shared.QueryInt32Param(w, r, "offset", 0, 0, "invalid offset")
-	if !ok {
-		return
-	}
-	viewerUserID, _ := webAuth.UserIDFromContext(r.Context())
-
-	resp, err := h.deps.Products.ListProducts(r.Context(), limit, offset)
-	if err != nil {
-		if shared.IsUnavailableError(err) {
-			shared.WriteUnavailablePage(w, r, http.StatusServiceUnavailable, productsUnavailableView())
-			return
-		}
-		shared.WriteGRPCError(w, r, err)
-		return
-	}
-
-	items := make([]sharedviews.ProductView, 0, len(resp.Products))
-	for _, p := range resp.Products {
-		if viewerUserID != "" && p.GetMerchantId() == viewerUserID {
-			continue
-		}
-		items = append(items, mapProductView(p.Id, p.MerchantId, p.Name, p.Description, p.PriceCents, 0, false, p.CreatedAt, p.UpdatedAt))
-	}
-
-	shared.WriteHTML(w, r, http.StatusOK, productviews.ProductsPage(items))
+	// Browse remains dark until the search projection is available.
+	shared.WriteHTML(w, r, http.StatusOK, productviews.ProductsPage(nil))
 }
 
 func (h *Handler) handleNewProductPage(w http.ResponseWriter, r *http.Request) {
@@ -131,7 +110,7 @@ func (h *Handler) handleListSellerProducts(w http.ResponseWriter, r *http.Reques
 func normalizeProductCreateInput(name, description string, priceCents int64, initialStock int32) (string, string, bool) {
 	name = strings.TrimSpace(name)
 	description = strings.TrimSpace(description)
-	if name == "" || priceCents <= 0 || initialStock <= 0 {
+	if name == "" || priceCents <= 0 || initialStock < 0 {
 		return "", "", false
 	}
 	return name, description, true

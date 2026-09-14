@@ -1,0 +1,17 @@
+syntax = "proto3";
+package products.v1;
+option go_package = "github.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1;productsv1";
+import "google/protobuf/timestamp.proto";
+
+message ProductCreated {
+  string event_id = 1;
+  uint32 schema_version = 2;
+  google.protobuf.Timestamp occurred_at = 3;
+  string product_id = 4;
+  uint64 product_version = 5;
+  string name = 6;
+  string description = 7;
+  int64 price_cents = 8;
+  string merchant_id = 9;
+  optional int32 initial_qty = 10;
+}

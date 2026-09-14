@@ -11,6 +11,7 @@ import (
 	"github.com/phuchoang2603/refurbished-marketplace/services/web/internal/auth"
 	"github.com/phuchoang2603/refurbished-marketplace/services/web/tests/fakes"
 	cartv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/cart/v1"
+	inventoryv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/inventory/v1"
 	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
 	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
 	productsv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1"
@@ -20,14 +21,6 @@ import (
 )
 
 func TestAddCartItemRedirectsToCart(t *testing.T) {
-	productsSvc := &fakes.ProductsService{
-		GetByIDFn: func(ctx context.Context, id string) (*productsv1.Product, error) {
-			if id != "prod-1" {
-				t.Fatalf("product id = %q, want prod-1", id)
-			}
-			return &productsv1.Product{Id: id, Name: "Phone", PriceCents: 1200, MerchantId: "merchant-1"}, nil
-		},
-	}
 	cartSvc := &fakes.CartService{
 		AddFn: func(ctx context.Context, cartID, productID, merchantID, productName string, quantity int32, unitPriceCents int64) (*cartv1.Cart, error) {
 			if merchantID != "merchant-1" {
@@ -39,12 +32,12 @@ func TestAddCartItemRedirectsToCart(t *testing.T) {
 			return &cartv1.Cart{CartId: cartID, Items: []*cartv1.CartItem{{ProductId: productID, Quantity: quantity, MerchantId: merchantID, ProductName: productName, UnitPriceCents: unitPriceCents}}}, nil
 		},
 	}
-	form := url.Values{"product_id": {"prod-1"}, "merchant_id": {"merchant-1"}, "quantity": {"2"}}
+	form := url.Values{"product_id": {"prod-1"}, "merchant_id": {"merchant-1"}, "quantity": {"2"}, "product_name": {"Phone"}, "unit_price_cents": {"1200"}}
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/cart/items", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	newTestRouter(t, routerDeps{cart: cartSvc, products: productsSvc}).ServeHTTP(rec, req)
+	newTestRouter(t, routerDeps{cart: cartSvc}).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusSeeOther {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusSeeOther)
@@ -112,15 +105,17 @@ func TestCheckoutRedirectsToHostedPaymentWithoutClearingCart(t *testing.T) {
 		},
 	}
 	var reservedOrderID string
-	productsSvc.ReserveFn = func(ctx context.Context, orderID, merchantID string, totalCents int64, items []*productsv1.ReserveStockItem) error {
-		reservedOrderID = orderID
-		if merchantID != "merchant-1" {
-			t.Fatalf("reserve merchantID = %q, want merchant-1", merchantID)
-		}
-		if len(items) != 2 {
-			t.Fatalf("reserve items = %d, want 2", len(items))
-		}
-		return nil
+	inventorySvc := &fakes.InventoryService{
+		ReserveFn: func(ctx context.Context, orderID, merchantID string, totalCents int64, items []*inventoryv1.ReserveStockItem) error {
+			reservedOrderID = orderID
+			if merchantID != "merchant-1" {
+				t.Fatalf("reserve merchantID = %q, want merchant-1", merchantID)
+			}
+			if len(items) != 2 {
+				t.Fatalf("reserve items = %d, want 2", len(items))
+			}
+			return nil
+		},
 	}
 	paymentSvc := &fakes.PaymentService{
 		CreateSessionFn: func(ctx context.Context, req *paymentv1.CreateHostedPaymentSessionRequest) (*paymentv1.CreateHostedPaymentSessionResponse, error) {
@@ -162,7 +157,7 @@ func TestCheckoutRedirectsToHostedPaymentWithoutClearingCart(t *testing.T) {
 	req.AddCookie(&http.Cookie{Name: auth.AccessCookieName, Value: signedAccessToken(t, "user-1")})
 	req.AddCookie(&http.Cookie{Name: "cart_id", Value: "cart-1"})
 
-	newTestRouter(t, routerDeps{cart: cartSvc, products: productsSvc, orders: ordersSvc, payment: paymentSvc}).ServeHTTP(rec, req)
+	newTestRouter(t, routerDeps{cart: cartSvc, products: productsSvc, inventory: inventorySvc, orders: ordersSvc, payment: paymentSvc}).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusSeeOther {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusSeeOther)
@@ -238,67 +233,73 @@ func checkoutIntentFromHTML(body string) string {
 }
 
 func TestCartCheckoutMarksOrderFailedWhenReserveFails(t *testing.T) {
-	cartSvc := &fakes.CartService{
-		GetFn: func(ctx context.Context, cartID string) (*cartv1.Cart, error) {
-			return &cartv1.Cart{
-				CartId: cartID,
-				Items: []*cartv1.CartItem{
-					{ProductId: "prod-1", Quantity: 1, MerchantId: "merchant-1", ProductName: "Phone", UnitPriceCents: 1200},
+	for _, reason := range []string{"insufficient stock", "stock not initialized"} {
+		t.Run(reason, func(t *testing.T) {
+			cartSvc := &fakes.CartService{
+				GetFn: func(ctx context.Context, cartID string) (*cartv1.Cart, error) {
+					return &cartv1.Cart{
+						CartId: cartID,
+						Items: []*cartv1.CartItem{
+							{ProductId: "prod-1", Quantity: 1, MerchantId: "merchant-1", ProductName: "Phone", UnitPriceCents: 1200},
+						},
+					}, nil
 				},
-			}, nil
-		},
-	}
-	productsSvc := &fakes.ProductsService{
-		GetByIDsFn: func(ctx context.Context, ids []string) (*productsv1.GetProductsByIDsResponse, error) {
-			return &productsv1.GetProductsByIDsResponse{Products: []*productsv1.Product{
-				{Id: "prod-1", Name: "Phone", PriceCents: 1200, MerchantId: "merchant-1"},
-			}}, nil
-		},
-		ReserveFn: func(ctx context.Context, orderID, merchantID string, totalCents int64, items []*productsv1.ReserveStockItem) error {
-			return status.Error(codes.FailedPrecondition, "insufficient stock")
-		},
-	}
-	var failedStatus ordersv1.OrderStatus
-	ordersSvc := &fakes.OrdersService{
-		CreateFn: func(ctx context.Context, buyerUserID, merchantID string, items []*ordersv1.CreateOrderItem, totalCents int64, idempotencyKey string) (*ordersv1.Order, error) {
-			return &ordersv1.Order{
-				Id:          "order-fail",
-				BuyerUserId: buyerUserID,
-				MerchantId:  merchantID,
-				Status:      ordersv1.OrderStatus_ORDER_STATUS_PENDING,
-				TotalCents:  totalCents,
-				Items:       []*ordersv1.OrderItem{{ProductId: items[0].GetProductId(), Quantity: items[0].GetQuantity()}},
-			}, nil
-		},
-		UpdateStatusFn: func(ctx context.Context, id string, st ordersv1.OrderStatus) (*ordersv1.Order, error) {
-			failedStatus = st
-			return &ordersv1.Order{Id: id, Status: st}, nil
-		},
-	}
-	paymentCalled := false
-	paymentSvc := &fakes.PaymentService{
-		CreateSessionFn: func(ctx context.Context, req *paymentv1.CreateHostedPaymentSessionRequest) (*paymentv1.CreateHostedPaymentSessionResponse, error) {
-			paymentCalled = true
-			return &paymentv1.CreateHostedPaymentSessionResponse{OrderId: req.GetOrderId()}, nil
-		},
-	}
-	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPost, "/cart/checkout", strings.NewReader(checkoutForm(url.Values{"merchant_id": {"merchant-1"}, "checkout_intent_key": {"intent-fail"}})))
-	req.Host = "localhost:8080"
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.AddCookie(&http.Cookie{Name: auth.AccessCookieName, Value: signedAccessToken(t, "user-1")})
-	req.AddCookie(&http.Cookie{Name: "cart_id", Value: "cart-1"})
+			}
+			productsSvc := &fakes.ProductsService{
+				GetByIDsFn: func(ctx context.Context, ids []string) (*productsv1.GetProductsByIDsResponse, error) {
+					return &productsv1.GetProductsByIDsResponse{Products: []*productsv1.Product{
+						{Id: "prod-1", Name: "Phone", PriceCents: 1200, MerchantId: "merchant-1"},
+					}}, nil
+				},
+			}
+			inventorySvc := &fakes.InventoryService{
+				ReserveFn: func(ctx context.Context, orderID, merchantID string, totalCents int64, items []*inventoryv1.ReserveStockItem) error {
+					return status.Error(codes.FailedPrecondition, reason)
+				},
+			}
+			var failedStatus ordersv1.OrderStatus
+			ordersSvc := &fakes.OrdersService{
+				CreateFn: func(ctx context.Context, buyerUserID, merchantID string, items []*ordersv1.CreateOrderItem, totalCents int64, idempotencyKey string) (*ordersv1.Order, error) {
+					return &ordersv1.Order{
+						Id:          "order-fail",
+						BuyerUserId: buyerUserID,
+						MerchantId:  merchantID,
+						Status:      ordersv1.OrderStatus_ORDER_STATUS_PENDING,
+						TotalCents:  totalCents,
+						Items:       []*ordersv1.OrderItem{{ProductId: items[0].GetProductId(), Quantity: items[0].GetQuantity()}},
+					}, nil
+				},
+				UpdateStatusFn: func(ctx context.Context, id string, st ordersv1.OrderStatus) (*ordersv1.Order, error) {
+					failedStatus = st
+					return &ordersv1.Order{Id: id, Status: st}, nil
+				},
+			}
+			paymentCalled := false
+			paymentSvc := &fakes.PaymentService{
+				CreateSessionFn: func(ctx context.Context, req *paymentv1.CreateHostedPaymentSessionRequest) (*paymentv1.CreateHostedPaymentSessionResponse, error) {
+					paymentCalled = true
+					return &paymentv1.CreateHostedPaymentSessionResponse{OrderId: req.GetOrderId()}, nil
+				},
+			}
+			rec := httptest.NewRecorder()
+			req := httptest.NewRequest(http.MethodPost, "/cart/checkout", strings.NewReader(checkoutForm(url.Values{"merchant_id": {"merchant-1"}, "checkout_intent_key": {"intent-fail"}})))
+			req.Host = "localhost:8080"
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			req.AddCookie(&http.Cookie{Name: auth.AccessCookieName, Value: signedAccessToken(t, "user-1")})
+			req.AddCookie(&http.Cookie{Name: "cart_id", Value: "cart-1"})
 
-	newTestRouter(t, routerDeps{cart: cartSvc, products: productsSvc, orders: ordersSvc, payment: paymentSvc}).ServeHTTP(rec, req)
+			newTestRouter(t, routerDeps{cart: cartSvc, products: productsSvc, inventory: inventorySvc, orders: ordersSvc, payment: paymentSvc}).ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusConflict {
-		t.Fatalf("status = %d, want %d", rec.Code, http.StatusConflict)
-	}
-	if failedStatus != ordersv1.OrderStatus_ORDER_STATUS_FAILED {
-		t.Fatalf("order status = %v, want FAILED", failedStatus)
-	}
-	if paymentCalled {
-		t.Fatal("hosted payment session should not be created when reserve fails")
+			if rec.Code != http.StatusConflict {
+				t.Fatalf("status = %d, want %d", rec.Code, http.StatusConflict)
+			}
+			if failedStatus != ordersv1.OrderStatus_ORDER_STATUS_FAILED {
+				t.Fatalf("order status = %v, want FAILED", failedStatus)
+			}
+			if paymentCalled {
+				t.Fatal("hosted payment session should not be created when reserve fails")
+			}
+		})
 	}
 }
 

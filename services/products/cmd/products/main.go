@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 
 	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/grpcserver"
@@ -61,11 +60,6 @@ func main() {
 		}
 	}()
 
-	var wg sync.WaitGroup
-	runtime.StartKafkaConsumer(ctx, &wg, func(ctx context.Context, brokers []string) error {
-		return runReservationConsumer(ctx, svc, brokers, cfg.KafkaGroupID)
-	})
-
 	if err := runtime.ServeGRPC(ctx, runtime.GRPCServerConfig{
 		Addr:        cfg.GRPCAddr,
 		ServiceName: "products",
@@ -75,5 +69,4 @@ func main() {
 	}); err != nil {
 		sharedlog.Fatal("grpc serve", "err", err)
 	}
-	wg.Wait()
 }

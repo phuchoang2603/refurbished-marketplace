@@ -73,3 +73,13 @@ RETURNING
     inventory.reserved_qty,
     inventory.created_at,
     inventory.updated_at;
+
+-- name: GetInventoriesByProductIDs :many
+SELECT
+    inventory.product_id,
+    inventory.available_qty,
+    inventory.reserved_qty,
+    inventory.created_at,
+    inventory.updated_at
+FROM inventory
+WHERE product_id = ANY($1::uuid []);

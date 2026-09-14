@@ -62,7 +62,14 @@ templ ProductDetailSection(product sharedviews.ProductView) {
 		@card.CardContent(card.CardContentArgs{Class: "grid gap-6"}) {
 			<p class="text-4xl font-semibold tracking-tight sm:text-5xl">{ sharedviews.FormatCents(product.PriceCents) }</p>
 			<p class="text-sm text-muted-foreground">Merchant <code>{ product.MerchantID }</code></p>
-			if product.Stock > 0 {
+			if product.JustCreated {
+                <p role="status">Listing created. Availability will appear once processing completes.</p>
+            }
+            if product.StockState == "pending" {
+                @badge.Badge("Availability processing")
+            } else if product.StockState != "ready" {
+                @badge.Badge("Availability unavailable")
+            } else if product.Stock > 0 {
 				@badge.Badge("In stock " + sharedviews.FormatInt32(product.Stock))
 			} else {
 				@badge.Badge("Out of stock")
@@ -70,12 +77,14 @@ templ ProductDetailSection(product sharedviews.ProductView) {
 			<div class="h-px bg-border"></div>
 			if product.IsOwner {
 				<p class="text-sm text-muted-foreground">This is your product.</p>
-			} else {
+			} else if product.StockState == "ready" && product.Stock > 0 {
 				<div class="grid gap-3">
 					<h2 class="text-xl font-semibold">Add to cart</h2>
 					@form.Form(form.FormArgs{Action: "/cart/items", Class: "grid gap-4"}) {
 						<input type="hidden" name="product_id" value={ product.ID }/>
 						<input type="hidden" name="merchant_id" value={ product.MerchantID }/>
+						<input type="hidden" name="product_name" value={ product.Name }/>
+						<input type="hidden" name="unit_price_cents" value={ sharedviews.FormatInt64(product.PriceCents) }/>
 						@form.FormItem(form.FormItemArgs{}) {
 							@form.FormLabel(form.FormLabelArgs{For: "product-quantity"}) {
 								Quantity 
@@ -121,7 +130,7 @@ templ CreateProductSection() {
 						@form.FormLabel(form.FormLabelArgs{For: "product-initial-stock"}) {
 							Initial stock
 						}
-						@input.Input(input.InputArgs{ID: "product-initial-stock", Name: "initial_stock", Type: "number", Min: "1", Required: true, Placeholder: "5"})
+						@input.Input(input.InputArgs{ID: "product-initial-stock", Name: "initial_stock", Type: "number", Min: "0", Required: true, Placeholder: "5"})
 					}
 				</div>
 				<div class="flex justify-end">
