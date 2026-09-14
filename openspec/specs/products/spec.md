@@ -8,7 +8,7 @@ The products capability defines the unified catalog boundary for marketplace lis
 
 ### Requirement: Products owns colocated stock state
 
-The products service MUST own listing identity and catalog fields in MongoDB. It MUST NOT persist available or reserved quantity. It MUST NOT call the inventory service. Product reads SHALL return catalog fields only.
+The products service MUST own listing identity and catalog fields in MongoDB. It MUST NOT persist available or reserved quantity. It MUST NOT call the inventory service. Product reads by id and batch SHALL return catalog fields only from MongoDB. Storefront and seller lists SHALL use the search service, not a Mongo listing scan and not ListProducts.
 
 #### Scenario: Product is read with stock summary
 
@@ -17,8 +17,8 @@ The products service MUST own listing identity and catalog fields in MongoDB. It
 
 #### Scenario: Product list is read
 
-- **WHEN** a caller fetches a catalog product list before Meilisearch exists
-- **THEN** the service SHALL return listing documents from MongoDB ordered by creation time and SHALL NOT read a SQL `products` table
+- **WHEN** a caller needs a catalog product list
+- **THEN** products SHALL NOT expose ListProducts; the caller SHALL use search SearchProducts
 
 ### Requirement: Products creates listings with initial stock in one logical operation
 
@@ -45,7 +45,7 @@ The products service MUST persist the seller ownership identifier provided as `m
 
 ### Requirement: Products exposes internal gRPC methods
 
-The products service MUST expose internal gRPC methods for catalog reads and listing creation. It MUST NOT expose ReserveStock.
+The products service MUST expose internal gRPC methods for catalog reads by id, batch reads, and listing creation. It MUST NOT expose ReserveStock. It MUST NOT expose ListProducts or SearchProducts.
 
 #### Scenario: Product lookup occurs
 
@@ -61,6 +61,11 @@ The products service MUST expose internal gRPC methods for catalog reads and lis
 
 - **WHEN** a caller invokes reservation on the products API
 - **THEN** the method is absent; reservation SHALL go to inventory
+
+#### Scenario: ListProducts is requested
+
+- **WHEN** a caller invokes ListProducts on the products API
+- **THEN** the method is absent; list and search SHALL go to the search service
 
 ### Requirement: Products supports batch lookup by IDs
 
@@ -83,7 +88,7 @@ The products service MUST expose a batch read that returns catalog rows for a se
 
 ### Requirement: Products durably publishes ProductCreated
 
-Products SHALL write a ProductCreated outbox document in the same MongoDB replica-set transaction as catalog creation. CDC SHALL publish that document to `products.created`, keyed by product id. The event SHALL contain a stable event id, schema version, occurrence time, product id, initial product version, catalog name/description/price/merchant fields, and explicit initial quantity. Retries SHALL preserve event identity. Inventory and the future Meilisearch projector SHALL be able to consume the topic independently. Products SHALL NOT use a Postgres `products_outbox` table and SHALL NOT publish the creation event from the products process.
+Products SHALL write a ProductCreated outbox document in the same MongoDB replica-set transaction as catalog creation. CDC SHALL publish that document to `products.created`, keyed by product id. The event SHALL contain a stable event id, schema version, occurrence time, product id, initial product version, catalog name/description/price/merchant fields, and explicit initial quantity. Retries SHALL preserve event identity. Inventory and search SHALL consume the topic in independent consumer groups. Products SHALL NOT use a Postgres `products_outbox` table and SHALL NOT publish the creation event from the products process.
 
 #### Scenario: Listing and event commit together
 
