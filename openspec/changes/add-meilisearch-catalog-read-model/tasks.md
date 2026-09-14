@@ -21,4 +21,4 @@
 ## 4. Cutover
 
 - [x] 4.1 Update `docs/catalog-inventory-search.md` for the search read-side service, independent consumer group, and browse vs PDP
-- [ ] 4.2 Set Doppler `MEILI_MASTER_KEY`; wipe talos-dev catalog/search data; deploy Meili then search/products/web; verify create → browse and seller list
+- [x] 4.2 Set Doppler `MEILI_MASTER_KEY`; wipe talos-dev catalog/search data; deploy Meili then search/products/web; verify create → browse and seller list
