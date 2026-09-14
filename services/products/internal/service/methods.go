@@ -2,10 +2,10 @@ package service
 
 import (
 	"context"
+	"errors"
 	"time"
 
-	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/database"
-	"github.com/phuchoang2603/refurbished-marketplace/shared/err/dberr"
+	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/catalog"
 
 	"github.com/google/uuid"
 )
@@ -25,12 +25,15 @@ func (s *Service) GetProductByID(ctx context.Context, id uuid.UUID) (Product, er
 		return Product{}, err
 	}
 
-	p, err := s.queries.GetProductByID(ctx, id)
+	p, err := s.store.GetListingByID(ctx, id)
 	if err != nil {
-		return Product{}, dberr.MapErrNoRows(err, ErrProductNotFound)
+		if errors.Is(err, catalog.ErrListingNotFound) {
+			return Product{}, ErrProductNotFound
+		}
+		return Product{}, err
 	}
 
-	return mapDBProduct(p), nil
+	return mapListing(p), nil
 }
 
 const maxProductsByIDs = 100
@@ -56,14 +59,14 @@ func (s *Service) GetProductsByIDs(ctx context.Context, ids []uuid.UUID) ([]Prod
 		unique = append(unique, id)
 	}
 
-	rows, err := s.queries.GetProductsByIDs(ctx, unique)
+	rows, err := s.store.GetListingsByIDs(ctx, unique)
 	if err != nil {
 		return nil, err
 	}
 
 	result := make([]Product, 0, len(rows))
 	for _, row := range rows {
-		result = append(result, mapDBProduct(row))
+		result = append(result, mapListing(row))
 	}
 	return result, nil
 }
@@ -73,14 +76,14 @@ func (s *Service) ListProducts(ctx context.Context, limit, offset int32) ([]Prod
 		return nil, err
 	}
 
-	rows, err := s.queries.ListProducts(ctx, database.ListProductsParams{Limit: limit, Offset: offset})
+	rows, err := s.store.ListListings(ctx, limit, offset)
 	if err != nil {
 		return nil, err
 	}
 
 	result := make([]Product, 0, len(rows))
 	for _, row := range rows {
-		result = append(result, mapDBProduct(row))
+		result = append(result, mapListing(row))
 	}
 	return result, nil
 }

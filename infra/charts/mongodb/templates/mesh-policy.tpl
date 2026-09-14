@@ -6,7 +6,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "3"
 spec:
-  description: Products and kubelet to MongoDB Community 27017. No Cilium mTLS.
+  description: Products, Kafka Connect, and kubelet to MongoDB Community 27017. No Cilium mTLS.
   endpointSelector:
     matchLabels:
       app: {{ printf "%s-svc" .Values.name }}
@@ -27,6 +27,15 @@ spec:
     - fromEndpoints:
         - matchLabels:
             app: products
+      toPorts:
+        - ports:
+            - port: "27017"
+              protocol: TCP
+    - fromEndpoints:
+        - matchLabels:
+            k8s:io.kubernetes.pod.namespace: {{ default "kafka" .Values.meshPolicy.connectNamespace }}
+            strimzi.io/kind: KafkaConnect
+            strimzi.io/cluster: {{ default "ecommerce-connect-cluster" .Values.meshPolicy.connectCluster }}
       toPorts:
         - ports:
             - port: "27017"

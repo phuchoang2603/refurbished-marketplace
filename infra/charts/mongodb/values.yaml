@@ -33,3 +33,5 @@ externalSecrets:
 
 meshPolicy:
   enforce: true
+  connectNamespace: kafka
+  connectCluster: ecommerce-connect-cluster

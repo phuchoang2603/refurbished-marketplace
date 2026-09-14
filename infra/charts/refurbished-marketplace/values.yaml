@@ -118,21 +118,15 @@ services:
     image: products
     port: 9092
     protocol: grpc
-    env:
-      MONGO_ADDR: catalog-mongodb-svc:27017
-    migration:
-      enabled: true
-      image: products-migrator
-    db:
-      host: products-db-rw
-      port: 5432
-      name: products_db
-      owner: products_app
-      secretName: products-app
-      usernameKey: username
+    mongo:
+      host: catalog-mongodb-svc
+      port: 27017
+      database: catalog
+      user: catalog
+      authSource: admin
+      replicaSet: catalog-mongodb
+      secretName: mongodb-catalog-app
       passwordKey: password
-      instances: 1
-      storageSize: 1Gi
 
   inventory:
     enabled: true

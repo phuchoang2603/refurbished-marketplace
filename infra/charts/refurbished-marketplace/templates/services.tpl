@@ -87,6 +87,23 @@ spec:
             - name: DB_URL
               value: {{ printf "postgres://$(DB_USER):$(DB_PASSWORD)@%s:%v/%s?sslmode=disable" $svc.db.host $svc.db.port $svc.db.name | quote }}
 {{- end }}
+{{- if $svc.mongo }}
+            - name: MONGO_USER
+              value: {{ $svc.mongo.user | quote }}
+            - name: MONGO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $svc.mongo.secretName }}
+                  key: {{ default "password" $svc.mongo.passwordKey }}
+            - name: MONGO_ADDR
+              value: {{ printf "%s:%v" $svc.mongo.host $svc.mongo.port | quote }}
+            - name: MONGO_DATABASE
+              value: {{ $svc.mongo.database | quote }}
+            - name: MONGO_AUTH_SOURCE
+              value: {{ default "admin" $svc.mongo.authSource | quote }}
+            - name: MONGO_REPLICA_SET
+              value: {{ $svc.mongo.replicaSet | quote }}
+{{- end }}
 {{- if $svc.auth }}
             - name: JWT_SECRET
               valueFrom:

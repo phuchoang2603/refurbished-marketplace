@@ -3,12 +3,12 @@ package service
 import (
 	"strings"
 
-	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/database"
+	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/catalog"
 
 	"github.com/google/uuid"
 )
 
-func mapDBProduct(p database.Product) Product {
+func mapListing(p catalog.Listing) Product {
 	return Product{
 		ID:          p.ID,
 		Name:        p.Name,

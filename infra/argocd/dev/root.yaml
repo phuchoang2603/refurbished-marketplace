@@ -14,7 +14,7 @@ spec:
   project: default
   source:
     repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
-    targetRevision: split-runtime
+    targetRevision: cut-catalog-to-mongodb
     path: infra/argocd/app-of-apps
     helm:
       values: |

@@ -23,6 +23,10 @@ spec:
           db: {{ .Values.user.database | quote }}
         - name: dbAdmin
           db: {{ .Values.user.database | quote }}
+        - name: read
+          db: local
+        - name: read
+          db: config
       scramCredentialsSecretName: {{ .Values.user.scramCredentialsSecretName }}
   additionalMongodConfig:
     storage.wiredTiger.engineConfig.cacheSizeGB: {{ .Values.wiredTigerCacheSizeGB }}
