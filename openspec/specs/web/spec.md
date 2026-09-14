@@ -81,11 +81,11 @@ The web service MUST expose protected browser routes that let an authenticated u
 #### Scenario: Authenticated seller submits a product form
 
 - **WHEN** an authenticated browser submits valid product details and an initial quantity
-- **THEN** the web service SHALL call the products service to create the catalog record and initial stock through the unified catalog boundary before returning a usable success response
+- **THEN** the web service SHALL call products with catalog details and explicit initial quantity, and after the listing and creation event commit SHALL report listing creation with availability processing; it SHALL NOT call EnsureStock or compensating-delete the listing
 
 #### Scenario: Seller creation dependencies are unavailable
 
-- **WHEN** a seller product creation request reaches the web service and a required downstream service is unavailable
+- **WHEN** a seller product creation request reaches the web service and products cannot durably persist the listing and creation event
 - **THEN** the web service SHALL return a browser-friendly error response that matches the current popup-or-fragment mutation conventions
 
 ### Requirement: Web keeps checkout scoped to one merchant group
@@ -95,7 +95,7 @@ The web service MUST keep checkout scoped to one merchant group per submit when 
 #### Scenario: Buyer checks out one merchant group from the cart
 
 - **WHEN** a buyer submits checkout for a selected merchant group in the cart with a postal shipping address
-- **THEN** the web service SHALL place one order for only that merchant's items using the submit intent key, call products `ReserveStock` for that order, leave items from other merchants in the cart, request a hosted payment session for the created order including nested buyer and merchant ids, optional buyer email from the access token, total cents, shipping address, and named line items, and redirect the browser to the hosted payment URL
+- **THEN** the web service SHALL place one order for only that merchant's items using the submit intent key, call inventory `ReserveStock` for that order, leave items from other merchants in the cart, request a hosted payment session for the created order including nested buyer and merchant ids, optional buyer email from the access token, total cents, shipping address, and named line items, and redirect the browser to the hosted payment URL
 
 #### Scenario: Merchant group exceeds products batch size at checkout
 
@@ -104,7 +104,7 @@ The web service MUST keep checkout scoped to one merchant group per submit when 
 
 #### Scenario: Reserve fails after place-order
 
-- **WHEN** products cannot reserve the merchant group after the order is created
+- **WHEN** inventory cannot reserve the merchant group after the order is created
 - **THEN** the web service SHALL fail the order, return a browser-friendly error, and SHALL NOT redirect to hosted payment
 
 #### Scenario: Checkout omits shipping address
@@ -189,17 +189,17 @@ The web service SHALL emit JSON slog access logs for browser and non-browser HTT
 
 ### Requirement: Web stamps cart line product snapshots
 
-The web service MUST obtain product name and unit price from the products service when adding or updating a cart line and MUST write those values onto the cart item so subsequent cart reads do not require per-line product hydration.
+The web service MUST write product name and unit price onto the cart item from the PDP page snapshot (form or equivalent fields already shown to the buyer). Subsequent cart reads MUST NOT require per-line product hydration. Add-to-cart MUST NOT call GetProductByID or inventory solely to build that stamp. Checkout MUST still re-validate catalog prices via products batch.
 
 #### Scenario: Buyer adds a product to the cart
 
-- **WHEN** a browser adds a cart item with product_id, merchant_id, and quantity
-- **THEN** the web service SHALL load that product once from products, SHALL reject merchant mismatch against the product record, and SHALL call cart add with product name and unit price snapshot fields
+- **WHEN** a browser adds a cart item with product_id, merchant_id, quantity, and the listing snapshot from the product page
+- **THEN** the web service SHALL call cart add with those snapshot name and unit price fields and SHALL NOT call products GetProductByID solely to hydrate the stamp
 
 #### Scenario: Buyer changes cart line quantity
 
 - **WHEN** a browser sets quantity for an existing cart line (quantity greater than zero)
-- **THEN** the web service SHALL refresh the product snapshot from products and pass it into cart set-quantity
+- **THEN** the web service SHALL reuse the stored cart snapshot (or the submitted snapshot) and SHALL NOT refresh live stock from inventory
 
 #### Scenario: Cart becomes empty after remove or quantity zero
 
@@ -270,3 +270,27 @@ The web service MUST remove the order's product IDs from the buyer cart after a 
 
 - **WHEN** the buyer opens the order page after hosted payment FAILED or EXPIRED and a `cart_id` cookie is present
 - **THEN** the web service SHALL multi-remove that order's product IDs from the cart
+
+### Requirement: Web distinguishes pending stock from unavailable stock
+
+Web SHALL allow listing creation to succeed independently of inventory consumption. Until a read model exists, web MAY call GetStock once on PDP. A missing row SHALL be shown as availability processing, a read failure as availability unavailable, and an existing zero-quantity row as out of stock. Purchase controls SHALL be disabled while availability is pending or unavailable.
+
+#### Scenario: Inventory has not consumed creation
+
+- **WHEN** a newly created listing exists but its stock row is not found
+- **THEN** web SHALL display pending availability without inventing zero stock or deleting the listing
+
+#### Scenario: Stock read fails
+
+- **WHEN** inventory cannot serve the PDP stock read
+- **THEN** web SHALL display unavailable availability without claiming the product is out of stock
+
+#### Scenario: Checkout arrives before stock initialization
+
+- **WHEN** a buyer attempts checkout before the inventory row exists
+- **THEN** synchronous ReserveStock SHALL fail, web SHALL fail the created order, and web SHALL NOT initiate hosted payment
+
+#### Scenario: Inventory consumer is delayed during creation
+
+- **WHEN** products commits the listing and ProductCreated while inventory consumption is delayed
+- **THEN** web SHALL report listing creation without waiting for stock initialization or invoking compensation

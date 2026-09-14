@@ -8,31 +8,31 @@ The products capability defines the unified catalog boundary for marketplace lis
 
 ### Requirement: Products owns colocated stock state
 
-The products service MUST own product catalog data together with the colocated stock state needed for marketplace listing reads and writes.
+The products service MUST own listing identity and catalog fields. It MUST NOT persist available or reserved quantity. It MUST NOT call the inventory service. Product reads SHALL return catalog fields only.
 
 #### Scenario: Product is read with stock summary
 
-- **WHEN** a caller fetches product data for a detail or admin-oriented stock-aware catalog flow
-- **THEN** the service SHALL return product data from the unified catalog boundary without requiring a separate inventory service lookup
+- **WHEN** a caller fetches a product by id for detail or cart stamping
+- **THEN** the service SHALL return catalog fields from the catalog store and SHALL NOT load stock from inventory
 
 #### Scenario: Product list is read
 
-- **WHEN** a caller fetches a catalog product list in the first merged phase
-- **THEN** the service SHALL allow that list flow to stay lighter than detail/admin surfaces and SHALL NOT require exact stock quantities everywhere
+- **WHEN** a caller fetches a catalog product list before Meilisearch exists
+- **THEN** the list MAY be empty; the service SHALL NOT require SQL `products` OFFSET listing after the catalog table is removed
 
 ### Requirement: Products creates listings with initial stock in one logical operation
 
-The products service MUST support authenticated seller-managed listing creation through one logical catalog write path that persists the product record together with explicit initial stock.
+The products service MUST persist the catalog record for seller-managed listing creation. It MUST NOT seed inventory. It SHALL require explicit non-negative initial quantity as creation intent and atomically persist a ProductCreated outbox event with the listing. This intent SHALL NOT be exposed as live catalog stock.
 
 #### Scenario: Seller-managed listing is created
 
 - **WHEN** a trusted internal caller creates a product for an authenticated seller-managed listing
-- **THEN** the service SHALL persist the catalog fields and initial stock for that product in one logical operation
+- **THEN** the service SHALL persist the catalog fields and creation outbox event atomically, then return the listing identity without waiting for inventory or search
 
 #### Scenario: Seller-managed listing is created without explicit stock
 
-- **WHEN** a caller attempts to create a seller-managed listing without explicit initial stock
-- **THEN** the service SHALL reject the request instead of silently defaulting stock
+- **WHEN** a caller attempts to create a seller-managed listing without explicit initial stock at the web boundary
+- **THEN** web and products SHALL reject missing initial quantity instead of silently defaulting it; explicit zero SHALL be accepted and negative quantity rejected
 
 ### Requirement: Product records carry seller ownership
 
@@ -43,70 +43,37 @@ The products service MUST persist the seller ownership identifier provided as `m
 - **WHEN** a caller creates a product with a valid `merchant_id`
 - **THEN** the service SHALL store that `merchant_id` with the catalog record and return it in subsequent reads
 
-### Requirement: Products manages reservations
-
-The products service MUST reserve, commit, and release stock using reservation records owned inside the unified catalog boundary for each reserved order line.
-
-#### Scenario: Stock is reserved
-
-- **WHEN** a reservation request for an order is accepted
-- **THEN** the service SHALL move quantity from available to reserved stock and persist a reservation record for the order and product
-
-#### Scenario: Payment succeeds
-
-- **WHEN** payment succeeds for a reservation
-- **THEN** the service SHALL commit the reservation owned by that order and product
-
-#### Scenario: Payment fails or times out
-
-- **WHEN** payment fails or a reservation expires
-- **THEN** the service SHALL release the reserved quantity back to available stock for that order-owned reservation
-
-### Requirement: Products consumes order item events
-
-The products service MUST consume order-level `orders.created` events that include item lines and process reservation **idempotently** per order so a Kafka delivery after the gRPC reserve command does not double-hold stock.
-
-#### Scenario: Order is created
-
-- **WHEN** the service receives `orders.created` for an order with item lines
-- **THEN** it SHALL record the message idempotently and attempt reservation for each referenced product only when that order does not already have an active reservation from the command path
-
-#### Scenario: Reservation is fully successful
-
-- **WHEN** the service reserves all item lines for an order (command path or Kafka path)
-- **THEN** it SHALL emit an order-level `inventory.reserved` event for that order at most once for a successful hold
-
-#### Scenario: Reservation cannot be completed
-
-- **WHEN** the service cannot reserve one or more item lines for an order on the Kafka path and no prior successful command-path reservation exists
-- **THEN** it SHALL avoid leaving a partial active reservation for that order and emit an order-level `inventory.reservation_failed` event
-
 ### Requirement: Products exposes internal gRPC methods
 
-The products service MUST expose internal gRPC methods for stock-aware product reads, unified listing creation, and order-level stock reservation within the catalog boundary.
+The products service MUST expose internal gRPC methods for catalog reads and listing creation. It MUST NOT expose ReserveStock.
 
 #### Scenario: Product lookup occurs
 
 - **WHEN** a caller requests a product by ID
-- **THEN** the service SHALL return the matching product or not-found
+- **THEN** the service SHALL return the matching catalog product or not-found
 
 #### Scenario: Reserve is requested over gRPC
 
-- **WHEN** a documented internal caller requests reservation for an order
-- **THEN** the service SHALL apply the reserve-command behavior defined for that order
+- **WHEN** a documented internal caller requests reservation for an order on the products API
+- **THEN** products SHALL NOT apply the reserve; reservation SHALL be served by inventory
+
+#### Scenario: Reserve is requested on products
+
+- **WHEN** a caller invokes reservation on the products API
+- **THEN** the method is absent; reservation SHALL go to inventory
 
 ### Requirement: Products supports batch lookup by IDs
 
-The products service MUST expose a batch read that returns authoritative catalog rows for a set of product identifiers so marketplace composition (especially checkout) can re-validate many lines without N sequential single-get RPCs.
+The products service MUST expose a batch read that returns catalog rows for a set of product identifiers so checkout can re-validate many lines without N sequential single-get RPCs. The batch SHALL NOT join inventory.
 
 #### Scenario: Multiple known IDs are requested
 
 - **WHEN** a caller requests products by a non-empty list of product IDs within the service’s allowed batch size
-- **THEN** the service SHALL return product records for every ID that exists, from the PostgreSQL write model (including stock summary fields consistent with single-get)
+- **THEN** the service SHALL return catalog records for every ID that exists, without stock summaries from the inventory ledger
 
 #### Scenario: Some IDs are missing
 
-- **WHEN** a batch request includes product IDs that do not exist
+- **WHEN** a batch request includes product IDs that do not exist in the catalog
 - **THEN** the service SHALL omit those IDs from the response rather than failing the entire batch solely because some IDs are missing
 
 #### Scenario: Batch size exceeds the limit
@@ -114,21 +81,26 @@ The products service MUST expose a batch read that returns authoritative catalog
 - **WHEN** a caller requests more product IDs than the configured maximum batch size
 - **THEN** the service SHALL reject the request as invalid
 
-### Requirement: Products reserves stock on an internal command
+### Requirement: Products durably publishes ProductCreated
 
-The products service MUST expose an internal gRPC reservation command that holds all lines for one order idempotently so web can reserve stock before hosted payment.
+Products SHALL write a ProductCreated outbox record in the same transaction as catalog creation and publish it via CDC to `products.created`, keyed by product id. The event SHALL contain a stable event id, schema version, occurrence time, product id, initial product version, catalog name/description/price/merchant fields, and explicit initial quantity. Retries SHALL preserve event identity. Inventory and the future Meilisearch projector SHALL be able to consume the topic independently.
 
-#### Scenario: Reserve command succeeds
+#### Scenario: Listing and event commit together
 
-- **WHEN** a trusted caller requests reservation for an order with item lines and sufficient available stock
-- **THEN** the service SHALL move quantity from available to reserved, persist reservation records for that order, and emit `inventory.reserved` once for a successful full-order hold
+- **WHEN** CreateProduct succeeds
+- **THEN** both listing and durable event SHALL exist, even if Kafka or a consumer is temporarily unavailable
 
-#### Scenario: Reserve command is retried
+#### Scenario: Outbox persistence fails
 
-- **WHEN** the same order is reserved again after a successful hold
-- **THEN** the service SHALL NOT increase reserved quantity again and SHALL treat the request as success for the existing reservation
+- **WHEN** either the listing write or outbox write fails
+- **THEN** the transaction SHALL roll back both and CreateProduct SHALL fail
 
-#### Scenario: Reserve command cannot hold the full order
+#### Scenario: Publication resumes after an outage
 
-- **WHEN** one or more lines cannot be reserved
-- **THEN** the service SHALL NOT leave a partial active reservation for that order, SHALL fail the command, and SHALL emit `inventory.reservation_failed` when an order-level failure signal is required for downstream consumers
+- **WHEN** Kafka publication resumes after a committed creation was delayed
+- **THEN** the retained outbox event SHALL be published with its original identity without requiring the seller to recreate the listing
+
+#### Scenario: Consumers progress independently
+
+- **WHEN** one consumer group is delayed or replays ProductCreated
+- **THEN** that group's progress SHALL NOT acknowledge or advance another group's consumption
