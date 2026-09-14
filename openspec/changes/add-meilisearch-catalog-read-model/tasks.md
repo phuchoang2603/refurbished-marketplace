@@ -6,7 +6,7 @@
 
 ## 2. Search service
 
-- [ ] 2.1 Add `services/search` module, GHCR image, Helm Deployment/Service, go.work/lint/CI/govulncheck/release-images enrollment
+- [x] 2.1 Add `services/search` module, GHCR image, Helm Deployment/Service, go.work/lint/CI/govulncheck/release-images enrollment
 - [ ] 2.2 Add `shared/testutil/meilisearch` Testcontainers helper; enroll it in `go.work`, lint globs, and search path-filter fan-out
 - [ ] 2.3 Add search proto `SearchProducts` (text, optional merchant filter, offset/limit); remove products `ListProducts`; regenerate clients
 - [ ] 2.4 Wire search to Meilisearch and Kafka; wait-for-meili `/health`; consume `products.created` as `search-product-created`; upsert catalog fields (no `initial_qty`); no Mongo client or rebuild

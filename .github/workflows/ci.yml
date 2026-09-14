@@ -19,6 +19,7 @@ env:
   GO_MODULE_GLOBS: >-
     ./services/users/...
     ./services/products/...
+    ./services/search/...
     ./services/inventory/...
     ./services/orders/...
     ./services/cart/...
@@ -66,6 +67,7 @@ jobs:
     outputs:
       users: ${{ steps.filter.outputs.users }}
       products: ${{ steps.filter.outputs.products }}
+      search: ${{ steps.filter.outputs.search }}
       inventory: ${{ steps.filter.outputs.inventory }}
       orders: ${{ steps.filter.outputs.orders }}
       payment: ${{ steps.filter.outputs.payment }}
@@ -99,6 +101,17 @@ jobs:
               - 'shared/observe/trace/**'
               - 'shared/testutil/kafka/**'
               - 'shared/testutil/mongo/**'
+              - 'go.work*'
+              - '.github/workflows/ci.yml'
+            search:
+              - 'services/search/**'
+              - 'shared/proto/**'
+              - 'shared/messaging/**'
+              - 'shared/err/grpcerr/**'
+              - 'shared/runtime/**'
+              - 'shared/observe/log/**'
+              - 'shared/observe/trace/**'
+              - 'shared/testutil/kafka/**'
               - 'go.work*'
               - '.github/workflows/ci.yml'
             inventory:
@@ -170,6 +183,7 @@ jobs:
         service:
           - users
           - products
+          - search
           - inventory
           - orders
           - payment
@@ -205,6 +219,7 @@ jobs:
         service:
           - users
           - products
+          - search
           - inventory
           - orders
           - payment

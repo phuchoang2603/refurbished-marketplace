@@ -23,20 +23,20 @@ See [gitops.md](gitops.md).
 
 ## Path-filter fan-out for tests
 
-| Changed paths                 | Tests triggered                                        |
-| ----------------------------- | ------------------------------------------------------ |
-| `services/<name>/**`          | That service only                                      |
-| `shared/proto/**`             | users, products, inventory, orders, cart, payment, web |
-| `shared/auth/**`              | users, web                                             |
-| `shared/messaging/**`         | products, inventory, orders, payment                   |
-| `shared/err/dberr/**`         | users, inventory, orders, payment                      |
-| `shared/err/grpcerr/**`       | users, products, inventory, orders, cart, payment      |
-| `shared/runtime/**`           | users, products, inventory, orders, cart, payment, web |
-| `shared/observe/log/**`       | users, products, inventory, orders, cart, payment, web |
-| `shared/observe/trace/**`     | products, inventory, orders, payment, web              |
-| `shared/testutil/postgres/**` | users, inventory, orders, payment                      |
-| `shared/testutil/kafka/**`    | products, inventory, orders, payment                   |
-| `shared/testutil/mongo/**`    | products                                               |
-| `shared/testutil/redis/**`    | cart                                                   |
+| Changed paths                 | Tests triggered                                                |
+| ----------------------------- | -------------------------------------------------------------- |
+| `services/<name>/**`          | That service only                                              |
+| `shared/proto/**`             | users, products, search, inventory, orders, cart, payment, web |
+| `shared/auth/**`              | users, web                                                     |
+| `shared/messaging/**`         | products, inventory, orders, payment, search                   |
+| `shared/err/dberr/**`         | users, inventory, orders, payment                              |
+| `shared/err/grpcerr/**`       | users, products, inventory, orders, cart, payment, search      |
+| `shared/runtime/**`           | users, products, inventory, orders, cart, payment, web, search |
+| `shared/observe/log/**`       | users, products, inventory, orders, cart, payment, web, search |
+| `shared/observe/trace/**`     | products, inventory, orders, payment, web, search              |
+| `shared/testutil/postgres/**` | users, inventory, orders, payment                              |
+| `shared/testutil/kafka/**`    | products, inventory, orders, payment, search                   |
+| `shared/testutil/mongo/**`    | products                                                       |
+| `shared/testutil/redis/**`    | cart                                                           |
 
 Local formatting and codegen drift checks (`treefmt`, `generate-proto`, `sqlc-gen`) stay out of CI.

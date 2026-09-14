@@ -6,6 +6,7 @@ use (
 	./services/orders
 	./services/payment
 	./services/products
+	./services/search
 	./services/users
 	./services/web
 	./shared/auth
