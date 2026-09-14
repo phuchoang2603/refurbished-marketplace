@@ -65,6 +65,8 @@ spec:
     mongodb.connection.string: mongodb://${secrets:{{ $appNamespace }}/{{ $entity.connector.sourceSecretName }}:username}:${secrets:{{ $appNamespace }}/{{ $entity.connector.sourceSecretName }}:password}@{{ printf "%s.%s.svc" $entity.connector.databaseHost $appNamespace }}:{{ $entity.connector.databasePort }}/?authSource={{ default "admin" $entity.connector.authSource }}&replicaSet={{ $entity.connector.replicaSet }}
     topic.prefix: {{ $entityName | quote }}
     collection.include.list: {{ $entity.connector.outboxCollection }}
+    capture.scope: database
+    capture.target: {{ $entity.connector.databaseName }}
     snapshot.mode: no_data
     tombstones.on.delete: "false"
     transforms: outbox
