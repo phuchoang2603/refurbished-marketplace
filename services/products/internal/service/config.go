@@ -52,7 +52,7 @@ func mongoURIFromParts() string {
 		database = "catalog"
 	}
 	if authSource == "" {
-		authSource = "admin"
+		authSource = database
 	}
 	u := &url.URL{
 		Scheme: "mongodb",

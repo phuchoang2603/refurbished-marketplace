@@ -33,8 +33,9 @@ spec:
         marketplace.metrics: "true"
 {{- end }}
     spec:
-{{- if $svc.db }}
+{{- if or $svc.db $svc.mongo }}
       initContainers:
+{{- if $svc.db }}
         - name: wait-for-db
           image: postgres:16-alpine
           command: ["sh", "-c"]
@@ -45,6 +46,30 @@ spec:
 {{- with $initResources }}
           resources:
 {{ toYaml . | nindent 12 }}
+{{- end }}
+{{- end }}
+{{- if $svc.mongo }}
+        - name: wait-for-mongo
+          image: mongo:8.0.9
+          command: ["sh", "-c"]
+          args:
+            - >-
+              until mongosh --quiet
+              "mongodb://${MONGO_USER}:${MONGO_PASSWORD}@{{ $svc.mongo.host }}:{{ $svc.mongo.port }}/{{ $svc.mongo.database }}?authSource={{ default $svc.mongo.database $svc.mongo.authSource }}"
+              --eval 'db.runCommand({ ping: 1 })';
+              do echo "waiting for mongodb {{ $svc.mongo.host }}"; sleep 2; done
+          env:
+            - name: MONGO_USER
+              value: {{ $svc.mongo.user | quote }}
+            - name: MONGO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $svc.mongo.secretName }}
+                  key: {{ default "password" $svc.mongo.passwordKey }}
+{{- with $initResources }}
+          resources:
+{{ toYaml . | nindent 12 }}
+{{- end }}
 {{- end }}
 {{- end }}
       containers:
@@ -100,7 +125,7 @@ spec:
             - name: MONGO_DATABASE
               value: {{ $svc.mongo.database | quote }}
             - name: MONGO_AUTH_SOURCE
-              value: {{ default "admin" $svc.mongo.authSource | quote }}
+              value: {{ default $svc.mongo.database $svc.mongo.authSource | quote }}
             - name: MONGO_REPLICA_SET
               value: {{ $svc.mongo.replicaSet | quote }}
 {{- end }}

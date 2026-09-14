@@ -89,7 +89,7 @@ entities:
       databaseHost: catalog-mongodb-svc
       databasePort: 27017
       databaseName: catalog
-      authSource: admin
+      authSource: catalog
       replicaSet: catalog-mongodb
       outboxCollection: catalog.catalog_outbox
   orders:

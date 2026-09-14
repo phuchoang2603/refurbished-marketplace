@@ -7,12 +7,12 @@ The CI workflow SHALL expand path filters so changes under shared modules trigge
 - `shared/proto/**` → users, products, inventory, orders, cart, payment, web
 - `shared/auth/**` → users, web
 - `shared/messaging/**` → products, inventory, orders, payment
-- `shared/err/dberr/**` → users, products, inventory, orders, payment
+- `shared/err/dberr/**` → users, inventory, orders, payment
 - `shared/err/grpcerr/**` → users, products, inventory, orders, cart, payment
 - `shared/runtime/**` → users, products, inventory, orders, cart, payment, web
 - `shared/observe/log/**` → users, products, inventory, orders, cart, payment, web
 - `shared/observe/trace/**` → products, inventory, orders, payment, web
-- `shared/testutil/postgres/**` → users, products, inventory, orders, payment
+- `shared/testutil/postgres/**` → users, inventory, orders, payment
 - `shared/testutil/kafka/**` → products, inventory, orders, payment
 - `shared/testutil/redis/**` → cart
 - `shared/testutil/mongo/**` → products

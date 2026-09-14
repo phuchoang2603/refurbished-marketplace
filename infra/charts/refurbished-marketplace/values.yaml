@@ -123,7 +123,7 @@ services:
       port: 27017
       database: catalog
       user: catalog
-      authSource: admin
+      authSource: catalog
       replicaSet: catalog-mongodb
       secretName: mongodb-catalog-app
       passwordKey: password

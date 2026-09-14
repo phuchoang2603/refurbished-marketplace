@@ -39,7 +39,7 @@ Keep Kafka topic `products.created`. Replace the Postgres products connector wit
 
 ### 3. Reuse the existing catalog SCRAM secret
 
-Mount `mongodb-catalog-app` on the products Deployment (`catalog-mongodb-svc:27017`, auth DB `catalog`). Point the Mongo connector at the same secret. Remove `products.db`, products migrator, and `products-app` PG ExternalSecret.
+Mount `mongodb-catalog-app` on the products Deployment (`catalog-mongodb-svc:27017`, auth DB `catalog`). Point the Mongo connector at the same secret. Remove `products.db`, products migrator, and the marketplace `products-app` PG ExternalSecret.
 
 **Rationale:** P0 already provisioned that user for this replica set.
 

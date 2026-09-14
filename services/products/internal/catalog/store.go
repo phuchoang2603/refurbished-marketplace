@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -53,7 +55,19 @@ func Open(ctx context.Context, uri string) (*Store, error) {
 		_ = client.Disconnect(ctx)
 		return nil, fmt.Errorf("ping mongodb: %w", err)
 	}
-	return New(client.Database("catalog")), nil
+	return New(client.Database(databaseNameFromURI(uri))), nil
+}
+
+func databaseNameFromURI(uri string) string {
+	u, err := url.Parse(uri)
+	if err != nil {
+		return "catalog"
+	}
+	name := strings.Trim(u.Path, "/")
+	if name == "" {
+		return "catalog"
+	}
+	return name
 }
 
 func New(db *mongo.Database) *Store {

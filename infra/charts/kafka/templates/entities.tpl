@@ -62,7 +62,7 @@ spec:
     enabled: true
   config:
 {{- if eq $kind "mongodb" }}
-    mongodb.connection.string: mongodb://${secrets:{{ $appNamespace }}/{{ $entity.connector.sourceSecretName }}:username}:${secrets:{{ $appNamespace }}/{{ $entity.connector.sourceSecretName }}:password}@{{ printf "%s.%s.svc" $entity.connector.databaseHost $appNamespace }}:{{ $entity.connector.databasePort }}/?authSource={{ default "admin" $entity.connector.authSource }}&replicaSet={{ $entity.connector.replicaSet }}
+    mongodb.connection.string: mongodb://${secrets:{{ $appNamespace }}/{{ $entity.connector.sourceSecretName }}:username}:${secrets:{{ $appNamespace }}/{{ $entity.connector.sourceSecretName }}:password}@{{ printf "%s.%s.svc" $entity.connector.databaseHost $appNamespace }}:{{ $entity.connector.databasePort }}/?authSource={{ default $entity.connector.databaseName $entity.connector.authSource }}&replicaSet={{ $entity.connector.replicaSet }}
     topic.prefix: {{ $entityName | quote }}
     collection.include.list: {{ $entity.connector.outboxCollection }}
     capture.scope: database
