@@ -306,7 +306,7 @@ The web service MUST render the public catalog and the authenticated seller prod
 
 #### Scenario: Public catalog is searched
 
-- **WHEN** a browser submits a text query on the public catalog
+- **WHEN** a browser submits a text query on the public catalog (Enter in the search field)
 - **THEN** the web service SHALL call search SearchProducts with that text, without a merchant filter, and render matching catalog hits
 
 #### Scenario: Public catalog suggests listings while typing

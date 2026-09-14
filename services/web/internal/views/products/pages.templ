@@ -54,9 +54,6 @@ templ ProductListSection(products []sharedviews.ProductView, query string) {
 					})
 					@CatalogSuggest(nil)
 				}
-				@button.Button(button.ButtonArgs{Type: "submit", Class: "w-full sm:w-fit"}) {
-					Search
-				}
 				if query != "" {
 					<a class="inline-flex h-9 items-center text-sm text-muted-foreground hover:underline" href="/products">Clear</a>
 				}
