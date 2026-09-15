@@ -22,7 +22,7 @@ The system SHALL deploy a MongoDB Community replica set (not a standalone mongod
 
 ### Requirement: Products catalog traffic uses the replica set
 
-Authenticated products SHALL read and write catalog documents on the MongoDB Community replica set in `ecommerce`. Shop create, detail, batch, and seller list SHALL fail if Mongo is unavailable rather than falling back to Postgres.
+Authenticated products SHALL write catalog documents and serve GetProductByID and GetProductsByIDs from the MongoDB Community replica set in `ecommerce`. Shop create, detail, and checkout batch SHALL fail if Mongo is unavailable rather than falling back to Postgres. Storefront and seller lists SHALL NOT require a Mongo listing scan.
 
 #### Scenario: Listing create requires Mongo
 
@@ -31,7 +31,7 @@ Authenticated products SHALL read and write catalog documents on the MongoDB Com
 
 #### Scenario: Catalog reads require Mongo
 
-- **WHEN** products handles GetProductByID, GetProductsByIDs, or ListProducts after this cutover
+- **WHEN** products handles GetProductByID or GetProductsByIDs
 - **THEN** it SHALL load documents from the replica set
 
 #### Scenario: Outbox change streams are available to CDC

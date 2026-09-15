@@ -294,3 +294,37 @@ Web SHALL allow listing creation to succeed independently of inventory consumpti
 
 - **WHEN** products commits the listing and ProductCreated while inventory consumption is delayed
 - **THEN** web SHALL report listing creation without waiting for stock initialization or invoking compensation
+
+### Requirement: Web catalog and seller lists use SearchProducts
+
+The web service MUST render the public catalog and the authenticated seller product list from the search service SearchProducts. Public catalog SHALL accept an optional text query, show catalog fields (name, price, detail links), and SHALL NOT show live stock. An empty query SHALL browse. Seller list SHALL filter by the authenticated merchant on the search request rather than loading all listings and filtering in the web process. Product detail SHALL keep using products GetProductByID and inventory GetStock. Search unavailability SHALL use a localized catalog unavailable page and SHALL NOT fall back to products ListProducts.
+
+#### Scenario: Public catalog is requested
+
+- **WHEN** a browser requests the catalog route without a text query
+- **THEN** the web service SHALL call search SearchProducts with empty text, without a merchant filter, and render catalog hits, or the catalog unavailable page if search cannot be served
+
+#### Scenario: Public catalog is searched
+
+- **WHEN** a browser submits a text query on the public catalog (Enter in the search field)
+- **THEN** the web service SHALL call search SearchProducts with that text, without a merchant filter, and render matching catalog hits
+
+#### Scenario: Public catalog suggests listings while typing
+
+- **WHEN** a browser types at least two characters into the public catalog search box
+- **THEN** the web service SHALL call search SearchProducts with that text, limit at most eight hits, and render listing name suggestions without replacing the catalog grid
+
+#### Scenario: Short catalog prefix does not suggest
+
+- **WHEN** a browser types fewer than two characters into the public catalog search box
+- **THEN** the web service SHALL NOT query search for suggestions
+
+#### Scenario: Browse cards omit stock
+
+- **WHEN** the public catalog page renders listing cards
+- **THEN** those cards SHALL NOT display available or reserved quantity
+
+#### Scenario: Seller list is requested
+
+- **WHEN** an authenticated browser requests the seller product list
+- **THEN** the web service SHALL call search SearchProducts with that user's merchant filter and SHALL NOT call products ListProducts

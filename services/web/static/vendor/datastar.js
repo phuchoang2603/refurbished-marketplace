@@ -69,7 +69,7 @@ var xe = [],
     return wt.bind(0, t);
   },
   St = () => {
-    for (; Ne < Ze; ) {
+    for (; Ne < Ze;) {
       let e = ze[Ne];
       ((ze[Ne++] = void 0), Rt(e, (e.e &= -65)));
     }
@@ -106,7 +106,7 @@ var xe = [],
     }
     t & 32 && (e.e = t & -33);
     let n = e.s;
-    for (; n; ) {
+    for (; n;) {
       let r = n.c,
         s = r.e;
       (s & 64 && Rt(r, (r.e = s & -65)), (n = n.i));
@@ -140,7 +140,7 @@ var xe = [],
   },
   wt = (e) => {
     let t = e.s;
-    for (; t; ) t = Ce(t, e);
+    for (; t;) t = Ce(t, e);
     let n = e.r;
     (n && Ce(n), (e.e = 0));
   },
@@ -206,7 +206,7 @@ var xe = [],
         t = e.n;
         continue;
       }
-      for (; n; )
+      for (; n;)
         if (((e = n.t), (n = n.f), e)) {
           t = e.n;
           continue e;
@@ -220,7 +220,7 @@ var xe = [],
   Lt = (e) => {
     let t = e.a,
       n = t ? t.i : e.s;
-    for (; n; ) n = Ce(n, e);
+    for (; n;) n = Ce(n, e);
     e.e &= -5;
   },
   xt = (e, t) => {
@@ -247,7 +247,7 @@ var xe = [],
           continue;
         }
       }
-      for (; r--; ) {
+      for (; r--;) {
         let a = t.r,
           c = a.n;
         if ((c ? ((e = n.t), (n = n.f)) : (e = a), s)) {
@@ -274,7 +274,7 @@ var xe = [],
   },
   fn = (e, t) => {
     let n = t.a;
-    for (; n; ) {
+    for (; n;) {
       if (n === e) return !0;
       n = n.l;
     }
@@ -371,7 +371,7 @@ var xe = [],
       s = Et(t),
       i = [],
       o = [[n, ""]];
-    for (; o.length; ) {
+    for (; o.length;) {
       let [a, c] = o.pop();
       for (let l in a) {
         let u = c + l;
@@ -852,7 +852,7 @@ var ot = "started",
   wn = async (e, t) => {
     let n = e.getReader(),
       r = await n.read();
-    for (; !r.done; ) (t(r.value), (r = await n.read()));
+    for (; !r.done;) (t(r.value), (r = await n.read()));
   },
   Mn = (e) => {
     let t,
@@ -863,7 +863,7 @@ var ot = "started",
       t ? (t = xn(t, i)) : ((t = i), (n = 0), (r = -1));
       let o = t.length,
         a = 0;
-      for (; n < o; ) {
+      for (; n < o;) {
         s && (t[n] === 10 && (a = ++n), (s = !1));
         let c = -1;
         for (; n < o && c === -1; ++n)
@@ -1799,7 +1799,7 @@ var Re = W("ignore-morph"),
         if (i) {
           if (i !== n) {
             let o = n;
-            for (; o && o !== i; ) {
+            for (; o && o !== i;) {
               let a = o;
               ((o = o.nextSibling), en(a));
             }
@@ -1811,7 +1811,7 @@ var Re = W("ignore-morph"),
       if (s instanceof Element && fe.has(s.id)) {
         let i = document.getElementById(s.id),
           o = i;
-        for (; (o = o.parentNode); ) {
+        for (; (o = o.parentNode);) {
           let a = V.get(o);
           a && (a.delete(s.id), a.size || V.delete(o));
         }
@@ -1831,7 +1831,7 @@ var Re = W("ignore-morph"),
         (e.insertBefore(i, n), (n = i.nextSibling));
       }
     }
-    for (; n && n !== r; ) {
+    for (; n && n !== r;) {
       let s = n;
       ((n = n.nextSibling), en(s));
     }
@@ -1843,7 +1843,7 @@ var Re = W("ignore-morph"),
       o = 0,
       a = V.get(e)?.size || 0,
       c = t;
-    for (; c && c !== n; ) {
+    for (; c && c !== n;) {
       if (Xt(c, e)) {
         let l = !1,
           u = V.get(c),
@@ -1924,7 +1924,7 @@ var Re = W("ignore-morph"),
     for (let n of t)
       if (fe.has(n.id)) {
         let r = n;
-        for (; r && r !== e; ) {
+        for (; r && r !== e;) {
           let s = V.get(r);
           (s || ((s = new Set()), V.set(r, s)), s.add(n.id), (r = r.parentElement));
         }

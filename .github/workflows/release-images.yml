@@ -53,6 +53,12 @@ jobs:
               BUILD_PKG=./services/products/cmd/products
               BUILD_BIN=products
               EXPOSE_PORT=9092
+          - image: search
+            dockerfile: infra/docker/go-service.Dockerfile
+            build_args: |
+              BUILD_PKG=./services/search/cmd/search
+              BUILD_BIN=search
+              EXPOSE_PORT=9098
           - image: inventory
             dockerfile: infra/docker/go-service.Dockerfile
             build_args: |

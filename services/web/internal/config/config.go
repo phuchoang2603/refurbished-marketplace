@@ -18,6 +18,7 @@ type Config struct {
 	UsersAddr       string
 	ProductsAddr    string
 	InventoryAddr   string
+	SearchAddr      string
 	OrdersAddr      string
 	CartAddr        string
 	PaymentAddr     string
@@ -41,6 +42,7 @@ func LoadConfig() Config {
 		UsersAddr:       strings.TrimSpace(os.Getenv("USERS_SVC_ADDR")),
 		ProductsAddr:    strings.TrimSpace(os.Getenv("PRODUCTS_SVC_ADDR")),
 		InventoryAddr:   strings.TrimSpace(os.Getenv("INVENTORY_SVC_ADDR")),
+		SearchAddr:      strings.TrimSpace(os.Getenv("SEARCH_SVC_ADDR")),
 		OrdersAddr:      strings.TrimSpace(os.Getenv("ORDERS_SVC_ADDR")),
 		CartAddr:        strings.TrimSpace(os.Getenv("CART_SVC_ADDR")),
 		PaymentAddr:     strings.TrimSpace(os.Getenv("PAYMENT_SVC_ADDR")),
@@ -63,6 +65,9 @@ func ValidateConfig(cfg Config) error {
 	}
 	if strings.TrimSpace(cfg.InventoryAddr) == "" {
 		return errors.New("INVENTORY_SVC_ADDR is required")
+	}
+	if strings.TrimSpace(cfg.SearchAddr) == "" {
+		return errors.New("SEARCH_SVC_ADDR is required")
 	}
 	if strings.TrimSpace(cfg.OrdersAddr) == "" {
 		return errors.New("ORDERS_SVC_ADDR is required")

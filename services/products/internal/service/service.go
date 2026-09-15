@@ -12,8 +12,6 @@ var (
 	ErrInvalidPrice        = errors.New("invalid product price")
 	ErrInvalidMerchantID   = errors.New("invalid merchant id")
 	ErrProductNotFound     = errors.New("product not found")
-	ErrInvalidListLimit    = errors.New("invalid list limit")
-	ErrInvalidListOffset   = errors.New("invalid list offset")
 	ErrInvalidProductID    = errors.New("invalid product id")
 	ErrInvalidBatchSize    = errors.New("invalid product batch size")
 )

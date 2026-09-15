@@ -70,20 +70,3 @@ func (s *Service) GetProductsByIDs(ctx context.Context, ids []uuid.UUID) ([]Prod
 	}
 	return result, nil
 }
-
-func (s *Service) ListProducts(ctx context.Context, limit, offset int32) ([]Product, error) {
-	if err := validateListPagination(limit, offset); err != nil {
-		return nil, err
-	}
-
-	rows, err := s.store.ListListings(ctx, limit, offset)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]Product, 0, len(rows))
-	for _, row := range rows {
-		result = append(result, mapListing(row))
-	}
-	return result, nil
-}

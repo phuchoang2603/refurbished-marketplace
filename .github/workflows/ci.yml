@@ -19,6 +19,7 @@ env:
   GO_MODULE_GLOBS: >-
     ./services/users/...
     ./services/products/...
+    ./services/search/...
     ./services/inventory/...
     ./services/orders/...
     ./services/cart/...
@@ -35,6 +36,7 @@ env:
     ./shared/runtime/...
     ./shared/testutil/postgres/...
     ./shared/testutil/kafka/...
+    ./shared/testutil/meilisearch/...
     ./shared/testutil/mongo/...
     ./shared/testutil/redis/...
     ./tools/payment-gateway-simulator/...
@@ -66,6 +68,7 @@ jobs:
     outputs:
       users: ${{ steps.filter.outputs.users }}
       products: ${{ steps.filter.outputs.products }}
+      search: ${{ steps.filter.outputs.search }}
       inventory: ${{ steps.filter.outputs.inventory }}
       orders: ${{ steps.filter.outputs.orders }}
       payment: ${{ steps.filter.outputs.payment }}
@@ -99,6 +102,18 @@ jobs:
               - 'shared/observe/trace/**'
               - 'shared/testutil/kafka/**'
               - 'shared/testutil/mongo/**'
+              - 'go.work*'
+              - '.github/workflows/ci.yml'
+            search:
+              - 'services/search/**'
+              - 'shared/proto/**'
+              - 'shared/messaging/**'
+              - 'shared/err/grpcerr/**'
+              - 'shared/runtime/**'
+              - 'shared/observe/log/**'
+              - 'shared/observe/trace/**'
+              - 'shared/testutil/kafka/**'
+              - 'shared/testutil/meilisearch/**'
               - 'go.work*'
               - '.github/workflows/ci.yml'
             inventory:
@@ -170,6 +185,7 @@ jobs:
         service:
           - users
           - products
+          - search
           - inventory
           - orders
           - payment
@@ -205,6 +221,7 @@ jobs:
         service:
           - users
           - products
+          - search
           - inventory
           - orders
           - payment
@@ -265,6 +282,7 @@ jobs:
             "infra/charts/operators/strimzi:operators"
             "infra/charts/observability:monitoring"
             "infra/charts/cloudflare-tunnel:cloudflare-tunnel"
+            "infra/charts/meilisearch:ecommerce"
           )
           for item in "${wrapper_charts[@]}"; do
             chart="${item%%:*}"
@@ -286,4 +304,5 @@ jobs:
             /tmp/cnpg.yaml \
             /tmp/strimzi.yaml \
             /tmp/observability.yaml \
-            /tmp/cloudflare-tunnel.yaml
+            /tmp/cloudflare-tunnel.yaml \
+            /tmp/meilisearch.yaml

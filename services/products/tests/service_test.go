@@ -56,29 +56,6 @@ func TestCreateAndReadProducts(t *testing.T) {
 			t.Fatalf("expected merchant id %s, got %s", merchantID, got.MerchantID)
 		}
 	})
-
-	t.Run("list products", func(t *testing.T) {
-		created, err := svc.CreateProduct(ctx, "iPhone 13", "Refurbished - Grade A", 49900, uuid.New(), proto.Int32(5))
-		if err != nil {
-			t.Fatalf("create product: %v", err)
-		}
-
-		list, err := svc.ListProducts(ctx, 20, 0)
-		if err != nil {
-			t.Fatalf("list products: %v", err)
-		}
-
-		found := false
-		for _, item := range list {
-			if item.ID == created.ID {
-				found = true
-				break
-			}
-		}
-		if !found {
-			t.Fatalf("expected created product in list")
-		}
-	})
 }
 
 func TestProductValidation(t *testing.T) {
@@ -119,26 +96,6 @@ func TestProductValidation(t *testing.T) {
 		_, err := svc.CreateProduct(ctx, "Laptop", "x", 0, uuid.New(), proto.Int32(5))
 		if !errors.Is(err, service.ErrInvalidPrice) {
 			t.Fatalf("expected ErrInvalidPrice, got %v", err)
-		}
-	})
-
-	t.Run("invalid list limit", func(t *testing.T) {
-		svc := newProductsService(t)
-		ctx := t.Context()
-
-		_, err := svc.ListProducts(ctx, 0, 0)
-		if !errors.Is(err, service.ErrInvalidListLimit) {
-			t.Fatalf("expected ErrInvalidListLimit, got %v", err)
-		}
-	})
-
-	t.Run("invalid list offset", func(t *testing.T) {
-		svc := newProductsService(t)
-		ctx := t.Context()
-
-		_, err := svc.ListProducts(ctx, 10, -1)
-		if !errors.Is(err, service.ErrInvalidListOffset) {
-			t.Fatalf("expected ErrInvalidListOffset, got %v", err)
 		}
 	})
 }

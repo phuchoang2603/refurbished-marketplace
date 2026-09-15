@@ -3,11 +3,13 @@ package products
 import (
 	"net/http"
 	"strings"
+	"unicode/utf8"
 
 	webAuth "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/auth"
 	shared "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
 	productviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/products"
 	sharedviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/shared"
+	searchv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/search/v1"
 
 	"github.com/go-chi/chi/v5"
 	"google.golang.org/grpc/codes"
@@ -18,6 +20,10 @@ import (
 type Handler struct{ deps *shared.Dependencies }
 
 func New(deps *shared.Dependencies) *Handler { return &Handler{deps: deps} }
+
+func catalogUnavailableView() sharedviews.UnavailableView {
+	return shared.NewUnavailableView("Products", "products", "Catalog unavailable", "The catalog is temporarily unavailable. Please try again shortly.")
+}
 
 func productsUnavailableView() sharedviews.UnavailableView {
 	return shared.NewUnavailableView("Products", "products", "Products unavailable", "The catalog is temporarily unavailable. Please try again shortly.")
@@ -30,6 +36,7 @@ func productManagementUnavailableView() sharedviews.UnavailableView {
 func (h *Handler) RegisterPages(r chi.Router) {
 	r.Get("/", h.handleListProducts)
 	r.Get("/products", h.handleListProducts)
+	r.Get("/products/suggest", h.handleCatalogSuggest)
 	r.Get("/products/{id}", h.handleGetProductByID)
 }
 
@@ -40,6 +47,10 @@ func (h *Handler) RegisterProtectedPages(r chi.Router) {
 
 func mapProductView(id, merchantID, name, description string, priceCents int64, stock int32, isOwner bool, createdAt, updatedAt *timestamppb.Timestamp) sharedviews.ProductView {
 	return sharedviews.ProductView{ID: id, MerchantID: merchantID, IsOwner: isOwner, Name: name, Description: description, PriceCents: priceCents, Stock: stock, CreatedAt: shared.FormatTimestamp(createdAt), UpdatedAt: shared.FormatTimestamp(updatedAt)}
+}
+
+func mapListingHit(hit *searchv1.ListingHit, isOwner bool) sharedviews.ProductView {
+	return mapProductView(hit.GetId(), hit.GetMerchantId(), hit.GetName(), hit.GetDescription(), hit.GetPriceCents(), 0, isOwner, hit.GetCreatedAt(), hit.GetCreatedAt())
 }
 
 func (h *Handler) handleGetProductByID(w http.ResponseWriter, r *http.Request) {
@@ -75,8 +86,57 @@ func (h *Handler) handleGetProductByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) handleListProducts(w http.ResponseWriter, r *http.Request) {
-	// Browse remains dark until the search projection is available.
-	shared.WriteHTML(w, r, http.StatusOK, productviews.ProductsPage(nil))
+	if h.deps.Search == nil {
+		shared.WriteUnavailablePage(w, r, http.StatusServiceUnavailable, catalogUnavailableView())
+		return
+	}
+	query := catalogSearchQuery(r)
+	resp, err := h.deps.Search.SearchProducts(r.Context(), query, "", 100, 0)
+	if err != nil {
+		if shared.IsUnavailableError(err) {
+			shared.WriteUnavailablePage(w, r, http.StatusServiceUnavailable, catalogUnavailableView())
+			return
+		}
+		shared.WriteGRPCError(w, r, err)
+		return
+	}
+	items := make([]sharedviews.ProductView, 0, len(resp.Listings))
+	for _, hit := range resp.Listings {
+		items = append(items, mapListingHit(hit, false))
+	}
+	shared.WriteHTML(w, r, http.StatusOK, productviews.ProductsPage(items, query))
+}
+
+const (
+	maxCatalogQueryRunes   = 200
+	minCatalogSuggestRunes = 2
+	catalogSuggestLimit    = 8
+)
+
+func (h *Handler) handleCatalogSuggest(w http.ResponseWriter, r *http.Request) {
+	query := catalogSearchQuery(r)
+	if utf8.RuneCountInString(query) < minCatalogSuggestRunes || h.deps.Search == nil {
+		shared.WriteFragment(w, r, http.StatusOK, "#catalog-suggest", productviews.CatalogSuggest(nil))
+		return
+	}
+	resp, err := h.deps.Search.SearchProducts(r.Context(), query, "", catalogSuggestLimit, 0)
+	if err != nil {
+		shared.WriteFragment(w, r, http.StatusOK, "#catalog-suggest", productviews.CatalogSuggest(nil))
+		return
+	}
+	items := make([]sharedviews.ProductView, 0, len(resp.Listings))
+	for _, hit := range resp.Listings {
+		items = append(items, mapListingHit(hit, false))
+	}
+	shared.WriteFragment(w, r, http.StatusOK, "#catalog-suggest", productviews.CatalogSuggest(items))
+}
+
+func catalogSearchQuery(r *http.Request) string {
+	query := strings.TrimSpace(r.URL.Query().Get("q"))
+	if utf8.RuneCountInString(query) <= maxCatalogQueryRunes {
+		return query
+	}
+	return string([]rune(query)[:maxCatalogQueryRunes])
 }
 
 func (h *Handler) handleNewProductPage(w http.ResponseWriter, r *http.Request) {
@@ -88,7 +148,7 @@ func (h *Handler) handleListSellerProducts(w http.ResponseWriter, r *http.Reques
 	if !ok {
 		return
 	}
-	resp, err := h.deps.Products.ListProducts(r.Context(), 100, 0)
+	resp, err := h.deps.Search.SearchProducts(r.Context(), "", userID, 100, 0)
 	if err != nil {
 		if shared.IsUnavailableError(err) {
 			shared.WriteUnavailablePage(w, r, http.StatusServiceUnavailable, productManagementUnavailableView())
@@ -97,12 +157,9 @@ func (h *Handler) handleListSellerProducts(w http.ResponseWriter, r *http.Reques
 		shared.WriteGRPCError(w, r, err)
 		return
 	}
-	items := make([]sharedviews.ProductView, 0, len(resp.Products))
-	for _, p := range resp.Products {
-		if p.GetMerchantId() != userID {
-			continue
-		}
-		items = append(items, mapProductView(p.Id, p.MerchantId, p.Name, p.Description, p.PriceCents, 0, true, p.CreatedAt, p.UpdatedAt))
+	items := make([]sharedviews.ProductView, 0, len(resp.Listings))
+	for _, hit := range resp.Listings {
+		items = append(items, mapListingHit(hit, true))
 	}
 	shared.WriteHTML(w, r, http.StatusOK, productviews.SellerProductsPage(items))
 }

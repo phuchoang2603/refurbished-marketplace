@@ -10,8 +10,8 @@ import page "github.com/phuchoang2603/refurbished-marketplace/services/web/inter
 import textarea "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/components/textarea"
 import sharedviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/shared"
 
-templ ProductsPage(products []sharedviews.ProductView) {
-	@sharedviews.AppShell("Products", sharedviews.DefaultNav, ProductListSection(products))
+templ ProductsPage(products []sharedviews.ProductView, query string) {
+	@sharedviews.AppShell("Products", sharedviews.DefaultNav, ProductListSection(products, query))
 }
 
 templ ProductDetailPage(product sharedviews.ProductView) {
@@ -26,12 +26,47 @@ templ SellerProductsPage(products []sharedviews.ProductView) {
 	@sharedviews.AppShell("Your products", sharedviews.DefaultNav, SellerProductsSection(products))
 }
 
-templ ProductListSection(products []sharedviews.ProductView) {
+templ ProductListSection(products []sharedviews.ProductView, query string) {
 	@card.Card(card.CardArgs{Attributes: templpkg.Attributes{"id": "products"}}) {
 		@page.Header("Products", "Browse quality refurbished tech, verified devices, and sustainable deals from trusted sellers.")
 		@card.CardContent(card.CardContentArgs{Class: "grid gap-4"}) {
+			<form method="get" action="/products" class="flex flex-wrap items-end gap-3" role="search">
+				@form.FormItem(form.FormItemArgs{Class: "min-w-60 flex-1"}) {
+					@form.FormLabel(form.FormLabelArgs{For: "catalog-query"}) {
+						Search listings
+					}
+					<div class="relative z-10 w-full">
+						@input.Input(input.InputArgs{
+							ID:           "catalog-query",
+							Name:         "q",
+							Type:         "search",
+							Value:        query,
+							Placeholder:  "Name or description",
+							Autocomplete: "off",
+							Attributes: templpkg.Attributes{
+								"role":                          "combobox",
+								"aria-autocomplete":             "list",
+								"aria-controls":                 "catalog-suggest",
+								"aria-expanded":                 "false",
+								"aria-haspopup":                 "listbox",
+								"data-on:input":                 "el.value.trim().length < 2 && (el._catalogSuggestAbort?.abort(), document.getElementById('catalog-suggest')?.classList.add('hidden'), el.setAttribute('aria-expanded','false'))",
+								"data-on:input__debounce.200ms": "el.value.trim().length >= 2 && (el._catalogSuggestAbort?.abort(), el._catalogSuggestAbort = new AbortController(), @get('/products/suggest?q=' + encodeURIComponent(el.value.trim()), {requestCancellation: el._catalogSuggestAbort}))",
+								"data-on:datastar-fetch":        "evt.detail.el === el && evt.detail.type === 'finished' && (el.value.trim().length < 2 ? (document.getElementById('catalog-suggest')?.classList.add('hidden'), el.setAttribute('aria-expanded','false')) : el.setAttribute('aria-expanded', String(!!document.getElementById('catalog-suggest')?.querySelector('[role=option]'))))",
+							},
+						})
+						@CatalogSuggest(nil)
+					</div>
+				}
+				if query != "" {
+					<a class="inline-flex h-9 items-center text-sm text-muted-foreground hover:underline" href="/products">Clear</a>
+				}
+			</form>
 			if len(products) == 0 {
-				@page.EmptyState("No products are available yet.")
+				if query != "" {
+					@page.EmptyState("No listings match that search.")
+				} else {
+					@page.EmptyState("No products are available yet.")
+				}
 			} else {
 				<div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 					for _, product := range products {
@@ -54,6 +89,23 @@ templ ProductListSection(products []sharedviews.ProductView) {
 			}
 		}
 	}
+}
+
+templ CatalogSuggest(products []sharedviews.ProductView) {
+	<ul
+		id="catalog-suggest"
+		role="listbox"
+		class={ "absolute inset-x-0 top-full z-20 mt-1 max-h-72 overflow-auto rounded-md border bg-popover p-1 text-sm shadow-md", templ.KV("hidden", len(products) == 0) }
+	>
+		for _, product := range products {
+			<li role="option">
+				<a class="flex items-center justify-between gap-3 rounded-sm px-3 py-2 hover:bg-accent hover:text-accent-foreground" href={ "/products/" + product.ID }>
+					<span class="truncate font-medium">{ product.Name }</span>
+					<span class="shrink-0 text-muted-foreground">{ sharedviews.FormatCents(product.PriceCents) }</span>
+				</a>
+			</li>
+		}
+	</ul>
 }
 
 templ ProductDetailSection(product sharedviews.ProductView) {

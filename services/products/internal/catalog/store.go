@@ -147,32 +147,6 @@ func (s *Store) GetListingsByIDs(ctx context.Context, ids []uuid.UUID) ([]Listin
 	return out, nil
 }
 
-func (s *Store) ListListings(ctx context.Context, limit, offset int32) ([]Listing, error) {
-	opts := options.Find().
-		SetSort(bson.D{{Key: "created_at", Value: -1}, {Key: "_id", Value: -1}}).
-		SetLimit(int64(limit)).
-		SetSkip(int64(offset))
-	cursor, err := s.listings.Find(ctx, bson.M{}, opts)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { _ = cursor.Close(ctx) }()
-
-	var docs []listingDoc
-	if err := cursor.All(ctx, &docs); err != nil {
-		return nil, err
-	}
-	out := make([]Listing, 0, len(docs))
-	for _, doc := range docs {
-		listing, err := doc.toListing()
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, listing)
-	}
-	return out, nil
-}
-
 type listingDoc struct {
 	ID          string    `bson:"_id"`
 	Name        string    `bson:"name"`
