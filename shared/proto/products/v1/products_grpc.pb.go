@@ -22,8 +22,6 @@ const (
 	ProductsService_CreateProduct_FullMethodName    = "/products.v1.ProductsService/CreateProduct"
 	ProductsService_GetProductByID_FullMethodName   = "/products.v1.ProductsService/GetProductByID"
 	ProductsService_GetProductsByIDs_FullMethodName = "/products.v1.ProductsService/GetProductsByIDs"
-	ProductsService_ListProducts_FullMethodName     = "/products.v1.ProductsService/ListProducts"
-	ProductsService_ReserveStock_FullMethodName     = "/products.v1.ProductsService/ReserveStock"
 )
 
 // ProductsServiceClient is the client API for ProductsService service.
@@ -33,8 +31,6 @@ type ProductsServiceClient interface {
 	CreateProduct(ctx context.Context, in *CreateProductRequest, opts ...grpc.CallOption) (*Product, error)
 	GetProductByID(ctx context.Context, in *GetProductByIDRequest, opts ...grpc.CallOption) (*Product, error)
 	GetProductsByIDs(ctx context.Context, in *GetProductsByIDsRequest, opts ...grpc.CallOption) (*GetProductsByIDsResponse, error)
-	ListProducts(ctx context.Context, in *ListProductsRequest, opts ...grpc.CallOption) (*ListProductsResponse, error)
-	ReserveStock(ctx context.Context, in *ReserveStockRequest, opts ...grpc.CallOption) (*ReserveStockResponse, error)
 }
 
 type productsServiceClient struct {
@@ -75,26 +71,6 @@ func (c *productsServiceClient) GetProductsByIDs(ctx context.Context, in *GetPro
 	return out, nil
 }
 
-func (c *productsServiceClient) ListProducts(ctx context.Context, in *ListProductsRequest, opts ...grpc.CallOption) (*ListProductsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListProductsResponse)
-	err := c.cc.Invoke(ctx, ProductsService_ListProducts_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *productsServiceClient) ReserveStock(ctx context.Context, in *ReserveStockRequest, opts ...grpc.CallOption) (*ReserveStockResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ReserveStockResponse)
-	err := c.cc.Invoke(ctx, ProductsService_ReserveStock_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // ProductsServiceServer is the server API for ProductsService service.
 // All implementations must embed UnimplementedProductsServiceServer
 // for forward compatibility.
@@ -102,8 +78,6 @@ type ProductsServiceServer interface {
 	CreateProduct(context.Context, *CreateProductRequest) (*Product, error)
 	GetProductByID(context.Context, *GetProductByIDRequest) (*Product, error)
 	GetProductsByIDs(context.Context, *GetProductsByIDsRequest) (*GetProductsByIDsResponse, error)
-	ListProducts(context.Context, *ListProductsRequest) (*ListProductsResponse, error)
-	ReserveStock(context.Context, *ReserveStockRequest) (*ReserveStockResponse, error)
 	mustEmbedUnimplementedProductsServiceServer()
 }
 
@@ -122,12 +96,6 @@ func (UnimplementedProductsServiceServer) GetProductByID(context.Context, *GetPr
 }
 func (UnimplementedProductsServiceServer) GetProductsByIDs(context.Context, *GetProductsByIDsRequest) (*GetProductsByIDsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetProductsByIDs not implemented")
-}
-func (UnimplementedProductsServiceServer) ListProducts(context.Context, *ListProductsRequest) (*ListProductsResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ListProducts not implemented")
-}
-func (UnimplementedProductsServiceServer) ReserveStock(context.Context, *ReserveStockRequest) (*ReserveStockResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ReserveStock not implemented")
 }
 func (UnimplementedProductsServiceServer) mustEmbedUnimplementedProductsServiceServer() {}
 func (UnimplementedProductsServiceServer) testEmbeddedByValue()                         {}
@@ -204,42 +172,6 @@ func _ProductsService_GetProductsByIDs_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
-func _ProductsService_ListProducts_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListProductsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ProductsServiceServer).ListProducts(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ProductsService_ListProducts_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProductsServiceServer).ListProducts(ctx, req.(*ListProductsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _ProductsService_ReserveStock_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ReserveStockRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(ProductsServiceServer).ReserveStock(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: ProductsService_ReserveStock_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ProductsServiceServer).ReserveStock(ctx, req.(*ReserveStockRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // ProductsService_ServiceDesc is the grpc.ServiceDesc for ProductsService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -258,14 +190,6 @@ var ProductsService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetProductsByIDs",
 			Handler:    _ProductsService_GetProductsByIDs_Handler,
-		},
-		{
-			MethodName: "ListProducts",
-			Handler:    _ProductsService_ListProducts_Handler,
-		},
-		{
-			MethodName: "ReserveStock",
-			Handler:    _ProductsService_ReserveStock_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

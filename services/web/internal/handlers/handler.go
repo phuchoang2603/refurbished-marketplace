@@ -24,6 +24,8 @@ type Handler struct {
 func New(
 	users shared.UsersService,
 	products shared.ProductsService,
+	inventory shared.InventoryService,
+	search shared.SearchService,
 	orders shared.OrdersService,
 	cart shared.CartService,
 	payment shared.PaymentService,
@@ -33,6 +35,8 @@ func New(
 	deps := &shared.Dependencies{
 		Users:         users,
 		Products:      products,
+		Inventory:     inventory,
+		Search:        search,
 		Orders:        orders,
 		Cart:          cart,
 		Payment:       payment,

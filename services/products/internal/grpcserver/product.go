@@ -13,7 +13,7 @@ import (
 )
 
 func mapProduct(p service.Product) *productsv1.Product {
-	out := &productsv1.Product{
+	return &productsv1.Product{
 		Id:          p.ID.String(),
 		Name:        p.Name,
 		Description: p.Description,
@@ -22,13 +22,6 @@ func mapProduct(p service.Product) *productsv1.Product {
 		CreatedAt:   timestamppb.New(p.CreatedAt),
 		UpdatedAt:   timestamppb.New(p.UpdatedAt),
 	}
-	if p.AvailableQty != nil {
-		out.AvailableQty = p.AvailableQty
-	}
-	if p.ReservedQty != nil {
-		out.ReservedQty = p.ReservedQty
-	}
-	return out
 }
 
 func (s *Server) CreateProduct(ctx context.Context, req *productsv1.CreateProductRequest) (*productsv1.Product, error) {
@@ -36,18 +29,15 @@ func (s *Server) CreateProduct(ctx context.Context, req *productsv1.CreateProduc
 	if err != nil {
 		return nil, err
 	}
-	if req.InitialStock == nil {
-		return nil, grpcerr.InvalidArgument("initial stock is required")
-	}
 
-	p, err := s.svc.CreateProduct(ctx, req.GetName(), req.GetDescription(), req.GetPriceCents(), merchantID, req.GetInitialStock())
+	p, err := s.svc.CreateProduct(ctx, req.GetName(), req.GetDescription(), req.GetPriceCents(), merchantID, req.InitialStock)
 	if err != nil {
 		return nil, grpcerr.Map(
 			err,
 			grpcerr.Mapping{Err: service.ErrInvalidProductName, Code: codes.InvalidArgument},
+			grpcerr.Mapping{Err: service.ErrInvalidInitialStock, Code: codes.InvalidArgument},
 			grpcerr.Mapping{Err: service.ErrInvalidPrice, Code: codes.InvalidArgument},
 			grpcerr.Mapping{Err: service.ErrInvalidMerchantID, Code: codes.InvalidArgument},
-			grpcerr.Mapping{Err: service.ErrInvalidQuantity, Code: codes.InvalidArgument},
 		)
 	}
 
@@ -92,54 +82,4 @@ func (s *Server) GetProductsByIDs(ctx context.Context, req *productsv1.GetProduc
 		out = append(out, mapProduct(p))
 	}
 	return &productsv1.GetProductsByIDsResponse{Products: out}, nil
-}
-
-func (s *Server) ListProducts(ctx context.Context, req *productsv1.ListProductsRequest) (*productsv1.ListProductsResponse, error) {
-	products, err := s.svc.ListProducts(ctx, req.GetLimit(), req.GetOffset())
-	if err != nil {
-		return nil, grpcerr.Map(
-			err,
-			grpcerr.Mapping{Err: service.ErrInvalidListLimit, Code: codes.InvalidArgument},
-			grpcerr.Mapping{Err: service.ErrInvalidListOffset, Code: codes.InvalidArgument},
-		)
-	}
-
-	out := make([]*productsv1.Product, 0, len(products))
-	for _, p := range products {
-		out = append(out, mapProduct(p))
-	}
-
-	return &productsv1.ListProductsResponse{Products: out}, nil
-}
-
-func (s *Server) ReserveStock(ctx context.Context, req *productsv1.ReserveStockRequest) (*productsv1.ReserveStockResponse, error) {
-	orderID, err := grpcerr.ParseUUID(req.GetOrderId(), "order id")
-	if err != nil {
-		return nil, err
-	}
-	merchantID, err := grpcerr.ParseUUID(req.GetMerchantId(), "merchant id")
-	if err != nil {
-		return nil, err
-	}
-	items := make([]service.ReservationItemInput, 0, len(req.GetItems()))
-	for _, item := range req.GetItems() {
-		productID, err := grpcerr.ParseUUID(item.GetProductId(), "product id")
-		if err != nil {
-			return nil, err
-		}
-		items = append(items, service.ReservationItemInput{ProductID: productID, Quantity: item.GetQuantity()})
-	}
-
-	err = s.svc.ReserveStock(ctx, orderID, merchantID, req.GetTotalCents(), items)
-	if err != nil {
-		return nil, grpcerr.Map(
-			err,
-			grpcerr.Mapping{Err: service.ErrInvalidMerchantID, Code: codes.InvalidArgument},
-			grpcerr.Mapping{Err: service.ErrInvalidQuantity, Code: codes.InvalidArgument},
-			grpcerr.Mapping{Err: service.ErrInvalidProductID, Code: codes.InvalidArgument},
-			grpcerr.Mapping{Err: service.ErrInventoryNotFound, Code: codes.FailedPrecondition},
-			grpcerr.Mapping{Err: service.ErrInsufficientStock, Code: codes.FailedPrecondition},
-		)
-	}
-	return &productsv1.ReserveStockResponse{}, nil
 }

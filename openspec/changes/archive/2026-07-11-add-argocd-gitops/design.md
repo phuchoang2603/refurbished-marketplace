@@ -75,7 +75,7 @@ Chart templates prefix service image names:
 ```yaml
 # values.yaml (dev / Tilt — registry empty or omitted → local names unchanged)
 global:
-  imageRegistry: ""          # empty = use image as-is for Tilt
+  imageRegistry: "" # empty = use image as-is for Tilt
   imageTag: ""
 
 # staging overlay
@@ -86,7 +86,7 @@ global:
 # production overlay
 global:
   imageRegistry: ghcr.io/<owner>/refurbished-marketplace
-  imageTag: abc123def   # commit SHA, updated on promote
+  imageTag: abc123def # commit SHA, updated on promote
 ```
 
 Template helper builds `imageRef(name, tag)` — if `imageRegistry` is empty, return `name` only (Tilt). Optional `services.<slug>.imageTag` override reserved but not required when all images share a release SHA.

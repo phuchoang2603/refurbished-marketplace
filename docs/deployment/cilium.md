@@ -24,17 +24,20 @@ SPIRE for Cilium mutual auth is cluster Helm in **talos-proxmox** (`authenticati
 
 Ingress policies select marketplace app pods only. Egress is unrestricted so CNPG, Valkey localhost, Kafka TLS, and OTLP keep working. Migration Jobs and CNPG Clusters are not selected.
 
-| Destination                 | Port | Allowed ingress                                                                                                   | mTLS (`mode: required`)  |
-| --------------------------- | ---- | ----------------------------------------------------------------------------------------------------------------- | ------------------------ |
-| `web`                       | 8080 | Cilium Gateway (`fromEntities: ingress`), kubelet (`host`), `payment-gateway-simulator` (hosted-payment callback) | Simulator → web only     |
-| `users`                     | 9091 | `web`, kubelet                                                                                                    | web → users              |
-| `products`                  | 9092 | `web`, kubelet                                                                                                    | web → products           |
-| `orders`                    | 9093 | `web`, kubelet                                                                                                    | web → orders             |
-| `cart`                      | 9094 | `web`, kubelet                                                                                                    | web → cart               |
-| `payment`                   | 9096 | `web`, kubelet                                                                                                    | web → payment            |
-| `payment-gateway-simulator` | 8097 | Cilium Gateway, kubelet                                                                                           | no (browser via Gateway) |
+| Destination                 | Port  | Allowed ingress                                                                                                   | mTLS (`mode: required`)  |
+| --------------------------- | ----- | ----------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| `web`                       | 8080  | Cilium Gateway (`fromEntities: ingress`), kubelet (`host`), `payment-gateway-simulator` (hosted-payment callback) | Simulator → web only     |
+| `users`                     | 9091  | `web`, kubelet                                                                                                    | web → users              |
+| `products`                  | 9092  | `web`, kubelet                                                                                                    | web → products           |
+| `catalog-mongodb`           | 27017 | `products`, kubelet, Kafka Connect (`kafka` ns, `strimzi.io/kind=KafkaConnect`)                                   | no                       |
+| `catalog-meilisearch`       | 7700  | `search`, kubelet                                                                                                 | no                       |
+| `search`                    | 9098  | `web`, kubelet                                                                                                    | web → search             |
+| `orders`                    | 9093  | `web`, kubelet                                                                                                    | web → orders             |
+| `cart`                      | 9094  | `web`, kubelet                                                                                                    | web → cart               |
+| `payment`                   | 9096  | `web`, kubelet                                                                                                    | web → payment            |
+| `payment-gateway-simulator` | 8097  | Cilium Gateway, kubelet                                                                                           | no (browser via Gateway) |
 
-Inventory lives in `products` (catalog). Checkout holds stock with `ReserveStock` from `web`, not `orders`. Kafka consumers are those same service pods talking to namespace `kafka` (Strimzi TLS, not mesh mTLS). Cart → Valkey is `127.0.0.1` on the pod. Init/migrate containers talk to `*-db-rw:5432` without a CNP on CNPG.
+Inventory is a separate gRPC service with its own CNPG cluster. Checkout holds stock with `ReserveStock` from `web`. Kafka consumers are those same service pods talking to namespace `kafka` (Strimzi TLS, not mesh mTLS). Cart → Valkey is `127.0.0.1` on the pod. Init/migrate containers talk to remaining `*-db-rw:5432` without a CNP on CNPG. Mongo 27017 is allow-listed for products, kubelet, and Kafka Connect only; that hop does not use SPIRE. Meilisearch 7700 is allow-listed for search and kubelet only; that hop does not use SPIRE.
 
 Chart knobs (`infra/charts/refurbished-marketplace/values.yaml`):
 

@@ -19,6 +19,8 @@ env:
   GO_MODULE_GLOBS: >-
     ./services/users/...
     ./services/products/...
+    ./services/search/...
+    ./services/inventory/...
     ./services/orders/...
     ./services/cart/...
     ./services/payment/...
@@ -34,6 +36,8 @@ env:
     ./shared/runtime/...
     ./shared/testutil/postgres/...
     ./shared/testutil/kafka/...
+    ./shared/testutil/meilisearch/...
+    ./shared/testutil/mongo/...
     ./shared/testutil/redis/...
     ./tools/payment-gateway-simulator/...
 
@@ -64,6 +68,8 @@ jobs:
     outputs:
       users: ${{ steps.filter.outputs.users }}
       products: ${{ steps.filter.outputs.products }}
+      search: ${{ steps.filter.outputs.search }}
+      inventory: ${{ steps.filter.outputs.inventory }}
       orders: ${{ steps.filter.outputs.orders }}
       payment: ${{ steps.filter.outputs.payment }}
       cart: ${{ steps.filter.outputs.cart }}
@@ -77,32 +83,94 @@ jobs:
           filters: |
             users:
               - 'services/users/**'
-              - 'shared/**'
+              - 'shared/proto/**'
+              - 'shared/auth/**'
+              - 'shared/err/dberr/**'
+              - 'shared/err/grpcerr/**'
+              - 'shared/runtime/**'
+              - 'shared/observe/log/**'
+              - 'shared/testutil/postgres/**'
               - 'go.work*'
               - '.github/workflows/ci.yml'
             products:
               - 'services/products/**'
-              - 'shared/**'
+              - 'shared/proto/**'
+              - 'shared/messaging/**'
+              - 'shared/err/grpcerr/**'
+              - 'shared/runtime/**'
+              - 'shared/observe/log/**'
+              - 'shared/observe/trace/**'
+              - 'shared/testutil/kafka/**'
+              - 'shared/testutil/mongo/**'
+              - 'go.work*'
+              - '.github/workflows/ci.yml'
+            search:
+              - 'services/search/**'
+              - 'shared/proto/**'
+              - 'shared/messaging/**'
+              - 'shared/err/grpcerr/**'
+              - 'shared/runtime/**'
+              - 'shared/observe/log/**'
+              - 'shared/observe/trace/**'
+              - 'shared/testutil/kafka/**'
+              - 'shared/testutil/meilisearch/**'
+              - 'go.work*'
+              - '.github/workflows/ci.yml'
+            inventory:
+              - 'services/inventory/**'
+              - 'shared/proto/**'
+              - 'shared/messaging/**'
+              - 'shared/err/dberr/**'
+              - 'shared/err/grpcerr/**'
+              - 'shared/runtime/**'
+              - 'shared/observe/log/**'
+              - 'shared/observe/trace/**'
+              - 'shared/testutil/postgres/**'
+              - 'shared/testutil/kafka/**'
               - 'go.work*'
               - '.github/workflows/ci.yml'
             orders:
               - 'services/orders/**'
-              - 'shared/**'
+              - 'shared/proto/**'
+              - 'shared/messaging/**'
+              - 'shared/err/dberr/**'
+              - 'shared/err/grpcerr/**'
+              - 'shared/runtime/**'
+              - 'shared/observe/log/**'
+              - 'shared/observe/trace/**'
+              - 'shared/testutil/postgres/**'
+              - 'shared/testutil/kafka/**'
               - 'go.work*'
               - '.github/workflows/ci.yml'
             payment:
               - 'services/payment/**'
-              - 'shared/**'
+              - 'shared/proto/**'
+              - 'shared/messaging/**'
+              - 'shared/err/dberr/**'
+              - 'shared/err/grpcerr/**'
+              - 'shared/runtime/**'
+              - 'shared/observe/log/**'
+              - 'shared/observe/trace/**'
+              - 'shared/testutil/postgres/**'
+              - 'shared/testutil/kafka/**'
               - 'go.work*'
               - '.github/workflows/ci.yml'
             cart:
               - 'services/cart/**'
-              - 'shared/**'
+              - 'shared/proto/**'
+              - 'shared/err/grpcerr/**'
+              - 'shared/runtime/**'
+              - 'shared/observe/log/**'
+              - 'shared/testutil/redis/**'
               - 'go.work*'
               - '.github/workflows/ci.yml'
             web:
               - 'services/web/**'
-              - 'shared/**'
+              - 'shared/proto/**'
+              - 'shared/auth/**'
+              - 'shared/runtime/**'
+              - 'shared/observe/log/**'
+              - 'shared/observe/trace/**'
               - 'go.work*'
               - '.github/workflows/ci.yml'
             helm:
@@ -117,6 +185,8 @@ jobs:
         service:
           - users
           - products
+          - search
+          - inventory
           - orders
           - payment
           - cart
@@ -151,6 +221,8 @@ jobs:
         service:
           - users
           - products
+          - search
+          - inventory
           - orders
           - payment
           - cart
@@ -210,6 +282,7 @@ jobs:
             "infra/charts/operators/strimzi:operators"
             "infra/charts/observability:monitoring"
             "infra/charts/cloudflare-tunnel:cloudflare-tunnel"
+            "infra/charts/meilisearch:ecommerce"
           )
           for item in "${wrapper_charts[@]}"; do
             chart="${item%%:*}"
@@ -231,4 +304,5 @@ jobs:
             /tmp/cnpg.yaml \
             /tmp/strimzi.yaml \
             /tmp/observability.yaml \
-            /tmp/cloudflare-tunnel.yaml
+            /tmp/cloudflare-tunnel.yaml \
+            /tmp/meilisearch.yaml

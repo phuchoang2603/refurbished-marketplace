@@ -19,6 +19,8 @@ const testJWTSecret = "secret"
 type routerDeps struct {
 	users         *fakes.UsersService
 	products      *fakes.ProductsService
+	inventory     *fakes.InventoryService
+	search        *fakes.SearchService
 	orders        *fakes.OrdersService
 	cart          *fakes.CartService
 	payment       *fakes.PaymentService
@@ -35,7 +37,13 @@ func newTestRouter(t *testing.T, deps routerDeps) http.Handler {
 	if hostedPayment.GatewayBaseURL == "" {
 		hostedPayment = defaultTestHostedPayment
 	}
-	h := handlers.New(deps.users, deps.products, deps.orders, deps.cart, deps.payment, hostedPayment, authconfig.DefaultConfig(testJWTSecret))
+	if deps.inventory == nil {
+		deps.inventory = &fakes.InventoryService{}
+	}
+	if deps.search == nil {
+		deps.search = &fakes.SearchService{}
+	}
+	h := handlers.New(deps.users, deps.products, deps.inventory, deps.search, deps.orders, deps.cart, deps.payment, hostedPayment, authconfig.DefaultConfig(testJWTSecret))
 	router := chi.NewRouter()
 	h.Register(router)
 	return router

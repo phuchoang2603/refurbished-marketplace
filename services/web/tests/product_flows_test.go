@@ -11,6 +11,7 @@ import (
 	"github.com/phuchoang2603/refurbished-marketplace/services/web/internal/auth"
 	"github.com/phuchoang2603/refurbished-marketplace/services/web/tests/fakes"
 	productsv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1"
+	searchv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/search/v1"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -32,7 +33,7 @@ func TestCreateProductRedirectsToProductDetail(t *testing.T) {
 				t.Fatalf("merchantID = %q, want UUID subject", merchantID)
 			}
 			if initialStock != 4 {
-				t.Fatalf("initialStock = %d, want 4", initialStock)
+				t.Fatalf("initial stock = %d", initialStock)
 			}
 			return &productsv1.Product{Id: "prod-1"}, nil
 		},
@@ -53,7 +54,7 @@ func TestCreateProductRedirectsToProductDetail(t *testing.T) {
 	if rec.Code != http.StatusSeeOther {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusSeeOther)
 	}
-	if got := rec.Header().Get("Location"); got != "/products/prod-1" {
+	if got := rec.Header().Get("Location"); got != "/products/prod-1?created=1" {
 		t.Fatalf("location = %q, want /products/prod-1", got)
 	}
 }
@@ -83,12 +84,13 @@ func TestCreateProductReturnsUnavailableWhenProductsServiceFails(t *testing.T) {
 }
 
 func TestSellerProductsPageListsOnlyCurrentSellerProducts(t *testing.T) {
-	stock := int32(4)
-	productsSvc := &fakes.ProductsService{
-		ListFn: func(ctx context.Context, limit, offset int32) (*productsv1.ListProductsResponse, error) {
-			return &productsv1.ListProductsResponse{Products: []*productsv1.Product{
-				{Id: "prod-1", MerchantId: "11111111-1111-1111-1111-111111111111", Name: "Seller Phone", PriceCents: 25999, AvailableQty: &stock},
-				{Id: "prod-2", MerchantId: "22222222-2222-2222-2222-222222222222", Name: "Other Laptop", PriceCents: 99999, AvailableQty: &stock},
+	searchSvc := &fakes.SearchService{
+		SearchFn: func(ctx context.Context, query, merchantID string, limit, offset int32) (*searchv1.SearchProductsResponse, error) {
+			if merchantID != "11111111-1111-1111-1111-111111111111" {
+				t.Fatalf("merchantID = %q, want authenticated seller", merchantID)
+			}
+			return &searchv1.SearchProductsResponse{Listings: []*searchv1.ListingHit{
+				{Id: "prod-1", MerchantId: merchantID, Name: "Seller Phone", PriceCents: 25999},
 			}}, nil
 		},
 	}
@@ -96,7 +98,7 @@ func TestSellerProductsPageListsOnlyCurrentSellerProducts(t *testing.T) {
 	req := httptest.NewRequest(http.MethodGet, "/seller/products", nil)
 	req.AddCookie(&http.Cookie{Name: auth.AccessCookieName, Value: signedAccessToken(t, "11111111-1111-1111-1111-111111111111")})
 
-	newTestRouter(t, routerDeps{products: productsSvc}).ServeHTTP(rec, req)
+	newTestRouter(t, routerDeps{search: searchSvc}).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
@@ -110,31 +112,95 @@ func TestSellerProductsPageListsOnlyCurrentSellerProducts(t *testing.T) {
 	}
 }
 
-func TestProductsPageHidesCurrentUsersProducts(t *testing.T) {
-	stock := int32(4)
-	productsSvc := &fakes.ProductsService{
-		ListFn: func(ctx context.Context, limit, offset int32) (*productsv1.ListProductsResponse, error) {
-			return &productsv1.ListProductsResponse{Products: []*productsv1.Product{
-				{Id: "prod-1", MerchantId: "11111111-1111-1111-1111-111111111111", Name: "Own Phone", Description: "This should be hidden", PriceCents: 25999, AvailableQty: &stock},
-				{Id: "prod-2", MerchantId: "22222222-2222-2222-2222-222222222222", Name: "Other Laptop", Description: "Visible", PriceCents: 99999, AvailableQty: &stock},
+func TestProductsPageRendersSearchHitsWithoutStock(t *testing.T) {
+	searchSvc := &fakes.SearchService{
+		SearchFn: func(ctx context.Context, query, merchantID string, limit, offset int32) (*searchv1.SearchProductsResponse, error) {
+			if query != "" || merchantID != "" {
+				t.Fatalf("browse query=%q merchant=%q", query, merchantID)
+			}
+			return &searchv1.SearchProductsResponse{Listings: []*searchv1.ListingHit{
+				{Id: "prod-1", MerchantId: "22222222-2222-2222-2222-222222222222", Name: "Browse Phone", Description: "Ready to ship", PriceCents: 25999},
 			}}, nil
 		},
 	}
 	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodGet, "/products", nil)
-	req.AddCookie(&http.Cookie{Name: auth.AccessCookieName, Value: signedAccessToken(t, "11111111-1111-1111-1111-111111111111")})
-
-	newTestRouter(t, routerDeps{products: productsSvc}).ServeHTTP(rec, req)
-
+	newTestRouter(t, routerDeps{search: searchSvc}).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/products", nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
 	}
 	body := rec.Body.String()
-	if strings.Contains(body, "Own Phone") {
-		t.Fatalf("body should not include current user's product in %q", body)
+	if !strings.Contains(body, "Browse Phone") {
+		t.Fatalf("body missing listing in %q", body)
 	}
-	if !strings.Contains(body, "Other Laptop") {
-		t.Fatalf("body missing visible product in %q", body)
+	if strings.Contains(body, "In stock") || strings.Contains(body, "Out of stock") {
+		t.Fatalf("browse cards should omit stock in %q", body)
+	}
+}
+
+func TestProductsPageForwardsCatalogQuery(t *testing.T) {
+	searchSvc := &fakes.SearchService{
+		SearchFn: func(ctx context.Context, query, merchantID string, limit, offset int32) (*searchv1.SearchProductsResponse, error) {
+			if query != "pixel" || merchantID != "" {
+				t.Fatalf("query=%q merchant=%q", query, merchantID)
+			}
+			return &searchv1.SearchProductsResponse{Listings: []*searchv1.ListingHit{
+				{Id: "prod-1", MerchantId: "22222222-2222-2222-2222-222222222222", Name: "Pixel 8", PriceCents: 24900},
+			}}, nil
+		},
+	}
+	rec := httptest.NewRecorder()
+	newTestRouter(t, routerDeps{search: searchSvc}).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/products?q=pixel", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, "Pixel 8") {
+		t.Fatalf("body missing listing in %q", body)
+	}
+	if !strings.Contains(body, `value="pixel"`) {
+		t.Fatalf("search input should keep query in %q", body)
+	}
+}
+
+func TestCatalogSuggestReturnsNamesWithoutGrid(t *testing.T) {
+	searchSvc := &fakes.SearchService{
+		SearchFn: func(ctx context.Context, query, merchantID string, limit, offset int32) (*searchv1.SearchProductsResponse, error) {
+			if query != "phone" || merchantID != "" || limit != 8 {
+				t.Fatalf("query=%q merchant=%q limit=%d", query, merchantID, limit)
+			}
+			return &searchv1.SearchProductsResponse{Listings: []*searchv1.ListingHit{
+				{Id: "prod-1", Name: "Refurbished Phone", PriceCents: 25999},
+			}}, nil
+		},
+	}
+	rec := httptest.NewRecorder()
+	newTestRouter(t, routerDeps{search: searchSvc}).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/products/suggest?q=phone", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, "Refurbished Phone") || !strings.Contains(body, "/products/prod-1") {
+		t.Fatalf("body missing suggestion in %q", body)
+	}
+	if strings.Contains(body, "Browse quality refurbished") {
+		t.Fatalf("suggest must not render the catalog grid in %q", body)
+	}
+}
+
+func TestCatalogSuggestSkipsShortQuery(t *testing.T) {
+	searchSvc := &fakes.SearchService{
+		SearchFn: func(ctx context.Context, query, merchantID string, limit, offset int32) (*searchv1.SearchProductsResponse, error) {
+			t.Fatalf("search called for short query=%q", query)
+			return nil, nil
+		},
+	}
+	rec := httptest.NewRecorder()
+	newTestRouter(t, routerDeps{search: searchSvc}).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/products/suggest?q=p", nil))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusOK)
+	}
+	if !strings.Contains(rec.Body.String(), `id="catalog-suggest"`) {
+		t.Fatalf("missing suggest root in %q", rec.Body.String())
 	}
 }
 

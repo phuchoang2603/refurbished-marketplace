@@ -4,9 +4,11 @@ import (
 	"context"
 
 	cartv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/cart/v1"
+	inventoryv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/inventory/v1"
 	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
 	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
 	productsv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1"
+	searchv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/search/v1"
 	usersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/users/v1"
 )
 
@@ -20,8 +22,16 @@ type ProductsService interface {
 	CreateProduct(ctx context.Context, name, description string, priceCents int64, merchantID string, initialStock int32) (*productsv1.Product, error)
 	GetProductByID(ctx context.Context, id string) (*productsv1.Product, error)
 	GetProductsByIDs(ctx context.Context, ids []string) (*productsv1.GetProductsByIDsResponse, error)
-	ListProducts(ctx context.Context, limit, offset int32) (*productsv1.ListProductsResponse, error)
-	ReserveStock(ctx context.Context, orderID, merchantID string, totalCents int64, items []*productsv1.ReserveStockItem) error
+}
+
+type InventoryService interface {
+	GetStock(ctx context.Context, productID string) (*inventoryv1.Stock, error)
+	GetStocksByIDs(ctx context.Context, productIDs []string) (*inventoryv1.GetStocksByIDsResponse, error)
+	ReserveStock(ctx context.Context, orderID, merchantID string, totalCents int64, items []*inventoryv1.ReserveStockItem) error
+}
+
+type SearchService interface {
+	SearchProducts(ctx context.Context, query, merchantID string, limit, offset int32) (*searchv1.SearchProductsResponse, error)
 }
 
 type OrdersService interface {
@@ -48,6 +58,8 @@ type PaymentService interface {
 type Dependencies struct {
 	Users         UsersService
 	Products      ProductsService
+	Inventory     InventoryService
+	Search        SearchService
 	Orders        OrdersService
 	Cart          CartService
 	Payment       PaymentService

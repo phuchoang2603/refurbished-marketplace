@@ -18,15 +18,18 @@ Child Applications inherit `targetRevision` via `$ARGOCD_APP_SOURCE_TARGET_REVIS
 
 ## What Argo CD syncs
 
-| Component                 | Source        | Pin                                                  | Namespace           |
-| ------------------------- | ------------- | ---------------------------------------------------- | ------------------- |
-| External Secrets Operator | Wrapper chart | upstream chart + Doppler `ClusterSecretStore`        | `operators`         |
-| CloudNativePG             | Wrapper chart | upstream chart                                       | `operators`         |
-| Strimzi                   | Wrapper chart | `watchAnyNamespace=true`                             | `operators`         |
-| `observability`           | Wrapper chart | `victoria-metrics-k8s-stack` `0.86.0`                | `monitoring`        |
-| `refurbished-marketplace` | This repo     | CNPG, ExternalSecrets, migrations, services, Gateway | `ecommerce`         |
-| `kafka`                   | This repo     | Debezium reads secrets/DBs in `ecommerce`            | `kafka`             |
-| `cloudflare-tunnel`       | This repo     | `cloudflared`; token via Doppler ExternalSecret      | `cloudflare-tunnel` |
+| Component                 | Source        | Pin                                                                          | Namespace           |
+| ------------------------- | ------------- | ---------------------------------------------------------------------------- | ------------------- |
+| External Secrets Operator | Wrapper chart | upstream chart + Doppler `ClusterSecretStore`                                | `operators`         |
+| CloudNativePG             | Wrapper chart | upstream chart                                                               | `operators`         |
+| Strimzi                   | Wrapper chart | `watchAnyNamespace=true`                                                     | `operators`         |
+| MCK (MongoDB operator)    | Wrapper chart | `mongodb/mongodb-kubernetes` 1.12.0, Community watch                         | `operators`         |
+| `observability`           | Wrapper chart | `victoria-metrics-k8s-stack` `0.86.0`                                        | `monitoring`        |
+| `mongodb`                 | This repo     | `MongoDBCommunity` replica set + CNP + ESO                                   | `ecommerce`         |
+| `meilisearch`             | Wrapper chart | upstream `meilisearch-kubernetes` + CNP + ESO                                | `ecommerce`         |
+| `refurbished-marketplace` | This repo     | CNPG (non-catalog services), ExternalSecrets, migrations, services, Gateway  | `ecommerce`         |
+| `kafka`                   | This repo     | Debezium Postgres outboxes plus Mongo catalog outbox; secrets in `ecommerce` | `kafka`             |
+| `cloudflare-tunnel`       | This repo     | `cloudflared`; token via Doppler ExternalSecret                              | `cloudflare-tunnel` |
 
 Cilium is cluster-owned in **talos-proxmox**, not an Argo app. See [cilium.md](cilium.md).
 
@@ -34,7 +37,11 @@ Cilium is cluster-owned in **talos-proxmox**, not an Argo app. See [cilium.md](c
 
 **Bootstrap:** Doppler service token Secret in `operators` — see [secrets](../development/secrets.md).
 
-Sync waves: operators (0) → observability (1) → marketplace (3) → kafka (4) → cloudflare-tunnel (5).
+Sync waves: operators (0, including MCK) → observability (1) → MongoDBCommunity and Meilisearch (2) → marketplace (3) → kafka (4) → cloudflare-tunnel (5).
+
+Mongo is MCK **Community** in `ecommerce` (`catalog-mongodb`). Products authenticates with `mongodb-catalog-app` and uses database `catalog` (`listings`, `catalog_outbox`). Community MCK does not include Ops Manager continuous backup. The marketplace chart does not deploy `products-db`.
+
+Meilisearch is the storefront catalog projection (`catalog-meilisearch`). The search service authenticates with `meilisearch-master-key`. It is not listing or stock source of truth.
 
 ```
 infra/argocd/

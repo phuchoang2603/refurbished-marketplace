@@ -36,12 +36,12 @@ Root Applications on the gpu cluster SHALL enable the marketplace chart via Argo
 
 ### Requirement: Marketplace release owns databases
 
-CNPG Clusters for marketplace services SHALL be resources of the Argo-managed marketplace Helm release. The repository SHALL NOT apply databases out-of-band to protect them from `tilt down`.
+CNPG Clusters for marketplace services that still use Postgres SHALL be resources of the Argo-managed marketplace Helm release. The marketplace release SHALL NOT deploy a `products-db` Cluster after catalog cutover. The repository SHALL NOT apply remaining databases out-of-band to protect them from `tilt down`.
 
 #### Scenario: Clusters sync with the chart
 
 - **WHEN** the marketplace Application syncs
-- **THEN** CNPG Cluster objects are applied from the chart templates
+- **THEN** CNPG Cluster objects for remaining Postgres services are applied from the chart templates and no products Cluster is rendered
 
 ### Requirement: App-of-apps per environment
 
@@ -214,3 +214,90 @@ The repository SHALL include Argo CD child Applications that deploy in-cluster `
 
 - **WHEN** the cloudflare-tunnel chart syncs with External Secrets enabled
 - **THEN** the tunnel token Secret is populated from Doppler via an ExternalSecret rather than committed to Git
+
+### Requirement: MCK operator Application
+
+The repository SHALL include an Argo CD child Application that deploys MongoDB Controllers for Kubernetes into the `operators` namespace at an operator sync wave (before marketplace and before the Mongo database Application).
+
+#### Scenario: Operator syncs before the database CR
+
+- **WHEN** a full environment sync runs
+- **THEN** the MCK operator Application has a lower sync wave than the Application that applies the MongoDB Community custom resource
+
+#### Scenario: Operator lands in operators
+
+- **WHEN** the MCK operator Application syncs
+- **THEN** the operator runs in the `operators` namespace
+
+### Requirement: MongoDB Community Application in ecommerce
+
+The repository SHALL include an Argo CD child Application that applies the MongoDB Community replica set (and related secrets/policy owned by that chart) into the `ecommerce` namespace. That Application SHALL NOT template an `ecommerce` Namespace object (the marketplace Application already destines that namespace).
+
+#### Scenario: Database CR destines ecommerce
+
+- **WHEN** the Mongo database Application syncs
+- **THEN** the MongoDB Community custom resource is applied in `ecommerce`
+
+#### Scenario: Prod may overlay size
+
+- **WHEN** prod-root applies Mongo chart value overlays
+- **THEN** production MAY raise replica-set members or resources without changing the Community operator path
+
+### Requirement: GitOps docs include Mongo
+
+GitOps documentation SHALL list the MCK operator and Mongo database Applications, their namespaces, and sync-wave order.
+
+#### Scenario: Contributor finds Mongo in the deploy table
+
+- **WHEN** a contributor reads the GitOps deploy guide
+- **THEN** documentation names the Mongo operator and database Applications, `operators` vs `ecommerce`, and that shop traffic does not depend on Mongo yet
+
+### Requirement: Inventory workload in marketplace chart
+
+The marketplace Helm release SHALL deploy an `inventory` Service and Deployment in `ecommerce` with GHCR image tags matching other marketplace services.
+
+#### Scenario: Inventory syncs with the chart
+
+- **WHEN** the marketplace Application syncs
+- **THEN** an inventory Deployment and Service exist in `ecommerce`
+
+### Requirement: Product creation event transport
+
+The GitOps configuration SHALL retain the `products.created` topic and SHALL deploy a Debezium MongoDB outbox connector against the catalog outbox collection, using Mongo credentials and the same EventRouter identity/key/payload/tracing mapping as other outbox connectors. It SHALL NOT deploy a Postgres products-outbox CDC connector. Inventory SHALL continue to subscribe to creation events with its own consumer group.
+
+#### Scenario: Creation transport syncs
+
+- **WHEN** the Kafka and marketplace Applications sync
+- **THEN** the products creation topic, Mongo outbox connector, and inventory subscription SHALL be configured without a Postgres `products-outbox` connector and without replacing the inventory reservation event transport
+
+### Requirement: Meilisearch Application in ecommerce
+
+The repository SHALL include an Argo CD child Application that deploys Meilisearch into the `ecommerce` namespace. That Application SHALL NOT template an `ecommerce` Namespace object. Sync wave SHALL land after External Secrets Operator and with other data-plane stores, before marketplace workloads that query it at runtime.
+
+#### Scenario: Search engine destines ecommerce
+
+- **WHEN** the Meilisearch Application syncs
+- **THEN** the Meilisearch workload is applied in `ecommerce`
+
+#### Scenario: Search service can reference Meilisearch
+
+- **WHEN** the marketplace Application syncs after Meilisearch is Healthy
+- **THEN** the search workload can be configured with the in-cluster Meilisearch URL without a second search cluster
+
+### Requirement: Search workload in marketplace chart
+
+The marketplace Helm release SHALL deploy a `search` Service and Deployment in `ecommerce` with GHCR image tags matching other marketplace services.
+
+#### Scenario: Search syncs with the chart
+
+- **WHEN** the marketplace Application syncs
+- **THEN** a search Deployment and Service exist in `ecommerce`
+
+### Requirement: GitOps docs include Meilisearch
+
+GitOps documentation SHALL list the Meilisearch Application, the search marketplace workload, namespaces, and sync-wave order relative to operators and marketplace.
+
+#### Scenario: Contributor finds Meilisearch in the deploy table
+
+- **WHEN** a contributor reads the GitOps deploy guide
+- **THEN** documentation names the Meilisearch Application, the search service, `ecommerce`, and that Meilisearch is a catalog projection rather than listing SoT

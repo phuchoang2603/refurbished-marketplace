@@ -4,9 +4,9 @@ import (
 	"context"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 
+	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/catalog"
 	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/grpcserver"
 	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/service"
 	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
@@ -14,7 +14,6 @@ import (
 
 	productsv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1"
 
-	_ "github.com/lib/pq"
 	"google.golang.org/grpc"
 )
 
@@ -25,21 +24,21 @@ func main() {
 		sharedlog.Fatal("config", "err", err)
 	}
 
-	db, err := runtime.OpenPostgres(runtime.MustEnv("DB_URL"))
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	store, err := catalog.Open(ctx, cfg.MongoURI)
 	if err != nil {
-		sharedlog.Fatal("open postgres", "err", err)
+		sharedlog.Fatal("open mongodb", "err", err)
 	}
 	defer func() {
-		if err := db.Close(); err != nil {
-			sharedlog.Error("close db", "err", err)
+		if err := store.Close(context.Background()); err != nil {
+			sharedlog.Error("close mongodb", "err", err)
 		}
 	}()
 
-	svc := service.New(db)
+	svc := service.New(store)
 	grpcSvc := grpcserver.New(svc)
-
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
 
 	shutdownTracing, err := runtime.InitTracing(ctx, "products")
 	if err != nil {
@@ -61,11 +60,6 @@ func main() {
 		}
 	}()
 
-	var wg sync.WaitGroup
-	runtime.StartKafkaConsumer(ctx, &wg, func(ctx context.Context, brokers []string) error {
-		return runReservationConsumer(ctx, svc, brokers, cfg.KafkaGroupID)
-	})
-
 	if err := runtime.ServeGRPC(ctx, runtime.GRPCServerConfig{
 		Addr:        cfg.GRPCAddr,
 		ServiceName: "products",
@@ -75,5 +69,4 @@ func main() {
 	}); err != nil {
 		sharedlog.Fatal("grpc serve", "err", err)
 	}
-	wg.Wait()
 }

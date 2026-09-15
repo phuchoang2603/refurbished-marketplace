@@ -1,0 +1,13 @@
+# Prod overlay: more RAM; still Community replica set (not Ops Manager).
+resources:
+  requests:
+    cpu: 100m
+    memory: 512Mi
+  limits:
+    cpu: "1"
+    memory: 1Gi
+
+persistence:
+  size: 8Gi
+
+wiredTigerCacheSizeGB: 0.5

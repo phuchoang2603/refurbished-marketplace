@@ -46,7 +46,7 @@ The repository SHALL render `ExternalSecret` resources from the `refurbished-mar
 #### Scenario: Debezium connector secrets
 
 - **WHEN** ExternalSecrets have synced successfully
-- **THEN** `orders-app` and `payment-app` secrets exist for Strimzi `${secrets:…}` references in the kafka chart
+- **THEN** `orders-app`, `payment-app`, `products-app`, and `inventory-app` secrets exist for Strimzi `${secrets:…}` references in the kafka chart
 
 ### Requirement: No committed plaintext cluster secrets
 
@@ -102,3 +102,72 @@ Doppler MAY use separate configs for non-production vs production secrets. Boots
 
 - **WHEN** a contributor bootstraps secrets
 - **THEN** they create `operators/doppler-token` with kubectl on the workload cluster
+
+### Requirement: Mongo credentials from Doppler
+
+The repository SHALL render ExternalSecret resources that populate Kubernetes Secrets for MongoDB Community SCRAM users (and any replica-set key material the operator requires) from Doppler via the existing `doppler` ClusterSecretStore. Plaintext Mongo passwords SHALL NOT be committed.
+
+#### Scenario: SCRAM secret exists in ecommerce
+
+- **WHEN** ExternalSecrets for Mongo have synced successfully
+- **THEN** a Secret in `ecommerce` exists with the keys the MongoDB Community custom resource `passwordSecretRef` expects
+
+#### Scenario: No Mongo passwords in Git
+
+- **WHEN** the repository is cloned
+- **THEN** no Mongo root or app password values are present in tracked files
+
+### Requirement: Secrets documentation lists Mongo Doppler keys
+
+Secrets documentation SHALL list the Doppler remote keys and Kubernetes Secret names used for Mongo.
+
+#### Scenario: Operator can bootstrap Mongo passwords
+
+- **WHEN** an operator prepares Doppler configs `dev` and `prd`
+- **THEN** documentation names the Mongo-related Doppler keys to set before the database Application can become Ready
+
+### Requirement: Products Mongo credentials from Doppler
+
+The repository SHALL sync Doppler-backed credentials that products and the products Mongo outbox connector use to authenticate to the catalog replica set (SCRAM user password or equivalent). Plaintext Mongo URIs with passwords SHALL NOT be committed. Products SHALL NOT keep a Postgres `products-app` database secret after `products_db` is removed.
+
+#### Scenario: Products can authenticate to Mongo
+
+- **WHEN** ExternalSecrets have synced successfully after cutover
+- **THEN** products and the Kafka Connect service account can read a Secret in `ecommerce` with the keys needed to connect to the catalog replica set
+
+#### Scenario: Products Postgres secret is gone
+
+- **WHEN** the marketplace chart no longer deploys `products_db`
+- **THEN** GitOps SHALL NOT render a products CloudNativePG app username/password ExternalSecret
+
+### Requirement: Inventory database secret from Doppler
+
+The marketplace chart SHALL render an ExternalSecret for inventory’s CNPG credentials from Doppler using the same `{SECRET_NAME}_PASSWORD` pattern as other service databases. Plaintext inventory passwords SHALL NOT be committed.
+
+#### Scenario: Inventory app secret exists
+
+- **WHEN** ExternalSecrets have synced successfully
+- **THEN** an inventory app Secret exists in `ecommerce` with keys usable by CloudNativePG and the inventory Deployment
+
+### Requirement: Meilisearch master key from Doppler
+
+The repository SHALL sync a Doppler-backed master key that Meilisearch and the search service use. Plaintext Meilisearch keys SHALL NOT be committed.
+
+#### Scenario: Search secret exists in ecommerce
+
+- **WHEN** ExternalSecrets for Meilisearch have synced successfully
+- **THEN** a Secret in `ecommerce` exists with the key Meilisearch and the search service need to authenticate to the search HTTP API
+
+#### Scenario: No Meilisearch keys in Git
+
+- **WHEN** the repository is cloned
+- **THEN** no Meilisearch master key values are present in tracked files
+
+### Requirement: Secrets documentation lists Meilisearch Doppler keys
+
+Secrets documentation SHALL list the Doppler remote key and Kubernetes Secret name used for Meilisearch.
+
+#### Scenario: Operator can bootstrap the Meilisearch key
+
+- **WHEN** an operator prepares Doppler configs `dev` and `prd`
+- **THEN** documentation names the Meilisearch Doppler key to set before the search Application can become Ready

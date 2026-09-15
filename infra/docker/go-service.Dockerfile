@@ -11,6 +11,7 @@
 # Service build args (BUILD_PKG / BUILD_BIN / EXPOSE_PORT):
 #   users                     ./services/users/cmd/users                     users                     9091
 #   products                  ./services/products/cmd/products               products                  9092
+#   search                    ./services/search/cmd/search                   search                    9098
 #   orders                    ./services/orders/cmd/orders                   orders                    9093
 #   cart                      ./services/cart/cmd/cart                       cart                      9094
 #   payment                   ./services/payment/cmd/payment                 payment                   9096

@@ -1,0 +1,14 @@
+# Operator in `operators`; watches ecommerce MongoDBCommunity CRs (and the rest of the cluster).
+# Namespaced watch cannot reach ecommerce from operators without extra RoleBindings.
+mongodb-kubernetes:
+  operator:
+    watchNamespace: "*"
+    watchedResources:
+      - mongodbcommunity
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi

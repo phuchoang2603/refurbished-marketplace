@@ -206,7 +206,7 @@ victoria-metrics-k8s-stack:
     spec:
       k8sCollector:
         enabled: true
-        excludeFilter: "not kubernetes.pod_namespace:=ecommerce or kubernetes.container_name:=wait-for-db"
+        excludeFilter: "not kubernetes.pod_namespace:=ecommerce or kubernetes.container_name:=wait-for-db or kubernetes.container_name:=wait-for-mongo or kubernetes.container_name:=wait-for-meili"
       resources:
         requests:
           cpu: 50m

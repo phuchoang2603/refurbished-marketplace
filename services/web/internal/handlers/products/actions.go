@@ -27,10 +27,14 @@ func (h *Handler) handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 		shared.WriteBadRequest(w, r, "invalid request body")
 		return
 	}
+	if h.deps.Products == nil {
+		shared.WriteUnavailablePage(w, r, http.StatusServiceUnavailable, productManagementUnavailableView())
+		return
+	}
 	product, err := h.deps.Products.CreateProduct(r.Context(), name, description, priceCents, userID, initialStock)
 	if err != nil {
 		shared.WriteGRPCError(w, r, err)
 		return
 	}
-	shared.Redirect(w, r, "/products/"+product.GetId(), http.StatusSeeOther)
+	shared.Redirect(w, r, "/products/"+product.GetId()+"?created=1", http.StatusSeeOther)
 }

@@ -33,8 +33,9 @@ spec:
         marketplace.metrics: "true"
 {{- end }}
     spec:
-{{- if $svc.db }}
+{{- if or $svc.db $svc.mongo $svc.meili }}
       initContainers:
+{{- if $svc.db }}
         - name: wait-for-db
           image: postgres:16-alpine
           command: ["sh", "-c"]
@@ -45,6 +46,43 @@ spec:
 {{- with $initResources }}
           resources:
 {{ toYaml . | nindent 12 }}
+{{- end }}
+{{- end }}
+{{- if $svc.mongo }}
+        - name: wait-for-mongo
+          image: mongo:8.0.9
+          command: ["sh", "-c"]
+          args:
+            - >-
+              until mongosh --quiet
+              "mongodb://${MONGO_USER}:${MONGO_PASSWORD}@{{ $svc.mongo.host }}:{{ $svc.mongo.port }}/{{ $svc.mongo.database }}?authSource={{ default $svc.mongo.database $svc.mongo.authSource }}"
+              --eval 'db.runCommand({ ping: 1 })';
+              do echo "waiting for mongodb {{ $svc.mongo.host }}"; sleep 2; done
+          env:
+            - name: MONGO_USER
+              value: {{ $svc.mongo.user | quote }}
+            - name: MONGO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $svc.mongo.secretName }}
+                  key: {{ default "password" $svc.mongo.passwordKey }}
+{{- with $initResources }}
+          resources:
+{{ toYaml . | nindent 12 }}
+{{- end }}
+{{- end }}
+{{- if $svc.meili }}
+        - name: wait-for-meili
+          image: busybox:1.37
+          command: ["sh", "-c"]
+          args:
+            - >-
+              until wget -q -O /dev/null http://{{ $svc.meili.host }}:{{ $svc.meili.port }}/health;
+              do echo "waiting for meilisearch {{ $svc.meili.host }}"; sleep 2; done
+{{- with $initResources }}
+          resources:
+{{ toYaml . | nindent 12 }}
+{{- end }}
 {{- end }}
 {{- end }}
       containers:
@@ -86,6 +124,32 @@ spec:
                   key: {{ $svc.db.passwordKey }}
             - name: DB_URL
               value: {{ printf "postgres://$(DB_USER):$(DB_PASSWORD)@%s:%v/%s?sslmode=disable" $svc.db.host $svc.db.port $svc.db.name | quote }}
+{{- end }}
+{{- if $svc.mongo }}
+            - name: MONGO_USER
+              value: {{ $svc.mongo.user | quote }}
+            - name: MONGO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $svc.mongo.secretName }}
+                  key: {{ default "password" $svc.mongo.passwordKey }}
+            - name: MONGO_ADDR
+              value: {{ printf "%s:%v" $svc.mongo.host $svc.mongo.port | quote }}
+            - name: MONGO_DATABASE
+              value: {{ $svc.mongo.database | quote }}
+            - name: MONGO_AUTH_SOURCE
+              value: {{ default $svc.mongo.database $svc.mongo.authSource | quote }}
+            - name: MONGO_REPLICA_SET
+              value: {{ $svc.mongo.replicaSet | quote }}
+{{- end }}
+{{- if $svc.meili }}
+            - name: MEILI_URL
+              value: {{ printf "http://%s:%v" $svc.meili.host $svc.meili.port | quote }}
+            - name: MEILI_MASTER_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $svc.meili.secretName }}
+                  key: {{ default "MEILI_MASTER_KEY" $svc.meili.secretKey }}
 {{- end }}
 {{- if $svc.auth }}
             - name: JWT_SECRET

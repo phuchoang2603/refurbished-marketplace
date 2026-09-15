@@ -53,9 +53,21 @@ jobs:
               BUILD_PKG=./services/products/cmd/products
               BUILD_BIN=products
               EXPOSE_PORT=9092
-          - image: products-migrator
+          - image: search
+            dockerfile: infra/docker/go-service.Dockerfile
+            build_args: |
+              BUILD_PKG=./services/search/cmd/search
+              BUILD_BIN=search
+              EXPOSE_PORT=9098
+          - image: inventory
+            dockerfile: infra/docker/go-service.Dockerfile
+            build_args: |
+              BUILD_PKG=./services/inventory/cmd/inventory
+              BUILD_BIN=inventory
+              EXPOSE_PORT=9097
+          - image: inventory-migrator
             dockerfile: infra/docker/goose-migrator.Dockerfile
-            build_args: MIGRATIONS_DIR=services/products/db/migrations
+            build_args: MIGRATIONS_DIR=services/inventory/db/migrations
           - image: orders
             dockerfile: infra/docker/go-service.Dockerfile
             build_args: |
