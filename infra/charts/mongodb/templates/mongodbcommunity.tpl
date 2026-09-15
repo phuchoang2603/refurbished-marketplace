@@ -13,6 +13,16 @@ spec:
     authentication:
       modes:
         - SCRAM
+    # Debezium MongoDbConnector config validation calls listDatabaseNames() and
+    # treats an empty result as unauthorized, even with capture.scope=database.
+    roles:
+      - role: catalogListDatabases
+        db: admin
+        privileges:
+          - resource:
+              cluster: true
+            actions:
+              - listDatabases
   users:
     - name: {{ .Values.user.name }}
       db: {{ .Values.user.database | quote }}
@@ -21,6 +31,8 @@ spec:
       roles:
         - name: readWrite
           db: {{ .Values.user.database | quote }}
+        - name: catalogListDatabases
+          db: admin
       scramCredentialsSecretName: {{ .Values.user.scramCredentialsSecretName }}
   additionalMongodConfig:
     storage.wiredTiger.engineConfig.cacheSizeGB: {{ .Values.wiredTigerCacheSizeGB }}
