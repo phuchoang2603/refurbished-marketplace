@@ -34,11 +34,6 @@ dist-ssr
 # Local docker build artifacts
 build/
 
-# Direnv
-.env
-.envrc
-.direnv
-
 # Devenv
 .devenv*
 devenv.local.nix
@@ -51,4 +46,5 @@ infra/k8s/doppler-token.prd.secret.yaml
 
 # Openspec, Cursor, Codex
 .cursor*
-.agents
+.agents*
+.opencode*
