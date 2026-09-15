@@ -1,6 +1,6 @@
 # Contributing
 
-Thanks for helping build this project. Guides live under [docs/development/](docs/development/) and [docs/deployment/](docs/deployment/).
+Thanks for helping build this project. Guides live under [docs/](docs/), including [architecture](docs/architecture.md), [docs/development/](docs/development/), and [docs/deployment/](docs/deployment/).
 
 ## Prerequisites
 
@@ -25,6 +25,7 @@ kubectl apply -f infra/argocd/dev/root.yaml
 | Topic                      | Guide                                                                      |
 | -------------------------- | -------------------------------------------------------------------------- |
 | devenv, Argo, test         | [docs/development/local-setup.md](docs/development/local-setup.md)         |
+| Architecture               | [docs/architecture.md](docs/architecture.md)                               |
 | Doppler + External Secrets | [docs/development/secrets.md](docs/development/secrets.md)                 |
 | Code generation            | [docs/development/code-generation.md](docs/development/code-generation.md) |
 | OpenSpec                   | [docs/development/openspec.md](docs/development/openspec.md)               |
@@ -32,8 +33,9 @@ kubectl apply -f infra/argocd/dev/root.yaml
 
 ## Deployment guides
 
-| Topic                         | Guide                                                  |
-| ----------------------------- | ------------------------------------------------------ |
-| GitHub Actions, GHCR          | [docs/deployment/ci.md](docs/deployment/ci.md)         |
-| Argo CD GitOps                | [docs/deployment/gitops.md](docs/deployment/gitops.md) |
-| Cilium + Gateway + Cloudflare | [docs/deployment/cilium.md](docs/deployment/cilium.md) |
+| Topic                                 | Guide                                                                |
+| ------------------------------------- | -------------------------------------------------------------------- |
+| GitHub Actions, GHCR                  | [docs/deployment/ci.md](docs/deployment/ci.md)                       |
+| Argo CD GitOps                        | [docs/deployment/gitops.md](docs/deployment/gitops.md)               |
+| Cilium + Gateway + Cloudflare         | [docs/deployment/cilium.md](docs/deployment/cilium.md)               |
+| Observability (Grafana, traces, logs) | [docs/deployment/observability.md](docs/deployment/observability.md) |

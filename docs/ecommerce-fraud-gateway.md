@@ -1,20 +1,18 @@
-# Ecommerce Fraud Gateway Note
+# Ecommerce fraud gateway note
 
-This note captures a simpler future direction for payment and fraud in the marketplace.
+Future direction for payment fraud. The marketplace already uses a hosted payment page (in-cluster simulator today). This note is about moving fraud scoring and card capture fully onto a real gateway plus an optional feature platform.
 
 ## Direction
 
-Use a hosted payment page.
-
 ```text
-Marketplace checkout -> create order -> create gateway payment session -> redirect user to gateway
+Marketplace checkout -> create order -> reserve stock -> create gateway payment session -> redirect user to gateway
 ```
 
-That keeps payment entry and fraud logic out of the marketplace.
+That keeps payment-method entry and fraud decisioning out of marketplace services.
 
-## Responsibility Split
+## Responsibility split
 
-### Marketplace
+### Marketplace (current)
 
 Owns commerce facts:
 
@@ -24,10 +22,11 @@ Owns commerce facts:
 - cart
 - order
 - shipping address chosen for the order
+- inventory reservation before redirect
 
-Sends only commerce context to the gateway.
+Sends commerce context to the gateway (`order_id` is the session idempotency key).
 
-### Payment Gateway
+### Payment gateway (target)
 
 Owns payment execution and fraud logic:
 
@@ -38,11 +37,11 @@ Owns payment execution and fraud logic:
 - fraud scoring and decisioning
 - payment outcome callback to marketplace
 
-The gateway may keep its own local customer and merchant records if useful, but those can be created lazily when a payment session is created. No separate customer or merchant sync flow is required for this plan.
+The gateway may keep its own local customer and merchant records if useful, created lazily when a payment session is created. No separate customer or merchant sync flow is required.
 
-### Feature Platform
+### Feature platform (not built)
 
-Spark, Flink, or another feature system computes derived historical features such as:
+Spark, Flink, or another feature system would compute derived historical features such as:
 
 - customer velocity
 - average spend
@@ -52,7 +51,7 @@ Spark, Flink, or another feature system computes derived historical features suc
 
 This layer computes history. It should not own orders or payment execution.
 
-## Runtime Flow
+## Runtime flow
 
 ```mermaid
 sequenceDiagram
@@ -60,14 +59,16 @@ sequenceDiagram
     participant B as Browser
     participant M as Marketplace
     participant O as Orders
+    participant I as Inventory
     participant G as Payment Gateway
 
     B->>M: Checkout
-    M->>O: CreateOrder(...)
-    O-->>M: order_id
-    M->>G: CreatePaymentSession(order context)
-    G-->>M: payment_session_id, hosted_payment_url
-    M-->>B: Redirect to hosted_payment_url
+    M->>O: CreateOrder
+    O-->>M: order id
+    M->>I: ReserveStock
+    M->>G: CreatePaymentSession order context
+    G-->>M: payment session id, hosted payment url
+    M-->>B: Redirect to hosted payment url
     B->>G: Submit payment details
     G->>G: Score and process payment
     G-->>B: Redirect back to marketplace
@@ -76,20 +77,18 @@ sequenceDiagram
 
 ## Idempotency
 
-`Model B` does not hurt idempotency if the boundary is defined simply.
-
 - `order_id` is the idempotency key for payment-session creation.
-- Repeating `CreatePaymentSession` for the same `order_id` should return the same active session.
-- Refreshing the hosted payment page should not create a second payment attempt by itself.
-- Gateway-side submission and gateway callbacks should also be idempotent.
+- Repeating CreatePaymentSession for the same `order_id` returns the same active session.
+- Refreshing the hosted payment page must not create a second payment attempt by itself.
+- Gateway-side submission and gateway callbacks must also be idempotent.
 
-If you later want retries after a failed payment, the gateway can support multiple attempts under the same `order_id` without creating duplicate live sessions.
+Retries after a failed payment can stay under the same `order_id` without creating duplicate live sessions.
 
-## Marketplace To Gateway Contract
+## Marketplace to gateway contract
 
-The marketplace should send the minimum necessary commerce facts.
+Minimum commerce facts. This sketch is a target contract, not the current gRPC field list.
 
-### Request Sketch
+### Request sketch
 
 ```json
 {
@@ -115,33 +114,24 @@ The marketplace should send the minimum necessary commerce facts.
         "quantity": 1,
         "unit_price_cents": 19999,
         "condition": "refurbished_grade_a"
-      },
-      {
-        "product_id": "p-2",
-        "category": "accessories",
-        "quantity": 1,
-        "unit_price_cents": 6000,
-        "condition": "new"
       }
     ]
   },
   "shipping_address": {
     "name": "Buyer Name",
     "line1": "123 Main St",
-    "line2": "Apt 4",
     "city": "New York",
     "region": "NY",
     "postal_code": "10001",
     "country": "US"
   },
   "redirect": {
-    "return_url": "https://marketplace.example/orders/6a7c.../payment/return",
-    "cancel_url": "https://marketplace.example/orders/6a7c.../payment/cancel"
+    "return_url": "https://marketplace.example/orders/6a7c.../payment/return"
   }
 }
 ```
 
-### Response Sketch
+### Response sketch
 
 ```json
 {
@@ -151,11 +141,11 @@ The marketplace should send the minimum necessary commerce facts.
 }
 ```
 
-## Gateway Fraud Inputs
+Payment already persists hosted session metadata, buyer/merchant JSON snapshots, named line items, `return_url`, and `expires_at`. A real gateway would still need richer fraud inputs than that snapshot.
 
-The gateway should combine three kinds of data.
+## Gateway fraud inputs
 
-### Commerce Facts From Marketplace
+### Commerce facts from marketplace
 
 - `order_id`
 - `marketplace_user_id`
@@ -168,7 +158,7 @@ The gateway should combine three kinds of data.
 - `customer_account_created_at`
 - `merchant_account_created_at`
 
-### Runtime Signals Captured By Gateway
+### Runtime signals captured by gateway
 
 - `payment_session_id`
 - `attempted_at`
@@ -181,7 +171,7 @@ The gateway should combine three kinds of data.
 - `payment_method_type`
 - `payment_method_fingerprint`
 
-### Derived Features From Feature Platform
+### Derived features from feature platform
 
 - `customer_txn_count_24h`
 - `customer_avg_amount_30d`
@@ -190,34 +180,27 @@ The gateway should combine three kinds of data.
 - `device_distinct_customers_24h`
 - `merchant_decline_rate_7d`
 
-## Simulator Model
+## Simulator model
 
 Treat this as ecommerce fraud, not physical terminal fraud.
 
-Use these core simulated entities:
+Core simulated entities:
 
 - customer profiles
 - merchant profiles
 - device profiles
 - payment method profiles
 
-Instead of customer-to-terminal distance, model customer familiarity:
+Instead of customer-to-terminal distance, model customer familiarity: usual devices, IP geographies, shipping regions, and merchant categories.
 
-- usual devices
-- usual IP geographies
-- usual shipping regions
-- usual merchant categories
+### Transaction generation outline
 
-### Transaction Generation Outline
+1. Generate customer, merchant, device, and payment method profiles.
+2. Associate customers with familiar devices, regions, and payment methods.
+3. Generate legitimate transactions.
+4. Apply fraud scenarios.
 
-1. Generate customer profiles.
-2. Generate merchant profiles.
-3. Generate device and payment method profiles.
-4. Associate customers with familiar devices, regions, and payment methods.
-5. Generate legitimate transactions.
-6. Apply fraud scenarios.
-
-### Good Starting Fraud Scenarios
+### Starting fraud scenarios
 
 - stolen card on a new device
 - account takeover from unusual geography
@@ -225,14 +208,13 @@ Instead of customer-to-terminal distance, model customer familiarity:
 - low-value card testing burst
 - high-velocity retry attack
 
-## Current System Gap
+## Current gap
 
-Today the repository still reflects an internal payment-intent shape based on:
+Hosted-session create, redirect, callback, expiry, and order-level `payment.succeeded` / `payment.failed` are implemented against `tools/payment-gateway-simulator`. What is not built:
 
-- `order_id`
-- `buyer_user_id`
-- `payment_token`
-- `currency`
-- `shipping_address`
+- a real card-capturing gateway
+- device/network signal collection
+- fraud scoring
+- a feature platform for historical risk features
 
-That is enough for the current internal payment flow, but not yet for a hosted gateway payment session with ecommerce fraud analysis.
+Checkout still reserves inventory in-process before opening the hosted page; that marketplace rule stays even with an external gateway.

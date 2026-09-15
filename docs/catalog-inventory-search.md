@@ -1,12 +1,12 @@
-# Catalog, Inventory, and Search
+# Catalog, inventory, and search
 
-Products persists listings and a ProductCreated outbox document in MongoDB; Debezium Mongo CDC publishes `products.created`. Inventory consumes that topic in `inventory-product-created`. Search consumes the same topic in `search-product-created` and upserts catalog fields into Meilisearch. The two consumer groups are independent.
+Products persists listings and a ProductCreated outbox document in MongoDB. Debezium Mongo CDC publishes `products.created`. Inventory consumes that topic in `inventory-product-created`. Search consumes the same topic in `search-product-created` and upserts catalog fields into Meilisearch. The two consumer groups are independent.
 
 ## Ownership
 
 - Products owns listing identity, name, description, price, and merchant in Mongo `catalog.listings`. Requested initial quantity is creation intent carried in the event, not live catalog stock. Products does not query Meilisearch or consume Kafka.
 - Inventory Postgres owns available/reserved quantity, reservations, seed intent, inbox, and outbox. Web calls stock reads and ReserveStock; products never calls inventory.
-- Search owns the storefront catalog projection: Kafka consume + Meilisearch upsert + gRPC `SearchProducts`. It does not persist listings or stock and does not rebuild from Mongo.
+- Search owns the storefront catalog projection: Kafka consume, Meilisearch upsert, and gRPC `SearchProducts`. It does not persist listings or stock and does not rebuild from Mongo.
 - Cart Redis owns displayed product snapshots and requested cart quantities.
 - Meilisearch is the browse/seller-list read model, never the checkout source of truth.
 
@@ -20,16 +20,24 @@ Inventory consumes the event in `inventory-product-created`, separate from reser
 
 ```mermaid
 flowchart LR
-  W[Web] -->|CreateProduct with initial quantity| P[Products]
-  P -->|One replica-set transaction| C[(Mongo listings and catalog_outbox)]
-  C -->|Debezium Mongo CDC: ProductCreated| K[Kafka products.created]
-  K -->|inventory-product-created| I[Inventory]
-  I -->|One transaction| L[(Stock and inventory inbox)]
-  K -->|search-product-created| S[Search]
-  S --> M[(Meilisearch listings)]
-  W -->|SearchProducts browse, text query, seller list| S
-  W -->|GetProductByID| P
-  W -->|GetStock / ReserveStock| I
+  W["Web"]
+  P["Products"]
+  C[("Mongo listings and catalog-outbox")]
+  K["Kafka products.created"]
+  I["Inventory"]
+  L[("Stock and inventory inbox")]
+  S["Search"]
+  M[("Meilisearch listings")]
+  W -->|"CreateProduct with initial quantity"| P
+  P -->|"One replica-set transaction"| C
+  C -->|"Debezium Mongo CDC ProductCreated"| K
+  K -->|"inventory-product-created"| I
+  I -->|"One transaction"| L
+  K -->|"search-product-created"| S
+  S --> M
+  W -->|"SearchProducts browse, text query, seller list"| S
+  W -->|"GetProductByID"| P
+  W -->|"GetStock / ReserveStock"| I
 ```
 
 ```mermaid
@@ -41,16 +49,16 @@ sequenceDiagram
   participant K as Kafka
   participant I as Inventory
   participant S as Search
-  B->>W: Create listing + explicit initial quantity
+  B->>W: Create listing plus explicit initial quantity
   W->>P: CreateProduct
-  P->>D: Commit listing + ProductCreated atomically
+  P->>D: Commit listing and ProductCreated atomically
   D-->>P: Committed
   P-->>W: Listing identity
   W-->>B: Listing created; availability processing
   D-->>K: CDC publishes ProductCreated
   par Inventory group
     K->>I: ProductCreated
-    I->>I: Commit inbox + stock seed
+    I->>I: Commit inbox and stock seed
   and Search group
     K->>S: ProductCreated
     S->>S: Upsert catalog fields in Meilisearch
@@ -75,13 +83,13 @@ sequenceDiagram
   participant P as Products
   participant I as Inventory
   participant C as Cart Redis
-  B->>W: GET catalog (optional q)
+  B->>W: GET catalog optional q
   W->>S: SearchProducts empty or text query
   W-->>B: Catalog cards without stock
   B->>W: GET product detail
   W->>P: GetProductByID
   W->>I: GetStock
-  W-->>B: Catalog and ready/pending/unavailable stock state
+  W-->>B: Catalog and ready, pending, or unavailable stock
   B->>W: Add to cart with displayed snapshot
   W->>C: AddCartItem name, price, quantity
   B->>W: Checkout selected merchant

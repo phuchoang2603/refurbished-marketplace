@@ -15,7 +15,7 @@ Large work can be a single **Feature** issue with a detailed checklist, or split
 Apply **type**, **service**, and **area** as GitHub labels when opening an issue (not in the issue body):
 
 - `type: feature`, `type: bug`, `type: chore`
-- `service: web`, `service: payment`, `service: orders`, `service: cart`, `service: products`, `service: users`
+- `service: web`, `service: payment`, `service: orders`, `service: cart`, `service: products`, `service: inventory`, `service: search`, `service: users`
 - `area: infra`, `area: ci`, `area: observability`, `area: security`, `area: data`, `area: ml`
 
 Use **type** on every issue. Add **service** when the work is scoped to one or more services (omit for cross-cutting platform work). Add **area** for the primary concern (infra, CI, observability, etc.).

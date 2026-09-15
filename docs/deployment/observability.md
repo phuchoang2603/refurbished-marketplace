@@ -137,10 +137,10 @@ Browser → ingress → web ──gRPC──▶ domain services (+ DB / Redis ch
 2. Place a checkout order; in Grafana Explore select the **VictoriaTraces** Tempo datasource. Prefer TraceQL scoped to app services:
 
 ```
-{ resource.service.name =~ "web|orders|payment|products|cart|users|connect-debezium" }
+{ resource.service.name =~ "web|orders|payment|products|inventory|search|cart|users|connect-debezium" }
 ```
 
-3. Open a TraceId for service `web`: root should look like `POST /cart/checkout` (or similar route pattern), not the bare string `web`. Expect web → orders (`CreateOrder`) and web → products (`ReserveStock`), then Debezium/connect → products (messaging + DB) as the Kafka safety net. Kafka `orders.created` records should carry a `traceparent` header.
+3. Open a TraceId for service `web`: root should look like `POST /cart/checkout` (or similar route pattern), not the bare string `web`. Expect web → orders (`CreateOrder`) and web → inventory (`ReserveStock`), then Debezium/connect → inventory (messaging + DB) as the Kafka safety net. Listing create traces go web → products (Mongo) then Connect → inventory and search. Kafka `orders.created` records should carry a `traceparent` header.
 4. Complete hosted-payment success/fail; confirm callback → payment gRPC → payment outbox path.
 5. Confirm Gateway proxy spans are absent. For request/error/duration, open Grafana folder **Marketplace** → **Marketplace RED** (VictoriaMetrics). For JSON logs, open **Marketplace logs**. Hubble is not required.
 
@@ -187,13 +187,13 @@ Exact filter syntax can vary slightly with the Grafana VL plugin UI — prefer E
 
 Logs Drilldown does not work with VictoriaLogs — use **Marketplace logs** or **Explore**.
 
-1. **Traces:** Explore → **VictoriaTraces** → TraceQL `{ resource.service.name =~ "web|orders|payment|products|cart|users|connect-debezium" }` (or search service `web`) → open a TraceId. Expect app spans with route/RPC/messaging names, DB/Redis children where applicable, and `connect-debezium` on the async hop — not mesh proxy services.
+1. **Traces:** Explore → **VictoriaTraces** → TraceQL `{ resource.service.name =~ "web|orders|payment|products|inventory|search|cart|users|connect-debezium" }` (or search service `web`) → open a TraceId. Expect app spans with route/RPC/messaging names, Postgres/Redis/Mongo children where applicable, and `connect-debezium` on the async hop — not mesh proxy services.
 2. **App logs for that TraceId:** Trace → logs. Tempo sends LogsQL `trace_id:="<id>"` to VictoriaLogs (not a Loki `{trace_id=…}` selector). You should see marketplace JSON lines across services for that TraceId.
 3. **App logs in Explore** (same time range as the trace):
 
 ```logsql
 kubernetes.pod_namespace:="ecommerce"
-  AND service:in(web,orders,payment,products,cart,users)
+  AND service:in(web,orders,payment,products,inventory,search,cart,users)
 ```
 
 4. **Optional drills:** `order_id:="<uuid>"` on app JSON; for the Kafka hop use TraceId spans (`connect-debezium`) rather than Connect pod logs (not scraped into VL).

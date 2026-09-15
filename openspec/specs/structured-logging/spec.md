@@ -73,7 +73,7 @@ Structured logging helpers and access-log middleware SHALL NOT emit full payment
 
 ### Requirement: Logging documentation
 
-The repository SHALL document structured logging field conventions, VictoriaLogs LogSQL examples filtered by `service`, `trace_id`, and checkout domain fields such as `order_id`, and Trace → logs usage in `docs/observability.md`.
+The repository SHALL document structured logging field conventions, VictoriaLogs LogSQL examples filtered by `service`, `trace_id`, and checkout domain fields such as `order_id`, and Trace → logs usage in `docs/deployment/observability.md`.
 
 #### Scenario: Contributor finds logging guide
 

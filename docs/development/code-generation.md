@@ -12,7 +12,7 @@ Run these from inside `devenv shell`:
 
 Commit `*_templ.go` and `static/app.css`. CI builds the `web` image from those files. For a live watch while editing, run `templ generate --watch` / `tailwindcss … --watch=always` in `services/web`.
 
-Edit SQL migrations under `services/<service>/db/migrations/` and queries under `services/<service>/db/queries/`, then run `sqlc-gen` when query shapes change.
+Edit SQL migrations under `services/<service>/db/migrations/` and queries under `services/<service>/db/queries/`, then run `sqlc-gen` when query shapes change. Products uses Mongo (`services/products/internal/catalog`); it has no `sqlc.yaml`. Search has no SQL store.
 
 ## Formatting
 
@@ -27,17 +27,18 @@ The repo uses a root [`go.work`](../../go.work) file for local development and c
 
 Shared library layout:
 
-| Path                   | Role                                      |
-| ---------------------- | ----------------------------------------- |
-| `shared/proto`         | gRPC / protobuf contracts                 |
-| `shared/auth`          | JWT and auth config                       |
-| `shared/messaging`     | Kafka helpers                             |
-| `shared/runtime`       | Service bootstrap (HTTP, gRPC, Postgres…) |
-| `shared/observe/trace` | OpenTelemetry tracing                     |
-| `shared/observe/log`   | JSON slog + TraceId correlation           |
-| `shared/err/dberr`     | DB error / null helpers                   |
-| `shared/err/grpcerr`   | gRPC status mapping                       |
-| `shared/testutil/*`    | Testcontainers helpers                    |
+| Path                    | Role                                            |
+| ----------------------- | ----------------------------------------------- |
+| `shared/proto`          | gRPC / protobuf contracts                       |
+| `shared/auth`           | JWT and auth config                             |
+| `shared/messaging`      | Kafka helpers                                   |
+| `shared/runtime`        | Service bootstrap (HTTP, gRPC, Postgres, Mongo) |
+| `shared/observe/trace`  | OpenTelemetry tracing                           |
+| `shared/observe/log`    | JSON slog + TraceId correlation                 |
+| `shared/observe/metric` | Prometheus RED on `:9100/metrics`               |
+| `shared/err/dberr`      | DB error / null helpers                         |
+| `shared/err/grpcerr`    | gRPC status mapping                             |
+| `shared/testutil/*`     | Testcontainers helpers                          |
 
 Run `tidy` (alias for `go work sync`) after changing `go.mod` files. `go get` and `go mod tidy` inside a module directory work because each `go.mod` has `replace` directives for local shared modules.
 

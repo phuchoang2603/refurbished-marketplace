@@ -15,6 +15,6 @@ OpenSpec is the authoritative planning workflow for non-trivial changes. Active 
 4. **Sync** delta specs to main: `/opsx-sync` (or manual merge to `openspec/specs/`).
 5. **Archive** the change: `/opsx-archive` — moves to `openspec/changes/archive/YYYY-MM-DD-<change-name>/`.
 
-Main specs live in `openspec/specs/`.
+Main specs live in `openspec/specs/`. Domain capabilities that match the current runtime include `products`, `inventory`, `search`, `mongodb-catalog`, `meilisearch-catalog`, `cart`, `orders`, `payment`, `users`, `web`, and `server-rendered-web`. Platform specs cover GitOps, Cilium, CI, secrets, and observability.
 
 Cursor command shortcuts for this workflow live under `.cursor/commands/opsx-*.md` if you use Cursor.

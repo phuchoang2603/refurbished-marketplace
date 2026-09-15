@@ -60,3 +60,4 @@ Marketplace and Kafka Connect images: `ghcr.io/phuchoang2603/refurbished-marketp
 
 - [cilium.md](cilium.md) — CNI, Gateway API, Cloudflare origin
 - [ci.md](ci.md) — GHCR `:main` / `:<sha>` and PR SHA cleanup
+- [observability.md](observability.md) — Victoria stack, Grafana, traces, logs

@@ -1,5 +1,7 @@
 # Local setup
 
+Runtime layout is in [architecture.md](../architecture.md). This page is how to boot the Talos/Argo loop on a laptop.
+
 ## Prerequisites
 
 - [Nix](https://nixos.org/) with [devenv](https://devenv.sh/) for pinned tooling

@@ -32,12 +32,13 @@ Ingress policies select marketplace app pods only. Egress is unrestricted so CNP
 | `catalog-mongodb`           | 27017 | `products`, kubelet, Kafka Connect (`kafka` ns, `strimzi.io/kind=KafkaConnect`)                                   | no                       |
 | `catalog-meilisearch`       | 7700  | `search`, kubelet                                                                                                 | no                       |
 | `search`                    | 9098  | `web`, kubelet                                                                                                    | web → search             |
+| `inventory`                 | 9097  | `web`, kubelet                                                                                                    | web → inventory          |
 | `orders`                    | 9093  | `web`, kubelet                                                                                                    | web → orders             |
 | `cart`                      | 9094  | `web`, kubelet                                                                                                    | web → cart               |
 | `payment`                   | 9096  | `web`, kubelet                                                                                                    | web → payment            |
 | `payment-gateway-simulator` | 8097  | Cilium Gateway, kubelet                                                                                           | no (browser via Gateway) |
 
-Inventory is a separate gRPC service with its own CNPG cluster. Checkout holds stock with `ReserveStock` from `web`. Kafka consumers are those same service pods talking to namespace `kafka` (Strimzi TLS, not mesh mTLS). Cart → Valkey is `127.0.0.1` on the pod. Init/migrate containers talk to remaining `*-db-rw:5432` without a CNP on CNPG. Mongo 27017 is allow-listed for products, kubelet, and Kafka Connect only; that hop does not use SPIRE. Meilisearch 7700 is allow-listed for search and kubelet only; that hop does not use SPIRE.
+Inventory is a separate gRPC service with its own CNPG cluster. Checkout holds stock with `ReserveStock` from `web`; products is not an allowed inventory caller. Kafka consumers are those same service pods talking to namespace `kafka` (Strimzi TLS, not mesh mTLS). Cart → Valkey is `127.0.0.1` on the pod. Init/migrate containers talk to remaining `*-db-rw:5432` without a CNP on CNPG. Mongo 27017 is allow-listed for products, kubelet, and Kafka Connect only; that hop does not use SPIRE. Meilisearch 7700 is allow-listed for search and kubelet only; that hop does not use SPIRE.
 
 Chart knobs (`infra/charts/refurbished-marketplace/values.yaml`):
 
