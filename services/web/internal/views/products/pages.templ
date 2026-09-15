@@ -31,29 +31,31 @@ templ ProductListSection(products []sharedviews.ProductView, query string) {
 		@page.Header("Products", "Browse quality refurbished tech, verified devices, and sustainable deals from trusted sellers.")
 		@card.CardContent(card.CardContentArgs{Class: "grid gap-4"}) {
 			<form method="get" action="/products" class="flex flex-wrap items-end gap-3" role="search">
-				@form.FormItem(form.FormItemArgs{Class: "relative min-w-60 flex-1"}) {
+				@form.FormItem(form.FormItemArgs{Class: "min-w-60 flex-1"}) {
 					@form.FormLabel(form.FormLabelArgs{For: "catalog-query"}) {
 						Search listings
 					}
-					@input.Input(input.InputArgs{
-						ID:           "catalog-query",
-						Name:         "q",
-						Type:         "search",
-						Value:        query,
-						Placeholder:  "Name or description",
-						Autocomplete: "off",
-						Attributes: templpkg.Attributes{
-							"role":                          "combobox",
-							"aria-autocomplete":             "list",
-							"aria-controls":                 "catalog-suggest",
-							"aria-expanded":                 "false",
-							"aria-haspopup":                 "listbox",
-							"data-on:input":                 "el.value.trim().length < 2 && (el._catalogSuggestAbort?.abort(), document.getElementById('catalog-suggest')?.classList.add('hidden'), el.setAttribute('aria-expanded','false'))",
-							"data-on:input__debounce.200ms": "el.value.trim().length >= 2 && (el._catalogSuggestAbort?.abort(), el._catalogSuggestAbort = new AbortController(), @get('/products/suggest?q=' + encodeURIComponent(el.value.trim()), {requestCancellation: el._catalogSuggestAbort}))",
-							"data-on:datastar-fetch":        "evt.detail.el === el && evt.detail.type === 'finished' && (el.value.trim().length < 2 ? (document.getElementById('catalog-suggest')?.classList.add('hidden'), el.setAttribute('aria-expanded','false')) : el.setAttribute('aria-expanded', String(!!document.getElementById('catalog-suggest')?.querySelector('[role=option]'))))",
-						},
-					})
-					@CatalogSuggest(nil)
+					<div class="relative z-10 w-full">
+						@input.Input(input.InputArgs{
+							ID:           "catalog-query",
+							Name:         "q",
+							Type:         "search",
+							Value:        query,
+							Placeholder:  "Name or description",
+							Autocomplete: "off",
+							Attributes: templpkg.Attributes{
+								"role":                          "combobox",
+								"aria-autocomplete":             "list",
+								"aria-controls":                 "catalog-suggest",
+								"aria-expanded":                 "false",
+								"aria-haspopup":                 "listbox",
+								"data-on:input":                 "el.value.trim().length < 2 && (el._catalogSuggestAbort?.abort(), document.getElementById('catalog-suggest')?.classList.add('hidden'), el.setAttribute('aria-expanded','false'))",
+								"data-on:input__debounce.200ms": "el.value.trim().length >= 2 && (el._catalogSuggestAbort?.abort(), el._catalogSuggestAbort = new AbortController(), @get('/products/suggest?q=' + encodeURIComponent(el.value.trim()), {requestCancellation: el._catalogSuggestAbort}))",
+								"data-on:datastar-fetch":        "evt.detail.el === el && evt.detail.type === 'finished' && (el.value.trim().length < 2 ? (document.getElementById('catalog-suggest')?.classList.add('hidden'), el.setAttribute('aria-expanded','false')) : el.setAttribute('aria-expanded', String(!!document.getElementById('catalog-suggest')?.querySelector('[role=option]'))))",
+							},
+						})
+						@CatalogSuggest(nil)
+					</div>
 				}
 				if query != "" {
 					<a class="inline-flex h-9 items-center text-sm text-muted-foreground hover:underline" href="/products">Clear</a>
@@ -93,7 +95,7 @@ templ CatalogSuggest(products []sharedviews.ProductView) {
 	<ul
 		id="catalog-suggest"
 		role="listbox"
-		class={ "absolute z-10 mt-1 max-h-72 w-full overflow-auto rounded-md border bg-popover p-1 text-sm shadow-md", templ.KV("hidden", len(products) == 0) }
+		class={ "absolute inset-x-0 top-full z-20 mt-1 max-h-72 overflow-auto rounded-md border bg-popover p-1 text-sm shadow-md", templ.KV("hidden", len(products) == 0) }
 	>
 		for _, product := range products {
 			<li role="option">
