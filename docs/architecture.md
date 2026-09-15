@@ -18,56 +18,9 @@ Go marketplace services behind a server-rendered web edge. Browser traffic never
 
 ## Runtime topology
 
-```mermaid
-flowchart LR
-  browser["Browser"]
-  tunnel["Cloudflare Tunnel"]
-  gw["Cilium Gateway"]
-  web["web"]
-  sim["payment-gateway-simulator"]
-  users["users"]
-  products["products"]
-  search["search"]
-  inventory["inventory"]
-  cart["cart"]
-  orders["orders"]
-  payment["payment"]
-  mongo[("Mongo catalog")]
-  meili[("Meilisearch")]
-  pgInv[("inventory Postgres")]
-  pgOrd[("orders Postgres")]
-  pgPay[("payment Postgres")]
-  pgUsers[("users Postgres")]
-  redis[("Valkey")]
-  kafka["Kafka"]
+![Marketplace runtime: Cloudflare Tunnel and Cilium Gateway in front of web, domain gRPC services, stores, and Kafka](diagrams/architecture.svg)
 
-  browser --> tunnel --> gw
-  gw --> web
-  gw --> sim
-  sim -->|"hosted callback"| web
-  web --> users
-  web --> products
-  web --> search
-  web --> inventory
-  web --> cart
-  web --> orders
-  web --> payment
-  users --> pgUsers
-  products --> mongo
-  search --> meili
-  inventory --> pgInv
-  cart --> redis
-  orders --> pgOrd
-  payment --> pgPay
-  mongo -->|"Debezium Mongo CDC"| kafka
-  pgInv -->|"Debezium Postgres outbox"| kafka
-  pgOrd -->|"Debezium Postgres outbox"| kafka
-  pgPay -->|"Debezium Postgres outbox"| kafka
-  kafka --> inventory
-  kafka --> search
-  kafka --> orders
-  kafka --> payment
-```
+Editable source: [diagrams/architecture.excalidraw](diagrams/architecture.excalidraw).
 
 East-west calls are ClusterIP plus CiliumNetworkPolicy (optional required mTLS). Kafka uses Strimzi TLS, not mesh mTLS. Mongo `27017` and Meilisearch `7700` are allow-listed without SPIRE.
 

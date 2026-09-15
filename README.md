@@ -4,8 +4,6 @@ Learning project for distributed Go services around a refurbished-goods marketpl
 
 ## Architecture
 
-Eight marketplace processes plus a hosted-payment simulator. Catalog identity is Mongo, live stock is inventory Postgres, browse/search is Meilisearch.
-
 | Service              | Responsibility                | Notes                                              |
 | -------------------- | ----------------------------- | -------------------------------------------------- |
 | `services/web`       | Browser edge and SSR          | `templ`, Datastar fragments, internal gRPC clients |
@@ -17,37 +15,11 @@ Eight marketplace processes plus a hosted-payment simulator. Catalog identity is
 | `services/orders`    | Order lifecycle               | Merchant-scoped PostgreSQL, outbox/Kafka           |
 | `services/payment`   | Hosted payment sessions       | Gateway callbacks, Kafka outcomes                  |
 
-```mermaid
-flowchart LR
-  browser["Browser"]
-  web["web"]
-  products["products"]
-  search["search"]
-  inventory["inventory"]
-  cart["cart"]
-  orders["orders"]
-  payment["payment"]
-  users["users"]
-  mongo[("Mongo")]
-  meili[("Meilisearch")]
-  kafka["Kafka"]
+![Marketplace architecture: ingress, services and datastores, Kafka events, GitOps, and observability](docs/diagrams/architecture-redesigned.png)
 
-  browser --> web
-  web --> users
-  web --> products
-  web --> search
-  web --> inventory
-  web --> cart
-  web --> orders
-  web --> payment
-  products --> mongo
-  mongo -->|"CDC ProductCreated"| kafka
-  kafka --> inventory
-  kafka --> search
-  search --> meili
-```
-
-Full topology, ports, and GitOps: [docs/architecture.md](docs/architecture.md). Catalog vs stock vs search: [docs/catalog-inventory-search.md](docs/catalog-inventory-search.md). Checkout: [docs/order-placement.md](docs/order-placement.md).
+Full topology, ports, and GitOps: [docs/architecture.md](docs/architecture.md).
+Catalog vs stock vs search: [docs/catalog-inventory-search.md](docs/catalog-inventory-search.md).
+Checkout: [docs/order-placement.md](docs/order-placement.md).
 
 ## Tech stack
 
@@ -67,12 +39,3 @@ Full topology, ports, and GitOps: [docs/architecture.md](docs/architecture.md). 
 ## Development
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/](docs/).
-
-```bash
-devenv shell
-export KUBECONFIG="$HOME/.kube/talos-dev.yaml"
-kubectl apply -f infra/k8s/doppler-token.dev.secret.yaml
-export KUBECONFIG="$HOME/.kube/talos-gpu.yaml"
-kubectl apply -f infra/argocd/dev/root.yaml
-# https://shop-dev.phuchoang.sbs
-```
