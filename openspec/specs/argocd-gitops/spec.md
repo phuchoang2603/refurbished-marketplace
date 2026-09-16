@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define GitOps delivery via a shared Argo CD app-of-apps Helm chart (`infra/argocd/app-of-apps`). Argo CD runs on the gpu cluster. Thin `dev-root` and `prod-root` Applications destine registered clusters `dev` and `prod`. Chart defaults are shop-dev; production hosts live in `values-prod.yaml`. `dev-root` `targetRevision` MAY stay on a feature branch until operators retarget it.
+Define GitOps delivery via a shared Argo CD app-of-apps Helm chart (`infra/argocd/app-of-apps`). Argo CD runs on the management cluster. Thin `dev-root` and `prod-root` Applications destine registered clusters `dev` and `prod`. Chart defaults are shop-dev; production hosts live in `values-prod.yaml`. `dev-root` `targetRevision` MAY stay on a feature branch until operators retarget it.
 
 ## Requirements
 
@@ -20,9 +20,9 @@ The marketplace Application SHALL render Cilium edge Gateway API resources when 
 - **WHEN** prod-root applies `values-prod.yaml`
 - **THEN** production marketplace workloads expose a Cilium ingress Gateway for `shop` / `pay`
 
-### Requirement: Argo on gpu destines Talos workload clusters
+### Requirement: Argo on management cluster destines Talos workload clusters
 
-Root Applications on the gpu cluster SHALL enable the marketplace chart via Argo CD. Children SHALL destine registered clusters `dev` or `prod`. Child Applications SHALL inherit `targetRevision` from the root so branch tracking moves git and (with matching GHCR tags) images together. `dev-root` `targetRevision` MAY remain on a feature branch after merge until operators retarget it.
+Root Applications on the management cluster SHALL enable the marketplace chart via Argo CD. Children SHALL destine registered clusters `dev` or `prod`. Child Applications SHALL inherit `targetRevision` from the root so branch tracking moves git and (with matching GHCR tags) images together. `dev-root` `targetRevision` MAY remain on a feature branch after merge until operators retarget it.
 
 #### Scenario: Marketplace is an Argo Application
 
@@ -45,7 +45,7 @@ CNPG Clusters for marketplace services that still use Postgres SHALL be resource
 
 ### Requirement: App-of-apps per environment
 
-The repository SHALL provide a shared Argo CD app-of-apps Helm chart under `infra/argocd/app-of-apps/` plus thin `dev-root` and `prod-root` Applications on gpu that enable marketplace and set `global.imageRegistry` / `global.imageTag` and `destinationName`. Child Applications SHALL inherit `targetRevision` from the root via `$ARGOCD_APP_SOURCE_TARGET_REVISION`.
+The repository SHALL provide a shared Argo CD app-of-apps Helm chart under `infra/argocd/app-of-apps/` plus thin `dev-root` and `prod-root` Applications on management cluster that enable marketplace and set `global.imageRegistry` / `global.imageTag` and `destinationName`. Child Applications SHALL inherit `targetRevision` from the root via `$ARGOCD_APP_SOURCE_TARGET_REVISION`.
 
 #### Scenario: Talos root application
 
@@ -65,7 +65,7 @@ The repository SHALL provide a shared Argo CD app-of-apps Helm chart under `infr
 #### Scenario: Children destine the registered cluster
 
 - **WHEN** a root Application sets `destinationName` to `dev` or `prod`
-- **THEN** child Applications destine that Argo CD cluster name (not in-cluster on gpu)
+- **THEN** child Applications destine that Argo CD cluster name (not in-cluster on management cluster)
 
 ### Requirement: Chart image registry and tag resolution
 
@@ -115,7 +115,7 @@ Child ArgoCD Applications SHALL use sync waves so operators sync before the mark
 
 ### Requirement: GitOps documentation
 
-The repository SHALL document the Argo CD layout (gpu roots destining `dev` / `prod`), `values-prod.yaml` overlays, image tags (`$ARGOCD_APP_REVISION` vs `:main`), and prerequisites that remain outside Git (Argo bootstrap, Doppler token, ClusterSecretStore, Cloudflare Public Hostname origin DNS).
+The repository SHALL document the Argo CD layout (management cluster roots destining `dev` / `prod`), `values-prod.yaml` overlays, image tags (`$ARGOCD_APP_REVISION` vs `:main`), and prerequisites that remain outside Git (Argo bootstrap, Doppler token, ClusterSecretStore, Cloudflare Public Hostname origin DNS).
 
 #### Scenario: Contributor finds deploy guide
 

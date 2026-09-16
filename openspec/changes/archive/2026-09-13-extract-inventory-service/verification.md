@@ -15,7 +15,7 @@ Product creation commits catalog and ProductCreated outbox records together. The
 
 ## Talos-dev cutover — 2026-09-13 (task 4.4)
 
-Kubeconfigs: `/Users/felix/.kube/talos-dev.yaml` (workloads), `/Users/felix/.kube/talos-gpu.yaml` (Argo CD). Git revision / image tag: `faf5b5cc16ff56402ae2ad88c18e3d2d2c489e15` (`split-runtime`).
+Kubeconfigs: `/Users/felix/.kube/talos-dev.yaml` (workloads), `/Users/felix/.kube/talos-argocd.yaml` (Argo CD). Git revision / image tag: `faf5b5cc16ff56402ae2ad88c18e3d2d2c489e15` (`split-runtime`).
 
 ### Runtime
 

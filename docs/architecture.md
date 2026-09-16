@@ -44,7 +44,7 @@ Details: [order-placement.md](order-placement.md).
 
 | Layer    | Where                                                                                                               |
 | -------- | ------------------------------------------------------------------------------------------------------------------- |
-| Clusters | Talos **dev** / **prod** run workloads; Argo CD is on **gpu**                                                       |
+| Clusters | Talos **dev** / **prod** run workloads; Argo CD is on the **management** cluster                                    |
 | GitOps   | `infra/argocd/dev/root.yaml` and `prod/root.yaml` → shared app-of-apps                                              |
 | Images   | GHCR `ghcr.io/phuchoang2603/refurbished-marketplace/<name>:<sha>` (dev) or `:main` (prod)                           |
 | Secrets  | Doppler → External Secrets; token Secret on the workload cluster                                                    |

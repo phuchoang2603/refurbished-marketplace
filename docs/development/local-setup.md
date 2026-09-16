@@ -5,24 +5,24 @@ Runtime layout is in [architecture.md](../architecture.md). This page is how to 
 ## Prerequisites
 
 - [Nix](https://nixos.org/) with [devenv](https://devenv.sh/) for pinned tooling
-- Talos kubeconfigs: `~/.kube/talos-gpu.yaml` (Argo CD), `~/.kube/talos-dev.yaml` (workloads / Doppler)
+- Talos kubeconfigs: `~/.kube/talos-argocd.yaml` (management cluster / Argo CD), `~/.kube/talos-dev.yaml` (workloads / Doppler)
 - [Doppler](https://doppler.com/) — see [secrets.md](secrets.md)
 - Cloudflare Zero Trust tunnel for `shop-dev.phuchoang.sbs` / `pay-dev.phuchoang.sbs`
 
-Argo CD runs on the **gpu** cluster (talos-proxmox). Workloads sync to the registered Argo cluster named `dev`. Bootstrap Doppler **dev** on talos-dev, then apply the **dev** root on gpu:
+Argo CD runs on the **management** cluster (talos-proxmox). Workloads sync to the registered Argo cluster named `dev`. Bootstrap Doppler **dev** on talos-dev, then apply the **dev** root on the management cluster:
 
 ```bash
 export KUBECONFIG="$HOME/.kube/talos-dev.yaml"
 kubectl create namespace operators --dry-run=client -o yaml | kubectl apply -f -
 kubectl apply -f infra/k8s/doppler-token.dev.secret.yaml
 
-export KUBECONFIG="$HOME/.kube/talos-gpu.yaml"
+export KUBECONFIG="$HOME/.kube/talos-argocd.yaml"
 kubectl apply -f infra/argocd/dev/root.yaml
 ```
 
-`prod-root` is the same pattern with the prod kubeconfig for Doppler and `infra/argocd/prod/root.yaml` on gpu. Do not apply the `prd` Doppler token on talos-dev.
+`prod-root` is the same pattern with the prod kubeconfig for Doppler and `infra/argocd/prod/root.yaml` on the management cluster. Do not apply the `prd` Doppler token on talos-dev.
 
-Children follow the root’s git revision (`spec.source.targetRevision` in `infra/argocd/dev/root.yaml`). Change that field in git, then `kubectl apply -f` the same file **on gpu**. `global.imageTag` is `$ARGOCD_APP_REVISION`. Wait for GHCR `:<sha>` after the image job. Prod uses `:main`. Keep `dev-root` on the live feature branch until you want a different pointer.
+Children follow the root’s git revision (`spec.source.targetRevision` in `infra/argocd/dev/root.yaml`). Change that field in git, then `kubectl apply -f` the same file **on the management cluster**. `global.imageTag` is `$ARGOCD_APP_REVISION`. Wait for GHCR `:<sha>` after the image job. Prod uses `:main`. Keep `dev-root` on the live feature branch until you want a different pointer.
 
 ## Development shell
 
@@ -44,7 +44,7 @@ Cloudflare Tunnel → Cilium Gateway (`cilium-gateway-ecommerce-ingress.ecommerc
 Smoke-check:
 
 ```bash
-kubectl --kubeconfig="$HOME/.kube/talos-gpu.yaml" get applications -n argo-cd
+kubectl --kubeconfig="$HOME/.kube/talos-argocd.yaml" get applications -n argo-cd
 kubectl --kubeconfig="$HOME/.kube/talos-dev.yaml" get gateway,httproute -n ecommerce
 kubectl --kubeconfig="$HOME/.kube/talos-dev.yaml" get svc -n ecommerce -l gateway.networking.k8s.io/gateway-name=ecommerce-ingress
 kubectl --kubeconfig="$HOME/.kube/talos-dev.yaml" get pods -n ecommerce

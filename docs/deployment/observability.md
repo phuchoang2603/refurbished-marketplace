@@ -67,10 +67,10 @@ kubectl get configmaps -n monitoring -l grafana_dashboard=1
 
 ## Health checks
 
-After Argo CD syncs the observability Application, check the Application (on gpu) and namespace (on the dest cluster):
+After Argo CD syncs the observability Application, check the Application (on the management cluster) and namespace (on the dest cluster):
 
 ```bash
-kubectl --kubeconfig="$HOME/.kube/talos-gpu.yaml" get applications.argoproj.io -n argo-cd
+kubectl --kubeconfig="$HOME/.kube/talos-argocd.yaml" get applications.argoproj.io -n argo-cd
 kubectl get pods -n monitoring
 kubectl get pvc -n monitoring
 ```

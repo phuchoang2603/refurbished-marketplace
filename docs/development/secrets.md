@@ -5,7 +5,7 @@ Application secrets are **not** committed to Git. External Secrets Operator sync
 ## Doppler project
 
 1. Create a Doppler project named `refurbished-marketplace`.
-2. Use Doppler config `dev` on talos-dev and `prd` on prod. The service token Secret on that cluster selects the config; Argo does not set it. Apply tokens with the **workload** kubeconfig, not gpu.
+2. Use Doppler config `dev` on talos-dev and `prd` on prod. The service token Secret on that cluster selects the config; Argo does not set it. Apply tokens with the **workload** kubeconfig, not the management cluster kubeconfig.
 
 ## Application secrets
 

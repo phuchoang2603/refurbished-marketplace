@@ -14,9 +14,9 @@ The marketplace Application SHALL render Cilium edge Gateway API resources when 
 - **WHEN** prod-root applies `values-prod.yaml`
 - **THEN** production marketplace workloads expose a Cilium ingress Gateway for `shop` / `pay`
 
-### Requirement: Argo on gpu destines Talos workload clusters
+### Requirement: Argo on management cluster destines Talos workload clusters
 
-Root Applications on the gpu cluster SHALL enable the marketplace chart via Argo CD. Children SHALL destine registered clusters `dev` or `prod`. Tilt SHALL NOT be the applier for marketplace Helm. Child Applications SHALL inherit `targetRevision` from the root so branch tracking moves git and (with matching GHCR tags) images together. `dev-root` `targetRevision` MAY remain on a feature branch after merge until operators retarget it.
+Root Applications on the management cluster SHALL enable the marketplace chart via Argo CD. Children SHALL destine registered clusters `dev` or `prod`. Tilt SHALL NOT be the applier for marketplace Helm. Child Applications SHALL inherit `targetRevision` from the root so branch tracking moves git and (with matching GHCR tags) images together. `dev-root` `targetRevision` MAY remain on a feature branch after merge until operators retarget it.
 
 #### Scenario: Marketplace is an Argo Application
 
@@ -41,7 +41,7 @@ CNPG Clusters for marketplace services SHALL be resources of the Argo-managed ma
 
 ### Requirement: App-of-apps per environment
 
-The repository SHALL provide a shared Argo CD app-of-apps Helm chart under `infra/argocd/app-of-apps/` plus thin `dev-root` and `prod-root` Applications on gpu that enable marketplace and set `global.imageRegistry` / `global.imageTag` and `destinationName`. Child Applications SHALL inherit `targetRevision` from the root via `$ARGOCD_APP_SOURCE_TARGET_REVISION`. `infra/argocd/local/` and a Tilt-omitted marketplace Application SHALL NOT exist.
+The repository SHALL provide a shared Argo CD app-of-apps Helm chart under `infra/argocd/app-of-apps/` plus thin `dev-root` and `prod-root` Applications on management cluster that enable marketplace and set `global.imageRegistry` / `global.imageTag` and `destinationName`. Child Applications SHALL inherit `targetRevision` from the root via `$ARGOCD_APP_SOURCE_TARGET_REVISION`. `infra/argocd/local/` and a Tilt-omitted marketplace Application SHALL NOT exist.
 
 #### Scenario: Talos root application
 
@@ -61,7 +61,7 @@ The repository SHALL provide a shared Argo CD app-of-apps Helm chart under `infr
 #### Scenario: Children destine the registered cluster
 
 - **WHEN** a root Application sets `destinationName` to `dev` or `prod`
-- **THEN** child Applications destine that Argo CD cluster name (not in-cluster on gpu)
+- **THEN** child Applications destine that Argo CD cluster name (not in-cluster on management cluster)
 
 ### Requirement: Chart image registry and tag resolution
 

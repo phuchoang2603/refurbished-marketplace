@@ -15,7 +15,7 @@ Thanks for helping build this project. Guides live under [docs/](docs/), includi
 devenv shell
 export KUBECONFIG="$HOME/.kube/talos-dev.yaml"
 kubectl apply -f infra/k8s/doppler-token.dev.secret.yaml
-export KUBECONFIG="$HOME/.kube/talos-gpu.yaml"
+export KUBECONFIG="$HOME/.kube/talos-argocd.yaml"
 kubectl apply -f infra/argocd/dev/root.yaml
 # https://shop-dev.phuchoang.sbs
 ```

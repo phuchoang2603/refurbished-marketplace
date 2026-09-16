@@ -36,7 +36,7 @@ This repo does **not** keep a second Cilium values file (it would drift). Market
 
 ### 2. Argo CD is the only deploy path; delete Tilt-era quirks
 
-One app-of-apps catalog, two thin roots (`dev-root` / `prod-root`) on the **gpu** cluster. Children destine registered Argo clusters `dev` / `prod`. Chart **defaults** are talos-dev (`shop-dev` / `pay-dev`). Prod uses `values-prod.yaml` hosts. `dev-root` `targetRevision` stays on the branch we are running until we change it on purpose (not automatically back to `main` at merge).
+One app-of-apps catalog, two thin roots (`dev-root` / `prod-root`) on the **management cluster** cluster. Children destine registered Argo clusters `dev` / `prod`. Chart **defaults** are talos-dev (`shop-dev` / `pay-dev`). Prod uses `values-prod.yaml` hosts. `dev-root` `targetRevision` stays on the branch we are running until we change it on purpose (not automatically back to `main` at merge).
 
 **Delete (legacy / Tilt-only):**
 
@@ -100,7 +100,7 @@ Cilium Gateway class `cilium`. Origin Service is LoadBalancer (Cilium 1.18) but 
 
 ## Migration Plan
 
-1. Confirm Talos `GatewayClass/cilium`; Argo on gpu destining `dev`/`prod`.
+1. Confirm Talos `GatewayClass/cilium`; Argo on management cluster destining `dev`/`prod`.
 2. Add PR image workflow + SHA tags; add closed-PR GHCR cleanup.
 3. Collapse to one Argo root; GHCR-required chart defaults; full observability defaults; CNPG in the marketplace release; delete Tiltfile, local-root, Colima devenv wiring.
 4. Switch ingress to Cilium Gateway; update Cloudflare origin DNS; verify checkout.

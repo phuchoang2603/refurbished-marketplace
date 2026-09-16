@@ -2023,8 +2023,8 @@
       "y": 680,
       "width": 270,
       "height": 40,
-      "text": "17. Argo CD on Talos gpu\ndev-root / prod-root \u2192 app-of-apps",
-      "originalText": "17. Argo CD on Talos gpu\ndev-root / prod-root \u2192 app-of-apps",
+      "text": "17. Argo CD on Talos management\ndev-root / prod-root \u2192 app-of-apps",
+      "originalText": "17. Argo CD on Talos management\ndev-root / prod-root \u2192 app-of-apps",
       "fontSize": 15,
       "fontFamily": 2,
       "textAlign": "center",
@@ -2253,7 +2253,7 @@
       "locked": false,
       "updated": 1,
       "version": 1,
-      "id": "gpu",
+      "id": "management",
       "type": "rectangle",
       "x": 464,
       "y": 766,
@@ -2266,11 +2266,11 @@
       },
       "boundElements": [
         {
-          "id": "lbl_gpu",
+          "id": "lbl_management",
           "type": "text"
         },
         {
-          "id": "a_gpu_wl",
+          "id": "a_management_wl",
           "type": "arrow"
         }
       ],
@@ -2289,14 +2289,14 @@
       "locked": false,
       "updated": 1,
       "version": 1,
-      "id": "lbl_gpu",
+      "id": "lbl_management",
       "type": "text",
       "x": 464,
       "y": 766,
       "width": 150,
       "height": 40,
-      "text": "Talos gpu\nArgo control",
-      "originalText": "Talos gpu\nArgo control",
+      "text": "Talos management\nArgo control",
+      "originalText": "Talos management\nArgo control",
       "fontSize": 15,
       "fontFamily": 2,
       "textAlign": "center",
@@ -2304,7 +2304,7 @@
       "strokeColor": "#1e293b",
       "backgroundColor": "transparent",
       "baseline": 15,
-      "containerId": "gpu",
+      "containerId": "management",
       "autoResize": true,
       "lineHeight": 1.25,
       "seed": 300068,
@@ -2340,7 +2340,7 @@
           "type": "text"
         },
         {
-          "id": "a_gpu_wl",
+          "id": "a_management_wl",
           "type": "arrow"
         }
       ],
@@ -3703,7 +3703,7 @@
       "locked": false,
       "updated": 1,
       "version": 1,
-      "id": "a_gpu_wl",
+      "id": "a_management_wl",
       "type": "arrow",
       "x": 624,
       "y": 801.0,
@@ -3722,7 +3722,7 @@
         ]
       ],
       "startBinding": {
-        "elementId": "gpu",
+        "elementId": "management",
         "gap": 4,
         "focus": 0
       },
