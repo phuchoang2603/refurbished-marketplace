@@ -40,6 +40,11 @@ spec:
     spec:
       template:
         spec:
+          {{- with .Values.nodeAffinity }}
+          affinity:
+            nodeAffinity:
+              {{- toYaml . | nindent 14 }}
+          {{- end }}
           containers:
             - name: mongod
               resources:

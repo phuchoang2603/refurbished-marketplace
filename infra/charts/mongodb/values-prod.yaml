@@ -11,3 +11,12 @@ persistence:
   size: 8Gi
 
 wiredTigerCacheSizeGB: 0.5
+
+nodeAffinity:
+  requiredDuringSchedulingIgnoredDuringExecution:
+    nodeSelectorTerms:
+      - matchExpressions:
+          - key: cpu-feature.homelab/avx
+            operator: In
+            values:
+              - "true"

@@ -23,6 +23,9 @@ resources:
 
 wiredTigerCacheSizeGB: 0.25
 
+# Official MongoDB 5+ x86_64 binaries require AVX. Leave empty on AVX-capable clusters.
+nodeAffinity: {}
+
 externalSecrets:
   enabled: true
   refreshInterval: 1h
