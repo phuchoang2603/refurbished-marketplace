@@ -11,7 +11,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: {{ $app.syncWave | quote }}
 spec:
-  project: default
+  project: refurbished-marketplace
   source:
     repoURL: {{ $.Values.repoURL | quote }}
     targetRevision: {{ $.Values.targetRevision | quote }}
@@ -54,7 +54,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "3"
 spec:
-  project: default
+  project: refurbished-marketplace
   source:
     repoURL: {{ .Values.repoURL | quote }}
     targetRevision: {{ .Values.targetRevision | quote }}

@@ -7,7 +7,7 @@ Talos **dev** and **prod** run the workloads. Argo CD runs on the **management**
 
 ## Fresh installation
 
-Provision the Talos clusters and Argo CD with `talos-proxmox`, then register the workload clusters. Before applying a marketplace root, verify the matching platform root is healthy and the destination cluster has:
+Provision the Talos clusters and Argo CD with `talos-proxmox`, then register the workload clusters. Before applying the marketplace project and roots, verify the matching platform root is healthy and the destination cluster has:
 
 - a default StorageClass;
 - External Secrets, CloudNativePG, Strimzi, MongoDB Community, and VictoriaMetrics operators with their CRDs;
@@ -22,9 +22,11 @@ kubectl --kubeconfig="$HOME/.kube/talos-argocd.yaml" apply --server-side \
   -f ../talos-proxmox/apps/argocd/roots/dev.yaml
 ```
 
-Prepare the application secrets with the workload kubeconfig as described in [secrets.md](../development/secrets.md), then apply this repository's root on the management cluster:
+Prepare the application secrets with the workload kubeconfig as described in [secrets.md](../development/secrets.md), then apply this repository's project and root on the management cluster:
 
 ```bash
+kubectl --kubeconfig="$HOME/.kube/talos-argocd.yaml" apply --server-side \
+  -f infra/argocd/project.yaml
 kubectl --kubeconfig="$HOME/.kube/talos-argocd.yaml" apply --server-side \
   -f infra/argocd/dev/root.yaml
 ```
@@ -86,6 +88,7 @@ infra/argocd/
 ├── app-of-apps/
 │   ├── values.yaml
 │   └── templates/applications.tpl
+├── project.yaml
 ├── dev/root.yaml
 └── prod/root.yaml
 ```

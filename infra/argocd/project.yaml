@@ -1,0 +1,19 @@
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: refurbished-marketplace
+  namespace: argo-cd
+spec:
+  description: Applications managed by the refurbished-marketplace repository
+  sourceRepos:
+    - https://github.com/phuchoang2603/refurbished-marketplace.git
+  destinations:
+    - namespace: argo-cd
+      server: https://kubernetes.default.svc
+    - name: dev
+      namespace: "*"
+    - name: prod
+      namespace: "*"
+  clusterResourceWhitelist:
+    - group: "*"
+      kind: "*"
