@@ -6,14 +6,14 @@ Define how External Secrets Operator and Doppler sync application credentials in
 
 ## Requirements
 
-### Requirement: Doppler ClusterSecretStore with service token
+### Requirement: Doppler SecretStore with service token
 
-Application ExternalSecrets SHALL reference the platform-owned ClusterSecretStore named doppler. The platform prerequisite SHALL authenticate using operators/doppler-token, key dopplerToken. This repository SHALL NOT render the store or contain a real token value.
+Application ExternalSecrets SHALL reference the marketplace-owned namespaced SecretStore named doppler in ecommerce. It SHALL authenticate using ecommerce/doppler-token, key dopplerToken. This repository SHALL render the SecretStore but SHALL NOT contain a real token value. Cloudflare Tunnel does not use ESO; talos-proxmox provisions its token directly during bootstrap.
 
 #### Scenario: Store references bootstrap secret
 
 - **WHEN** a fresh workload cluster is prepared
-- **THEN** the platform store is Ready using the environment-appropriate bootstrap token before application ExternalSecrets sync
+- **THEN** the ecommerce SecretStore is Ready using the environment-appropriate bootstrap token before application ExternalSecret sync
 
 #### Scenario: Service token not in Git
 
@@ -76,27 +76,27 @@ The repository SHALL provide Doppler CLI via devenv and set `DOPPLER_PROJECT` an
 - **WHEN** `infra/k8s/doppler-token.dev.secret.yaml` is applied on talos-dev
 - **THEN** Kubernetes Secret `doppler-token` exists in `operators` with key `dopplerToken`
 
-### Requirement: Provider swap via ClusterSecretStore
+### Requirement: Provider swap via SecretStore
 
-Secret provisioning SHALL remain provider-agnostic at the service deployment layer. Changing the external secrets provider SHALL require updating the platform-owned store configuration in talos-proxmox and, if remote key names change, marketplace chart `externalSecrets` / service `db` / `auth` settings — not service deployment templates.
+Secret provisioning SHALL remain provider-agnostic at the service deployment layer. Changing the external secrets provider SHALL require updating the marketplace-owned SecretStore and, if remote key names change, marketplace chart `externalSecrets` / service `db` / `auth` settings — not service deployment templates.
 
 #### Scenario: Deployment templates unchanged after provider swap
 
-- **WHEN** the `ClusterSecretStore` provider is changed from Doppler to another supported ESO provider
+- **WHEN** the `SecretStore` provider is changed from Doppler to another supported ESO provider
 - **THEN** `refurbished-marketplace` service deployments and the `kafka` chart continue referencing the same Kubernetes Secret names
 
 ### Requirement: Doppler environment configs
 
-Doppler MAY use separate configs for non-production vs production secrets. Bootstrap of `operators/doppler-token` SHALL use kubectl (or equivalent) on the destination cluster.
+Doppler MAY use separate configs for non-production vs production secrets. Bootstrap of `ecommerce/doppler-token` SHALL use kubectl (or equivalent) on the destination cluster.
 
 #### Scenario: Bootstrap with kubectl
 
 - **WHEN** a contributor bootstraps secrets
-- **THEN** they create `operators/doppler-token` with kubectl on the workload cluster
+- **THEN** they create `ecommerce/doppler-token` with kubectl on the workload cluster
 
 ### Requirement: Mongo credentials from Doppler
 
-The repository SHALL render ExternalSecret resources that populate Kubernetes Secrets for MongoDB Community SCRAM users (and any replica-set key material the operator requires) from Doppler via the existing `doppler` ClusterSecretStore. Plaintext Mongo passwords SHALL NOT be committed.
+The repository SHALL render ExternalSecret resources that populate Kubernetes Secrets for MongoDB Community SCRAM users (and any replica-set key material the operator requires) from Doppler via the `ecommerce/doppler` SecretStore. Plaintext Mongo passwords SHALL NOT be committed.
 
 #### Scenario: SCRAM secret exists in ecommerce
 

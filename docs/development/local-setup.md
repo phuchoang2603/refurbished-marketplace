@@ -20,7 +20,7 @@ export KUBECONFIG="$HOME/.kube/talos-argocd.yaml"
 kubectl apply --server-side -f ../talos-proxmox/apps/argocd/roots/dev.yaml
 
 export KUBECONFIG="$HOME/.kube/talos-dev.yaml"
-kubectl wait --for=condition=Ready clustersecretstore/doppler --timeout=2m
+kubectl wait --for=condition=Ready secretstore/doppler -n ecommerce --timeout=2m
 
 export KUBECONFIG="$HOME/.kube/talos-argocd.yaml"
 kubectl apply -f infra/argocd/dev/root.yaml

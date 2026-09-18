@@ -32,7 +32,7 @@ externalSecrets:
   remoteKey: MEILI_MASTER_KEY
   secretName: meilisearch-master-key
   secretStoreRef:
-    kind: ClusterSecretStore
+    kind: SecretStore
     name: doppler
 
 meshPolicy:

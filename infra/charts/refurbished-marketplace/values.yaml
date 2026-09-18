@@ -68,7 +68,7 @@ externalSecrets:
   enabled: true
   refreshInterval: 1h
   secretStoreRef:
-    kind: ClusterSecretStore
+    kind: SecretStore
     name: doppler
 
 services:

@@ -14,7 +14,7 @@ The `govulncheck` job uses the same service matrix and path-filter fan-out as `t
 
 **Branch protection:** require the `lint` job. Service test jobs may be skipped when a PR does not touch relevant paths — that is expected.
 
-Treefmt's existing Oxfmt integration formats plain YAML locally. Helm templates remain excluded. There is no automated Helm rendering or Kubernetes schema validation in CI or devenv.
+Treefmt's existing Oxfmt integration formats plain YAML locally. Helm templates remain excluded. The marketplace repository does not validate or deploy the platform-owned Cloudflare Tunnel chart.
 
 ## Container images (GHCR)
 

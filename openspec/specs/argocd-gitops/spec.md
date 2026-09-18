@@ -50,7 +50,7 @@ The repository SHALL provide a shared Argo CD app-of-apps Helm chart under `infr
 #### Scenario: Talos root application
 
 - **WHEN** the Talos cluster root Application syncs from Git
-- **THEN** child Applications exist for `refurbished-marketplace`, MongoDB, Meilisearch, Kafka, and Cloudflare Tunnel, with no operator or platform observability Application
+- **THEN** child Applications exist for `refurbished-marketplace`, MongoDB, Meilisearch, and Kafka, with no operator, Cloudflare Tunnel, or platform observability Application
 
 #### Scenario: Talos inherits root revision
 
@@ -106,7 +106,7 @@ The repository SHALL deploy `payment-gateway-simulator` from the `refurbished-ma
 
 ### Requirement: Loose sync ordering
 
-Child Applications SHALL retain local ordering hints for data stores, marketplace, Kafka, and Cloudflare Tunnel. Deployment guidance SHALL distinguish these hints from readiness guarantees and SHALL require platform readiness before marketplace sync; waves SHALL NOT be described as ordering independent platform and marketplace roots.
+Child Applications SHALL retain local ordering hints for data stores, marketplace, and Kafka. Deployment guidance SHALL distinguish these hints from readiness guarantees and SHALL require platform readiness before marketplace sync; waves SHALL NOT be described as ordering independent platform and marketplace roots.
 
 #### Scenario: Operator wave before apps
 
@@ -120,7 +120,7 @@ Child Applications SHALL retain local ordering hints for data stores, marketplac
 
 ### Requirement: GitOps documentation
 
-The repository SHALL document the Argo CD layout (management cluster roots destining `dev` / `prod`), `values-prod.yaml` overlays, image tags (`$ARGOCD_APP_REVISION` vs `:main`), and fresh-install prerequisites (Argo cluster registration, the talos-proxmox platform root, ready CRDs/operators, default storage, Doppler token and ready ClusterSecretStore, telemetry services, and Cloudflare origin configuration). It SHALL identify platform-dev/platform-prod and apps/components as platform references and SHALL NOT prescribe legacy ownership transfer or data migration.
+The repository SHALL document the Argo CD layout (management cluster roots destining `dev` / `prod`), `values-prod.yaml` overlays, image tags (`$ARGOCD_APP_REVISION` vs `:main`), and fresh-install prerequisites (Argo cluster registration, the talos-proxmox platform root, ready CRDs/operators, default storage, ecommerce Doppler token and ready SecretStore, telemetry services, and Cloudflare origin configuration). It SHALL identify platform-dev/platform-prod and apps/components as platform references and SHALL NOT prescribe legacy ownership transfer or data migration.
 
 #### Scenario: Contributor finds deploy guide
 
@@ -150,19 +150,19 @@ Chart defaults SHALL set `HOSTED_PAYMENT_BASE_URL` to the Cloudflare-facing `pay
 - **WHEN** ingress with simulator routing is enabled
 - **THEN** the web Deployment environment uses the public `https://` simulator hostname, not `http://payment-gateway-simulator:8097` cluster DNS alone and not `http://localhost:8097`
 
-### Requirement: Cloudflare Tunnel application
+### Requirement: Cloudflare Tunnel is platform-owned
 
-The repository SHALL include Argo CD child Applications that deploy in-cluster `cloudflared` for the marketplace edge.
+The marketplace repository SHALL NOT include an Argo CD child Application or Helm chart for `cloudflared`. The platform repository SHALL deploy the connector in the `cloudflare-tunnel` namespace, using its bootstrap-provisioned Kubernetes Secret directly.
 
-#### Scenario: Root sync includes cloudflare-tunnel
+#### Scenario: Marketplace root omits cloudflared
 
-- **WHEN** `dev-root` or `prod-root` syncs from Git
-- **THEN** Argo CD manages a child Application for the Cloudflare Tunnel connector in the `cloudflare-tunnel` namespace
+- **WHEN** `dev-root` or `prod-root` syncs from this repository
+- **THEN** no Cloudflare Tunnel child Application is created
 
-#### Scenario: Tunnel token comes from External Secrets
+#### Scenario: Platform root provides cloudflared
 
-- **WHEN** the cloudflare-tunnel chart syncs with External Secrets enabled
-- **THEN** the tunnel token Secret is populated from Doppler via an ExternalSecret rather than committed to Git
+- **WHEN** the matching talos-proxmox platform root syncs
+- **THEN** it manages the tunnel deployment using the bootstrap-provisioned token Secret
 
 ### Requirement: MongoDB Community Application in ecommerce
 
@@ -239,7 +239,7 @@ GitOps documentation SHALL list the Meilisearch Application, the search marketpl
 
 ### Requirement: Marketplace consumes platform custom resources
 
-Marketplace deployment SHALL retain CNPG Cluster, MongoDBCommunity, Kafka, KafkaNodePool, KafkaConnect, KafkaTopic, KafkaConnector, ExternalSecret, VMPodScrape, CiliumNetworkPolicy, Gateway, and HTTPRoute resources needed by enabled workloads. It SHALL retain MongoDB workload service accounts/RBAC, Kafka connector secret-access RBAC, and schema initialization jobs. It SHALL NOT install shared operators, their CRDs, the Doppler ClusterSecretStore, or the platform observability stack.
+Marketplace deployment SHALL retain CNPG Cluster, MongoDBCommunity, Kafka, KafkaNodePool, KafkaConnect, KafkaTopic, KafkaConnector, ExternalSecret, SecretStore, VMPodScrape, CiliumNetworkPolicy, Gateway, and HTTPRoute resources needed by enabled workloads. It SHALL retain MongoDB workload service accounts/RBAC, Kafka connector secret-access RBAC, and schema initialization jobs. It SHALL NOT install shared operators, their CRDs, or the platform observability stack.
 
 #### Scenario: Consumer resources survive cleanup
 

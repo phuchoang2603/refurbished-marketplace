@@ -37,9 +37,6 @@ spec:
           meilisearch:
             valueFiles:
               - values-prod.yaml
-          cloudflare-tunnel:
-            valueFiles:
-              - values-prod.yaml
       parameters:
         - name: targetRevision
           value: $ARGOCD_APP_SOURCE_TARGET_REVISION
