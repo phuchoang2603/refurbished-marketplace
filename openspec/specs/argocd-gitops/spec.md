@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define GitOps delivery via a shared Argo CD app-of-apps Helm chart (`infra/argocd/app-of-apps`). Argo CD runs on the management cluster. Thin `dev-root` and `prod-root` Applications destine registered clusters `dev` and `prod`. Chart defaults are shop-dev; production hosts live in `values-prod.yaml`. `dev-root` `targetRevision` MAY stay on a feature branch until operators retarget it.
+Define marketplace GitOps delivery through Argo CD roots on the management cluster, consuming shared platform operators and observability from `talos-proxmox` while deploying application resources to registered `dev` and `prod` clusters.
 
 ## Requirements
 
@@ -22,7 +22,7 @@ The marketplace Application SHALL render Cilium edge Gateway API resources when 
 
 ### Requirement: Argo on management cluster destines Talos workload clusters
 
-Root Applications on the management cluster SHALL enable the marketplace chart via Argo CD. Children SHALL destine registered clusters `dev` or `prod`. Child Applications SHALL inherit `targetRevision` from the root so branch tracking moves git and (with matching GHCR tags) images together. `dev-root` `targetRevision` MAY remain on a feature branch after merge until operators retarget it.
+Root Applications on the management cluster SHALL enable the marketplace chart via Argo CD. Children SHALL destine registered clusters `dev` or `prod`. Child Applications SHALL inherit `targetRevision` from the root so branch tracking moves git and (with matching GHCR tags) images together. Committed dev and prod roots SHALL default to `main`; dev SHALL retain SHA-based images and prod SHALL retain the rolling `main` image tag.
 
 #### Scenario: Marketplace is an Argo Application
 
@@ -50,7 +50,7 @@ The repository SHALL provide a shared Argo CD app-of-apps Helm chart under `infr
 #### Scenario: Talos root application
 
 - **WHEN** the Talos cluster root Application syncs from Git
-- **THEN** child Applications exist for operators, `refurbished-marketplace`, and `kafka` as defined
+- **THEN** child Applications exist for `refurbished-marketplace`, MongoDB, Meilisearch, Kafka, and Cloudflare Tunnel, with no operator or platform observability Application
 
 #### Scenario: Talos inherits root revision
 
@@ -106,77 +106,26 @@ The repository SHALL deploy `payment-gateway-simulator` from the `refurbished-ma
 
 ### Requirement: Loose sync ordering
 
-Child ArgoCD Applications SHALL use sync waves so operators sync before the marketplace chart and the marketplace chart syncs before the kafka chart.
+Child Applications SHALL retain local ordering hints for data stores, marketplace, Kafka, and Cloudflare Tunnel. Deployment guidance SHALL distinguish these hints from readiness guarantees and SHALL require platform readiness before marketplace sync; waves SHALL NOT be described as ordering independent platform and marketplace roots.
 
 #### Scenario: Operator wave before apps
 
-- **WHEN** a full environment sync runs
-- **THEN** operator Applications have a lower sync wave than marketplace and kafka Applications
+- **WHEN** a fresh environment is prepared
+- **THEN** the platform root is applied and its operators, CRDs, storage, secret store, and telemetry services are verified before the marketplace root is applied
+
+#### Scenario: Child readiness
+
+- **WHEN** deployment guidance describes child sync waves
+- **THEN** it states that waiting for child Application health requires Argo Application health assessment and is not guaranteed by the current platform configuration
 
 ### Requirement: GitOps documentation
 
-The repository SHALL document the Argo CD layout (management cluster roots destining `dev` / `prod`), `values-prod.yaml` overlays, image tags (`$ARGOCD_APP_REVISION` vs `:main`), and prerequisites that remain outside Git (Argo bootstrap, Doppler token, ClusterSecretStore, Cloudflare Public Hostname origin DNS).
+The repository SHALL document the Argo CD layout (management cluster roots destining `dev` / `prod`), `values-prod.yaml` overlays, image tags (`$ARGOCD_APP_REVISION` vs `:main`), and fresh-install prerequisites (Argo cluster registration, the talos-proxmox platform root, ready CRDs/operators, default storage, Doppler token and ready ClusterSecretStore, telemetry services, and Cloudflare origin configuration). It SHALL identify platform-dev/platform-prod and apps/components as platform references and SHALL NOT prescribe legacy ownership transfer or data migration.
 
 #### Scenario: Contributor finds deploy guide
 
 - **WHEN** a contributor prepares a Talos deploy
 - **THEN** documentation explains app-of-apps paths, value overlays, and SHA vs `:main` tags
-
-### Requirement: Observability application
-
-The repository SHALL include Argo CD child Applications for the platform observability stack.
-
-#### Scenario: Root sync includes observability
-
-- **WHEN** `dev-root` or `prod-root` syncs from Git
-- **THEN** Argo CD manages a child Application for the observability stack
-
-#### Scenario: Observability deploys to monitoring namespace
-
-- **WHEN** an observability Application syncs
-- **THEN** it deploys the observability chart into the `monitoring` namespace
-
-### Requirement: Privileged Pod Security for host-network DaemonSets
-
-Child Applications that deploy host-network or hostPath DaemonSets (Prometheus node-exporter) SHALL set Argo CD `syncPolicy.managedNamespaceMetadata` so `CreateNamespace=true` labels the destination namespace `pod-security.kubernetes.io/enforce=privileged` (and matching audit/warn). Unlabeled namespaces inherit cluster-default PSS baseline (Talos) and those DaemonSets cannot schedule.
-
-#### Scenario: Monitoring namespace allows node-exporter
-
-- **WHEN** the observability Application creates or syncs the `monitoring` namespace
-- **THEN** the namespace is labeled for privileged Pod Security so node-exporter can use hostNetwork, hostPID, hostPath, and hostPort
-
-### Requirement: Observability sync ordering
-
-The observability Application SHALL sync before workloads that depend on metrics storage and Grafana.
-
-#### Scenario: Observability precedes application telemetry verification
-
-- **WHEN** sync ordering is evaluated
-- **THEN** the observability stack has a sync wave that allows it to become available before checkout trace verification depends on VictoriaTraces
-
-### Requirement: Observability ArgoCD drift handling
-
-Observability Applications SHALL include sync and ignore-difference configuration for known `victoria-metrics-k8s-stack` ArgoCD drift sources.
-
-#### Scenario: Generated operator webhook certificates do not cause drift
-
-- **WHEN** ArgoCD compares the VictoriaMetrics operator admission resources
-- **THEN** generated validation Secret data and webhook `caBundle` differences are ignored according to the chart guidance
-
-#### Scenario: Generated Grafana password does not cause drift
-
-- **WHEN** ArgoCD compares Grafana resources from the observability stack
-- **THEN** generated admin password Secret data and related deployment checksum annotation differences are ignored according to the chart guidance
-
-#### Scenario: Large dashboard ConfigMaps apply successfully
-
-- **WHEN** default dashboard ConfigMaps are applied
-- **THEN** the Application or dashboard resources use server-side apply handling so dashboard annotations do not exceed Kubernetes limits
-
-#### Scenario: Pre-delete hooks are not required for closure
-
-- **WHEN** the observability stack is removed by ArgoCD
-- **THEN** cleanup does not rely on Helm pre-delete hooks that ArgoCD will ignore
 
 ### Requirement: Kafka messaging namespace separation
 
@@ -215,20 +164,6 @@ The repository SHALL include Argo CD child Applications that deploy in-cluster `
 - **WHEN** the cloudflare-tunnel chart syncs with External Secrets enabled
 - **THEN** the tunnel token Secret is populated from Doppler via an ExternalSecret rather than committed to Git
 
-### Requirement: MCK operator Application
-
-The repository SHALL include an Argo CD child Application that deploys MongoDB Controllers for Kubernetes into the `operators` namespace at an operator sync wave (before marketplace and before the Mongo database Application).
-
-#### Scenario: Operator syncs before the database CR
-
-- **WHEN** a full environment sync runs
-- **THEN** the MCK operator Application has a lower sync wave than the Application that applies the MongoDB Community custom resource
-
-#### Scenario: Operator lands in operators
-
-- **WHEN** the MCK operator Application syncs
-- **THEN** the operator runs in the `operators` namespace
-
 ### Requirement: MongoDB Community Application in ecommerce
 
 The repository SHALL include an Argo CD child Application that applies the MongoDB Community replica set (and related secrets/policy owned by that chart) into the `ecommerce` namespace. That Application SHALL NOT template an `ecommerce` Namespace object (the marketplace Application already destines that namespace).
@@ -245,12 +180,12 @@ The repository SHALL include an Argo CD child Application that applies the Mongo
 
 ### Requirement: GitOps docs include Mongo
 
-GitOps documentation SHALL list the MCK operator and Mongo database Applications, their namespaces, and sync-wave order.
+GitOps documentation SHALL identify the platform-owned MCK operator and marketplace-owned Mongo database Application, their namespaces, and MongoDB as the catalog system of record.
 
 #### Scenario: Contributor finds Mongo in the deploy table
 
-- **WHEN** a contributor reads the GitOps deploy guide
-- **THEN** documentation names the Mongo operator and database Applications, `operators` vs `ecommerce`, and that shop traffic does not depend on Mongo yet
+- **WHEN** a contributor reads the deploy guide
+- **THEN** it distinguishes the external operator in operators from MongoDBCommunity and workload RBAC in ecommerce, and identifies products as a Mongo consumer
 
 ### Requirement: Inventory workload in marketplace chart
 
@@ -272,7 +207,7 @@ The GitOps configuration SHALL retain the `products.created` topic and SHALL dep
 
 ### Requirement: Meilisearch Application in ecommerce
 
-The repository SHALL include an Argo CD child Application that deploys Meilisearch into the `ecommerce` namespace. That Application SHALL NOT template an `ecommerce` Namespace object. Sync wave SHALL land after External Secrets Operator and with other data-plane stores, before marketplace workloads that query it at runtime.
+The repository SHALL include an Argo CD child Application that deploys Meilisearch into the `ecommerce` namespace. That Application SHALL NOT template an `ecommerce` Namespace object. The deployment SHALL require platform External Secrets readiness and retain the local data-store wave before marketplace workloads; this wave SHALL NOT imply ordering against the independent platform root.
 
 #### Scenario: Search engine destines ecommerce
 
@@ -295,9 +230,23 @@ The marketplace Helm release SHALL deploy a `search` Service and Deployment in `
 
 ### Requirement: GitOps docs include Meilisearch
 
-GitOps documentation SHALL list the Meilisearch Application, the search marketplace workload, namespaces, and sync-wave order relative to operators and marketplace.
+GitOps documentation SHALL list the Meilisearch Application, the search marketplace workload, namespaces, and local sync-wave hints relative to marketplace and the external platform operator prerequisite.
 
 #### Scenario: Contributor finds Meilisearch in the deploy table
 
 - **WHEN** a contributor reads the GitOps deploy guide
 - **THEN** documentation names the Meilisearch Application, the search service, `ecommerce`, and that Meilisearch is a catalog projection rather than listing SoT
+
+### Requirement: Marketplace consumes platform custom resources
+
+Marketplace deployment SHALL retain CNPG Cluster, MongoDBCommunity, Kafka, KafkaNodePool, KafkaConnect, KafkaTopic, KafkaConnector, ExternalSecret, VMPodScrape, CiliumNetworkPolicy, Gateway, and HTTPRoute resources needed by enabled workloads. It SHALL retain MongoDB workload service accounts/RBAC, Kafka connector secret-access RBAC, and schema initialization jobs. It SHALL NOT install shared operators, their CRDs, the Doppler ClusterSecretStore, or the platform observability stack.
+
+#### Scenario: Consumer resources survive cleanup
+
+- **WHEN** dev and prod application charts are rendered
+- **THEN** enabled workload custom resources and supporting RBAC remain, and no shared operator installation or platform stack is rendered
+
+#### Scenario: Empty databases
+
+- **WHEN** marketplace workloads start against new empty databases
+- **THEN** schema initialization still runs before dependent service operation

@@ -1,49 +1,87 @@
 # GitOps deployment (Argo CD)
 
-Talos **dev** and **prod** are the runtimes. Argo CD runs on the **management** cluster (https://github.com/phuchoang2603/talos-proxmox, `bootstrap-argocd.sh`) and registers remotes named `dev` and `prod`. This repo’s root Applications live in the management cluster’s `argo-cd`; children destine those cluster names.
+Talos **dev** and **prod** run the workloads. Argo CD runs on the **management** cluster and registers those workload clusters as `dev` and `prod`. Two independent roots are applied to Argo CD:
 
-## Where env lives
+1. `platform-dev` / `platform-prod` from [`talos-proxmox`](https://github.com/phuchoang2603/talos-proxmox/tree/main/apps) install shared operators and observability.
+2. `dev-root` / `prod-root` from this repository deploy marketplace-owned resources that consume those platform APIs.
 
-| Layer       | What                                       | Dev                                                                  | Prod                                                                                          |
-| ----------- | ------------------------------------------ | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Argo        | apply roots                                | `~/.kube/talos-argocd.yaml` + `dev-root` (`destinationName: dev`)    | same management kubeconfig + `prod-root` (`destinationName: prod`)                            |
-| Workloads   | kubeconfig for Doppler / kubectl           | `~/.kube/talos-dev.yaml`                                             | prod kubeconfig                                                                               |
-| Secrets     | `operators/doppler-token` (not Helm)       | `doppler-token.dev.secret.yaml` on talos-dev                         | `doppler-token.prd.secret.yaml` on prod                                                       |
-| Git (root)  | `namePrefix`, `targetRevision`, `imageTag` | `dev`, branch or `main`; images = `$ARGOCD_APP_REVISION`             | `prod`, git `main`; images = `:main`                                                          |
-| Git (chart) | `values.yaml`                              | default (shop-dev, 1 Kafka replica, 1-day topic retention, 1 tunnel) | `values-prod.yaml` on marketplace (hosts), kafka (RF 3, 7-day retention), tunnel (2 replicas) |
+## Fresh installation
 
-Both roots may be applied on the management cluster; they target different clusters. Do not put Doppler config names in Helm. Cloudflare Public Hostnames stay in Zero Trust; origin DNS is `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`.
+Provision the Talos clusters and Argo CD with `talos-proxmox`, then register the workload clusters. Before applying a marketplace root, verify the matching platform root is healthy and the destination cluster has:
 
-Child Applications inherit `targetRevision` via `$ARGOCD_APP_SOURCE_TARGET_REVISION`. Change `dev-root` `spec.source.targetRevision` in `infra/argocd/dev/root.yaml`, commit, and `kubectl apply -f` that file on the management cluster. `global.imageTag` is `$ARGOCD_APP_REVISION`. Wait for GHCR `:<sha>` or pods ImagePullBackOff until the image job finishes. Leave `targetRevision` on the branch you are running until you deliberately retarget (do not flip it to `main` just because a PR merged).
+- a default StorageClass;
+- External Secrets, CloudNativePG, Strimzi, MongoDB Community, and VictoriaMetrics operators with their CRDs;
+- `operators/doppler-token` and a Ready `ClusterSecretStore/doppler`;
+- Grafana, VMAgent, VLAgent, VictoriaLogs, and VictoriaTraces in `monitoring`;
+- the marketplace container images required by the selected Git revision in GHCR.
 
-## What Argo CD syncs
+Apply the platform root from the sibling checkout first:
 
-| Component                 | Source        | Pin                                                                          | Namespace           |
-| ------------------------- | ------------- | ---------------------------------------------------------------------------- | ------------------- |
-| External Secrets Operator | Wrapper chart | upstream chart + Doppler `ClusterSecretStore`                                | `operators`         |
-| CloudNativePG             | Wrapper chart | upstream chart                                                               | `operators`         |
-| Strimzi                   | Wrapper chart | `watchAnyNamespace=true`                                                     | `operators`         |
-| MCK (MongoDB operator)    | Wrapper chart | `mongodb/mongodb-kubernetes` 1.12.0, Community watch                         | `operators`         |
-| `observability`           | Wrapper chart | `victoria-metrics-k8s-stack` `0.86.0`                                        | `monitoring`        |
-| `mongodb`                 | This repo     | `MongoDBCommunity` replica set + CNP + ESO                                   | `ecommerce`         |
-| `meilisearch`             | Wrapper chart | upstream `meilisearch-kubernetes` + CNP + ESO                                | `ecommerce`         |
-| `refurbished-marketplace` | This repo     | CNPG (non-catalog services), ExternalSecrets, migrations, services, Gateway  | `ecommerce`         |
-| `kafka`                   | This repo     | Debezium Postgres outboxes plus Mongo catalog outbox; secrets in `ecommerce` | `kafka`             |
-| `cloudflare-tunnel`       | This repo     | `cloudflared`; token via Doppler ExternalSecret                              | `cloudflare-tunnel` |
-
-Cilium is cluster-owned in **talos-proxmox**, not an Argo app. See [cilium.md](cilium.md).
-
-`monitoring` is privileged PSS for node-exporter.
-
-**Bootstrap:** Doppler service token Secret in `operators` — see [secrets](../development/secrets.md).
-
-Sync waves: operators (0, including MCK) → observability (1) → MongoDBCommunity and Meilisearch (2) → marketplace (3) → kafka (4) → cloudflare-tunnel (5).
-
-Mongo is MCK **Community** in `ecommerce` (`catalog-mongodb`). Products authenticates with `mongodb-catalog-app` and uses database `catalog` (`listings`, `catalog_outbox`). Community MCK does not include Ops Manager continuous backup. The marketplace chart does not deploy `products-db`.
-
-Meilisearch is the storefront catalog projection (`catalog-meilisearch`). The search service authenticates with `meilisearch-master-key`. It is not listing or stock source of truth.
-
+```bash
+kubectl --kubeconfig="$HOME/.kube/talos-argocd.yaml" apply --server-side \
+  -f ../talos-proxmox/apps/argocd/roots/dev.yaml
 ```
+
+Prepare the application secrets with the workload kubeconfig as described in [secrets.md](../development/secrets.md), then apply this repository's root on the management cluster:
+
+```bash
+kubectl --kubeconfig="$HOME/.kube/talos-argocd.yaml" apply --server-side \
+  -f infra/argocd/dev/root.yaml
+```
+
+Use `apps/argocd/roots/prod.yaml` and `infra/argocd/prod/root.yaml` for production. Both repositories commit their roots to `main`.
+
+## Environment configuration
+
+| Layer            | Dev                                        | Prod                                        |
+| ---------------- | ------------------------------------------ | ------------------------------------------- |
+| Destination      | registered Argo cluster `dev`              | registered Argo cluster `prod`              |
+| Platform root    | `platform-dev`                             | `platform-prod`                             |
+| Marketplace root | `dev-root`                                 | `prod-root`                                 |
+| Doppler token    | `operators/doppler-token` for config `dev` | `operators/doppler-token` for config `prd`  |
+| Images           | `:<git-sha>` via `$ARGOCD_APP_REVISION`    | rolling `:main`                             |
+| Values           | chart `values.yaml`                        | chart `values.yaml` plus `values-prod.yaml` |
+
+Child Applications inherit the root Git revision through `$ARGOCD_APP_SOURCE_TARGET_REVISION`. Dev converts that revision to the immutable image tag `$ARGOCD_APP_REVISION`; wait for all required `:<sha>` images before syncing. Production uses `:main`. Doppler config names do not belong in Helm or Argo values.
+
+Cloudflare Public Hostnames remain in Zero Trust. The shop/pay origin is `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`.
+
+## Marketplace ownership
+
+| Application               | Marketplace-owned resources                                                                                 | Namespace                               |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| `mongodb`                 | `MongoDBCommunity`, credentials, workload RBAC, Cilium policy                                               | `ecommerce`                             |
+| `meilisearch`             | Meilisearch workload/PVC, credentials, Cilium policy                                                        | `ecommerce`                             |
+| `refurbished-marketplace` | CNPG Clusters, ExternalSecrets, migrations, services, Gateway/HTTPRoutes, VMPodScrape, dashboard ConfigMaps | `ecommerce`, dashboards in `monitoring` |
+| `kafka`                   | Kafka/NodePool, topics, Connect/connectors, secret-reader RBAC, UI                                          | `kafka`, RBAC in `ecommerce`            |
+| `cloudflare-tunnel`       | cloudflared and its ExternalSecret                                                                          | `cloudflare-tunnel`                     |
+
+The matching platform root owns the operators, CRDs, `ClusterSecretStore/doppler`, the `monitoring` namespace, and the complete Victoria stack. Cilium, Gateway API installation, and storage are also cluster-owned in `talos-proxmox`.
+
+MongoDB is the products catalog source of truth; Meilisearch is its storefront projection. PostgreSQL schema migrations still initialize new empty databases before their services start.
+
+## Ordering and health
+
+Marketplace child annotations give this local order:
+
+```text
+MongoDB + Meilisearch (2) → marketplace (3) → Kafka (4) → cloudflared (5)
+```
+
+These waves order resources within the marketplace root. They do not order the independent platform root, and the current Argo CD configuration does not restore `Application` CR health assessment for child-readiness orchestration. Verify platform readiness explicitly before applying the marketplace root.
+
+Useful checks:
+
+```bash
+kubectl --kubeconfig="$HOME/.kube/talos-argocd.yaml" get applications -n argo-cd
+kubectl --kubeconfig="$HOME/.kube/talos-dev.yaml" get storageclass
+kubectl --kubeconfig="$HOME/.kube/talos-dev.yaml" get clustersecretstore doppler
+kubectl --kubeconfig="$HOME/.kube/talos-dev.yaml" get crd | grep -E 'cnpg|strimzi|mongodb|external-secrets|victoriametrics'
+```
+
+## Repository layout
+
+```text
 infra/argocd/
 ├── app-of-apps/
 │   ├── values.yaml
@@ -52,12 +90,4 @@ infra/argocd/
 └── prod/root.yaml
 ```
 
-## Images
-
-Marketplace and Kafka Connect images: `ghcr.io/phuchoang2603/refurbished-marketplace/<name>:<sha>` on talos-dev, or `:main` on prod. See [ci.md](ci.md).
-
-## Related
-
-- [cilium.md](cilium.md) — CNI, Gateway API, Cloudflare origin
-- [ci.md](ci.md) — GHCR `:main` / `:<sha>` and PR SHA cleanup
-- [observability.md](observability.md) — Victoria stack, Grafana, traces, logs
+See [ci.md](ci.md) for image publication, [cilium.md](cilium.md) for networking, [observability.md](observability.md) for the telemetry contract, and the [`talos-proxmox` application guide](https://github.com/phuchoang2603/talos-proxmox/blob/main/apps/README.md) for platform installation and administration.

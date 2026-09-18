@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD - created by archiving change add-structured-slog-correlation. Update Purpose after archive.
+Define structured JSON application logging, sensitive-field redaction, and trace correlation so marketplace requests and asynchronous work can be investigated through platform log collection.
 
 ## Requirements
 

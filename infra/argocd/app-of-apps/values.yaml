@@ -1,4 +1,6 @@
-# Shared Application catalog. Env lives in:
+# Marketplace Application catalog. talos-proxmox platform roots must install shared operators,
+# CRDs, storage, ClusterSecretStore/doppler, and observability before this root syncs.
+# Env lives in:
 # - dest cluster: operators/doppler-token (Doppler dev vs prd)
 # - infra/argocd/{dev,prod}/root.yaml: namePrefix, destinationName, git revision, imageTag
 # Chart values.yaml is the Talos-dev shape. Do not add Doppler config names here.
@@ -18,26 +20,6 @@ marketplace:
   valueFiles: []
 
 apps:
-  external-secrets:
-    syncWave: "0"
-    path: infra/charts/operators/external-secrets
-    releaseName: external-secrets
-    namespace: operators
-  cnpg:
-    syncWave: "0"
-    path: infra/charts/operators/cnpg
-    releaseName: cnpg
-    namespace: operators
-  strimzi:
-    syncWave: "0"
-    path: infra/charts/operators/strimzi
-    releaseName: strimzi-cluster-operator
-    namespace: operators
-  mongodb-operator:
-    syncWave: "0"
-    path: infra/charts/operators/mongodb
-    releaseName: mongodb-operator
-    namespace: operators
   mongodb:
     syncWave: "2"
     path: infra/charts/mongodb
@@ -48,18 +30,6 @@ apps:
     path: infra/charts/meilisearch
     releaseName: catalog-meilisearch
     namespace: ecommerce
-  observability:
-    syncWave: "1"
-    path: infra/charts/observability
-    releaseName: observability
-    namespace: monitoring
-    valueFiles: []
-    ignoreDifferences: true
-    managedNamespaceMetadata:
-      labels:
-        pod-security.kubernetes.io/enforce: privileged
-        pod-security.kubernetes.io/audit: privileged
-        pod-security.kubernetes.io/warn: privileged
   kafka:
     syncWave: "4"
     path: infra/charts/kafka

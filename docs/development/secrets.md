@@ -1,6 +1,6 @@
 # Secrets (Doppler + ESO)
 
-Application secrets are **not** committed to Git. External Secrets Operator syncs them from Doppler into Kubernetes.
+Application secrets are **not** committed to Git. The platform-owned External Secrets Operator and `ClusterSecretStore/doppler` sync this repository's `ExternalSecret` resources from Doppler into Kubernetes. Their installation is maintained in `talos-proxmox`; this repository owns the application key mappings below.
 
 ## Doppler project
 
@@ -28,7 +28,7 @@ Application secrets are **not** committed to Git. External Secrets Operator sync
 
 ## Bootstrap service token
 
-ESO reads `operators/doppler-token` key `dopplerToken`.
+The platform `ClusterSecretStore/doppler` reads `operators/doppler-token` key `dopplerToken`. Copy the tracked `.example` manifest for the target environment, replace only `REPLACE_ME` in the untracked copy, and apply it with that workload cluster's kubeconfig.
 
 ```bash
 # talos-dev workloads
@@ -45,3 +45,5 @@ kubectl get externalsecrets,secrets -n ecommerce
 kubectl get secret mongodb-catalog-app -n ecommerce
 kubectl get secret meilisearch-master-key -n ecommerce
 ```
+
+Do not apply marketplace roots until `kubectl get clustersecretstore doppler` reports `Ready=True`.

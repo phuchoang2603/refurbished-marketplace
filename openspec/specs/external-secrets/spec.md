@@ -6,32 +6,23 @@ Define how External Secrets Operator and Doppler sync application credentials in
 
 ## Requirements
 
-### Requirement: External Secrets Operator installed
-
-The repository SHALL install External Secrets Operator on the Talos cluster using the upstream Helm chart in the `operators` namespace via Argo CD.
-
-#### Scenario: ESO operator healthy after GitOps sync
-
-- **WHEN** the Talos operators Application syncs
-- **THEN** the External Secrets Operator deployment becomes ready in the `operators` namespace
-
 ### Requirement: Doppler ClusterSecretStore with service token
 
-The repository SHALL configure a `ClusterSecretStore` that authenticates to Doppler using a service token stored in Kubernetes Secret `doppler-token` with key `dopplerToken` in the `operators` namespace.
+Application ExternalSecrets SHALL reference the platform-owned ClusterSecretStore named doppler. The platform prerequisite SHALL authenticate using operators/doppler-token, key dopplerToken. This repository SHALL NOT render the store or contain a real token value.
 
 #### Scenario: Store references bootstrap secret
 
-- **WHEN** ESO evaluates the Doppler `ClusterSecretStore`
-- **THEN** it reads the service token from `operators/doppler-token` key `dopplerToken`
+- **WHEN** a fresh workload cluster is prepared
+- **THEN** the platform store is Ready using the environment-appropriate bootstrap token before application ExternalSecrets sync
 
 #### Scenario: Service token not in Git
 
 - **WHEN** the repository is cloned
-- **THEN** no Doppler service token value is present in tracked files
+- **THEN** no Doppler token value is present in tracked files
 
 ### Requirement: ExternalSecrets sync chart secrets
 
-The repository SHALL render `ExternalSecret` resources from the `refurbished-marketplace` Helm chart for each enabled service with `db` (basic-auth username/password) and for each unique `auth.secretName` (for example `users-auth` / `JWT_SECRET`). Doppler remote keys for DB secrets SHALL follow `{SECRET_NAME}_USERNAME` and `{SECRET_NAME}_PASSWORD` derived from `db.secretName`.
+The repository SHALL render `ExternalSecret` resources from the `refurbished-marketplace` Helm chart for each enabled service with `db` (basic-auth username/password) and for each unique `auth.secretName` (for example `users-auth` / `JWT_SECRET`). Doppler remote password keys SHALL follow `{SECRET_NAME}_PASSWORD` derived from `db.secretName`. The Kubernetes Secret username SHALL be generated from `db.owner`, defaulting to `<service>_app`; no Doppler username key is required.
 
 #### Scenario: DB secret available for CNPG
 
@@ -46,7 +37,7 @@ The repository SHALL render `ExternalSecret` resources from the `refurbished-mar
 #### Scenario: Debezium connector secrets
 
 - **WHEN** ExternalSecrets have synced successfully
-- **THEN** `orders-app`, `payment-app`, `products-app`, and `inventory-app` secrets exist for Strimzi `${secrets:…}` references in the kafka chart
+- **THEN** orders, payment, and inventory Postgres credentials and catalog Mongo credentials exist under the names referenced by Strimzi connectors; no obsolete products Postgres credential is required
 
 ### Requirement: No committed plaintext cluster secrets
 
@@ -87,7 +78,7 @@ The repository SHALL provide Doppler CLI via devenv and set `DOPPLER_PROJECT` an
 
 ### Requirement: Provider swap via ClusterSecretStore
 
-Secret provisioning SHALL remain provider-agnostic at the service deployment layer. Changing the external secrets provider SHALL require updating `infra/charts/operators/external-secrets/values.yaml` and, if remote key names change, marketplace chart `externalSecrets` / service `db` / `auth` settings — not service deployment templates.
+Secret provisioning SHALL remain provider-agnostic at the service deployment layer. Changing the external secrets provider SHALL require updating the platform-owned store configuration in talos-proxmox and, if remote key names change, marketplace chart `externalSecrets` / service `db` / `auth` settings — not service deployment templates.
 
 #### Scenario: Deployment templates unchanged after provider swap
 

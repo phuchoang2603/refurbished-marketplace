@@ -1,223 +1,125 @@
-# Observability
+# Marketplace observability
 
-The observability stack is deployed from `infra/charts/observability`, a local wrapper around `victoria-metrics-k8s-stack` chart version `0.86.0`.
+The shared VictoriaMetrics, VictoriaLogs, VictoriaTraces, Grafana, and Alertmanager stack is installed and administered by [`talos-proxmox/apps/components/observability`](https://github.com/phuchoang2603/talos-proxmox/tree/main/apps/components/observability). This repository owns the marketplace telemetry producers, scrape resource, network access, and two Grafana dashboard ConfigMaps.
 
-It deploys the first platform baseline for:
+## Application contract
 
-- Metrics: VMSingle and VMAgent
-- Logs: VLSingle and VLAgent
-- Traces: VTSingle
-- Dashboards: Grafana
-- Alerts: Alertmanager and stack-managed rules
+| Signal     | Marketplace output                                                                                             | Platform consumer         |
+| ---------- | -------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| Metrics    | Prometheus `/metrics` on pod port `9100`; `VMPodScrape/marketplace-apps` selects `marketplace.metrics: "true"` | VMAgent → VictoriaMetrics |
+| Logs       | structured JSON on stdout                                                                                      | VLAgent → VictoriaLogs    |
+| Traces     | OTLP/gRPC to `vtsingle-vmks.monitoring.svc.cluster.local:4317`                                                 | VictoriaTraces            |
+| Dashboards | ConfigMaps in `monitoring` labeled `grafana_dashboard: "1"`                                                    | Grafana dashboard sidecar |
 
-Application `/metrics` scrape is the RED export path: marketplace services expose Prometheus text on port `9100`, and VMAgent picks them up via `VMPodScrape`. Traces still go OTLP **directly** to VictoriaTraces. Gateway proxies do not export traces. Hubble is not required (it may be deleted on the cluster). Grafana **Marketplace RED** (`Marketplace` folder) is the application request/error/duration path.
+The `refurbished-marketplace` Helm release provisions **Marketplace RED** and **Marketplace logs**. Grafana folder placement is controlled by the platform sidecar/provider configuration. The marketplace release does not create `monitoring`, Grafana, datasources, collectors, or storage.
 
-### OTLP endpoints
+Hubble and Gateway proxy spans are outside the application RED/tracing path. Metrics use scrape, while traces use direct OTLP export.
 
-| Signal  | Protocol          | Endpoint                                                                                 |
-| ------- | ----------------- | ---------------------------------------------------------------------------------------- |
-| Traces  | gRPC (preferred)  | `vtsingle-vmks.monitoring.svc.cluster.local:4317` (insecure TLS in-cluster)              |
-| Traces  | HTTP fallback     | `http://vtsingle-vmks.monitoring.svc.cluster.local:10428/insert/opentelemetry/v1/traces` |
-| Metrics | Prometheus scrape | Pod `:9100/metrics` (VMAgent `VMPodScrape` `marketplace-apps`)                           |
+## Platform prerequisites
 
-Set `OTEL_EXPORTER_OTLP_ENDPOINT` to the traces gRPC address (or the HTTP traces URL with the `shared/observe/trace` bootstrap’s HTTP mode). Do not point traces at VictoriaMetrics. App RED is scrape, not OTLP push.
+Before the marketplace root syncs, verify the matching `platform-dev` or `platform-prod` Application and the telemetry services:
 
-Grafana folder **Marketplace** hosts **Marketplace RED** (HTTP/gRPC rate/error/p95) and **Marketplace logs** (volume + JSON lines from VictoriaLogs). Hubble and Istio series are not the source.
+```bash
+kubectl --kubeconfig="$HOME/.kube/talos-argocd.yaml" get applications -n argo-cd
+kubectl --kubeconfig="$HOME/.kube/talos-dev.yaml" get pods,svc -n monitoring
+kubectl --kubeconfig="$HOME/.kube/talos-dev.yaml" get \
+  vmsingle,vlagent,vlsingle,vtsingle,vmagent -n monitoring
+```
 
-## Grafana Access
+Platform installation, retention, storage, datasource, ingress, and credential details live in the [`talos-proxmox` application guide](https://github.com/phuchoang2603/talos-proxmox/blob/main/apps/README.md).
 
-Argo CD deploys the observability chart into `monitoring`. Cilium Gateway + HTTPRoute (Cloudflare origin):
+## Grafana access
 
 - Dev: `https://grafana-dev.phuchoang.sbs`
 - Prod: `https://grafana.phuchoang.sbs`
 
-Point the tunnel Public Hostname at `http://cilium-gateway-grafana.monitoring.svc.cluster.local:80`.
-
-Port-forward Grafana:
+For local access:
 
 ```bash
-kubectl port-forward -n monitoring svc/observability-grafana 3000:80
+kubectl --kubeconfig="$HOME/.kube/talos-dev.yaml" \
+  port-forward -n monitoring svc/observability-grafana 3000:80
 ```
 
-Open the public hostname (or http://localhost:3000) and sign in:
-
-- **Username:** `admin`
-- **Password:** generated into Secret `observability-grafana` (key `admin-password`)
+The platform provides datasources with UIDs `VictoriaMetrics`, `VictoriaLogs`, and `VictoriaTraces`. Confirm marketplace dashboards are discovered:
 
 ```bash
-kubectl get secret observability-grafana -n monitoring \
-  -o jsonpath='{.data.admin-password}' | base64 -d && echo
+kubectl --kubeconfig="$HOME/.kube/talos-dev.yaml" \
+  get configmaps -n monitoring -l grafana_dashboard=1
 ```
 
-Useful checks:
+## Verify application telemetry
+
+Confirm the scrape resource and exporter configuration:
 
 ```bash
-kubectl get pods -n monitoring
-kubectl get svc -n monitoring
-kubectl get pvc -n monitoring
+kubectl --kubeconfig="$HOME/.kube/talos-dev.yaml" get vmpodscrape marketplace-apps -n ecommerce
+kubectl --kubeconfig="$HOME/.kube/talos-dev.yaml" get pods -n ecommerce -l marketplace.metrics=true
+kubectl --kubeconfig="$HOME/.kube/talos-dev.yaml" get deploy -n ecommerce \
+  -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.template.spec.containers[0].env[?(@.name=="OTEL_EXPORTER_OTLP_ENDPOINT")].value}{"\n"}{end}'
 ```
 
-Grafana should include datasources for VictoriaMetrics, VictoriaLogs, and VictoriaTraces. VictoriaLogs requires the `victoriametrics-logs-datasource` Grafana plugin. VictoriaTraces is provisioned as a Grafana **Tempo** datasource (`http://vtsingle-vmks.monitoring.svc.cluster.local:10428/select/tempo`) so Explore can use TraceQL and (optionally) Grafana Traces Drilldown.
+To check successful scraping, query VictoriaMetrics in Grafana Explore:
 
-Default dashboards are fetched by `vmks-sync-job` (an Argo CD `PostSync` hook in the wrapper chart) and loaded into Grafana via the dashboard sidecar. After sync, verify:
+```promql
+up{namespace="ecommerce",job=~"web|users|products|inventory|orders|payment|cart|search"}
+```
+
+Expect one series per metrics-enabled pod, each with value `1`. A `0` means the target was discovered but scraping failed; absent series mean discovery or collection needs investigation. Compare results with the metrics-enabled pod list above.
+
+For target errors, port-forward VMAgent and open `http://localhost:8429/targets`:
 
 ```bash
-kubectl get configmaps -n monitoring -l grafana_dashboard=1
+kubectl --kubeconfig="$HOME/.kube/talos-dev.yaml" \
+  port-forward -n monitoring svc/vmagent-vmks 8429:8429
 ```
 
-## Health checks
+Find the `ecommerce` targets on port `9100` with path `/metrics`, confirm they are UP and have a recent successful scrape, and inspect Last Error for failed targets. Check the pod endpoint, VMPodScrape selection, and scrape network policy when targets fail.
 
-After Argo CD syncs the observability Application, check the Application (on the management cluster) and namespace (on the dest cluster):
+In Grafana:
 
-```bash
-kubectl --kubeconfig="$HOME/.kube/talos-argocd.yaml" get applications.argoproj.io -n argo-cd
-kubectl get pods -n monitoring
-kubectl get pvc -n monitoring
+- use **Marketplace RED** for HTTP/gRPC request rate, errors, and p95 latency;
+- use **Marketplace logs** or VictoriaLogs Explore for JSON logs;
+- use the `VictoriaTraces` Tempo datasource for TraceQL and waterfalls.
+
+## Distributed tracing
+
+Application tracing is initialized through `shared/observe/trace` and `shared/runtime`. Services propagate W3C `traceparent`; outbox rows carry `tracingspancontext`, Debezium maps it to Kafka headers, and consumers continue the trace.
+
+```text
+Browser → web → domain services → database
+                    │
+                    └→ outbox → Debezium/Connect → Kafka → consumers
+                                                              │
+                                                              └→ VictoriaTraces
 ```
 
-Check VictoriaMetrics Operator custom resources:
+KafkaConnect enables Strimzi OpenTelemetry tracing and exports to the same VictoriaTraces endpoint. Rebuild the Connect image only when its plugin contents change.
 
-```bash
-kubectl get vmsingle,vlagent,vlsingle,vtsingle,vmagent,vmalert -n monitoring
-```
+To verify a checkout, query:
 
-Check Grafana, Alertmanager, and service endpoints:
-
-```bash
-kubectl get svc -n monitoring
-```
-
-When Grafana access is available, confirm:
-
-- The VictoriaMetrics datasource is present.
-- The VictoriaLogs datasource is present.
-- The VictoriaTraces datasource is present.
-- Default Kubernetes dashboards load.
-- Alertmanager is reachable from Grafana or through its service.
-
-## ArgoCD Notes
-
-The upstream chart has a few ArgoCD-specific behaviors that are handled on the observability Application in `infra/argocd/app-of-apps/templates/applications.tpl`:
-
-- `managedNamespaceMetadata` labels `monitoring` `pod-security.kubernetes.io/enforce=privileged` so Talos default PSS baseline does not block node-exporter.
-- `RespectIgnoreDifferences=true` is enabled so ignored generated fields are also respected during apply.
-- VictoriaMetrics Operator self-signed webhook certificate drift is ignored.
-- Grafana generated admin password and related deployment checksum drift are ignored.
-- Default dashboards use server-side apply to avoid large annotation failures.
-- The upstream `vmks-sync-job` Helm hook is disabled; the wrapper chart runs an equivalent Argo CD `PostSync` job so dashboards are provisioned on sync.
-
-ArgoCD does not run Helm pre-delete hooks, so removal should not rely on the chart's hook-based cleanup. If removing the stack, inspect operator-managed VictoriaMetrics resources in `monitoring` before deleting the namespace or Application.
-
-## Distributed tracing (e2e)
-
-App tracing bootstrap lives in `shared/observe/trace` (wired through `shared/runtime`). Marketplace services export OTLP **directly** to VictoriaTraces (no collector). Mesh proxy tracing is not used.
-
-```
-Browser → ingress → web ──gRPC──▶ domain services (+ DB / Redis child spans)
-                         │
-                    outbox.tracingspancontext
-                         │
-              Debezium EventRouter (+ Strimzi OTEL agent on Connect)
-                         │  Kafka header traceparent
-                         ▼
-              consumers (child-of spans) → VictoriaTraces → Grafana Explore
-```
-
-**Joining rule:** one W3C `TraceId` across app spans when services propagate `traceparent`. Async hops continue via the outbox column → Kafka headers. Consumer spans use parent–child (not links) for Grafana waterfall UX.
-
-**Span naming:** Prefer operation names over process names. Web HTTP server spans use `METHOD` + chi route pattern (e.g. `POST /orders/{id}`, `http.route` set). gRPC uses the full method; Kafka consumers use `messaging process <topic>`. Postgres (otelsql via `OpenPostgres`) and Redis (redisotel via `OpenRedis`) appear as child spans under those parents. Bound SQL parameter values are not recorded; statement text is truncated.
-
-**Connect tracing:** KafkaConnect sets `spec.tracing.type: opentelemetry` (loads Strimzi `tracing-agent`) plus `OTEL_PROPAGATORS=tracecontext` and OTLP export to VictoriaTraces. EventRouter maps `tracingspancontext` → Kafka `traceparent`. Rebuild `connect-debezium` only when the Debezium plugin changes; enabling the agent is a chart/CR change.
-
-**Mesh / edge SLIs:** Istio RED is gone. Hubble is not the observe path. Use Grafana **Marketplace RED** (application OTEL metrics in VictoriaMetrics) for request/error/duration. Waterfalls are app + Connect only — no Gateway proxy spans.
-
-**Verify after deploy:**
-
-1. Confirm VT Service has port `4317` and apps have `OTEL_EXPORTER_OTLP_ENDPOINT`.
-2. Place a checkout order; in Grafana Explore select the **VictoriaTraces** Tempo datasource. Prefer TraceQL scoped to app services:
-
-```
+```traceql
 { resource.service.name =~ "web|orders|payment|products|inventory|search|cart|users|connect-debezium" }
 ```
 
-3. Open a TraceId for service `web`: root should look like `POST /cart/checkout` (or similar route pattern), not the bare string `web`. Expect web → orders (`CreateOrder`) and web → inventory (`ReserveStock`), then Debezium/connect → inventory (messaging + DB) as the Kafka safety net. Listing create traces go web → products (Mongo) then Connect → inventory and search. Kafka `orders.created` records should carry a `traceparent` header.
-4. Complete hosted-payment success/fail; confirm callback → payment gRPC → payment outbox path.
-5. Confirm Gateway proxy spans are absent. For request/error/duration, open Grafana folder **Marketplace** → **Marketplace RED** (VictoriaMetrics). For JSON logs, open **Marketplace logs**. Hubble is not required.
+Expect route/RPC/messaging span names, database child spans where applicable, and `connect-debezium` across asynchronous hops. Gateway proxy spans are not expected.
 
-## Structured logging
+## Structured logging and correlation
 
-Marketplace services emit **JSON slog** lines to stdout via `shared/observe/log` (wired by `shared/runtime.InitLogging`). Call sites use that package’s helpers — prefer `InfoContext` / `WarnContext` / `ErrorContext` on request paths so `trace_id` / `span_id` are injected; use `Key*` constants with key/value pairs (or `Attr*` with `LogAttrs`). Do not use raw `log/slog`. VLAgent scrapes those lines into VictoriaLogs.
+Marketplace services emit JSON slog lines via `shared/observe/log`. Request-path logging should use context-aware helpers so `trace_id` and `span_id` are present. Sensitive keys are redacted, but free-text messages are not rewritten; never put secrets or payment payloads in log messages.
 
-VLAgent scrapes the `ecommerce` namespace (apps + CNPG DB pods) and skips `wait-for-db`, `wait-for-mongo`, and `wait-for-meili` init containers.
+Common fields include `service`, `trace_id`, `span_id`, HTTP/gRPC method and status, Kafka topic/partition/offset, and domain IDs such as `order_id`.
 
-HTTP/gRPC access logs put the useful bits in `msg` (e.g. `GET /orders/... 200`, `ListOrdersByBuyer OK`) while keeping structured attrs for filters. Log `level` is emitted lowercase (`info`, `error`, …) so Grafana Explore does not mark marketplace JSON as `unknown`.
-
-### Field conventions
-
-| Field                                        | When present                        |
-| -------------------------------------------- | ----------------------------------- |
-| `service`                                    | Always (bootstrap default)          |
-| `trace_id`                                   | When logging with a valid OTEL span |
-| `span_id`                                    | When logging with a valid OTEL span |
-| `method`/`path`/`status`/`duration_ms`       | HTTP access logs (web)              |
-| `grpc_method`/`grpc_code`/`duration_ms`      | gRPC unary access logs              |
-| `topic`/`partition`/`offset`                 | Kafka handler errors                |
-| `order_id` / `merchant_id` / `buyer_user_id` | Checkout hot-path domain logs       |
-| `status` / `outcome` / `event_type`          | Order/payment/reservation outcomes  |
-
-Sensitive attribute keys (`password`, `token`, `api_key`, `bearer`, `access_token`, `card`, `cvv`, …) are redacted to `[redacted]` via `ReplaceAttr`. Redaction does not rewrite free-text `msg` — never put secrets in the message string. Do not log full payment gateway payloads.
-
-### LogSQL examples (VictoriaLogs)
-
-```logsql
-service:="web"
-```
+VictoriaLogs examples:
 
 ```logsql
 service:="orders" AND trace_id:="<hex-trace-id>"
 ```
 
 ```logsql
-order_id:="<uuid>"
-```
-
-Exact filter syntax can vary slightly with the Grafana VL plugin UI — prefer Explore’s builder, then copy the query.
-
-### Debug a checkout
-
-Logs Drilldown does not work with VictoriaLogs — use **Marketplace logs** or **Explore**.
-
-1. **Traces:** Explore → **VictoriaTraces** → TraceQL `{ resource.service.name =~ "web|orders|payment|products|inventory|search|cart|users|connect-debezium" }` (or search service `web`) → open a TraceId. Expect app spans with route/RPC/messaging names, Postgres/Redis/Mongo children where applicable, and `connect-debezium` on the async hop — not mesh proxy services.
-2. **App logs for that TraceId:** Trace → logs. Tempo sends LogsQL `trace_id:="<id>"` to VictoriaLogs (not a Loki `{trace_id=…}` selector). You should see marketplace JSON lines across services for that TraceId.
-3. **App logs in Explore** (same time range as the trace):
-
-```logsql
 kubernetes.pod_namespace:="ecommerce"
   AND service:in(web,orders,payment,products,inventory,search,cart,users)
 ```
 
-4. **Optional drills:** `order_id:="<uuid>"` on app JSON; for the Kafka hop use TraceId spans (`connect-debezium`) rather than Connect pod logs (not scraped into VL).
+The platform `VictoriaTraces` datasource sends Trace → logs queries as LogsQL using `trace_id`; it does not use Loki stream selectors. The platform `VictoriaLogs` datasource provides derived links from `trace_id` to traces and from `service` to VictoriaMetrics.
 
-### Trace → logs
-
-The VictoriaTraces Tempo datasource (`uid: VictoriaTraces`) uses `tracesToLogsV2` with a **LogsQL custom query** `trace_id:="${__trace.traceId}"`. Grafana’s default `filterByTraceID` builds a Loki stream selector, which VictoriaLogs does not execute, so the jump looks empty or unfiltered.
-
-1. Open a span in Explore / Traces Drilldown.
-2. Use **Logs for this span** / Trace → logs.
-3. Confirm matching JSON lines include the same `trace_id` (all marketplace services that logged for that TraceId). Do not expect span-id-only matching: access logs often carry the request TraceId on a different span than the one you clicked.
-
-Trace → metrics on the same Tempo datasource queries VictoriaMetrics request-rate series labeled `job`.
-
-### Logs dashboard and log → traces / metrics
-
-Grafana folder **Marketplace** → **Marketplace logs** shows ecommerce JSON volume (and errors) plus a logs panel. Filter by `service` (All expands to every marketplace service).
-
-VictoriaLogs derived fields (on log rows that have the label):
-
-| Field      | Opens                                |
-| ---------- | ------------------------------------ |
-| `trace_id` | VictoriaTraces for that TraceId      |
-| `service`  | VictoriaMetrics RED series for `job` |
-| `order_id` | VictoriaLogs query `order_id:<uuid>` |
-
-Click the field in Explore or the logs panel, then the derived-field link.
+For a failed checkout, open the trace first, follow Trace → logs, then narrow by `order_id` if available. Align the Grafana time range with the trace before concluding that logs are missing.

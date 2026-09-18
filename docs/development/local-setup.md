@@ -9,7 +9,7 @@ Runtime layout is in [architecture.md](../architecture.md). This page is how to 
 - [Doppler](https://doppler.com/) — see [secrets.md](secrets.md)
 - Cloudflare Zero Trust tunnel for `shop-dev.phuchoang.sbs` / `pay-dev.phuchoang.sbs`
 
-Argo CD runs on the **management** cluster (talos-proxmox). Workloads sync to the registered Argo cluster named `dev`. Bootstrap Doppler **dev** on talos-dev, then apply the **dev** root on the management cluster:
+Argo CD runs on the **management** cluster (talos-proxmox). Workloads sync to the registered Argo cluster named `dev`. Apply the `platform-dev` root first, bootstrap Doppler **dev** on talos-dev, verify the platform prerequisites, then apply the marketplace **dev** root:
 
 ```bash
 export KUBECONFIG="$HOME/.kube/talos-dev.yaml"
@@ -17,12 +17,18 @@ kubectl create namespace operators --dry-run=client -o yaml | kubectl apply -f -
 kubectl apply -f infra/k8s/doppler-token.dev.secret.yaml
 
 export KUBECONFIG="$HOME/.kube/talos-argocd.yaml"
+kubectl apply --server-side -f ../talos-proxmox/apps/argocd/roots/dev.yaml
+
+export KUBECONFIG="$HOME/.kube/talos-dev.yaml"
+kubectl wait --for=condition=Ready clustersecretstore/doppler --timeout=2m
+
+export KUBECONFIG="$HOME/.kube/talos-argocd.yaml"
 kubectl apply -f infra/argocd/dev/root.yaml
 ```
 
 `prod-root` is the same pattern with the prod kubeconfig for Doppler and `infra/argocd/prod/root.yaml` on the management cluster. Do not apply the `prd` Doppler token on talos-dev.
 
-Children follow the root’s git revision (`spec.source.targetRevision` in `infra/argocd/dev/root.yaml`). Change that field in git, then `kubectl apply -f` the same file **on the management cluster**. `global.imageTag` is `$ARGOCD_APP_REVISION`. Wait for GHCR `:<sha>` after the image job. Prod uses `:main`. Keep `dev-root` on the live feature branch until you want a different pointer.
+Children follow the root’s git revision (`spec.source.targetRevision` in `infra/argocd/dev/root.yaml`), which is committed as `main`. `global.imageTag` is `$ARGOCD_APP_REVISION`; wait for every required GHCR `:<sha>` image before syncing dev. Prod uses `:main`.
 
 ## Development shell
 
@@ -55,3 +61,7 @@ Optional debug: `kubectl -n ecommerce port-forward svc/web 8080:8080`.
 ## Integration testing
 
 Integration tests use Testcontainers (Docker on the laptop). Full flows: Talos + Argo + GHCR.
+
+## Infrastructure formatting
+
+The existing treefmt/Oxfmt hook formats plain YAML, including chart values and Argo roots. Helm template files remain excluded. No Helm validation script or devenv validation task is configured.

@@ -74,7 +74,6 @@ jobs:
       payment: ${{ steps.filter.outputs.payment }}
       cart: ${{ steps.filter.outputs.cart }}
       web: ${{ steps.filter.outputs.web }}
-      helm: ${{ steps.filter.outputs.helm }}
     steps:
       - uses: actions/checkout@v6
       - uses: dorny/paths-filter@v4
@@ -173,8 +172,6 @@ jobs:
               - 'shared/observe/trace/**'
               - 'go.work*'
               - '.github/workflows/ci.yml'
-            helm:
-              - 'infra/charts/**'
 
   test:
     needs: changes
@@ -253,56 +250,3 @@ jobs:
         with:
           sarif_file: govulncheck.sarif
           category: govulncheck-${{ matrix.service }}
-
-  helm:
-    needs: changes
-    if: needs.changes.outputs.helm == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: azure/setup-helm@v4
-        with:
-          version: v3.17.3
-      - name: Helm lint and template
-        run: |
-          set -euo pipefail
-          helm lint infra/charts/refurbished-marketplace -f infra/charts/refurbished-marketplace/values.yaml
-          helm template test-release infra/charts/refurbished-marketplace \
-            -f infra/charts/refurbished-marketplace/values.yaml \
-            --namespace ecommerce > /tmp/refurbished-marketplace.yaml
-
-          helm lint infra/charts/kafka -f infra/charts/kafka/values.yaml
-          helm template test-release infra/charts/kafka \
-            -f infra/charts/kafka/values.yaml \
-            --namespace kafka > /tmp/kafka.yaml
-
-          wrapper_charts=(
-            "infra/charts/operators/external-secrets:operators"
-            "infra/charts/operators/cnpg:operators"
-            "infra/charts/operators/strimzi:operators"
-            "infra/charts/observability:monitoring"
-            "infra/charts/cloudflare-tunnel:cloudflare-tunnel"
-            "infra/charts/meilisearch:ecommerce"
-          )
-          for item in "${wrapper_charts[@]}"; do
-            chart="${item%%:*}"
-            chart_namespace="${item##*:}"
-            helm lint "$chart"
-            helm template test-release "$chart" --namespace "$chart_namespace" > "/tmp/$(basename "$chart").yaml"
-          done
-      - name: Set up kubeconform
-        uses: bmuschko/setup-kubeconform@v1
-        with:
-          kubeconform-version: "0.6.7"
-      - name: Kubeconform
-        run: |
-          set -euo pipefail
-          kubeconform -summary -ignore-missing-schemas \
-            /tmp/refurbished-marketplace.yaml \
-            /tmp/kafka.yaml \
-            /tmp/external-secrets.yaml \
-            /tmp/cnpg.yaml \
-            /tmp/strimzi.yaml \
-            /tmp/observability.yaml \
-            /tmp/cloudflare-tunnel.yaml \
-            /tmp/meilisearch.yaml

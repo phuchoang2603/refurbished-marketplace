@@ -41,39 +41,6 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
-{{- if $app.ignoreDifferences }}
-      - RespectIgnoreDifferences=true
-{{- end }}
-{{- with $app.managedNamespaceMetadata }}
-    managedNamespaceMetadata:
-{{- toYaml . | nindent 6 }}
-{{- end }}
-{{- if $app.ignoreDifferences }}
-  ignoreDifferences:
-    - group: ""
-      kind: Secret
-      name: observability-grafana
-      namespace: monitoring
-      jsonPointers:
-        - /data/admin-password
-    - group: ""
-      kind: Secret
-      name: observability-victoria-metrics-operator-validation
-      namespace: monitoring
-      jsonPointers:
-        - /data
-    - group: admissionregistration.k8s.io
-      kind: ValidatingWebhookConfiguration
-      name: observability-victoria-metrics-operator-admission
-      jqPathExpressions:
-        - ".webhooks[]?.clientConfig.caBundle"
-    - group: apps
-      kind: Deployment
-      name: observability-grafana
-      namespace: monitoring
-      jsonPointers:
-        - /spec/template/metadata/annotations/checksum~1secret
-{{- end }}
 {{- end }}
 {{- end }}
 {{- if .Values.marketplace.enabled }}

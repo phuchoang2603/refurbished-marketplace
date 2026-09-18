@@ -32,7 +32,7 @@ Checkout: [docs/order-placement.md](docs/order-placement.md).
 - Kafka (Strimzi) + Debezium outbox (Postgres and Mongo).
 - `templ` + Datastar for server-rendered HTML.
 - Kubernetes / Helm: CloudNativePG, Strimzi, MCK, Cilium Gateway API, External Secrets.
-- GitOps: Argo CD on the Talos management cluster (`dev-root` / `prod-root` → app-of-apps); images from GHCR.
+- GitOps: Argo CD on the Talos management cluster; `talos-proxmox` owns shared operators and this repo owns marketplace Applications.
 - Cloudflare Tunnel to Cilium Gateway for shop, pay, and Grafana.
 - Nix/devenv for local tooling; OpenSpec for change proposals.
 

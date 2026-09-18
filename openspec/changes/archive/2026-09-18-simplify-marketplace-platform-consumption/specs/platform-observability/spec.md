@@ -1,10 +1,4 @@
-# Platform Observability
-
-## Purpose
-
-Define how marketplace services and application-owned dashboards consume the VictoriaMetrics, VictoriaLogs, VictoriaTraces, and Grafana services provided by `talos-proxmox`.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Backend-first scope
 
@@ -24,48 +18,6 @@ Marketplace SHALL consume the metrics, logs, and traces backends provided by tal
 
 - **WHEN** application RED metrics are enabled for marketplace workloads
 - **THEN** Go services expose `/metrics` and VMAgent scrapes them into VictoriaMetrics for Grafana dashboards
-
-### Requirement: Observability documentation
-
-The repository SHALL link to talos-proxmox for stack installation and administration, and SHALL document how developers and operators access Grafana, verify scrape health, use Trace → logs correlation for marketplace TraceIds, and use application RED metrics in Grafana.
-
-#### Scenario: Developer opens Grafana
-
-- **WHEN** observability is deployed
-- **THEN** documentation explains the Grafana public hostname or port-forward and basic login/access path
-
-#### Scenario: Operator verifies scrape health
-
-- **WHEN** observability is deployed
-- **THEN** documentation explains how to verify that scrape targets are healthy
-
-#### Scenario: Operator correlates traces to logs
-
-- **WHEN** structured application logging is enabled
-- **THEN** documentation explains how to filter VictoriaLogs by `service` and `trace_id` and how to use Grafana Trace → logs
-
-#### Scenario: Operator views application RED
-
-- **WHEN** application OTEL metrics are enabled
-- **THEN** documentation explains the `/metrics` scrape path, the Marketplace RED dashboard, and the application scrape/export contract
-
-### Requirement: VictoriaTraces accepts application OTLP
-
-The platform observability stack SHALL remain the destination for distributed traces visualized in Grafana, including spans exported by marketplace services. Mesh, Hubble, or Gateway proxy tracing is not required.
-
-#### Scenario: Grafana still uses VictoriaTraces
-
-- **WHEN** operators inspect traces after application exporters are enabled
-- **THEN** they use the existing Grafana VictoriaTraces datasource rather than a temporary tracing UI
-
-### Requirement: VictoriaMetrics stores application RED metrics
-
-The platform observability stack SHALL remain the destination for application RED metrics visualized in Grafana. Marketplace services SHALL expose Prometheus `/metrics` for VMAgent scrape into VMSingle. An OpenTelemetry Collector is not required for this path.
-
-#### Scenario: Grafana uses VictoriaMetrics for app RED
-
-- **WHEN** operators inspect application request/error/duration after metrics scrape is enabled
-- **THEN** they use the existing Grafana VictoriaMetrics datasource rather than Hubble or Istio scrapes
 
 ### Requirement: Marketplace RED dashboard is provisioned
 
@@ -95,6 +47,30 @@ The marketplace release SHALL provision an application-owned Grafana dashboard f
 - **WHEN** the marketplace release is removed
 - **THEN** only its dashboard ConfigMaps are removed; the monitoring namespace and Grafana remain platform-owned
 
+### Requirement: Observability documentation
+
+The repository SHALL link to talos-proxmox for stack installation and administration, and SHALL document how developers and operators access Grafana, verify scrape health, use Trace → logs correlation for marketplace TraceIds, and use application RED metrics in Grafana.
+
+#### Scenario: Developer opens Grafana
+
+- **WHEN** observability is deployed
+- **THEN** documentation explains the Grafana public hostname or port-forward and basic login/access path
+
+#### Scenario: Operator verifies scrape health
+
+- **WHEN** observability is deployed
+- **THEN** documentation explains how to verify that scrape targets are healthy
+
+#### Scenario: Operator correlates traces to logs
+
+- **WHEN** structured application logging is enabled
+- **THEN** documentation explains how to filter VictoriaLogs by `service` and `trace_id` and how to use Grafana Trace → logs
+
+#### Scenario: Operator views application RED
+
+- **WHEN** application OTEL metrics are enabled
+- **THEN** documentation explains the `/metrics` scrape path, the Marketplace RED dashboard, and the application scrape/export contract
+
 ### Requirement: Trace to logs correlation in Grafana
 
 The marketplace telemetry contract SHALL consume platform configuration of the Grafana VictoriaTraces (Tempo) datasource so operators can navigate from a span to VictoriaLogs using LogsQL on the log field `trace_id`. The link SHALL NOT rely on Loki-style stream selectors.
@@ -123,6 +99,8 @@ The marketplace telemetry contract SHALL consume platform-provided VictoriaLogs 
 - **WHEN** an operator opens a marketplace JSON log that includes `service`
 - **THEN** Grafana offers a link to VictoriaMetrics series filtered by that service name
 
+## ADDED Requirements
+
 ### Requirement: Platform observability consumption contract
 
 Marketplace SHALL retain VMPodScrape discovery of application /metrics on port 9100, the network policy allowing platform VMAgent scrapes, structured stdout logs for platform collection, and direct OTLP trace export to vtsingle-vmks.monitoring.svc.cluster.local:4317. Deployment guidance SHALL identify ready platform datasources, scrape discovery, log collection, and dashboard discovery as prerequisites.
@@ -131,3 +109,23 @@ Marketplace SHALL retain VMPodScrape discovery of application /metrics on port 9
 
 - **WHEN** marketplace deploys against the prepared platform
 - **THEN** its metrics, logs, and traces use platform services without a duplicate telemetry stack
+
+## REMOVED Requirements
+
+### Requirement: Victoria observability stack
+
+**Reason**: Shared observability installation and datasource provisioning belong to talos-proxmox; application consumption requirements remain here.
+
+**Migration**: None. Fresh installations consume the platform provided by talos-proxmox; existing resource adoption is outside scope.
+
+### Requirement: Argo deploys observability
+
+**Reason**: Shared observability installation and datasource provisioning belong to talos-proxmox; application consumption requirements remain here.
+
+**Migration**: None. Fresh installations consume the platform provided by talos-proxmox; existing resource adoption is outside scope.
+
+### Requirement: Grafana datasources and alerting baseline
+
+**Reason**: Shared observability installation and datasource provisioning belong to talos-proxmox; application consumption requirements remain here.
+
+**Migration**: None. Fresh installations consume the platform provided by talos-proxmox; existing resource adoption is outside scope.

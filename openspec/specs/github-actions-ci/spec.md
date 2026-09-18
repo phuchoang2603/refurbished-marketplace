@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define GitHub Actions CI for lint, selective service tests, Helm chart validation, and vulnerability scanning without publishing images.
+Define GitHub Actions CI for lint, selective service tests, and vulnerability scanning without publishing images.
 
 ## Requirements
 
@@ -164,20 +164,6 @@ When a selected service test job runs for a module that uses Testcontainers, CI 
 
 - **WHEN** CI runs tests for users, products, inventory, orders, payment, or cart due to path selection
 - **THEN** the test job uses the runner Docker environment sufficient for Testcontainers
-
-### Requirement: Helm validation on chart changes
-
-When a change modifies files under `infra/charts/**`, CI SHALL validate Helm charts by running `helm lint`, rendering manifests with `helm template`, and validating rendered YAML with `kubeconform` using `-ignore-missing-schemas`.
-
-#### Scenario: Chart change triggers helm job
-
-- **WHEN** a pull request modifies files under `infra/charts/**`
-- **THEN** CI runs helm lint, helm template, and kubeconform validation for the affected charts
-
-#### Scenario: Non-chart change skips helm job
-
-- **WHEN** a pull request does not modify files under `infra/charts/**`
-- **THEN** CI skips the Helm validation job
 
 ### Requirement: CI excludes local-only quality gates
 
