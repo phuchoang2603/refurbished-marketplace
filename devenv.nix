@@ -62,8 +62,8 @@ in
     };
   };
 
-  scripts = {
-    generate-proto = {
+  tasks = {
+    "codegen:proto" = {
       exec = ''
         cd "${config.git.root}"
 
@@ -83,42 +83,6 @@ in
             "$file"
         done
       '';
-    };
-
-    tidy = {
-      exec = ''
-        echo "Syncing go.work..."
-        go work sync
-      '';
-    };
-
-    sqlc-gen = {
-      exec = ''
-        echo "Bootstrap sql queries..."
-        for dir in $(find services -maxdepth 2 -name sqlc.yaml -exec dirname {} \;); do
-          (cd "$dir" && sqlc generate)
-        done
-      '';
-    };
-
-    generate-templ = {
-      exec = ''
-        cd "${config.git.root}/services/web"
-        templ generate
-      '';
-    };
-
-    generate-tailwind = {
-      exec = ''
-        cd "${config.git.root}/services/web"
-        tailwindcss -c tailwind.config.js -i tailwind.css -o static/app.css
-      '';
-    };
-  };
-
-  tasks = {
-    "codegen:proto" = {
-      exec = "generate-proto";
       before = [ "devenv:enterShell" ];
 
       execIfModified = [
@@ -128,7 +92,13 @@ in
     };
 
     "codegen:sqlc" = {
-      exec = "sqlc-gen";
+      exec = ''
+        cd "${config.git.root}"
+        echo "Bootstrap sql queries..."
+        for dir in $(find services -maxdepth 2 -name sqlc.yaml -exec dirname {} \;); do
+          (cd "$dir" && sqlc generate)
+        done
+      '';
       before = [ "devenv:enterShell" ];
 
       execIfModified = [
@@ -138,7 +108,11 @@ in
     };
 
     "go:tidy" = {
-      exec = "tidy";
+      exec = ''
+        cd "${config.git.root}"
+        echo "Syncing go.work..."
+        go work sync
+      '';
       before = [ "devenv:enterShell" ];
 
       execIfModified = [
@@ -150,7 +124,10 @@ in
     };
 
     "codegen:templ" = {
-      exec = "generate-templ";
+      exec = ''
+        cd "${config.git.root}/services/web"
+        templ generate
+      '';
       before = [ "devenv:enterShell" ];
 
       execIfModified = [
@@ -159,7 +136,10 @@ in
     };
 
     "codegen:tailwind" = {
-      exec = "generate-tailwind";
+      exec = ''
+        cd "${config.git.root}/services/web"
+        tailwindcss -c tailwind.config.js -i tailwind.css -o static/app.css
+      '';
       before = [ "devenv:enterShell" ];
 
       execIfModified = [

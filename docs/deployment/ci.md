@@ -41,4 +41,4 @@ See [gitops.md](gitops.md).
 | `shared/testutil/mongo/**`       | products                                                       |
 | `shared/testutil/redis/**`       | cart                                                           |
 
-Local formatting and codegen drift checks (`treefmt`, `generate-proto`, `sqlc-gen`) stay out of CI.
+Local formatting and codegen drift checks (`treefmt`, `codegen:proto`, `codegen:sqlc`) stay out of CI.

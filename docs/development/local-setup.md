@@ -36,7 +36,7 @@ Children follow the root’s git revision (`spec.source.targetRevision` in `infr
 devenv shell
 ```
 
-Go, protobuf, `kubectl`, `helm`, Doppler, OpenSpec. On enter, devenv regenerates proto/sqlc/templ/Tailwind when those inputs change (`codegen:templ`, `codegen:tailwind`). Commit the generated files; CI builds the `web` image from them.
+Go, protobuf, `kubectl`, `helm`, Doppler, OpenSpec. On enter, devenv runs tasks to regenerate proto/sqlc/templ/Tailwind and sync modules when inputs change (`codegen:proto`, `codegen:sqlc`, `codegen:templ`, `codegen:tailwind`, `go:tidy`). Run any task directly with `devenv tasks run <task>`. Commit the generated files; CI builds the `web` image from them.
 
 ## Browser
 

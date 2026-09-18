@@ -1,18 +1,18 @@
 # Code generation
 
-Run these from inside `devenv shell`:
+Tasks run automatically on `devenv shell` entry when their inputs change (`execIfModified`), or can be run manually via `devenv tasks run <task>`:
 
-| Command             | Purpose                                                                            |
-| ------------------- | ---------------------------------------------------------------------------------- |
-| `generate-proto`    | Regenerate Go code from `**/proto/*/v1/*.proto`                                    |
-| `sqlc-gen`          | Regenerates sqlc query code for services with `sqlc.yaml`                          |
-| `tidy`              | `go work sync` — keeps workspace module dependencies aligned                       |
-| `generate-templ`    | `templ generate` in `services/web` (also `codegen:templ` on devenv enter)          |
-| `generate-tailwind` | Tailwind → `services/web/static/app.css` (also `codegen:tailwind` on devenv enter) |
+| Task / Command                      | Purpose                                                     |
+| ----------------------------------- | ----------------------------------------------------------- |
+| `devenv tasks run codegen:proto`    | Regenerate Go code from `**/proto/*/v1/*.proto`             |
+| `devenv tasks run codegen:sqlc`     | Regenerate sqlc query code for services with `sqlc.yaml`    |
+| `devenv tasks run go:tidy`          | `go work sync` — keep workspace module dependencies aligned |
+| `devenv tasks run codegen:templ`    | `templ generate` in `services/web`                          |
+| `devenv tasks run codegen:tailwind` | Tailwind → `services/web/static/app.css`                    |
 
 Commit `*_templ.go` and `static/app.css`. CI builds the `web` image from those files. For a live watch while editing, run `templ generate --watch` / `tailwindcss … --watch=always` in `services/web`.
 
-Edit SQL migrations under `services/<service>/db/migrations/` and queries under `services/<service>/db/queries/`, then run `sqlc-gen` when query shapes change. Products uses Mongo (`services/products/internal/catalog`); it has no `sqlc.yaml`. Search has no SQL store.
+Edit SQL migrations under `services/<service>/db/migrations/` and queries under `services/<service>/db/queries/`, then run `devenv tasks run codegen:sqlc` when query shapes change. Products uses Mongo (`services/products/internal/catalog`); it has no `sqlc.yaml`. Search has no SQL store.
 
 ## Formatting
 
@@ -40,7 +40,7 @@ Shared library layout:
 | `shared/err/grpcerr`    | gRPC status mapping                             |
 | `shared/testutil/*`     | Testcontainers helpers                          |
 
-Run `tidy` (alias for `go work sync`) after changing `go.mod` files. `go get` and `go mod tidy` inside a module directory work because each `go.mod` has `replace` directives for local shared modules.
+Run `devenv tasks run go:tidy` (or `go work sync`) after changing `go.mod` files. `go get` and `go mod tidy` inside a module directory work because each `go.mod` has `replace` directives for local shared modules.
 
 Build from the repo root:
 
