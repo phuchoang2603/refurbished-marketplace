@@ -6,6 +6,10 @@ kafka:
   storage:
     size: 10Gi
 
+# Keeps CDC off the Proxmox control-plane nodes; holds one AWS burst worker up while Connect runs.
+connect:
+  burst: required
+
 entities:
   orders:
     topics:

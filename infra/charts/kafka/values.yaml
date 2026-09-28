@@ -18,9 +18,10 @@ kafka:
   jvmOptions:
     "-Xms": 512m
     "-Xmx": 512m
+  # Brokers use ~150-200m steady (550m+ at startup); a nominal request hid that load from the scheduler.
   resources:
     requests:
-      cpu: 100m
+      cpu: 250m
       memory: 768Mi
     limits:
       cpu: "1"
@@ -55,14 +56,18 @@ entityOperator:
 connect:
   clusterName: ecommerce-connect-cluster
   image: connect-debezium
+  # talos-proxmox AWS burst workers: none | eligible | required. Connect is stateless
+  # (offsets, configs, and status live in Kafka topics), so it may run on AWS.
+  burst: none
   jvmOptions:
     "-Xms": 512m
     "-Xmx": 512m
   # spec.tracing (Strimzi OTEL java agent) adds ~200Mi of non-heap overhead
   # (agent + metaspace + direct buffers); 512Mi limit caused repeated OOMKills.
+  # CPU request covers plugin scanning at startup (~430m observed) without starving neighbours.
   resources:
     requests:
-      cpu: 100m
+      cpu: 250m
       memory: 768Mi
     limits:
       memory: 1Gi
