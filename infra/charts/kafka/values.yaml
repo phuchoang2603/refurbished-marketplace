@@ -56,9 +56,6 @@ entityOperator:
 connect:
   clusterName: ecommerce-connect-cluster
   image: connect-debezium
-  # talos-proxmox AWS burst workers: none | eligible | required. Connect is stateless
-  # (offsets, configs, and status live in Kafka topics), so it may run on AWS.
-  burst: none
   jvmOptions:
     "-Xms": 512m
     "-Xmx": 512m

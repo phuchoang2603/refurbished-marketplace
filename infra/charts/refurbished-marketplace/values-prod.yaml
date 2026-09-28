@@ -1,8 +1,5 @@
 # Prod overlay (Argo `prod-root` valueFiles). Doppler env is the cluster
 # `ecommerce/doppler-token` Secret, not this file.
-burst:
-  mode: eligible
-
 ingress:
   webHostname: shop.phuchoang.sbs
   simulatorHostname: pay.phuchoang.sbs

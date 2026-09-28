@@ -85,17 +85,6 @@ kubectl get crd | grep -E 'cnpg|strimzi|mongodb|external-secrets|victoriametrics
 
 A child stuck retrying shows its last sync error in the environment's Argo CD UI. A missing or invalid token shows up on `<env>-secret-store` first.
 
-## AWS burst placement
-
-The `refurbished-marketplace` chart (`burst.mode`, per-service `burst`) and the `kafka` chart (`connect.burst`) accept `none`, `eligible`, or `required` for the talos-proxmox [AWS burst workers](https://github.com/phuchoang2603/talos-proxmox/blob/main/docs/architecture/hybrid-aws-workers.md). `eligible` tolerates the burst taint but prefers Proxmox, so pods reach AWS only when their requests no longer fit on-prem; `required` pins them to AWS. Only stateless workloads may use it: CNPG, MongoDB, Meilisearch, Kafka brokers, and migration Jobs stay on Proxmox.
-
-| Workload                        | Dev    | Prod       |
-| ------------------------------- | ------ | ---------- |
-| Marketplace service Deployments | `none` | `eligible` |
-| Kafka Connect                   | `none` | `required` |
-
-Prod Kafka Connect keeps one AWS worker running. Burst scale-up is driven by Pending pods, so CPU requests must reflect real usage for spill-over to trigger.
-
 ## Repository layout
 
 ```text
