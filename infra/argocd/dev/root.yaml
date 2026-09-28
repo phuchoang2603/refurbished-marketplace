@@ -1,6 +1,5 @@
-# Apply on the management cluster (with Argo CD). Workloads land on the registered `dev` cluster.
-# Apply ../talos-proxmox/apps/argocd/roots/dev.yaml and verify platform readiness first.
-# Secrets on talos-dev: kubectl --kubeconfig=$HOME/.kube/talos-dev.yaml apply -f infra/k8s/doppler-token.dev.secret.yaml
+# Apply to dev's own Argo CD after talos-proxmox platform bring-up, using the kubeconfig from
+# Doppler talos-proxmox/dev. Apply infra/k8s/doppler-token.dev.secret.yaml and infra/argocd/project.yaml first.
 # Images: GHCR :<git-sha> ($ARGOCD_APP_REVISION).
 # Git pointer is spec.source.targetRevision in this file. Required SHA-tagged images must exist before sync.
 apiVersion: argoproj.io/v1alpha1
@@ -19,7 +18,6 @@ spec:
     helm:
       values: |
         namePrefix: dev
-        destinationName: dev
         global:
           imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
           imagePullPolicy: Always
@@ -31,7 +29,6 @@ spec:
         - name: global.imageTag
           value: $ARGOCD_APP_REVISION
   destination:
-    # Application CRs stay on the management cluster (where Argo CD runs).
     server: https://kubernetes.default.svc
     namespace: argo-cd
   syncPolicy:

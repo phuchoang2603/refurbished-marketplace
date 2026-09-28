@@ -1,15 +1,20 @@
-# Marketplace Application catalog. talos-proxmox platform roots must install shared operators,
-# CRDs, storage, and observability before this root syncs. The marketplace root creates
-# the ecommerce SecretStore after the bootstrap token Secret is present.
+# Marketplace Application catalog, rendered by the root on each environment's own Argo CD.
+# Children target the local cluster and consume talos-proxmox platform operators and CRDs;
+# retries absorb platform components that are still converging.
 # Env lives in:
-# - dest cluster: ecommerce/doppler-token (Doppler dev vs prd)
-# - infra/argocd/{dev,prod}/root.yaml: namePrefix, destinationName, git revision, imageTag
+# - local cluster: ecommerce/doppler-token (Doppler dev vs prd)
+# - infra/argocd/{dev,prod}/root.yaml: namePrefix, git revision, imageTag
 # Chart values.yaml is the Talos-dev shape. Do not add Doppler config names here.
-# Argo CD runs on the management cluster; destinationName is the registered Argo cluster (dev / prod).
 repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
 targetRevision: main
 namePrefix: dev
-destinationName: dev
+
+syncRetry:
+  limit: -1
+  backoff:
+    duration: 10s
+    factor: 2
+    maxDuration: 5m
 
 global:
   imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace

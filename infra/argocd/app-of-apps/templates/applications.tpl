@@ -32,15 +32,18 @@ spec:
           imagePullPolicy: {{ $.Values.global.imagePullPolicy | default "IfNotPresent" | quote }}
 {{- end }}
   destination:
-    name: {{ $.Values.destinationName | quote }}
+    server: https://kubernetes.default.svc
     namespace: {{ $app.namespace }}
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+    retry:
+{{- toYaml $.Values.syncRetry | nindent 6 }}
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true
 {{- end }}
 {{- end }}
 {{- if .Values.marketplace.enabled }}
@@ -75,14 +78,17 @@ spec:
           imagePullPolicy: {{ .Values.global.imagePullPolicy | default "IfNotPresent" | quote }}
 {{- end }}
   destination:
-    name: {{ .Values.destinationName | quote }}
+    server: https://kubernetes.default.svc
     namespace: ecommerce
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
+    retry:
+{{- toYaml .Values.syncRetry | nindent 6 }}
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+      - SkipDryRunOnMissingResource=true
     # Argo owns the ecommerce namespace (do not template a Namespace in the chart).
 {{- end }}
