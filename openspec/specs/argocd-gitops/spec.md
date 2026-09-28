@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define marketplace GitOps delivery through Argo CD roots on the management cluster, consuming shared platform operators and observability from `talos-proxmox` while deploying application resources to registered `dev` and `prod` clusters.
+Define marketplace GitOps delivery through Argo CD roots on each environment's own Argo CD, consuming shared platform operators and observability from `talos-proxmox` while deploying application resources to the local `dev` or `prod` cluster.
 
 ## Requirements
 
