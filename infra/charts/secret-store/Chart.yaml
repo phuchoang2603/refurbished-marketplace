@@ -1,0 +1,5 @@
+apiVersion: v2
+name: secret-store
+description: Marketplace Doppler SecretStore shared by every ecommerce ExternalSecret
+type: application
+version: 0.1.0

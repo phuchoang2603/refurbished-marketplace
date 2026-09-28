@@ -26,6 +26,11 @@ marketplace:
   valueFiles: []
 
 apps:
+  secret-store:
+    syncWave: "1"
+    path: infra/charts/secret-store
+    releaseName: ecommerce-secret-store
+    namespace: ecommerce
   mongodb:
     syncWave: "2"
     path: infra/charts/mongodb

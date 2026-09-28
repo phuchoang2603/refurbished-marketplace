@@ -1,0 +1,4 @@
+# Bootstrap token applied by hand per environment; it selects the Doppler config (dev / prd).
+tokenSecret:
+  name: doppler-token
+  key: dopplerToken
