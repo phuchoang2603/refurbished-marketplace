@@ -5,18 +5,21 @@ Thanks for helping build this project. Guides live under [docs/](docs/), includi
 ## Prerequisites
 
 - [Nix](https://nixos.org/) with [devenv](https://devenv.sh/)
-- Talos kubeconfig
-- [Doppler](https://www.doppler.com/) for cluster secrets
+- A Talos environment brought up by `talos-proxmox` (each environment runs its own Argo CD)
+- [Doppler](https://www.doppler.com/) access to `talos-proxmox` (kubeconfig) and `refurbished-marketplace` (app secrets)
 - Cloudflare tunnel for shop/pay hostnames
 
 ## Quick start
 
 ```bash
 devenv shell
+doppler secrets get KUBECONFIG --plain --project talos-proxmox --config dev \
+  > "$HOME/.kube/talos-dev.yaml"
 export KUBECONFIG="$HOME/.kube/talos-dev.yaml"
+kubectl create namespace ecommerce --dry-run=client -o yaml | kubectl apply -f -
 kubectl apply -f infra/k8s/doppler-token.dev.secret.yaml
-export KUBECONFIG="$HOME/.kube/talos-argocd.yaml"
-kubectl apply -f infra/argocd/dev/root.yaml
+kubectl apply --server-side -f infra/argocd/project.yaml
+kubectl apply --server-side -f infra/argocd/dev/root.yaml
 # https://shop-dev.phuchoang.sbs
 ```
 

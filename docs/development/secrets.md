@@ -1,11 +1,13 @@
 # Secrets (Doppler + ESO)
 
-Application secret values are **not** committed to Git. The platform-owned External Secrets Operator syncs this repository's `ExternalSecret` resources through the marketplace-owned namespaced `SecretStore/doppler` in `ecommerce`. The bootstrap token Secret is also created in `ecommerce`. The platform owns cloudflared and its directly provisioned tunnel token.
+Application secret values are **not** committed to Git. The platform-owned External Secrets Operator syncs this repository's `ExternalSecret` resources through the marketplace-owned namespaced `SecretStore/doppler` in `ecommerce`. The bootstrap token Secret is also created in `ecommerce`.
+
+Marketplace resources do not use the platform `ClusterSecretStore/doppler`. That store reads the `talos-proxmox` Doppler project and delivers platform credentials such as the Cloudflare Tunnel token to cloudflared.
 
 ## Doppler project
 
 1. Create a Doppler project named `refurbished-marketplace`.
-2. Use Doppler config `dev` on talos-dev and `prd` on prod. The service token Secret on that cluster selects the config; Argo does not set it. Apply tokens with the **workload** kubeconfig, not the management cluster kubeconfig.
+2. Use Doppler config `dev` on talos-dev and `prd` on prod. The service token Secret on that cluster selects the config; Argo does not set it.
 
 ## Application secrets
 
@@ -23,17 +25,24 @@ Application secret values are **not** committed to Git. The platform-owned Exter
 
 `meilisearch-master-key` is mounted on Meilisearch and the search service. The Doppler value must be at least 16 bytes. Plaintext Meilisearch keys are not committed.
 
-`CLOUDFLARE_TUNNEL_TOKEN` is the Zero Trust tunnel whose Public Hostnames point at `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`.
+`CLOUDFLARE_TUNNEL_TOKEN` lives in the `talos-proxmox` Doppler project, not here. Its tunnel's Public Hostnames point at `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`.
 
 ## Bootstrap service token
 
-The marketplace `SecretStore/doppler` reads `ecommerce/doppler-token` key `dopplerToken`. Copy the tracked `.example` manifest for the target environment, replace only `REPLACE_ME` in the untracked copy, and apply it with that workload cluster's kubeconfig.
+The marketplace `SecretStore/doppler` reads `ecommerce/doppler-token` key `dopplerToken`. Copy the tracked `.example` manifest for the target environment and replace only `REPLACE_ME` in the untracked copy.
+
+Apply it with the environment kubeconfig from the `talos-proxmox` Doppler project (the same kubeconfig used for the Argo CD project and root). Create `ecommerce` first; the root's `CreateNamespace` would otherwise create it only after the token is needed.
 
 ```bash
-# talos-dev workloads
-kubectl --kubeconfig="$HOME/.kube/talos-dev.yaml" apply -f infra/k8s/doppler-token.dev.secret.yaml
-# prod workloads
-kubectl --kubeconfig="$HOME/.kube/talos-prod.yaml" apply -f infra/k8s/doppler-token.prd.secret.yaml
+export CLUSTER_ENV=dev  # use prod for production
+umask 077
+doppler secrets get KUBECONFIG --plain \
+  --project talos-proxmox --config "$CLUSTER_ENV" \
+  > "$HOME/.kube/talos-${CLUSTER_ENV}.yaml"
+export KUBECONFIG="$HOME/.kube/talos-${CLUSTER_ENV}.yaml"
+
+kubectl create namespace ecommerce --dry-run=client -o yaml | kubectl apply -f -
+kubectl apply -f infra/k8s/doppler-token.dev.secret.yaml   # prod: doppler-token.prd.secret.yaml
 ```
 
 Do not commit tokens. Do not set Doppler `dev`/`prd` in Helm or Argo values.
@@ -45,4 +54,4 @@ kubectl get secret mongodb-catalog-app -n ecommerce
 kubectl get secret meilisearch-master-key -n ecommerce
 ```
 
-Do not apply marketplace roots until `kubectl get secretstore doppler -n ecommerce` reports `Ready=True`.
+The marketplace charts render `SecretStore/doppler`, so it appears after the root syncs. If it does not report `Ready=True`, check the `ecommerce/doppler-token` Secret and its Doppler config.

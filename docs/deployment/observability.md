@@ -17,16 +17,16 @@ Hubble and Gateway proxy spans are outside the application RED/tracing path. Met
 
 ## Platform prerequisites
 
-Before the marketplace root syncs, verify the matching `platform-dev` or `platform-prod` Application and the telemetry services:
+The environment's `observability` platform Application provides the telemetry services. Marketplace children retry until its CRDs exist; to check the stack directly:
 
 ```bash
-kubectl --kubeconfig="$HOME/.kube/talos-argocd.yaml" get applications -n argo-cd
+kubectl --kubeconfig="$HOME/.kube/talos-dev.yaml" get applications -n argo-cd
 kubectl --kubeconfig="$HOME/.kube/talos-dev.yaml" get pods,svc -n monitoring
 kubectl --kubeconfig="$HOME/.kube/talos-dev.yaml" get \
   vmsingle,vlagent,vlsingle,vtsingle,vmagent -n monitoring
 ```
 
-Platform installation, retention, storage, datasource, ingress, and credential details live in the [`talos-proxmox` application guide](https://github.com/phuchoang2603/talos-proxmox/blob/main/apps/README.md).
+Fetch kubeconfigs as described in [gitops.md](gitops.md#fresh-installation). Platform installation, retention, storage, datasource, ingress, and credential details live in `talos-proxmox`'s [observability component](https://github.com/phuchoang2603/talos-proxmox/tree/main/apps/components/observability) and [GitOps architecture](https://github.com/phuchoang2603/talos-proxmox/blob/main/docs/architecture/gitops.md) guide.
 
 ## Grafana access
 

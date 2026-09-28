@@ -1,12 +1,12 @@
 # Cilium, Gateway API, and ingress
 
-Cilium is cluster bootstrap from **talos-proxmox**, not an Argo Application in this repo. Empty-cluster CNI still needs that Helm install; this repo must not duplicate `apps/values/cilium.yaml` (a second copy would drift and can wipe mesh flags on `helm upgrade`).
+Cilium is installed by the **talos-proxmox** platform OpenTofu root before Argo CD, not by an Argo Application in this repo. This repo must not duplicate `apps/components/cilium` values (a second copy would drift and can wipe mesh flags on `helm upgrade`).
 
-Already on the cluster (Cilium Helm from talos-proxmox):
+Already on the cluster (from talos-proxmox):
 
-- CNI, kube-proxy replacement, L2 announcements, Gateway API
+- CNI, kube-proxy replacement, L2 announcements, Gateway API CRDs
 - WireGuard encryption, Envoy L7 proxy, cluster name/id as set in that repo
-- L2 IP pool + platform Gateways in `cilium-ingress` (Longhorn, Argo CD; Hubble UI is not required and may be absent)
+- L2 IP pools (`cilium-network` Application) and platform Gateways such as the Argo CD UI in `argo-cd`; Hubble UI is not required and may be absent
 
 This repo only consumes that dataplane: marketplace and Grafana `Gateway`/`HTTPRoute` (`gatewayClassName: cilium`) and Cloudflare origin DNS. Do not add WireGuard/Envoy/ClusterMesh values here.
 
@@ -89,7 +89,7 @@ Then sync the marketplace Application. Cloudflare hostnames stay put.
 
 ## GitOps
 
-`dev-root` / `prod-root` (`infra/argocd/dev/root.yaml`, `infra/argocd/prod/root.yaml`) render [`infra/argocd/app-of-apps`](../../infra/argocd/app-of-apps/). Marketplace enrollment has no Istio labels. Kafka stays in namespace `kafka`.
+`dev-root` / `prod-root` (`infra/argocd/dev/root.yaml`, `infra/argocd/prod/root.yaml`) run on each environment's own Argo CD and render [`infra/argocd/app-of-apps`](../../infra/argocd/app-of-apps/). Marketplace enrollment has no Istio labels. Kafka stays in namespace `kafka`.
 
 ## Edge
 
@@ -111,7 +111,7 @@ Cloudflare Zero Trust Public Hostnames (not in Git):
 - `shop.phuchoang.sbs` / `pay.phuchoang.sbs` (prod) → same origin DNS on the prod cluster
 - `grafana.phuchoang.sbs` (prod) → `http://cilium-gateway-grafana.monitoring.svc.cluster.local:80`
 
-TLS terminates at Cloudflare. No marketplace TLS Secret on the Gateway. Do not reuse the `cilium-ingress` Longhorn/Argo Gateways for shop/pay.
+TLS terminates at Cloudflare. No marketplace TLS Secret on the Gateway. Do not reuse the platform Argo CD or Longhorn Gateways for shop/pay.
 
 ```bash
 kubectl get gateway,httproute -n ecommerce

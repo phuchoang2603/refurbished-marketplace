@@ -5,29 +5,25 @@ Runtime layout is in [architecture.md](../architecture.md). This page is how to 
 ## Prerequisites
 
 - [Nix](https://nixos.org/) with [devenv](https://devenv.sh/) for pinned tooling
-- Talos kubeconfigs: `~/.kube/talos-argocd.yaml` (management cluster / Argo CD), `~/.kube/talos-dev.yaml` (workloads / Doppler)
-- [Doppler](https://doppler.com/) — see [secrets.md](secrets.md)
+- A talos-dev cluster brought up by `talos-proxmox` (its platform root installs dev's own Argo CD)
+- [Doppler](https://doppler.com/) access to projects `talos-proxmox` (kubeconfig) and `refurbished-marketplace` (app secrets) — see [secrets.md](secrets.md)
 - Cloudflare Zero Trust tunnel for `shop-dev.phuchoang.sbs` / `pay-dev.phuchoang.sbs`
 
-Argo CD runs on the **management** cluster (talos-proxmox). Workloads sync to the registered Argo cluster named `dev`. Apply the `platform-dev` root first, bootstrap Doppler **dev** on talos-dev, verify the platform prerequisites, then apply the marketplace **dev** root:
+Argo CD runs inside talos-dev and deploys only to that cluster. Fetch its kubeconfig from Doppler, apply the Doppler **dev** token, then the marketplace project and **dev** root. Children retry until the platform operators and CRDs are available, so no readiness wait is needed:
 
 ```bash
+umask 077
+doppler secrets get KUBECONFIG --plain --project talos-proxmox --config dev \
+  > "$HOME/.kube/talos-dev.yaml"
 export KUBECONFIG="$HOME/.kube/talos-dev.yaml"
-kubectl create namespace operators --dry-run=client -o yaml | kubectl apply -f -
+
+kubectl create namespace ecommerce --dry-run=client -o yaml | kubectl apply -f -
 kubectl apply -f infra/k8s/doppler-token.dev.secret.yaml
-
-export KUBECONFIG="$HOME/.kube/talos-argocd.yaml"
-kubectl apply --server-side -f ../talos-proxmox/apps/argocd/roots/dev.yaml
-
-export KUBECONFIG="$HOME/.kube/talos-dev.yaml"
-kubectl wait --for=condition=Ready secretstore/doppler -n ecommerce --timeout=2m
-
-export KUBECONFIG="$HOME/.kube/talos-argocd.yaml"
 kubectl apply --server-side -f infra/argocd/project.yaml
-kubectl apply -f infra/argocd/dev/root.yaml
+kubectl apply --server-side -f infra/argocd/dev/root.yaml
 ```
 
-`prod-root` is the same pattern with the prod kubeconfig for Doppler and `infra/argocd/prod/root.yaml` on the management cluster. Do not apply the `prd` Doppler token on talos-dev.
+`prod-root` is the same pattern with `--config prod`, `doppler-token.prd.secret.yaml`, and `infra/argocd/prod/root.yaml`. Do not apply the `prd` Doppler token on talos-dev.
 
 Children follow the root’s git revision (`spec.source.targetRevision` in `infra/argocd/dev/root.yaml`), which is committed as `main`. `global.imageTag` is `$ARGOCD_APP_REVISION`; wait for every required GHCR `:<sha>` image before syncing dev. Prod uses `:main`.
 
@@ -51,7 +47,7 @@ Cloudflare Tunnel → Cilium Gateway (`cilium-gateway-ecommerce-ingress.ecommerc
 Smoke-check:
 
 ```bash
-kubectl --kubeconfig="$HOME/.kube/talos-argocd.yaml" get applications -n argo-cd
+kubectl --kubeconfig="$HOME/.kube/talos-dev.yaml" get applications -n argo-cd
 kubectl --kubeconfig="$HOME/.kube/talos-dev.yaml" get gateway,httproute -n ecommerce
 kubectl --kubeconfig="$HOME/.kube/talos-dev.yaml" get svc -n ecommerce -l gateway.networking.k8s.io/gateway-name=ecommerce-ingress
 kubectl --kubeconfig="$HOME/.kube/talos-dev.yaml" get pods -n ecommerce

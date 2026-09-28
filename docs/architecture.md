@@ -44,10 +44,10 @@ Details: [order-placement.md](order-placement.md).
 
 | Layer    | Where                                                                                                               |
 | -------- | ------------------------------------------------------------------------------------------------------------------- |
-| Clusters | Talos **dev** / **prod** run workloads; Argo CD is on the **management** cluster                                    |
-| GitOps   | `talos-proxmox` platform roots install shared operators; this repo's roots deploy application consumers             |
+| Clusters | Talos **dev** / **prod** run workloads; each runs its own Argo CD in `argo-cd`                                      |
+| GitOps   | `talos-proxmox` `platform` root installs shared operators; this repo's roots deploy application consumers locally   |
 | Images   | GHCR `ghcr.io/phuchoang2603/refurbished-marketplace/<name>:<sha>` (dev) or `:main` (prod)                           |
-| Secrets  | Doppler → External Secrets; token Secret on the workload cluster                                                    |
+| Secrets  | Doppler → External Secrets; `ecommerce/doppler-token` applied per environment                                       |
 | Ingress  | Cloudflare Tunnel → Cilium Gateway API (`gatewayClassName: cilium`)                                                 |
 | Observe  | VictoriaMetrics / VictoriaLogs / VictoriaTraces in `monitoring`; apps scrape `:9100/metrics` and export OTLP traces |
 
