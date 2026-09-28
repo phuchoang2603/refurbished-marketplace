@@ -52,13 +52,14 @@ Cloudflare Public Hostnames remain in Zero Trust. The shop/pay origin is `http:/
 
 | Application               | Marketplace-owned resources                                                                                 | Namespace                               |
 | ------------------------- | ----------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| `secret-store`            | `SecretStore/doppler`, the single owner shared by every marketplace ExternalSecret                          | `ecommerce`                             |
 | `mongodb`                 | `MongoDBCommunity`, credentials, workload RBAC, Cilium policy                                               | `ecommerce`                             |
 | `meilisearch`             | Meilisearch workload/PVC, credentials, Cilium policy                                                        | `ecommerce`                             |
 | `refurbished-marketplace` | CNPG Clusters, ExternalSecrets, migrations, services, Gateway/HTTPRoutes, VMPodScrape, dashboard ConfigMaps | `ecommerce`, dashboards in `monitoring` |
 | `kafka`                   | Kafka/NodePool, topics, Connect/connectors, secret-reader RBAC, UI                                          | `kafka`, RBAC in `ecommerce`            |
 | `cloudflare-tunnel`       | platform-owned in `talos-proxmox`                                                                           | `cloudflare-tunnel`                     |
 
-The `platform` root owns the operators, CRDs, cloudflared, the `monitoring` namespace, and the complete Victoria stack. The marketplace root owns `SecretStore/doppler` in `ecommerce`. Cilium, Gateway API CRDs, and storage are also owned by `talos-proxmox`.
+The `platform` root owns the operators, CRDs, cloudflared, the `monitoring` namespace, and the complete Victoria stack. The marketplace `secret-store` Application owns `SecretStore/doppler` in `ecommerce`; no other chart renders it. Cilium, Gateway API CRDs, and storage are also owned by `talos-proxmox`.
 
 MongoDB is the products catalog source of truth; Meilisearch is its storefront projection. PostgreSQL schema migrations still initialize new empty databases before their services start.
 
@@ -67,7 +68,7 @@ MongoDB is the products catalog source of truth; Meilisearch is its storefront p
 Marketplace child annotations give this local order:
 
 ```text
-MongoDB + Meilisearch (2) → marketplace (3) → Kafka (4)
+secret-store (1) → MongoDB + Meilisearch (2) → marketplace (3) → Kafka (4)
 ```
 
 Waves order submission of child Applications only; they do not wait for each child to become Healthy and do not order the marketplace root against `platform`. Children converge asynchronously: unlimited retries with backoff (capped at five minutes) and `SkipDryRunOnMissingResource` absorb CRDs, storage, and secret stores that platform Applications have not finished installing. The only manual prerequisite is `ecommerce/doppler-token`.
@@ -82,7 +83,18 @@ kubectl get externalsecrets -n ecommerce
 kubectl get crd | grep -E 'cnpg|strimzi|mongodb|external-secrets|victoriametrics'
 ```
 
-A child stuck retrying shows its last sync error in the environment's Argo CD UI.
+A child stuck retrying shows its last sync error in the environment's Argo CD UI. A missing or invalid token shows up on `<env>-secret-store` first.
+
+## AWS burst placement
+
+The `refurbished-marketplace` chart (`burst.mode`, per-service `burst`) and the `kafka` chart (`connect.burst`) accept `none`, `eligible`, or `required` for the talos-proxmox [AWS burst workers](https://github.com/phuchoang2603/talos-proxmox/blob/main/docs/architecture/hybrid-aws-workers.md). `eligible` tolerates the burst taint but prefers Proxmox, so pods reach AWS only when their requests no longer fit on-prem; `required` pins them to AWS. Only stateless workloads may use it: CNPG, MongoDB, Meilisearch, Kafka brokers, and migration Jobs stay on Proxmox.
+
+| Workload                        | Dev    | Prod       |
+| ------------------------------- | ------ | ---------- |
+| Marketplace service Deployments | `none` | `eligible` |
+| Kafka Connect                   | `none` | `required` |
+
+Prod Kafka Connect keeps one AWS worker running. Burst scale-up is driven by Pending pods, so CPU requests must reflect real usage for spill-over to trigger.
 
 ## Repository layout
 

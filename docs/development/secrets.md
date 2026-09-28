@@ -54,4 +54,4 @@ kubectl get secret mongodb-catalog-app -n ecommerce
 kubectl get secret meilisearch-master-key -n ecommerce
 ```
 
-The marketplace charts render `SecretStore/doppler`, so it appears after the root syncs. If it does not report `Ready=True`, check the `ecommerce/doppler-token` Secret and its Doppler config.
+The `secret-store` child Application (`infra/charts/secret-store`) is the only renderer of `SecretStore/doppler`; it syncs in wave 1, before MongoDB, Meilisearch, marketplace, and Kafka. If `<env>-secret-store` is Degraded or the store does not report `Ready=True`, check the `ecommerce/doppler-token` Secret and its Doppler config.
