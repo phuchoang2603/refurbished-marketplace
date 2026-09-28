@@ -10,6 +10,7 @@
 {{- end }}
 {{- $resources := default $.Values.defaults.resources $svc.resources }}
 {{- $initResources := default $.Values.defaults.initResources $svc.initResources }}
+{{- $burst := default $.Values.burst.mode $svc.burst }}
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -33,6 +34,9 @@ spec:
         marketplace.metrics: "true"
 {{- end }}
     spec:
+{{- with include "refurbished-marketplace.burstScheduling" $burst | trim }}
+{{- . | nindent 6 }}
+{{- end }}
 {{- if or $svc.db $svc.mongo $svc.meili }}
       initContainers:
 {{- if $svc.db }}

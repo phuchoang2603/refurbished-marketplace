@@ -14,6 +14,37 @@
 {{- . | upper | replace "-" "_" -}}
 {{- end -}}
 
+{{- /* talos-proxmox burst worker contract. Only for pods without persistent volumes. */ -}}
+{{- define "refurbished-marketplace.burstScheduling" -}}
+{{- if has . (list "eligible" "required") }}
+tolerations:
+  - key: burst.talos.dev/stateless
+    operator: Equal
+    value: "true"
+    effect: NoSchedule
+affinity:
+  nodeAffinity:
+{{- if eq . "required" }}
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: burst.talos.dev/compute
+              operator: In
+              values: [aws]
+{{- else }}
+    preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        preference:
+          matchExpressions:
+            - key: burst.talos.dev/compute
+              operator: NotIn
+              values: [aws]
+{{- end }}
+{{- else if ne . "none" }}
+{{- fail (printf "burst mode must be none, eligible, or required; got %q" .) }}
+{{- end }}
+{{- end -}}
+
 {{- define "refurbished-marketplace.image" -}}
 {{- $root := index . 0 -}}
 {{- $image := index . 1 -}}

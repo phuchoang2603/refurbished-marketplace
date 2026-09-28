@@ -25,6 +25,11 @@ meshPolicy:
 metricsScrape:
   enabled: true
 
+# talos-proxmox AWS burst workers for service Deployments (override per service with `burst`):
+# none | eligible (prefer Proxmox, spill to AWS when requests do not fit) | required (AWS only).
+burst:
+  mode: none
+
 defaults:
   otel:
     endpoint: vtsingle-vmks.monitoring.svc.cluster.local:4317

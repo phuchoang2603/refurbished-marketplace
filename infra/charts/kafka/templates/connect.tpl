@@ -47,6 +47,10 @@ spec:
     # (splitting the e2e TraceId at the Kafka hop).
     connector.client.config.override.policy: All
   template:
+{{- with include "kafka.burstScheduling" .Values.connect.burst | trim }}
+    pod:
+{{- . | nindent 6 }}
+{{- end }}
     connectContainer:
       env:
         - name: OTEL_SERVICE_NAME
