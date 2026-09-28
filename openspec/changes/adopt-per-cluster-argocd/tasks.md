@@ -25,4 +25,4 @@
 
 - [x] 4.1 Run `rg -n -i 'management cluster|talos-argocd|apps/argocd/roots|platform-dev|platform-prod|destinationName' --glob '!openspec/changes/**'` from the repo root and confirm no matches remain outside archived changes
 - [x] 4.2 Run `openspec validate adopt-per-cluster-argocd --strict` and confirm it passes
-- [ ] 4.3 On dev after talos-proxmox platform bring-up, follow the updated `docs/deployment/gitops.md` fresh-install steps and confirm `kubectl -n argo-cd get applications` shows `dev-root` and its four children Synced/Healthy
+- [x] 4.3 On dev after talos-proxmox platform bring-up, follow the updated `docs/deployment/gitops.md` fresh-install steps and confirm `kubectl -n argo-cd get applications` shows `dev-root` and its four children Synced/Healthy

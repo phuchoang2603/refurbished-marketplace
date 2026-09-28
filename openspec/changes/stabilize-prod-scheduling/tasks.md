@@ -18,4 +18,4 @@
 
 - [x] 4.1 Update `docs/deployment/gitops.md` and `docs/development/secrets.md` for the `secret-store` Application and prod burst placement; verify `rg -n 'secret-store' docs/` shows both
 - [x] 4.2 Run `openspec validate stabilize-prod-scheduling --strict` and confirm it passes
-- [ ] 4.3 After merge, confirm `prod-kafka` Connect runs on an `burst.talos.dev/compute=aws` node and no `SharedResourceWarning` remains on either environment
+- [x] 4.3 After merge, confirm `prod-kafka` Connect runs on an `burst.talos.dev/compute=aws` node and no `SharedResourceWarning` remains on either environment
