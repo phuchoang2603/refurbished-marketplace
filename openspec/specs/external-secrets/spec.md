@@ -8,7 +8,7 @@ Define how External Secrets Operator and Doppler sync application credentials in
 
 ### Requirement: Doppler SecretStore with service token
 
-Application ExternalSecrets SHALL reference the marketplace-owned namespaced SecretStore named doppler in ecommerce. It SHALL authenticate using ecommerce/doppler-token, key dopplerToken. This repository SHALL render the SecretStore but SHALL NOT contain a real token value. Cloudflare Tunnel does not use ESO; talos-proxmox provisions its token directly during bootstrap.
+Application ExternalSecrets SHALL reference the marketplace-owned namespaced SecretStore named doppler in ecommerce. It SHALL authenticate using ecommerce/doppler-token, key dopplerToken. This repository SHALL render the SecretStore but SHALL NOT contain a real token value. Marketplace ExternalSecrets SHALL NOT reference the platform `ClusterSecretStore/doppler`, which serves talos-proxmox secrets such as the Cloudflare Tunnel token.
 
 #### Scenario: Store references bootstrap secret
 
@@ -19,6 +19,11 @@ Application ExternalSecrets SHALL reference the marketplace-owned namespaced Sec
 
 - **WHEN** the repository is cloned
 - **THEN** no Doppler token value is present in tracked files
+
+#### Scenario: Marketplace does not use the platform store
+
+- **WHEN** marketplace charts are rendered
+- **THEN** every ExternalSecret references `SecretStore/doppler` in its own namespace and none references a `ClusterSecretStore`
 
 ### Requirement: ExternalSecrets sync chart secrets
 
@@ -74,7 +79,7 @@ The repository SHALL provide Doppler CLI via devenv and set `DOPPLER_PROJECT` an
 #### Scenario: Bootstrap applies Doppler secret
 
 - **WHEN** `infra/k8s/doppler-token.dev.secret.yaml` is applied on talos-dev
-- **THEN** Kubernetes Secret `doppler-token` exists in `operators` with key `dopplerToken`
+- **THEN** Kubernetes Secret `doppler-token` exists in `ecommerce` with key `dopplerToken`
 
 ### Requirement: Provider swap via SecretStore
 
@@ -87,12 +92,12 @@ Secret provisioning SHALL remain provider-agnostic at the service deployment lay
 
 ### Requirement: Doppler environment configs
 
-Doppler MAY use separate configs for non-production vs production secrets. Bootstrap of `ecommerce/doppler-token` SHALL use kubectl (or equivalent) on the destination cluster.
+Doppler MAY use separate configs for non-production vs production secrets. Bootstrap of `ecommerce/doppler-token` SHALL use kubectl (or equivalent) with the target environment's kubeconfig, fetched from the `talos-proxmox` Doppler project config for that environment.
 
 #### Scenario: Bootstrap with kubectl
 
-- **WHEN** a contributor bootstraps secrets
-- **THEN** they create `ecommerce/doppler-token` with kubectl on the workload cluster
+- **WHEN** a contributor bootstraps secrets for dev or prod
+- **THEN** they fetch that environment's `KUBECONFIG` from Doppler project `talos-proxmox` and create `ecommerce/doppler-token` with kubectl against that cluster
 
 ### Requirement: Mongo credentials from Doppler
 
@@ -162,3 +167,17 @@ Secrets documentation SHALL list the Doppler remote key and Kubernetes Secret na
 
 - **WHEN** an operator prepares Doppler configs `dev` and `prd`
 - **THEN** documentation names the Meilisearch Doppler key to set before the search Application can become Ready
+
+### Requirement: Single SecretStore owner
+
+`SecretStore/doppler` in `ecommerce` SHALL be rendered by exactly one chart, deployed as its own `secret-store` child Application with a sync wave earlier than every Application that renders ExternalSecrets. No other marketplace chart SHALL render a SecretStore.
+
+#### Scenario: One Application tracks the store
+
+- **WHEN** the dev or prod root has synced
+- **THEN** `SecretStore/doppler` is tracked only by the `<env>-secret-store` Application and no `SharedResourceWarning` is reported for it
+
+#### Scenario: Store failure is isolated
+
+- **WHEN** `ecommerce/doppler-token` is missing or invalid
+- **THEN** the `secret-store` Application reports the unhealthy store, and consumer charts do not render or own the store themselves

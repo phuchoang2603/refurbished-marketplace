@@ -20,9 +20,9 @@ The marketplace Application SHALL render Cilium edge Gateway API resources when 
 - **WHEN** prod-root applies `values-prod.yaml`
 - **THEN** production marketplace workloads expose a Cilium ingress Gateway for `shop` / `pay`
 
-### Requirement: Argo on management cluster destines Talos workload clusters
+### Requirement: Per-environment Argo CD deploys marketplace locally
 
-Root Applications on the management cluster SHALL enable the marketplace chart via Argo CD. Children SHALL destine registered clusters `dev` or `prod`. Child Applications SHALL inherit `targetRevision` from the root so branch tracking moves git and (with matching GHCR tags) images together. Committed dev and prod roots SHALL default to `main`; dev SHALL retain SHA-based images and prod SHALL retain the rolling `main` image tag.
+Each environment's own Argo CD (namespace `argo-cd`, installed by the talos-proxmox platform root) SHALL host that environment's marketplace root Application and enable the marketplace chart. Children SHALL destine the local cluster through `https://kubernetes.default.svc`. The repository SHALL NOT depend on a management cluster or on Argo CD cluster registrations. Child Applications SHALL inherit `targetRevision` from the root so branch tracking moves git and (with matching GHCR tags) images together. Committed dev and prod roots SHALL default to `main`; dev SHALL retain SHA-based images and prod SHALL retain the rolling `main` image tag.
 
 #### Scenario: Marketplace is an Argo Application
 
@@ -34,6 +34,11 @@ Root Applications on the management cluster SHALL enable the marketplace chart v
 - **WHEN** the root Application `targetRevision` is a branch or `main`
 - **THEN** child Applications use that same git revision
 
+#### Scenario: Root runs in the target environment
+
+- **WHEN** an operator installs `dev-root` or `prod-root`
+- **THEN** the root Application is created in `argo-cd` on that same environment's cluster, and no other cluster's Argo CD is involved
+
 ### Requirement: Marketplace release owns databases
 
 CNPG Clusters for marketplace services that still use Postgres SHALL be resources of the Argo-managed marketplace Helm release. The marketplace release SHALL NOT deploy a `products-db` Cluster after catalog cutover. The repository SHALL NOT apply remaining databases out-of-band to protect them from `tilt down`.
@@ -42,30 +47,6 @@ CNPG Clusters for marketplace services that still use Postgres SHALL be resource
 
 - **WHEN** the marketplace Application syncs
 - **THEN** CNPG Cluster objects for remaining Postgres services are applied from the chart templates and no products Cluster is rendered
-
-### Requirement: App-of-apps per environment
-
-The repository SHALL provide a shared Argo CD app-of-apps Helm chart under `infra/argocd/app-of-apps/` plus thin `dev-root` and `prod-root` Applications on management cluster that enable marketplace and set `global.imageRegistry` / `global.imageTag` and `destinationName`. Child Applications SHALL inherit `targetRevision` from the root via `$ARGOCD_APP_SOURCE_TARGET_REVISION`.
-
-#### Scenario: Talos root application
-
-- **WHEN** the Talos cluster root Application syncs from Git
-- **THEN** child Applications exist for `refurbished-marketplace`, MongoDB, Meilisearch, and Kafka, with no operator, Cloudflare Tunnel, or platform observability Application
-
-#### Scenario: Talos inherits root revision
-
-- **WHEN** a root Application renders the app-of-apps chart with `targetRevision` parameterized from `$ARGOCD_APP_SOURCE_TARGET_REVISION`
-- **THEN** each child Application uses the same Git revision as that root
-
-#### Scenario: Talos shares global image settings
-
-- **WHEN** the Talos root sets `global.imageRegistry` and `global.imageTag`
-- **THEN** child Applications that inject global images (for example kafka and marketplace) render those values into their Helm `values`
-
-#### Scenario: Children destine the registered cluster
-
-- **WHEN** a root Application sets `destinationName` to `dev` or `prod`
-- **THEN** child Applications destine that Argo CD cluster name (not in-cluster on management cluster)
 
 ### Requirement: Chart image registry and tag resolution
 
@@ -106,26 +87,31 @@ The repository SHALL deploy `payment-gateway-simulator` from the `refurbished-ma
 
 ### Requirement: Loose sync ordering
 
-Child Applications SHALL retain local ordering hints for data stores, marketplace, and Kafka. Deployment guidance SHALL distinguish these hints from readiness guarantees and SHALL require platform readiness before marketplace sync; waves SHALL NOT be described as ordering independent platform and marketplace roots.
+Child Applications SHALL retain local ordering hints for data stores, marketplace, and Kafka. Waves SHALL NOT be described as ordering the platform root against the marketplace root. Deployment guidance SHALL NOT require a manual platform-readiness check before the marketplace root is applied; convergence against platform operators, CRDs, storage, and telemetry SHALL rely on child sync retries. The `ecommerce/doppler-token` Secret SHALL remain a manual prerequisite for application secrets.
 
 #### Scenario: Operator wave before apps
 
-- **WHEN** a fresh environment is prepared
-- **THEN** the platform root is applied and its operators, CRDs, storage, secret store, and telemetry services are verified before the marketplace root is applied
+- **WHEN** the talos-proxmox platform root has installed Argo CD and the marketplace root is applied while platform child Applications are still converging
+- **THEN** marketplace child Applications keep retrying and reach Synced once the platform operators and CRDs they consume are available
 
 #### Scenario: Child readiness
 
 - **WHEN** deployment guidance describes child sync waves
-- **THEN** it states that waiting for child Application health requires Argo Application health assessment and is not guaranteed by the current platform configuration
+- **THEN** it states that waves order submission only, and that waiting for child Application health is not guaranteed by the current Argo CD configuration
 
 ### Requirement: GitOps documentation
 
-The repository SHALL document the Argo CD layout (management cluster roots destining `dev` / `prod`), `values-prod.yaml` overlays, image tags (`$ARGOCD_APP_REVISION` vs `:main`), and fresh-install prerequisites (Argo cluster registration, the talos-proxmox platform root, ready CRDs/operators, default storage, ecommerce Doppler token and ready SecretStore, telemetry services, and Cloudflare origin configuration). It SHALL identify platform-dev/platform-prod and apps/components as platform references and SHALL NOT prescribe legacy ownership transfer or data migration.
+The repository SHALL document the Argo CD layout (one Argo CD per environment, each hosting its own marketplace root and destining its local cluster), `values-prod.yaml` overlays, image tags (`$ARGOCD_APP_REVISION` vs `:main`), and fresh-install prerequisites (talos-proxmox platform bring-up for that environment, the environment kubeconfig fetched from the `talos-proxmox` Doppler project, the ecommerce Doppler token, and Cloudflare origin configuration). It SHALL identify the talos-proxmox platform root and `apps/components` as platform references and SHALL NOT reference a management cluster, `platform-dev` / `platform-prod` roots, or `apps/argocd/roots/`. It SHALL NOT prescribe legacy ownership transfer or data migration.
 
 #### Scenario: Contributor finds deploy guide
 
 - **WHEN** a contributor prepares a Talos deploy
 - **THEN** documentation explains app-of-apps paths, value overlays, and SHA vs `:main` tags
+
+#### Scenario: Contributor uses one kubeconfig per environment
+
+- **WHEN** a contributor follows the deploy guide for dev or prod
+- **THEN** they fetch that environment's `KUBECONFIG` from Doppler and use it for the token Secret, the AppProject, and the root, with no separate management kubeconfig
 
 ### Requirement: Kafka messaging namespace separation
 
@@ -152,7 +138,7 @@ Chart defaults SHALL set `HOSTED_PAYMENT_BASE_URL` to the Cloudflare-facing `pay
 
 ### Requirement: Cloudflare Tunnel is platform-owned
 
-The marketplace repository SHALL NOT include an Argo CD child Application or Helm chart for `cloudflared`. The platform repository SHALL deploy the connector in the `cloudflare-tunnel` namespace, using its bootstrap-provisioned Kubernetes Secret directly.
+The marketplace repository SHALL NOT include an Argo CD child Application or Helm chart for `cloudflared`. The platform repository SHALL deploy the connector in the `cloudflare-tunnel` namespace, with its token delivered by the platform's External Secrets `ClusterSecretStore`.
 
 #### Scenario: Marketplace root omits cloudflared
 
@@ -161,8 +147,8 @@ The marketplace repository SHALL NOT include an Argo CD child Application or Hel
 
 #### Scenario: Platform root provides cloudflared
 
-- **WHEN** the matching talos-proxmox platform root syncs
-- **THEN** it manages the tunnel deployment using the bootstrap-provisioned token Secret
+- **WHEN** the matching talos-proxmox platform Application syncs
+- **THEN** it manages the tunnel deployment using the platform-delivered token Secret
 
 ### Requirement: MongoDB Community Application in ecommerce
 
@@ -250,3 +236,55 @@ Marketplace deployment SHALL retain CNPG Cluster, MongoDBCommunity, Kafka, Kafka
 
 - **WHEN** marketplace workloads start against new empty databases
 - **THEN** schema initialization still runs before dependent service operation
+
+### Requirement: Local app-of-apps per environment
+
+The repository SHALL provide a shared Argo CD app-of-apps Helm chart under `infra/argocd/app-of-apps/` plus thin `dev-root` and `prod-root` Applications that enable marketplace and set `global.imageRegistry` / `global.imageTag`. The chart and roots SHALL NOT expose a destination cluster name. Child Applications SHALL inherit `targetRevision` from the root via `$ARGOCD_APP_SOURCE_TARGET_REVISION`. Child Applications SHALL retry failed syncs without a retry limit, using backoff, and SHALL skip dry-run for resources whose CRDs are not yet installed.
+
+#### Scenario: Talos root application
+
+- **WHEN** the Talos cluster root Application syncs from Git
+- **THEN** child Applications exist for `refurbished-marketplace`, MongoDB, Meilisearch, and Kafka, with no operator, Cloudflare Tunnel, or platform observability Application
+
+#### Scenario: Talos inherits root revision
+
+- **WHEN** a root Application renders the app-of-apps chart with `targetRevision` parameterized from `$ARGOCD_APP_SOURCE_TARGET_REVISION`
+- **THEN** each child Application uses the same Git revision as that root
+
+#### Scenario: Talos shares global image settings
+
+- **WHEN** the Talos root sets `global.imageRegistry` and `global.imageTag`
+- **THEN** child Applications that inject global images (for example kafka and marketplace) render those values into their Helm `values`
+
+#### Scenario: Children destine the local cluster
+
+- **WHEN** the app-of-apps chart renders child Applications for dev or prod
+- **THEN** every child destination server is `https://kubernetes.default.svc` and no child references a destination cluster name
+
+#### Scenario: Children wait out missing platform CRDs
+
+- **WHEN** a child Application syncs before a platform operator has installed its CRDs
+- **THEN** the sync fails without a hard dry-run error and is retried with backoff until the CRDs exist
+
+### Requirement: Marketplace AppProject scope
+
+The repository SHALL provide a `refurbished-marketplace` AppProject in `argo-cd` whose source is this repository and whose only destination server is `https://kubernetes.default.svc`. It SHALL NOT list named remote clusters.
+
+#### Scenario: Project admits local children
+
+- **WHEN** the AppProject is installed and the root syncs
+- **THEN** the root and every child Application are admitted by the project
+
+#### Scenario: Project rejects remote destinations
+
+- **WHEN** an Application in the project targets a destination other than `https://kubernetes.default.svc`
+- **THEN** Argo CD rejects it as outside the project's destinations
+
+### Requirement: Kafka requests reflect observed usage
+
+Kafka broker and Kafka Connect CPU requests SHALL be sized to their observed steady-state usage rather than a nominal minimum, so the scheduler sees their real load.
+
+#### Scenario: Broker and Connect requests
+
+- **WHEN** the kafka chart renders with default values
+- **THEN** broker and Connect containers request at least 250m CPU
