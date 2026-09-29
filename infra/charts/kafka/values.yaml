@@ -41,17 +41,6 @@ entityOperator:
       limits:
         cpu: 500m
         memory: 512Mi
-  userOperator:
-    jvmOptions:
-      "-Xms": 256m
-      "-Xmx": 256m
-    resources:
-      requests:
-        cpu: 50m
-        memory: 384Mi
-      limits:
-        cpu: 500m
-        memory: 512Mi
 
 connect:
   clusterName: ecommerce-connect-cluster
@@ -139,15 +128,3 @@ entities:
       databasePort: 5432
       outboxTable: public.inventory_outbox
       publicationAutocreateMode: filtered
-provectus:
-  enabled: true
-  name: kafka-ui
-  image: provectuslabs/kafka-ui:v0.7.2
-  port: 8080
-  resources:
-    requests:
-      cpu: 50m
-      memory: 256Mi
-    limits:
-      cpu: 500m
-      memory: 512Mi

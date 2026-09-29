@@ -68,13 +68,3 @@ spec:
       resources:
 {{ toYaml . | nindent 8 }}
 {{- end }}
-    userOperator:
-      reconciliationIntervalMs: 120000
-{{- with .Values.entityOperator.userOperator.jvmOptions }}
-      jvmOptions:
-{{ toYaml . | nindent 8 }}
-{{- end }}
-{{- with .Values.entityOperator.userOperator.resources }}
-      resources:
-{{ toYaml . | nindent 8 }}
-{{- end }}

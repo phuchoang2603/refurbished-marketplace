@@ -1,8 +1,8 @@
-# Prod Kafka: RF 3, 7-day retention, more partitions.
+# Prod Kafka: single broker (RF 1) to save RAM, 7-day retention, more partitions.
 kafka:
-  replicas: 3
-  replicationFactor: 3
-  minInsyncReplicas: 2
+  replicas: 1
+  replicationFactor: 1
+  minInsyncReplicas: 1
   storage:
     size: 10Gi
 
