@@ -3,49 +3,42 @@ package metric
 import (
 	"context"
 	"fmt"
-	"net/http"
 	"os"
 	"strings"
 
-	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/prometheus"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
 )
 
-const defaultMetricsAddr = ":9100"
-
-// Config controls the shared meter provider and optional scrape listener.
+// Config controls the shared meter provider. Empty Endpoint records metrics
+// without exporting them; the exporter itself reads OTEL_EXPORTER_OTLP_* and
+// the reader reads OTEL_METRIC_EXPORT_INTERVAL.
 type Config struct {
 	ServiceName string
-	Addr        string
+	Endpoint    string
 }
 
-// LoadConfig reads OTEL_SERVICE_NAME and METRICS_ADDR.
-// Empty METRICS_ADDR uses :9100. Set METRICS_ADDR=- to skip the scrape listener.
+// LoadConfig reads OTEL_SERVICE_NAME and the OTLP metrics endpoint.
 func LoadConfig(defaultServiceName string) Config {
 	serviceName := strings.TrimSpace(os.Getenv("OTEL_SERVICE_NAME"))
 	if serviceName == "" {
 		serviceName = strings.TrimSpace(defaultServiceName)
 	}
-	addr := strings.TrimSpace(os.Getenv("METRICS_ADDR"))
-	if addr == "" {
-		addr = defaultMetricsAddr
-	}
-	if addr == "-" {
-		addr = ""
+	endpoint := strings.TrimSpace(os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT"))
+	if endpoint == "" {
+		endpoint = strings.TrimSpace(os.Getenv("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"))
 	}
 	return Config{
 		ServiceName: serviceName,
-		Addr:        addr,
+		Endpoint:    endpoint,
 	}
 }
 
-// Init installs a Prometheus-backed global MeterProvider so otelhttp/otelgrpc
-// can be scraped at /metrics. It does not push OTLP metrics.
+// Init installs the global MeterProvider used by otelhttp/otelgrpc and pushes
+// its metrics over OTLP/gRPC. Shutdown flushes pending metrics.
 func Init(ctx context.Context, cfg Config) (func(context.Context) error, error) {
 	if strings.TrimSpace(cfg.ServiceName) == "" {
 		return func(context.Context) error { return nil }, fmt.Errorf("metric: service name is required")
@@ -62,23 +55,16 @@ func Init(ctx context.Context, cfg Config) (func(context.Context) error, error) 
 		return nil, err
 	}
 
-	exp, err := prometheus.New(
-		prometheus.WithoutScopeInfo(),
-		prometheus.WithResourceAsConstantLabels(attribute.NewAllowKeysFilter(semconv.ServiceNameKey)),
-	)
-	if err != nil {
-		return nil, err
+	opts := []sdkmetric.Option{sdkmetric.WithResource(res)}
+	if strings.TrimSpace(cfg.Endpoint) != "" {
+		exp, err := otlpmetricgrpc.New(ctx)
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, sdkmetric.WithReader(sdkmetric.NewPeriodicReader(exp)))
 	}
 
-	mp := sdkmetric.NewMeterProvider(
-		sdkmetric.WithResource(res),
-		sdkmetric.WithReader(exp),
-	)
+	mp := sdkmetric.NewMeterProvider(opts...)
 	otel.SetMeterProvider(mp)
 	return mp.Shutdown, nil
-}
-
-// Handler serves Prometheus text for the default gatherer used by Init.
-func Handler() http.Handler {
-	return promhttp.Handler()
 }

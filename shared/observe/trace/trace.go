@@ -10,7 +10,6 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -18,21 +17,17 @@ import (
 	"go.opentelemetry.io/otel/trace"
 )
 
-const (
-	defaultOTLPEndpoint = "vtsingle-vmks.monitoring.svc.cluster.local:4317"
-	defaultSampleRatio  = 1.0
-)
+const defaultSampleRatio = 1.0
 
 // Config controls the shared tracer provider. Empty Endpoint skips export
-// (noop provider).
+// (noop provider); the exporter itself reads OTEL_EXPORTER_OTLP_*.
 type Config struct {
 	ServiceName string
 	Endpoint    string
 	SampleRatio float64
-	UseHTTP     bool
 }
 
-// LoadConfig reads OTEL_* / SERVICE_NAME style env vars.
+// LoadConfig reads OTEL_* style env vars.
 func LoadConfig(defaultServiceName string) Config {
 	serviceName := strings.TrimSpace(os.Getenv("OTEL_SERVICE_NAME"))
 	if serviceName == "" {
@@ -48,13 +43,10 @@ func LoadConfig(defaultServiceName string) Config {
 			ratio = parsed
 		}
 	}
-	useHTTP := strings.EqualFold(strings.TrimSpace(os.Getenv("OTEL_EXPORTER_OTLP_PROTOCOL")), "http/protobuf") ||
-		strings.Contains(endpoint, "/insert/opentelemetry/")
 	return Config{
 		ServiceName: serviceName,
 		Endpoint:    endpoint,
 		SampleRatio: ratio,
-		UseHTTP:     useHTTP,
 	}
 }
 
@@ -94,23 +86,7 @@ func Init(ctx context.Context, cfg Config) (func(context.Context) error, error) 
 		ratio = 1
 	}
 
-	var exp sdktrace.SpanExporter
-	if cfg.UseHTTP {
-		endpoint := cfg.Endpoint
-		if !strings.Contains(endpoint, "/insert/opentelemetry/") {
-			endpoint = "http://" + strings.TrimPrefix(strings.TrimPrefix(endpoint, "http://"), "https://")
-			endpoint = strings.TrimRight(endpoint, "/") + "/insert/opentelemetry/v1/traces"
-		}
-		exp, err = otlptracehttp.New(ctx, otlptracehttp.WithEndpointURL(endpoint))
-	} else {
-		endpoint := strings.TrimPrefix(strings.TrimPrefix(cfg.Endpoint, "http://"), "https://")
-		endpoint = strings.TrimSuffix(endpoint, "/insert/opentelemetry/v1/traces")
-		exp, err = otlptracegrpc.New(
-			ctx,
-			otlptracegrpc.WithEndpoint(endpoint),
-			otlptracegrpc.WithInsecure(),
-		)
-	}
+	exp, err := otlptracegrpc.New(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -123,9 +99,6 @@ func Init(ctx context.Context, cfg Config) (func(context.Context) error, error) 
 	otel.SetTracerProvider(tp)
 	return tp.Shutdown, nil
 }
-
-// DefaultEndpoint is the in-cluster VictoriaTraces OTLP gRPC address.
-func DefaultEndpoint() string { return defaultOTLPEndpoint }
 
 // Tracer returns a named tracer from the global provider.
 func Tracer(name string) trace.Tracer {
