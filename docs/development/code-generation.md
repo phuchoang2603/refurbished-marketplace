@@ -35,7 +35,7 @@ Shared library layout:
 | `shared/runtime`        | Service bootstrap (HTTP, gRPC, Postgres, Mongo) |
 | `shared/observe/trace`  | OpenTelemetry tracing                           |
 | `shared/observe/log`    | JSON slog + TraceId correlation                 |
-| `shared/observe/metric` | Prometheus RED on `:9100/metrics`               |
+| `shared/observe/metric` | OpenTelemetry RED metrics pushed over OTLP      |
 | `shared/err/dberr`      | DB error / null helpers                         |
 | `shared/err/grpcerr`    | gRPC status mapping                             |
 | `shared/testutil/*`     | Testcontainers helpers                          |

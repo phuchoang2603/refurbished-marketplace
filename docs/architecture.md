@@ -42,13 +42,13 @@ Details: [order-placement.md](order-placement.md).
 
 ## Platform
 
-| Layer    | Where                                                                                                               |
-| -------- | ------------------------------------------------------------------------------------------------------------------- |
-| Clusters | Talos **dev** / **prod** run workloads; each runs its own Argo CD in `argo-cd`                                      |
-| GitOps   | `talos-proxmox` `platform` root installs shared operators; this repo's roots deploy application consumers locally   |
-| Images   | GHCR `ghcr.io/phuchoang2603/refurbished-marketplace/<name>:<sha>` (dev) or `:main` (prod)                           |
-| Secrets  | Doppler → External Secrets; `ecommerce/doppler-token` applied per environment                                       |
-| Ingress  | Cloudflare Tunnel → Cilium Gateway API (`gatewayClassName: cilium`)                                                 |
-| Observe  | VictoriaMetrics / VictoriaLogs / VictoriaTraces in `monitoring`; apps scrape `:9100/metrics` and export OTLP traces |
+| Layer    | Where                                                                                                             |
+| -------- | ----------------------------------------------------------------------------------------------------------------- |
+| Clusters | Talos **dev** / **prod** run workloads; each runs its own Argo CD in `argo-cd`                                    |
+| GitOps   | `talos-proxmox` `platform` root installs shared operators; this repo's roots deploy application consumers locally |
+| Images   | GHCR `ghcr.io/phuchoang2603/refurbished-marketplace/<name>:<sha>` (dev) or `:main` (prod)                         |
+| Secrets  | Doppler → External Secrets; `ecommerce/doppler-token` applied per environment                                     |
+| Ingress  | Cloudflare Tunnel → Cilium Gateway API (`gatewayClassName: cilium`)                                               |
+| Observe  | Apps export OTLP traces and metrics to `otel-agent` and log JSON to stdout; ClickHouse + HyperDX on prod          |
 
 See [deployment/gitops.md](deployment/gitops.md), [deployment/cilium.md](deployment/cilium.md), and [deployment/observability.md](deployment/observability.md).

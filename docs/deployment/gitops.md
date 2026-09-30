@@ -50,16 +50,16 @@ Cloudflare Public Hostnames remain in Zero Trust. The shop/pay origin is `http:/
 
 ## Marketplace ownership
 
-| Application               | Marketplace-owned resources                                                                                 | Namespace                               |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| `secret-store`            | `SecretStore/doppler`, the single owner shared by every marketplace ExternalSecret                          | `ecommerce`                             |
-| `mongodb`                 | `MongoDBCommunity`, credentials, workload RBAC, Cilium policy                                               | `ecommerce`                             |
-| `meilisearch`             | Meilisearch workload/PVC, credentials, Cilium policy                                                        | `ecommerce`                             |
-| `refurbished-marketplace` | CNPG Clusters, ExternalSecrets, migrations, services, Gateway/HTTPRoutes, VMPodScrape, dashboard ConfigMaps | `ecommerce`, dashboards in `monitoring` |
-| `kafka`                   | Kafka/NodePool, topics, Connect/connectors, secret-reader RBAC, UI                                          | `kafka`, RBAC in `ecommerce`            |
-| `cloudflare-tunnel`       | platform-owned in `talos-proxmox`                                                                           | `cloudflare-tunnel`                     |
+| Application               | Marketplace-owned resources                                                        | Namespace                    |
+| ------------------------- | ---------------------------------------------------------------------------------- | ---------------------------- |
+| `secret-store`            | `SecretStore/doppler`, the single owner shared by every marketplace ExternalSecret | `ecommerce`                  |
+| `mongodb`                 | `MongoDBCommunity`, credentials, workload RBAC, Cilium policy                      | `ecommerce`                  |
+| `meilisearch`             | Meilisearch workload/PVC, credentials, Cilium policy                               | `ecommerce`                  |
+| `refurbished-marketplace` | CNPG Clusters, ExternalSecrets, migrations, services, Gateway/HTTPRoutes           | `ecommerce`                  |
+| `kafka`                   | Kafka/NodePool, topics, Connect/connectors, secret-reader RBAC, UI                 | `kafka`, RBAC in `ecommerce` |
+| `cloudflare-tunnel`       | platform-owned in `talos-proxmox`                                                  | `cloudflare-tunnel`          |
 
-The `platform` root owns the operators, CRDs, cloudflared, the `monitoring` namespace, and the complete Victoria stack. The marketplace `secret-store` Application owns `SecretStore/doppler` in `ecommerce`; no other chart renders it. Cilium, Gateway API CRDs, and storage are also owned by `talos-proxmox`.
+The `platform` root owns the operators, CRDs, cloudflared, and the telemetry pipeline (`otel-agent` in both environments; ClickHouse and HyperDX on prod). Marketplace workloads only export OTLP to `otel-agent`; see [observability.md](observability.md). The marketplace `secret-store` Application owns `SecretStore/doppler` in `ecommerce`; no other chart renders it. Cilium, Gateway API CRDs, and storage are also owned by `talos-proxmox`.
 
 MongoDB is the products catalog source of truth; Meilisearch is its storefront projection. PostgreSQL schema migrations still initialize new empty databases before their services start.
 
@@ -80,7 +80,8 @@ kubectl get applications -n argo-cd
 kubectl get storageclass
 kubectl get secretstore doppler -n ecommerce
 kubectl get externalsecrets -n ecommerce
-kubectl get crd | grep -E 'cnpg|strimzi|mongodb|external-secrets|victoriametrics'
+kubectl get crd | grep -E 'cnpg|strimzi|mongodb|external-secrets'
+kubectl get svc otel-agent -n observability
 ```
 
 A child stuck retrying shows its last sync error in the environment's Argo CD UI. A missing or invalid token shows up on `<env>-secret-store` first.

@@ -8,7 +8,7 @@ Already on the cluster (from talos-proxmox):
 - WireGuard encryption, Envoy L7 proxy, cluster name/id as set in that repo
 - L2 IP pools (`cilium-network` Application) and platform Gateways such as the Argo CD UI in `argo-cd`; Hubble UI is not required and may be absent
 
-This repo only consumes that dataplane: marketplace and Grafana `Gateway`/`HTTPRoute` (`gatewayClassName: cilium`) and Cloudflare origin DNS. Do not add WireGuard/Envoy/ClusterMesh values here.
+This repo only consumes that dataplane: marketplace `Gateway`/`HTTPRoute` (`gatewayClassName: cilium`) and Cloudflare origin DNS. Do not add WireGuard/Envoy/ClusterMesh values here.
 
 Marketplace browser traffic: Cloudflare Tunnel → Cilium Gateway API.
 
@@ -16,7 +16,7 @@ Cilium 1.18 Gateway Services are `LoadBalancer`. `cloudflared` uses in-cluster D
 
 `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`
 
-East–west traffic is ordinary ClusterIP plus CiliumNetworkPolicy (allow-lists and optional required mTLS). Application traces stay OTEL → VictoriaTraces. Hubble is not part of the observe path; request/error/duration SLIs are application OTEL metrics in VictoriaMetrics (Grafana **Marketplace RED**).
+East–west traffic is ordinary ClusterIP plus CiliumNetworkPolicy (allow-lists and optional required mTLS). Application traces and RED metrics are OTLP exports to the node-local `otel-agent` in `observability` (egress, so no CNP exception is needed). Hubble is not part of the observe path; request/error/duration SLIs are application OTEL metrics queried in HyperDX. See [observability.md](observability.md).
 
 SPIRE for Cilium mutual auth is cluster Helm in **talos-proxmox** (`authentication.mutual.spire`). This chart sets `authentication.mode: required` on enrolled hops. Do not helm-upgrade Cilium from this repo.
 
@@ -93,25 +93,21 @@ Then sync the marketplace Application. Cloudflare hostnames stay put.
 
 ## Edge
 
-| Env  | Hostname                    | Backend                     |
-| ---- | --------------------------- | --------------------------- |
-| dev  | `shop-dev.phuchoang.sbs`    | `web`                       |
-| dev  | `pay-dev.phuchoang.sbs`     | `payment-gateway-simulator` |
-| dev  | `grafana-dev.phuchoang.sbs` | `observability-grafana`     |
-| prod | `shop.phuchoang.sbs`        | `web`                       |
-| prod | `pay.phuchoang.sbs`         | `payment-gateway-simulator` |
-| prod | `grafana.phuchoang.sbs`     | `observability-grafana`     |
+| Env  | Hostname                 | Backend                     |
+| ---- | ------------------------ | --------------------------- |
+| dev  | `shop-dev.phuchoang.sbs` | `web`                       |
+| dev  | `pay-dev.phuchoang.sbs`  | `payment-gateway-simulator` |
+| prod | `shop.phuchoang.sbs`     | `web`                       |
+| prod | `pay.phuchoang.sbs`      | `payment-gateway-simulator` |
 
 HTTPRoutes set `X-Forwarded-Proto: https` and `X-Forwarded-Host` so hosted-payment callbacks are not rewritten to HTTP (POST → Cloudflare 301 → GET → 405).
 
 Cloudflare Zero Trust Public Hostnames (not in Git):
 
 - `shop-dev.phuchoang.sbs` / `pay-dev.phuchoang.sbs` (dev) → `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`
-- `grafana-dev.phuchoang.sbs` (dev) → `http://cilium-gateway-grafana.monitoring.svc.cluster.local:80`
 - `shop.phuchoang.sbs` / `pay.phuchoang.sbs` (prod) → same origin DNS on the prod cluster
-- `grafana.phuchoang.sbs` (prod) → `http://cilium-gateway-grafana.monitoring.svc.cluster.local:80`
 
-TLS terminates at Cloudflare. No marketplace TLS Secret on the Gateway. Do not reuse the platform Argo CD or Longhorn Gateways for shop/pay.
+TLS terminates at Cloudflare. No marketplace TLS Secret on the Gateway. Do not reuse the platform Argo CD or HyperDX Gateways for shop/pay.
 
 ```bash
 kubectl get gateway,httproute -n ecommerce
