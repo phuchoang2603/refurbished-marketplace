@@ -156,7 +156,7 @@ The web service MUST preserve a non-browser callback path for hosted payment out
 
 ### Requirement: Web exports traces and injects gRPC context
 
-The web service SHALL export OpenTelemetry spans to VictoriaTraces and inject W3C trace context on outgoing gRPC calls used for browser and hosted-payment callback flows so downstream services continue the same TraceId. HTTP server span names SHALL use route patterns rather than the middleware operation string or service name alone.
+The web service SHALL export OpenTelemetry spans to the platform agent and inject W3C trace context on outgoing gRPC calls used for browser and hosted-payment callback flows so downstream services continue the same TraceId. HTTP server span names SHALL use route patterns rather than the middleware operation string or service name alone.
 
 #### Scenario: Outgoing gRPC calls carry traceparent
 

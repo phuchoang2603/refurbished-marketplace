@@ -6,49 +6,40 @@ Define application-layer HTTP and gRPC request/error/duration metrics from marke
 
 ## Requirements
 
-### Requirement: Marketplace services export HTTP and gRPC RED metrics
+### Requirement: Marketplace services push HTTP and gRPC RED metrics
 
-Instrumented marketplace services SHALL export request rate, error, and duration metrics for inbound HTTP (web) and inbound and outbound gRPC using OpenTelemetry metrics recorded against a Prometheus-backed MeterProvider. Metrics SHALL be scraped by the platform VictoriaMetrics agent from `/metrics`. Spans SHALL continue to use the existing VictoriaTraces OTLP path. Metrics SHALL NOT be sent to VictoriaTraces.
+Instrumented marketplace services SHALL export request rate, error, and duration metrics for inbound HTTP (web) and inbound and outbound gRPC using OpenTelemetry metrics. Metrics SHALL keep OpenTelemetry semantic-convention names and attributes, and SHALL carry `service.name` as a resource attribute. Metrics and spans SHALL use the same platform agent endpoint.
 
-#### Scenario: Web HTTP RED is stored in VictoriaMetrics
+#### Scenario: Web HTTP RED is stored
 
-- **WHEN** `web` handles browser or callback HTTP traffic with the metrics listener enabled
-- **THEN** VictoriaMetrics receives HTTP server request duration (and related RED) series labeled by job, method, status, and low-cardinality route pattern rather than raw URL paths
+- **WHEN** `web` handles browser or callback HTTP traffic
+- **THEN** the store receives `http.server.request.duration` data points for service `web` with method, status, and low-cardinality route pattern attributes, not raw URL paths
 
-#### Scenario: gRPC RED is stored in VictoriaMetrics
+#### Scenario: gRPC RED is stored
 
-- **WHEN** an instrumented gRPC server or client handles a marketplace RPC with the metrics listener enabled
-- **THEN** VictoriaMetrics receives RPC duration (and related RED) series labeled by job, RPC method, and status
+- **WHEN** an instrumented gRPC server or client handles a marketplace RPC
+- **THEN** the store receives RPC duration data points for that service with RPC method and status attributes
 
-#### Scenario: Metrics and traces use different backends
+#### Scenario: Metrics and traces share the agent
 
 - **WHEN** a marketplace service exports both traces and metrics
-- **THEN** spans arrive at VictoriaTraces over OTLP and metrics arrive at VictoriaMetrics via scrape
+- **THEN** both arrive at the platform agent over OTLP and can be filtered by the same `service.name` in HyperDX
 
-#### Scenario: Disabled metrics listener still starts
+### Requirement: OTLP push path for app RED
 
-- **WHEN** `METRICS_ADDR` is set to `-`
-- **THEN** the service still starts and does not require a scrape listener
+Marketplace services SHALL push RED metrics over OTLP to the endpoint in `OTEL_EXPORTER_OTLP_ENDPOINT`, on a fixed export interval. Services SHALL NOT open a metrics scrape listener or expose a metrics port.
 
-### Requirement: Grafana Marketplace RED dashboard
+#### Scenario: Metrics arrive without scraping
 
-The observability stack SHALL deploy a Grafana dashboard that shows marketplace HTTP and gRPC request rate, error ratio, and latency from scraped application metrics. The dashboard SHALL NOT use Hubble series (`hubble_http_*`), Istio series (`istio_requests_total`), or Gateway proxy metrics as its primary source.
+- **WHEN** a marketplace service runs on a cluster with the platform agent
+- **THEN** its RED metrics reach the ClickHouse store without any scrape configuration, scrape network policy, or metrics Service port
 
-#### Scenario: Dashboard is present after sync
+#### Scenario: Unset endpoint still starts
 
-- **WHEN** Grafana marketplace dashboards are synced after this change
-- **THEN** a Marketplace RED dashboard is available that queries VictoriaMetrics application metrics
+- **WHEN** `OTEL_EXPORTER_OTLP_ENDPOINT` is empty
+- **THEN** the service still starts, records metrics in-process, and exports nothing
 
-#### Scenario: Operator views service SLIs without Hubble
+#### Scenario: Metrics are flushed on shutdown
 
-- **WHEN** an operator opens the Marketplace RED dashboard
-- **THEN** they can see request rate, error ratio, and latency for `web` HTTP and internal gRPC services without enabling Hubble
-
-### Requirement: Prometheus scrape path for app RED
-
-Marketplace services SHALL expose `/metrics` as the RED export path. RED SHALL use VMAgent scrape (VMPodScrape) into VictoriaMetrics, not OTLP push.
-
-#### Scenario: App scrape targets are required
-
-- **WHEN** application RED is enabled
-- **THEN** closure depends on VMAgent scraping marketplace application `/metrics` ports
+- **WHEN** a marketplace service shuts down gracefully
+- **THEN** it exports pending metrics before exiting

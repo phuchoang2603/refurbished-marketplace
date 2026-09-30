@@ -60,7 +60,7 @@ The system SHALL expose the hosted `payment-gateway-simulator` on a Cilium-manag
 
 ### Requirement: Cloudflare Tunnel is the public front door
 
-Talos marketplace edges SHALL assume Cloudflare Tunnel as the public HTTPS front door and the Cilium Gateway as the HTTP origin. The talos-proxmox platform repository SHALL deploy the in-cluster `cloudflared` connector through Argo CD. This repository SHALL NOT require a marketplace TLS certificate on the Cilium Gateway for this path. The origin URL SHALL be `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80` (or the equivalent Grafana Service DNS) without requiring the L2 announcement VIP for the tunnel.
+Talos marketplace edges SHALL assume Cloudflare Tunnel as the public HTTPS front door and the Cilium Gateway as the HTTP origin. The talos-proxmox platform repository SHALL deploy the in-cluster `cloudflared` connector through Argo CD. This repository SHALL NOT require a marketplace TLS certificate on the Cilium Gateway for this path. The origin URL SHALL be `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80` without requiring the L2 announcement VIP for the tunnel.
 
 #### Scenario: Origin is HTTP behind Cloudflare
 

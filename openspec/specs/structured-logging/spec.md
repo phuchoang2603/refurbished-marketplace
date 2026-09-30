@@ -73,12 +73,12 @@ Structured logging helpers and access-log middleware SHALL NOT emit full payment
 
 ### Requirement: Logging documentation
 
-The repository SHALL document structured logging field conventions, VictoriaLogs LogSQL examples filtered by `service`, `trace_id`, and checkout domain fields such as `order_id`, and Trace → logs usage in `docs/deployment/observability.md`.
+The repository SHALL document structured logging field conventions, the JSON keys promoted by the platform agent, HyperDX log search examples filtered by service, trace ID, and checkout domain fields such as `order_id`, and trace-to-log navigation in `docs/deployment/observability.md`.
 
 #### Scenario: Contributor finds logging guide
 
 - **WHEN** a contributor opens observability documentation after this change
-- **THEN** they can find the field table (including domain hot-path fields), a LogSQL example joining by `trace_id` or `order_id`, and Trace → logs steps
+- **THEN** they can find the field table (including domain hot-path fields), a HyperDX search joining by trace ID or `order_id`, and trace-to-log steps
 
 ### Requirement: Checkout hot paths emit domain fields
 
@@ -98,3 +98,17 @@ Orders, products (inventory), and payment services SHALL emit structured slog li
 
 - **WHEN** payment applies a gateway webhook terminal success or failure
 - **THEN** a structured log includes `order_id` and the payment status / event type without card or raw gateway payloads
+
+### Requirement: Log lines follow the platform log contract
+
+Marketplace JSON log lines SHALL be single-line JSON objects on stdout that use the top-level keys `time`, `level`, `msg`, `trace_id`, and `span_id` with slog's default meanings. The platform agent promotes those keys into the stored record's timestamp, severity, body, trace ID, and span ID. All other keys SHALL remain available as log attributes.
+
+#### Scenario: Stored record has promoted fields
+
+- **WHEN** a service logs with a context that has a valid span, and the platform agent's JSON parsing is deployed
+- **THEN** the stored record has `TraceId` and `SpanId` from the line, `SeverityText` from `level`, `Body` from `msg`, and attributes such as `order_id` searchable in HyperDX
+
+#### Scenario: Line without a span
+
+- **WHEN** a service logs without a valid span
+- **THEN** the stored record has an empty `TraceId` and still has its severity, body, and attributes
