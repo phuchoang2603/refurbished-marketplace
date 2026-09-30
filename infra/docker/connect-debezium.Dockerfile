@@ -1,4 +1,4 @@
-FROM quay.io/strimzi/kafka:1.0.0-kafka-4.2.0
+FROM quay.io/strimzi/kafka:1.2.0-kafka-4.3.1
 
 # Orders outbox uses BYTEA protobuf; KafkaConnector uses ByteArrayConverter (built into Kafka Connect).
 # OpenTelemetry for Debezium EventRouter comes from the Strimzi base image
