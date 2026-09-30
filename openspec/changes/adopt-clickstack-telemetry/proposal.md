@@ -25,6 +25,7 @@ None.
 - `structured-logging`: documentation moves from VictoriaLogs LogsQL to HyperDX search, and the log contract states which JSON keys the platform promotes.
 - `cilium-observability`: the metrics scrape policy exception is removed, and traces and RED references move off Victoria.
 - `web`: web traces export to the platform OTLP agent instead of VictoriaTraces.
+- `cilium-ingress`: the Cloudflare Tunnel origin requirement drops its leftover Grafana Service reference.
 
 ## Non-goals
 

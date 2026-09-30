@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define post-Istio observe path: marketplace OpenTelemetry traces to VictoriaTraces, without Hubble, Cilium L7 visibility policies, or Istio waypoint metrics. Application-level RED metrics are OpenTelemetry metrics scraped from `/metrics` into VictoriaMetrics (not Hubble).
+Define post-Istio observe path: marketplace OpenTelemetry traces exported to the platform `otel-agent`, without Hubble, Cilium L7 visibility policies, or Istio waypoint metrics. Application-level RED metrics are OpenTelemetry metrics pushed over OTLP to the same agent (not Hubble).
 
 ## Requirements
 

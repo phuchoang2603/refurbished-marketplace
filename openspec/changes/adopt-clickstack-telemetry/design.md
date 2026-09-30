@@ -79,8 +79,8 @@ Delete `podscrape.tpl`, `dashboards.tpl`, `dashboards/`, the `allow-metrics-scra
 ## Risks / Trade-offs
 
 - [Marketplace logs lack `TraceId` until the talos-proxmox parsing lands] → Marketplace can merge first. Logs are still searchable by body text and service, and trace-to-log verification waits for the platform change.
-- [Cluster-wide JSON parsing affects other workloads' logs] → Parse only bodies starting with `{`, `on_error: send`, and promote only when keys exist, so other formats keep today's behavior.
-- [HyperDX metric views do not render OTel histogram names or cumulative temporality as expected] → Verify p95 of `http.server.request.duration` on dev before removing the old docs. If that fails, switch the reader to delta temporality, which is a one-line change.
+- [Cluster-wide JSON parsing affects other workloads' logs] → Parse only bodies starting with `{`, `on_error: send_quiet`, and promote only when keys exist, so other formats keep today's behavior.
+- [HyperDX metric views do not render OTel histogram names or cumulative temporality as expected] → Verify p95 of `http.server.request.duration` on prod before removing the old docs. If that fails, switch the reader to delta temporality, which is a one-line change.
 - [The `service.name` annotation depends on the platform keeping `otel_annotations`] → Document it as part of the platform contract in `docs/deployment/observability.md`.
 - [Node agent unavailable during a rollout] → The SDK batch processor and periodic reader drop data after retries. Services keep serving.
 - [No Git-managed dashboards] → Accepted. The docs carry the RED and log queries.
@@ -88,8 +88,8 @@ Delete `podscrape.tpl`, `dashboards.tpl`, `dashboards/`, the `allow-metrics-scra
 ## Migration Plan
 
 1. Land the `talos-proxmox` JSON parsing change. It is independent and can go first or in parallel.
-2. Merge this change. The dev marketplace root syncs with no Victoria resources, then prod follows on `:main`.
-3. Verify on dev in HyperDX: spans for all services and `connect-debezium`, RED metrics per service, logs with `ServiceName`, and, once step 1 is live, trace-to-log navigation.
+2. Merge this change and apply the prod marketplace root, which syncs with no Victoria resources on `:main`. Marketplace stays undeployed on dev.
+3. Verify on prod in HyperDX: spans for all services and `connect-debezium`, RED metrics per service, logs with `ServiceName`, and, once step 1 is live, trace-to-log navigation.
 4. When archiving, update the `## Purpose` sections of `platform-observability`, `app-otel-metrics`, `distributed-tracing`, and `cilium-observability` to drop the Victoria and Grafana wording.
 
 Rollback: revert the merge. The Victoria-based chart cannot sync on the current platform, so rollback only restores the previous code, not working telemetry.

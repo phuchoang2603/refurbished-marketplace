@@ -4,10 +4,10 @@
 
 Marketplace workloads SHALL export traces and metrics over OTLP/gRPC to the platform OpenTelemetry agent at `otel-agent.observability.svc.cluster.local:4317` in the cluster they run in. Marketplace SHALL NOT address the prod ingest gateway, ClickHouse, or HyperDX directly, and SHALL NOT hold a telemetry ingest credential.
 
-#### Scenario: Dev workload exports telemetry
+#### Scenario: Workload exports telemetry
 
-- **WHEN** a marketplace service on dev exports a span or metric
-- **THEN** it sends OTLP to the dev `otel-agent` Service without credentials, and the telemetry appears in HyperDX on prod with `deployment.environment=dev`
+- **WHEN** a marketplace service on prod exports a span or metric
+- **THEN** it sends OTLP to the prod `otel-agent` Service without credentials, and the telemetry appears in HyperDX with `deployment.environment=prod`
 
 #### Scenario: Environment labels come from the platform
 

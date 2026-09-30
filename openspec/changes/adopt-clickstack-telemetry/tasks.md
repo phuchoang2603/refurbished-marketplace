@@ -36,9 +36,10 @@
 
 - [x] 7.1 Apply the prod marketplace root on the fresh prod cluster; verify every marketplace Application is Synced and Healthy, and no pod exposes port 9100
 - [x] 7.2 Place a checkout on `shop.phuchoang.sbs`; verify HyperDX shows one TraceId across `web`, `orders`, `connect-debezium`, `inventory`, and `payment`, with `deployment.environment=prod`
-- [ ] 7.3 Verify HyperDX metrics show `http.server.request.duration` for `web` and RPC duration for the gRPC services, filtered by `ServiceName`, and that a p95 chart renders; if histograms do not render, switch the reader to delta temporality and re-verify (ClickHouse holds cumulative `http.server.request.duration` and `rpc.server.call.duration` for all eight services and a bucket p95 computes; the HyperDX chart itself is still to be checked after the operator account exists)
+- [x] 7.3 Verify HyperDX metrics show `http.server.request.duration` for `web` and RPC duration for the gRPC services, filtered by `ServiceName`, and that a p95 chart renders; if histograms do not render, switch the reader to delta temporality and re-verify
 - [x] 7.4 Verify marketplace logs in HyperDX have the correct `ServiceName` and, with task 1.2 done, that opening the checkout trace lists its log lines
 
 ## 8. Archive preparation
 
-- [ ] 8.1 Update the `## Purpose` sections of `openspec/specs/platform-observability`, `app-otel-metrics`, `distributed-tracing`, and `cilium-observability` to describe the OTLP, `otel-agent`, and HyperDX path; verify `rg -in "victoria|grafana" openspec/specs` returns nothing after archive
+- [x] 8.1 Update the `## Purpose` sections of `openspec/specs/platform-observability`, `app-otel-metrics`, `distributed-tracing`, and `cilium-observability` to describe the OTLP, `otel-agent`, and HyperDX path; verify that after archive `rg -in "victoria|grafana" openspec/specs` matches only the "Marketplace does not depend on removed telemetry resources" requirement, which names what must not be rendered
+- [x] 8.2 Add a `cilium-ingress` delta that drops "or the equivalent Grafana Service DNS" from the Cloudflare Tunnel origin requirement, so the archived specs carry no Grafana wording

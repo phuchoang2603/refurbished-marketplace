@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define application-layer HTTP and gRPC request/error/duration metrics from marketplace OpenTelemetry instrumentation, scraped as Prometheus `/metrics` into VictoriaMetrics and visualized in Grafana, without Hubble or Istio scrapes.
+Define application-layer HTTP and gRPC request/error/duration metrics from marketplace OpenTelemetry instrumentation, pushed over OTLP to the platform `otel-agent` and queried in HyperDX, without Hubble or Istio scrapes.
 
 ## Requirements
 

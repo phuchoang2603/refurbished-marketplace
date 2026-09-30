@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define how marketplace services and application-owned dashboards consume the VictoriaMetrics, VictoriaLogs, VictoriaTraces, and Grafana services provided by `talos-proxmox`.
+Define how marketplace services consume the telemetry pipeline provided by `talos-proxmox`: OTLP traces and metrics to the node-local `otel-agent`, stdout JSON logs collected by that agent, and the prod ClickHouse store viewed in HyperDX.
 
 ## Requirements
 

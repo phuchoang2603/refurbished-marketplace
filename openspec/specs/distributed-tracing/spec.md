@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define end-to-end checkout tracing: one W3C TraceId across HTTP, gRPC, outbox/Debezium, and Kafka consumers, exported to VictoriaTraces.
+Define end-to-end checkout tracing: one W3C TraceId across HTTP, gRPC, outbox/Debezium, and Kafka consumers, exported over OTLP to the platform `otel-agent` and viewed in HyperDX.
 
 ## Requirements
 
