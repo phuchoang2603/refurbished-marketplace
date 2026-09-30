@@ -46,6 +46,10 @@ spec:
     # overwrites the traceparent header EventRouter restored from the outbox row
     # (splitting the e2e TraceId at the Kafka hop).
     connector.client.config.override.policy: All
+    # Kafka 4.x AdminClient busy-loops "Rebootstrapping with Cluster" at INFO
+    # (no backoff) while the broker is unreachable. Bootstrap is a single
+    # Service, so rebootstrap has nothing else to fall back to.
+    metadata.recovery.strategy: none
   template:
     pod:
       metadata:
