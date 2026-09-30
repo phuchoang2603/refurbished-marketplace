@@ -18,7 +18,7 @@ Go marketplace services behind a server-rendered web edge. Browser traffic never
 
 ## Runtime topology
 
-![Marketplace runtime: Cloudflare Tunnel and Cilium Gateway in front of web, domain gRPC services, stores, and Kafka](diagrams/architecture.svg)
+![Marketplace runtime: Cloudflare Tunnel and Cilium Gateway, domain services and stores, local GitOps, and ClickStack telemetry](diagrams/architecture.svg)
 
 Editable source: [diagrams/architecture.excalidraw](diagrams/architecture.excalidraw).
 
@@ -50,5 +50,7 @@ Details: [order-placement.md](order-placement.md).
 | Secrets  | Doppler → External Secrets; `ecommerce/doppler-token` applied per environment                                     |
 | Ingress  | Cloudflare Tunnel → Cilium Gateway API (`gatewayClassName: cilium`)                                               |
 | Observe  | Apps export OTLP traces and metrics to `otel-agent` and log JSON to stdout; ClickHouse + HyperDX on prod          |
+
+Each cluster's Argo CD runs its own marketplace root alongside the platform root. The platform supplies operators and the telemetry pipeline; the marketplace root submits `secret-store` (wave 1), MongoDB and Meilisearch (2), services (3), then Kafka (4). These waves do not wait for child health: children retry while platform dependencies converge. The per-cluster `otel-agent` forwards both dev and prod telemetry to ClickHouse and HyperDX on prod.
 
 See [deployment/gitops.md](deployment/gitops.md), [deployment/cilium.md](deployment/cilium.md), and [deployment/observability.md](deployment/observability.md).

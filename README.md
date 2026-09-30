@@ -15,7 +15,7 @@ Learning project for distributed Go services around a refurbished-goods marketpl
 | `services/orders`    | Order lifecycle               | Merchant-scoped PostgreSQL, outbox/Kafka           |
 | `services/payment`   | Hosted payment sessions       | Gateway callbacks, Kafka outcomes                  |
 
-![Marketplace architecture: ingress, services and datastores, Kafka events, GitOps, and observability](docs/diagrams/architecture-redesigned.png)
+![Marketplace architecture: ingress, services and datastores, Kafka events, GitOps, and observability](docs/diagrams/architecture.svg)
 
 Full topology, ports, and GitOps: [docs/architecture.md](docs/architecture.md).
 Catalog vs stock vs search: [docs/catalog-inventory-search.md](docs/catalog-inventory-search.md).
@@ -33,7 +33,7 @@ Checkout: [docs/order-placement.md](docs/order-placement.md).
 - `templ` + Datastar for server-rendered HTML.
 - Kubernetes / Helm: CloudNativePG, Strimzi, MCK, Cilium Gateway API, External Secrets.
 - GitOps: one Argo CD per Talos environment; `talos-proxmox` owns shared operators and this repo owns marketplace Applications.
-- Cloudflare Tunnel to Cilium Gateway for shop, pay, and Grafana.
+- Cloudflare Tunnel to Cilium Gateway for shop and pay; HyperDX stays on the prod LAN.
 - Nix/devenv for local tooling; OpenSpec for change proposals.
 
 ## Development
