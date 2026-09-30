@@ -26,7 +26,7 @@ func SetupPostgresWithMigrations(t *testing.T, cfg Config, migrationsDir string)
 
 	pgContainer, err := pgmodule.Run(
 		ctx,
-		"postgres:16",
+		"postgres:18.3",
 		pgmodule.WithDatabase(cfg.Database),
 		pgmodule.WithUsername(cfg.Username),
 		pgmodule.WithPassword(cfg.Password),

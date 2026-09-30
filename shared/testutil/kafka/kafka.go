@@ -20,7 +20,7 @@ func SetupKafka(t *testing.T) *KafkaContainer {
 	t.Helper()
 
 	ctx := context.Background()
-	c, err := kafkamodule.Run(ctx, "confluentinc/confluent-local:8.2.0")
+	c, err := kafkamodule.Run(ctx, "confluentinc/confluent-local:8.3.2")
 	if err != nil {
 		t.Fatalf("start kafka container: %v", err)
 	}
