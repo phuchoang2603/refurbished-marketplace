@@ -1,9 +1,5 @@
 {{- range $name, $svc := .Values.services }}
 {{- if $svc.enabled }}
-{{- $metricsEnabled := true }}
-{{- if hasKey $svc "metrics" }}
-{{- $metricsEnabled = $svc.metrics }}
-{{- end }}
 {{- $owner := "" }}
 {{- if $svc.db }}
 {{- $owner = default (printf "%s_app" $name) $svc.db.owner }}
@@ -29,9 +25,9 @@ spec:
     metadata:
       labels:
         app: {{ $name }}
-{{- if $metricsEnabled }}
-        marketplace.metrics: "true"
-{{- end }}
+      annotations:
+        # Read by the platform agent's k8sattributes for stdout log records.
+        resource.opentelemetry.io/service.name: {{ $name }}
     spec:
 {{- if or $svc.db $svc.mongo $svc.meili }}
       initContainers:
@@ -105,10 +101,6 @@ spec:
           ports:
             - name: {{ default "http" $svc.protocol }}
               containerPort: {{ $svc.port }}
-{{- if $metricsEnabled }}
-            - name: metrics
-              containerPort: {{ default 9100 $svc.metricsPort }}
-{{- end }}
 {{- with $resources }}
           resources:
 {{ toYaml . | nindent 12 }}
@@ -165,12 +157,8 @@ spec:
               value: {{ $name | quote }}
             - name: OTEL_TRACES_SAMPLER_ARG
               value: "1"
-{{- end }}
-            - name: METRICS_ADDR
-{{- if $metricsEnabled }}
-              value: {{ printf ":%v" (default 9100 $svc.metricsPort) | quote }}
-{{- else }}
-              value: "-"
+            - name: OTEL_METRIC_EXPORT_INTERVAL
+              value: "30000"
 {{- end }}
 {{- if $svc.env }}
 {{- range $key, $value := $svc.env }}
@@ -193,10 +181,5 @@ spec:
     - name: {{ default "http" $svc.protocol }}
       port: {{ $svc.port }}
       targetPort: {{ $svc.port }}
-{{- if $metricsEnabled }}
-    - name: metrics
-      port: {{ default 9100 $svc.metricsPort }}
-      targetPort: metrics
-{{- end }}
 {{- end }}
 {{- end }}

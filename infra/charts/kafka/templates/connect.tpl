@@ -47,6 +47,10 @@ spec:
     # (splitting the e2e TraceId at the Kafka hop).
     connector.client.config.override.policy: All
   template:
+    pod:
+      metadata:
+        annotations:
+          resource.opentelemetry.io/service.name: connect-debezium
     connectContainer:
       env:
         - name: OTEL_SERVICE_NAME
@@ -54,7 +58,7 @@ spec:
         - name: OTEL_TRACES_EXPORTER
           value: otlp
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          value: {{ .Values.connect.otelEndpoint | default "http://vtsingle-vmks.monitoring.svc.cluster.local:4317" | quote }}
+          value: {{ .Values.connect.otelEndpoint | default "http://otel-agent.observability.svc.cluster.local:4317" | quote }}
         - name: OTEL_EXPORTER_OTLP_PROTOCOL
           value: grpc
         - name: OTEL_TRACES_SAMPLER
