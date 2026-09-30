@@ -1,7 +1,7 @@
 ## 1. Platform JSON log parsing (talos-proxmox)
 
 - [x] 1.1 In `../talos-proxmox`, extend the in-flight `add-clickstack-observability` change (design bullet and task 4.7) with the design's filelog operators to `apps/components/otel-agent/values.yaml`: `json_parser` gated on a body starting with `{` with `on_error: send_quiet`, severity from `level`, `trace_parser` from `trace_id`/`span_id`, and moving `msg` to the body; verify `helm template` renders the operators after `container-parser`
-- [ ] 1.2 Land that change and verify on prod that a JSON line from any pod is stored with a populated `SeverityText`, a `Body` equal to its `msg`, and a `TraceId` when the line had `trace_id`
+- [x] 1.2 Land that change and verify on prod that a JSON line from any pod is stored with a populated `SeverityText`, a `Body` equal to its `msg`, and a `TraceId` when the line had `trace_id`
 
 ## 2. Go tracing bootstrap
 
@@ -34,10 +34,10 @@
 
 ## 7. Rollout verification (prod)
 
-- [ ] 7.1 Apply the prod marketplace root on the fresh prod cluster; verify every marketplace Application is Synced and Healthy, and no pod exposes port 9100
-- [ ] 7.2 Place a checkout on `shop.phuchoang.sbs`; verify HyperDX shows one TraceId across `web`, `orders`, `connect-debezium`, `inventory`, and `payment`, with `deployment.environment=prod`
-- [ ] 7.3 Verify HyperDX metrics show `http.server.request.duration` for `web` and RPC duration for the gRPC services, filtered by `ServiceName`, and that a p95 chart renders; if histograms do not render, switch the reader to delta temporality and re-verify
-- [ ] 7.4 Verify marketplace logs in HyperDX have the correct `ServiceName` and, with task 1.2 done, that opening the checkout trace lists its log lines
+- [x] 7.1 Apply the prod marketplace root on the fresh prod cluster; verify every marketplace Application is Synced and Healthy, and no pod exposes port 9100
+- [x] 7.2 Place a checkout on `shop.phuchoang.sbs`; verify HyperDX shows one TraceId across `web`, `orders`, `connect-debezium`, `inventory`, and `payment`, with `deployment.environment=prod`
+- [ ] 7.3 Verify HyperDX metrics show `http.server.request.duration` for `web` and RPC duration for the gRPC services, filtered by `ServiceName`, and that a p95 chart renders; if histograms do not render, switch the reader to delta temporality and re-verify (ClickHouse holds cumulative `http.server.request.duration` and `rpc.server.call.duration` for all eight services and a bucket p95 computes; the HyperDX chart itself is still to be checked after the operator account exists)
+- [x] 7.4 Verify marketplace logs in HyperDX have the correct `ServiceName` and, with task 1.2 done, that opening the checkout trace lists its log lines
 
 ## 8. Archive preparation
 

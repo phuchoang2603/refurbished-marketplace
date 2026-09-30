@@ -58,6 +58,7 @@ Each service logs `tracing enabled` and `metrics export enabled` with the endpoi
 In HyperDX, open **Chart Explorer** or the SQL editor and check that each service sends every signal within the last 15 minutes:
 
 ```sql
+SELECT * FROM (
 SELECT 'traces' AS signal, ServiceName, count() FROM otel_traces
 WHERE Timestamp > now() - INTERVAL 15 MINUTE AND ResourceAttributes['k8s.namespace.name'] = 'ecommerce'
 GROUP BY ServiceName
@@ -69,10 +70,10 @@ UNION ALL
 SELECT 'metrics', ServiceName, count() FROM otel_metrics_histogram
 WHERE TimeUnix > now() - INTERVAL 15 MINUTE AND ResourceAttributes['k8s.namespace.name'] = 'ecommerce'
 GROUP BY ServiceName
-ORDER BY signal, ServiceName
+) ORDER BY signal, ServiceName
 ```
 
-Expect `web`, `users`, `products`, `inventory`, `orders`, `payment`, `cart`, and `search` for all three signals. Traffic-less services still export gRPC client metrics only after their first call, so exercise the shop before concluding metrics are missing. If a service is missing, check its startup logs for exporter errors and the `otel-agent` pod on the same node.
+Expect `web`, `users`, `products`, `inventory`, `orders`, `payment`, `cart`, and `search` for all three signals. A service exports RED metrics only after it handles its first request, so exercise the shop before concluding metrics are missing. If a service is missing, check its startup logs for exporter errors and the `otel-agent` pod on the same node.
 
 ## Application RED metrics
 
