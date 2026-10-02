@@ -36,7 +36,7 @@ func (service *Service) HandleCheckoutCommand(ctx context.Context, record messag
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 	queries := database.New(tx)
 	if _, err := queries.InsertPaymentInboxMessage(ctx, messageContext.GetMessageId()); errors.Is(err, sql.ErrNoRows) {
 		return tx.Commit()
