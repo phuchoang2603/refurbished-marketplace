@@ -15,7 +15,7 @@ templ Progress(status *checkoutv1.CheckoutStatus) {
 		@page.Header("Checkout", "Your checkout is progressing securely in the background.")
 		@card.CardContent(card.CardContentArgs{Class: "grid gap-4"}) {
 			if status.GetState() == checkoutv1.CheckoutState_CHECKOUT_STATE_FAILED {
-				<p role="status">Checkout could not be completed. No payment page was opened.</p>
+				<p role="status">Checkout could not be completed. If you reached the payment page, check your order before trying again.</p>
 				<a class="underline" href="/cart">Return to cart</a>
 			} else if status.GetState() == checkoutv1.CheckoutState_CHECKOUT_STATE_COMPLETED {
 				<p role="status">Your order is complete.</p>

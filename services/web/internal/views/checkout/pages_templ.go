@@ -97,7 +97,7 @@ func Progress(status *checkoutv1.CheckoutStatus) templ.Component {
 				}
 				ctx = templ.InitializeContext(ctx)
 				if status.GetState() == checkoutv1.CheckoutState_CHECKOUT_STATE_FAILED {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<p role=\"status\">Checkout could not be completed. No payment page was opened.</p><a class=\"underline\" href=\"/cart\">Return to cart</a>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<p role=\"status\">Checkout could not be completed. If you reached the payment page, check your order before trying again.</p><a class=\"underline\" href=\"/cart\">Return to cart</a>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}

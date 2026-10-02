@@ -36,7 +36,7 @@ kubectl --kubeconfig="$HOME/.kube/talos-prod.yaml" get applications -n argo-cd o
 kubectl --kubeconfig="$HOME/.kube/talos-prod.yaml" get pods,svc -n observability
 ```
 
-Dev agents forward to prod's gateway at `10.69.12.129:4317`. When prod is down, dev services keep running and telemetry is dropped after the agents' bounded retry. Fetch kubeconfigs as described in [gitops.md](gitops.md#fresh-installation). Retention (7 days), storage, ingest authentication, and HyperDX accounts are documented in `talos-proxmox`'s [cluster access](https://github.com/phuchoang2603/talos-proxmox/blob/main/docs/operations/cluster-access.md) guide.
+Dev agents forward to prod's gateway at `10.69.12.129:4317`. When prod is down, dev services keep running and telemetry is dropped after the agents' bounded retry. Fetch kubeconfigs as described in [gitops.md](gitops.md#environment-configuration). Retention (7 days), storage, ingest authentication, and HyperDX accounts are documented in `talos-proxmox`'s [cluster access](https://github.com/phuchoang2603/talos-proxmox/blob/main/docs/operations/cluster-access.md) guide.
 
 ## HyperDX access
 
@@ -73,7 +73,7 @@ GROUP BY ServiceName
 ) ORDER BY signal, ServiceName
 ```
 
-Expect `web`, `users`, `products`, `inventory`, `orders`, `payment`, `cart`, and `search` for all three signals. A service exports RED metrics only after it handles its first request, so exercise the shop before concluding metrics are missing. If a service is missing, check its startup logs for exporter errors and the `otel-agent` pod on the same node.
+Expect `web`, `users`, `products`, `inventory`, `orders`, `payment`, `checkout`, `cart`, and `search` for all three signals. A service exports RED metrics only after it handles its first request, so exercise the shop before concluding metrics are missing. If a service is missing, check its startup logs for exporter errors and the `otel-agent` pod on the same node.
 
 ## Application RED metrics
 
@@ -91,7 +91,7 @@ In HyperDX **Chart Explorer**, pick the **Metrics** source and the histogram met
 - error ratio: the same chart filtered to `Attributes['http.response.status_code'] >= '500'` (HTTP) or `Attributes['rpc.response.status_code'] != 'OK'` (gRPC), compared with the unfiltered count;
 - latency: aggregation **p95**, grouped by `ServiceName`.
 
-Save these charts to a HyperDX dashboard if you need them regularly. Dashboards live in HyperDX's own database, not in Git.
+The **Prod Checkout Saga** HyperDX dashboard shows the latest `checkout.pending.max_age.seconds`, `checkout.compensating.count`, `checkout.financial_exceptions.count`, and `checkout.stuck.count` gauges, filtered to `ServiceName = checkout` and `deployment.environment = prod`. A zero reading confirms the gauge is queryable, not that failure paths were exercised. Dashboards live in HyperDX's own database, not in Git. To verify accepted workflows, read Checkout by buyer-authenticated `GetCheckout` and cross-check persisted `checkouts`/`checkout_exceptions`; never infer completion from a browser redirect.
 
 ## Distributed tracing
 
@@ -110,7 +110,7 @@ KafkaConnect enables Strimzi OpenTelemetry tracing and exports to the same `otel
 To verify a checkout, search the **Traces** source:
 
 ```text
-ServiceName:(web OR orders OR payment OR products OR inventory OR search OR cart OR users OR connect-debezium)
+ServiceName:(web OR checkout OR orders OR payment OR products OR inventory OR search OR cart OR users OR connect-debezium)
 ```
 
 Open a `POST /checkout` span. Expect route/RPC/messaging span names, database child spans where applicable, and `connect-debezium` across asynchronous hops. Gateway proxy spans are not expected.

@@ -109,4 +109,4 @@ Payment MUST treat `order_id` as one payment attempt and MUST NOT mint another `
 
 **Reason**: `inventory.reserved` no longer acts as a catch-up/inbox dependency; Checkout requests a session only after observing a committed reservation result.
 
-**Migration**: Remove the `inventory.reserved` payment consumer as part of the fresh start and use idempotent Checkout session commands and result events.
+**Migration**: Remove the `inventory.reserved` payment consumer for new checkouts and use idempotent Checkout session commands and result events; retain existing payment records.

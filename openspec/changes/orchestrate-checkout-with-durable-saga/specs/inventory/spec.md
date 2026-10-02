@@ -56,7 +56,7 @@ Inventory MUST consume Checkout's correlated reserve, commit, and release comman
 
 **Reason**: `orders.created` must not race the Checkout coordinator and create reservations that Checkout has not requested.
 
-**Migration**: Remove the checkout auto-reserve consumer when replacing the old flow, and use correlated Checkout reserve commands on the fresh dataset.
+**Migration**: Remove the checkout auto-reserve consumer when replacing the old flow, and use correlated Checkout reserve commands for new checkouts while retaining existing inventory records.
 
 ### Requirement: Inventory exposes ReserveStock over gRPC
 

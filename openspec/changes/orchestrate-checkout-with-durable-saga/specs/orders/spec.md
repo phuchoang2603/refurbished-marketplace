@@ -60,4 +60,4 @@ Orders MUST finalize checkout orders only on correlated commands from Checkout a
 
 **Reason**: Independently applying payment and reservation outcome events can mark the order terminal before stock settlement and competes with the Checkout saga.
 
-**Migration**: On the fresh dataset, replace direct result consumption with Checkout's paid/failed finalization commands and correlated acknowledgements; no legacy order migration is required.
+**Migration**: For new checkouts, replace direct result consumption with Checkout's paid/failed finalization commands and correlated acknowledgements; retain existing order records without migration.

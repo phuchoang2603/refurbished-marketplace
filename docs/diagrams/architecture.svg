@@ -33,6 +33,9 @@
 <polyline points="1718,800.01 1727,800.01 1727,906.01 1718,906.01" fill="none" stroke="#0c8599" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow-0)"/>
 <polyline points="1097.53,950 1097.53,1156 359.99,1156 359.99,1192" fill="none" stroke="#e8590c" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow-4)"/>
 <polyline points="1537.53,950 1537.53,1174 490.01,1174 490.01,1192" fill="none" stroke="#e8590c" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow-4)"/>
+<polyline points="1977.5,950 1977.5,1192 527.5,1192" fill="none" stroke="#e8590c" stroke-width="2" marker-end="url(#arrow-4)"/>
+<polyline points="1450,364 1450,709 1977.5,709 1977.5,752" fill="none" stroke="#1971c2" stroke-width="2" marker-end="url(#arrow-1)"/>
+<polyline points="2158,800 2175,800 2175,906 2158,906" fill="none" stroke="#0c8599" stroke-width="2" marker-end="url(#arrow-0)"/>
 <polyline points="628,1243.01 827,1243.01" fill="none" stroke="#e8590c" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow-4)"/>
 <polyline points="192.52,2303 192.52,2320 527.52,2320 527.52,2303" fill="none" stroke="#2f9e44" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow-2)"/>
 <polyline points="1272.52,2303 1272.52,2320 1519.99,2320 1519.99,2303" fill="none" stroke="#1971c2" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow-1)"/>
@@ -66,6 +69,8 @@
 <rect x="485" y="870" width="345" height="72" rx="11" fill="#e3fafc" stroke="#0c8599" stroke-width="2"/>
 <rect x="925" y="870" width="345" height="72" rx="11" fill="#e3fafc" stroke="#0c8599" stroke-width="2"/>
 <rect x="1365" y="870" width="345" height="72" rx="11" fill="#e3fafc" stroke="#0c8599" stroke-width="2"/>
+<rect x="1805" y="760" width="345" height="80" rx="11" fill="#ffffff" stroke="#6741b0" stroke-width="2"/>
+<rect x="1805" y="870" width="345" height="72" rx="11" fill="#e3fafc" stroke="#0c8599" stroke-width="2"/>
 <rect x="230" y="1200" width="390" height="86" rx="11" fill="#ffffff" stroke="#e8590c" stroke-width="2"/>
 <rect x="835" y="1200" width="355" height="86" rx="11" fill="#ffffff" stroke="#e8590c" stroke-width="2"/>
 <rect x="75" y="2220" width="235" height="75" rx="11" fill="#ffffff" stroke="#2f9e44" stroke-width="2"/>
@@ -146,15 +151,10 @@
 <text x="1146" y="2143.49" fill="#1971c2" text-anchor="start" font-size="23" font-family="DejaVu Sans Mono,monospace" font-weight="400">
 <tspan x="1146" dy="0">07  OBSERVABILITY / ClickStack</tspan>
 </text>
-<text x="1815" y="791.58" fill="#6741b0" text-anchor="start" font-size="19" font-family="DejaVu Sans Mono,monospace" font-weight="400">
-<tspan x="1815" dy="0">WEB CALLS ALL 7 APIs</tspan>
-<tspan x="1815" dy="23.75"></tspan>
-<tspan x="1815" dy="23.75">• Catalog: products + search</tspan>
-<tspan x="1815" dy="23.75">• Checkout: cart → orders</tspan>
-<tspan x="1815" dy="23.75">  → inventory → payment</tspan>
-<tspan x="1815" dy="23.75">• Auth: users</tspan>
-<tspan x="1815" dy="23.75"></tspan>
-<tspan x="1815" dy="23.75">Browser never calls gRPC.</tspan>
+<text x="1815" y="1008" fill="#6741b0" text-anchor="start" font-size="19" font-family="DejaVu Sans Mono,monospace" font-weight="400">
+<tspan x="1815" dy="0">Web submits to Checkout; Checkout</tspan>
+<tspan x="1815" dy="23.75">coordinates order → stock → payment.</tspan>
+<tspan x="1815" dy="23.75">Catalog and auth stay synchronous.</tspan>
 </text>
 <text x="1295" y="1216.45" fill="#874b1a" text-anchor="start" font-size="19" font-family="DejaVu Sans Mono,monospace" font-weight="400">
 <tspan x="1295" dy="0">Mongo + PostgreSQL outboxes → Debezium → Kafka (TLS)</tspan>
@@ -188,7 +188,7 @@
 <tspan x="1648" dy="0">05  CHECKOUT  →  RESERVE + PAY</tspan>
 </text>
 <text x="1635" y="1414.32" fill="#865728" text-anchor="middle" font-size="17" font-family="DejaVu Sans Mono,monospace" font-weight="400">
-<tspan x="1635" dy="0">Merchant-scoped order; Web orchestrates every synchronous gRPC call.</tspan>
+<tspan x="1635" dy="0">Merchant-scoped saga; Checkout coordinates durable commands and results.</tspan>
 </text>
 <text x="223" y="1502.07" fill="#287b43" text-anchor="middle" font-size="17" font-family="DejaVu Sans Mono,monospace" font-weight="400">
 <tspan x="223" dy="0">Web → Products</tspan>
@@ -216,42 +216,42 @@
 <tspan x="850.5" dy="21.25">Meilisearch</tspan>
 </text>
 <text x="1303" y="1502.07" fill="#1971c2" text-anchor="middle" font-size="17" font-family="DejaVu Sans Mono,monospace" font-weight="400">
-<tspan x="1303" dy="0">Web → Orders</tspan>
-<tspan x="1303" dy="21.25">PlaceOrder</tspan>
+<tspan x="1303" dy="0">Web → Checkout</tspan>
+<tspan x="1303" dy="21.25">SubmitCheckout</tspan>
 <tspan x="1303" dy="21.25">merchant + key</tspan>
 </text>
 <text x="1653" y="1502.07" fill="#1971c2" text-anchor="middle" font-size="17" font-family="DejaVu Sans Mono,monospace" font-weight="400">
-<tspan x="1653" dy="0">Web → Inventory</tspan>
-<tspan x="1653" dy="21.25">ReserveStock</tspan>
-<tspan x="1653" dy="21.25">idempotent hold</tspan>
+<tspan x="1653" dy="0">Checkout → Orders</tspan>
+<tspan x="1653" dy="21.25">create pending order</tspan>
+<tspan x="1653" dy="21.25">checkout.*.v1</tspan>
 </text>
 <text x="2003" y="1502.07" fill="#1971c2" text-anchor="middle" font-size="17" font-family="DejaVu Sans Mono,monospace" font-weight="400">
-<tspan x="2003" dy="0">Web → Payment</tspan>
-<tspan x="2003" dy="21.25">hosted session</tspan>
-<tspan x="2003" dy="21.25">get-or-create</tspan>
+<tspan x="2003" dy="0">Checkout → Inventory</tspan>
+<tspan x="2003" dy="21.25">reserve stock</tspan>
+<tspan x="2003" dy="21.25">checkout.*.v1</tspan>
 </text>
 <text x="1303" y="1812.07" fill="#a95010" text-anchor="middle" font-size="17" font-family="DejaVu Sans Mono,monospace" font-weight="400">
-<tspan x="1303" dy="0">Kafka consumers</tspan>
-<tspan x="1303" dy="21.25">Orders: status</tspan>
-<tspan x="1303" dy="21.25">Inventory: settle</tspan>
+<tspan x="1303" dy="0">Checkout → Orders</tspan>
+<tspan x="1303" dy="21.25">finalize after stock</tspan>
+<tspan x="1303" dy="21.25">commit / release</tspan>
 </text>
 <text x="1653" y="1812.07" fill="#a95010" text-anchor="middle" font-size="17" font-family="DejaVu Sans Mono,monospace" font-weight="400">
-<tspan x="1653" dy="0">Payment → Kafka</tspan>
-<tspan x="1653" dy="21.25">payment.* outbox</tspan>
-<tspan x="1653" dy="21.25">terminal outcome</tspan>
+<tspan x="1653" dy="0">Payment → Checkout</tspan>
+<tspan x="1653" dy="21.25">payment outcome</tspan>
+<tspan x="1653" dy="21.25">via outbox + Kafka</tspan>
 </text>
 <text x="2003" y="1812.07" fill="#a95010" text-anchor="middle" font-size="17" font-family="DejaVu Sans Mono,monospace" font-weight="400">
-<tspan x="2003" dy="0">Simulator → Web</tspan>
-<tspan x="2003" dy="21.25">hosted callback</tspan>
-<tspan x="2003" dy="21.25">Web → Payment</tspan>
+<tspan x="2003" dy="0">Checkout → Payment</tspan>
+<tspan x="2003" dy="21.25">session after stock</tspan>
+<tspan x="2003" dy="21.25">ready → redirect</tspan>
 </text>
 <text x="440" y="1651.69" fill="#416f51" text-anchor="middle" font-size="17" font-family="DejaVu Sans Mono,monospace" font-weight="400">
 <tspan x="440" dy="0">initial_qty required (0 valid); listing + outbox commit atomically.</tspan>
 <tspan x="440" dy="21.25">Web returns before stock seed or search projection finishes.</tspan>
 </text>
 <text x="1462.5" y="1651.69" fill="#865728" text-anchor="middle" font-size="17" font-family="DejaVu Sans Mono,monospace" font-weight="400">
-<tspan x="1462.5" dy="0">orders.created → Inventory: Kafka safety net</tspan>
-<tspan x="1462.5" dy="21.25">inventory.reserved → Payment: one transaction</tspan>
+<tspan x="1462.5" dy="0">Checkout DB + outbox → Kafka commands; service results → Checkout inbox.</tspan>
+<tspan x="1462.5" dy="21.25">No stock hold or session before correlated commands.</tspan>
 </text>
 <text x="563" y="1977.57" fill="#416f51" text-anchor="middle" font-size="17" font-family="DejaVu Sans Mono,monospace" font-weight="400">
 <tspan x="563" dy="0">Browse / seller list → Search/Meili (no live stock); PDP → Products + Inventory.</tspan>
@@ -260,8 +260,8 @@
 </text>
 <text x="1668" y="1977.57" fill="#865728" text-anchor="middle" font-size="17" font-family="DejaVu Sans Mono,monospace" font-weight="400">
 <tspan x="1668" dy="0">Cart snapshots merchant + price; checkout reprices via Products.</tspan>
-<tspan x="1668" dy="21.25">Success → Orders PAID / Inventory COMMIT; failed or expired → FAILED / RELEASE.</tspan>
-<tspan x="1668" dy="21.25">Clear paid cart items after outcome; failed reserve never opens payment.</tspan>
+<tspan x="1668" dy="21.25">Success → commit stock then finalize order; failures → compensate.</tspan>
+<tspan x="1668" dy="21.25">Uncertain payment stays under review; stock rejection never opens payment.</tspan>
 </text>
 <text x="212.5" y="275.4" fill="#1971c2" text-anchor="middle" font-size="20" font-family="DejaVu Sans Mono,monospace" font-weight="400">
 <tspan x="212.5" dy="0">Browser</tspan>
@@ -281,7 +281,7 @@
 </text>
 <text x="1322.5" y="300.47" fill="#6741b0" text-anchor="middle" font-size="21" font-family="DejaVu Sans Mono,monospace" font-weight="400">
 <tspan x="1322.5" dy="0">WEB  ·  :8080</tspan>
-<tspan x="1322.5" dy="26.25">SSR  /  cookies  /  checkout orchestration</tspan>
+<tspan x="1322.5" dy="26.25">SSR  /  cookies  /  checkout submission</tspan>
 </text>
 <text x="657.5" y="506.4" fill="#6741b0" text-anchor="middle" font-size="20" font-family="DejaVu Sans Mono,monospace" font-weight="400">
 <tspan x="657.5" dy="0">PRODUCTS  ·  :9092</tspan>
@@ -337,6 +337,8 @@
 <tspan x="1537.5" dy="0">PostgreSQL  ·  payment_db</tspan>
 <tspan x="1537.5" dy="22.5">payment_outbox</tspan>
 </text>
+<text x="1977.5" y="791.4" fill="#6741b0" text-anchor="middle" font-size="20" font-family="DejaVu Sans Mono,monospace"><tspan x="1977.5" dy="0">CHECKOUT  ·  :9099</tspan><tspan x="1977.5" dy="25">Durable saga coordinator</tspan></text>
+<text x="1977.5" y="898.26" fill="#0c8599" text-anchor="middle" font-size="18" font-family="DejaVu Sans Mono,monospace"><tspan x="1977.5" dy="0">PostgreSQL  ·  checkout_db</tspan><tspan x="1977.5" dy="22.5">saga + inbox + outbox</tspan></text>
 <text x="425" y="1234.4" fill="#e8590c" text-anchor="middle" font-size="20" font-family="DejaVu Sans Mono,monospace" font-weight="400">
 <tspan x="425" dy="0">DEBEZIUM  ·  Kafka Connect</tspan>
 <tspan x="425" dy="25">Mongo + PostgreSQL outbox CDC</tspan>
@@ -387,7 +389,7 @@
 </text>
 <rect x="1394.46" y="418" width="111.6" height="24" rx="5" fill="white"/>
 <text x="1450.26" y="433.12" fill="#1971c2" text-anchor="middle" font-size="16" font-family="DejaVu Sans Mono,monospace" font-weight="400">
-<tspan x="1450.26" dy="0">(1) reserve</tspan>
+<tspan x="1450.26" dy="0">(1) stock read</tspan>
 </text>
 <rect x="1669.36" y="440" width="82.8" height="24" rx="5" fill="white"/>
 <text x="1710.76" y="455.12" fill="#1971c2" text-anchor="middle" font-size="16" font-family="DejaVu Sans Mono,monospace" font-weight="400">
@@ -479,15 +481,15 @@
 </text>
 <rect x="1394.2" y="1505.51" width="111.6" height="24" rx="5" fill="white"/>
 <text x="1450" y="1520.63" fill="#1971c2" text-anchor="middle" font-size="16" font-family="DejaVu Sans Mono,monospace" font-weight="400">
-<tspan x="1450" dy="0">(1) reserve</tspan>
+<tspan x="1450" dy="0">(1) order</tspan>
 </text>
 <rect x="1744.2" y="1505.51" width="111.6" height="24" rx="5" fill="white"/>
 <text x="1800" y="1520.63" fill="#1971c2" text-anchor="middle" font-size="16" font-family="DejaVu Sans Mono,monospace" font-weight="400">
-<tspan x="1800" dy="0">(2) session</tspan>
+<tspan x="1800" dy="0">(2) reserve</tspan>
 </text>
 <rect x="1914.42" y="1660.5" width="121.2" height="24" rx="5" fill="white"/>
 <text x="1975.02" y="1675.62" fill="#1971c2" text-anchor="middle" font-size="16" font-family="DejaVu Sans Mono,monospace" font-weight="400">
-<tspan x="1975.02" dy="0">(3) callback</tspan>
+<tspan x="1975.02" dy="0">(3) session</tspan>
 </text>
 <rect x="1744.2" y="1815.51" width="111.6" height="24" rx="5" fill="white"/>
 <text x="1800" y="1830.63" fill="#1971c2" text-anchor="middle" font-size="16" font-family="DejaVu Sans Mono,monospace" font-weight="400">
@@ -495,6 +497,6 @@
 </text>
 <rect x="1399" y="1815.51" width="102" height="24" rx="5" fill="white"/>
 <text x="1450" y="1830.63" fill="#1971c2" text-anchor="middle" font-size="16" font-family="DejaVu Sans Mono,monospace" font-weight="400">
-<tspan x="1450" dy="0">(5) settle</tspan>
+<tspan x="1450" dy="0">(5) finalize</tspan>
 </text>
 </svg>

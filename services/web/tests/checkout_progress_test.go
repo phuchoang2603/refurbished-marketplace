@@ -59,3 +59,23 @@ func TestCheckoutProgressWaitsForSessionAndRestrictsBuyer(t *testing.T) {
 		t.Fatalf("poll did not redirect only after readiness: %d %s", poll.Code, poll.Body.String())
 	}
 }
+
+func TestFailedCheckoutDoesNotClaimPaymentPageWasUnopened(t *testing.T) {
+	checkoutSvc := &fakes.CheckoutService{
+		GetFn: func(_ context.Context, request *checkoutv1.GetCheckoutRequest) (*checkoutv1.CheckoutStatus, error) {
+			return &checkoutv1.CheckoutStatus{
+				CheckoutId: request.GetCheckoutId(), BuyerUserId: request.GetBuyerUserId(),
+				OrderId: "order-1", State: checkoutv1.CheckoutState_CHECKOUT_STATE_FAILED,
+			}, nil
+		},
+	}
+	router := newTestRouter(t, routerDeps{checkout: checkoutSvc})
+	request := httptest.NewRequest(http.MethodGet, "/checkouts/checkout-1", nil)
+	request.AddCookie(&http.Cookie{Name: auth.AccessCookieName, Value: signedAccessToken(t, "user-1")})
+	response := httptest.NewRecorder()
+	router.ServeHTTP(response, request)
+	if response.Code != http.StatusOK || !strings.Contains(response.Body.String(), "If you reached the payment page") ||
+		strings.Contains(response.Body.String(), "No payment page was opened") {
+		t.Fatalf("failed checkout shows misleading payment status: %d %s", response.Code, response.Body.String())
+	}
+}

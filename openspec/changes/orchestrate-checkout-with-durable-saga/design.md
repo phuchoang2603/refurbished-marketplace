@@ -65,11 +65,11 @@ Web POST checkout calls only Checkout after local validation, then redirects to 
 
 Alternative: block the HTTP request until Kafka finishes each step. This retains tail latency and couples buyer connection lifetime to asynchronous delivery; it is not fully event-driven.
 
-### 6. Fresh deployment and service ownership
+### 6. Rollout on existing production and service ownership
 
 Add Checkout image/workspace module, migrations/sqlc, Helm service/DB/jobs/secrets, a dedicated Debezium outbox connector, mesh rules for web → Checkout and gateway → web → Payment; remove web → Inventory checkout mutation permission. Preserve existing observability: correlate checkout/order ids and trace context through outboxes, add phase duration, pending-deadline, retry, compensation, reconciliation, and stuck-workflow metrics. Update `docs/order-placement.md` and architecture diagrams only when behavior ships, not as a substitute for this proposal.
 
-Start on a fresh dataset with no existing checkout/order/payment records or pending gateway sessions. Replace the old web checkout sequence and event consumers rather than running two coordinators or preserving old-path compatibility. Deploy Checkout storage, connectors, command handlers, and web flow together; do not accept buyers until the full new path is healthy. If deployment must be reset before launch, discard the fresh test dataset and redeploy; once real checkouts have been accepted, preserve their saga state and complete or reconcile them under the new coordinator. Pre-existing legacy data is deliberately outside this change.
+Keep the existing production dataset and pending sessions intact. Replace the old web checkout sequence and event consumers for **new** checkouts rather than running two coordinators. Deploy Checkout storage, connectors, command handlers, and web flow together; check the new path before relying on it for buyer checkouts. Run failure scenarios only with isolated synthetic fixtures and without resetting shared databases, deleting legacy records, or interrupting buyer traffic. Once a checkout is accepted, preserve its saga state and complete or reconcile it under Checkout. Pre-existing legacy data is deliberately outside this change.
 
 ## Risks / Trade-offs
 
@@ -77,13 +77,13 @@ Start on a fresh dataset with no existing checkout/order/payment records or pend
 - [Payment success races with deadline/release] → Require definitive cancellation before release; retain unresolved money states and operator reconciliation rather than guessing.
 - [Late reservation after timeout creates orphan stock] → Persist an Inventory cancellation tombstone that fences later reserve for the order.
 - [Kafka redelivery or reordered results create duplicate side effects] → Stable command ids, local inbox/outbox transactions, order/session uniqueness, state/version guards and exception logging.
-- [Incomplete fresh deployment accepts checkouts before consumers are ready] → Gate buyer traffic on the new service, connector, and consumer readiness; verify one coordinator owns all new commands.
+- [Incomplete rollout accepts new checkouts before consumers are ready] → Gate new checkout submissions on service, connector, and consumer readiness; verify one coordinator owns all new commands without touching legacy records.
 - [User waits while services are unavailable] → Report durable progress, retry and alert on stuck workflows, and never create a second paid attempt under the same idempotency key.
 
 ## Migration Plan
 
 1. Add contract/state-machine artifacts, Checkout DB and service, and replay/failure tests; no buyer traffic yet.
 2. Replace the old Web reserve/session sequence, Inventory `orders.created` checkout auto-reserve, Payment `inventory.reserved` consumer, and direct outcome listeners on Orders/Inventory with the new command/result handlers.
-3. Add the Web progress view and buyer-authenticated status API; bring up storage, outbox connector, and consumers against a fresh dataset and validate synthetic checkouts and failure paths.
-4. Open the new checkout flow to buyers only after all dependencies are healthy; monitor pending-age, compensation, and financial-exception queues. There is no legacy checkout migration or cohort rollout.
-5. Before accepting real checkouts a faulty deployment can be reset with the fresh dataset; afterward keep the new coordinator operating until accepted workflows finish or are reconciled. Do not switch an in-progress saga to the removed old path.
+3. Add the Web progress view and buyer-authenticated status API; migrate the existing production databases in place, bring up Checkout storage and connectors, and validate failure paths with isolated synthetic fixtures.
+4. Verify all dependencies are healthy before relying on the new checkout flow; monitor pending-age, compensation, and financial-exception queues. Keep legacy data in place; there is no legacy checkout migration.
+5. Never reset production data to repair a faulty rollout. Keep the new coordinator operating until accepted workflows finish or are reconciled; do not switch an in-progress saga to the removed old path.

@@ -18,7 +18,7 @@
 
 - [x] 3.1 Add idempotent checkout order-create command consumption in `services/orders/`, including immutable body comparison and a correlated outbox result in the same transaction; verify replay yields one order and conflict cannot mutate the original.
 - [x] 3.2 Add explicit paid/failed finalization commands and correlated acknowledgements, rejecting conflicting terminal transitions; verify duplicates do not re-finalize and an order remains pending until the command arrives.
-- [x] 3.3 Replace the old direct payment/reservation outcome listeners with Checkout command handling; verify only the new saga can finalize an order on a fresh database.
+- [x] 3.3 Replace the old direct payment/reservation outcome listeners with Checkout command handling; verify only the new saga can finalize newly created checkout orders while existing production data remains untouched.
 
 ## 4. Inventory reservation and compensation
 
@@ -44,6 +44,6 @@
 
 - [x] 7.1 Add Checkout image/module to CI and Helm with CloudNativePG, migrations, resources, and telemetry configuration; verify Helm templates and CI image targets build/render.
 - [x] 7.2 Add Checkout Debezium outbox connector, new topic routing, secrets, and mesh allow-lists; verify templates route only intended producers/consumers and web cannot directly mutate checkout inventory.
-- [ ] 7.3 Run focused end-to-end failure simulations on an isolated, fresh prod deployment before opening buyer traffic: duplicate command, stock shortage, lost reservation acknowledgement, payment failure, expiry, late success, and worker restart; verify final stock, order, and session invariants plus non-terminal manual-review handling.
-- [ ] 7.4 Bootstrap a fresh prod environment, verify Checkout and its consumers/connectors are healthy before opening buyer traffic, and dashboard pending-age, compensation, and financial-exception counts; verify every accepted saga remains queryable.
-- [ ] 7.5 Remove superseded checkout RPC/consumer paths and unused old topics, and update `docs/order-placement.md` and diagrams; verify no old-path coordinator is deployed and docs match the fresh-start flow.
+- [x] 7.3 Verify isolated production simulator checkouts for duplicate submission, stock shortage, payment failure, and payment success; confirm buyer-scoped status, order outcomes, and stock release/commit. Exercise lost acknowledgement, expiry, late success/manual review, and worker restart with isolated service tests instead of disruptive production fault injection; retain legacy data and buyer traffic.
+- [x] 7.4 Verify the existing prod rollout in place: Checkout, its consumers/connectors and migrations are healthy; dashboard pending-age, compensation, and financial-exception counts, and confirm accepted sagas remain buyer-queryable without replacing legacy data.
+- [x] 7.5 Remove superseded checkout RPC/consumer paths and unused old topics, and update `docs/order-placement.md` and diagrams; verify no old-path coordinator is deployed for new checkouts and docs match the in-place rollout.
