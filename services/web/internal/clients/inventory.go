@@ -35,13 +35,3 @@ func (c *InventoryClient) GetStock(ctx context.Context, productID string) (*inve
 func (c *InventoryClient) GetStocksByIDs(ctx context.Context, productIDs []string) (*inventoryv1.GetStocksByIDsResponse, error) {
 	return c.client.GetStocksByIDs(ctx, &inventoryv1.GetStocksByIDsRequest{ProductIds: productIDs})
 }
-
-func (c *InventoryClient) ReserveStock(ctx context.Context, orderID, merchantID string, totalCents int64, items []*inventoryv1.ReserveStockItem) error {
-	_, err := c.client.ReserveStock(ctx, &inventoryv1.ReserveStockRequest{
-		OrderId:    orderID,
-		MerchantId: merchantID,
-		TotalCents: totalCents,
-		Items:      items,
-	})
-	return err
-}

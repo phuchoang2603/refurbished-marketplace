@@ -11,6 +11,7 @@ import (
 	"github.com/phuchoang2603/refurbished-marketplace/services/web/internal/auth"
 	"github.com/phuchoang2603/refurbished-marketplace/services/web/tests/fakes"
 	cartv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/cart/v1"
+	checkoutv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1"
 	inventoryv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/inventory/v1"
 	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
 	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
@@ -47,7 +48,7 @@ func TestAddCartItemRedirectsToCart(t *testing.T) {
 	}
 }
 
-func TestCheckoutRedirectsToHostedPaymentWithoutClearingCart(t *testing.T) {
+func TestCheckoutSubmitsSnapshotAndRedirectsToProgress(t *testing.T) {
 	var removed []string
 	var batchIDs []string
 	cartSvc := &fakes.CartService{
@@ -79,6 +80,7 @@ func TestCheckoutRedirectsToHostedPaymentWithoutClearingCart(t *testing.T) {
 			if idempotencyKey != "intent-1" {
 				t.Fatalf("idempotencyKey = %q, want intent-1", idempotencyKey)
 			}
+			t.Fatal("checkout POST must not call Orders directly")
 			if buyerUserID != "user-1" {
 				t.Fatalf("buyerUserID = %q, want user-1", buyerUserID)
 			}
@@ -119,6 +121,7 @@ func TestCheckoutRedirectsToHostedPaymentWithoutClearingCart(t *testing.T) {
 	}
 	paymentSvc := &fakes.PaymentService{
 		CreateSessionFn: func(ctx context.Context, req *paymentv1.CreateHostedPaymentSessionRequest) (*paymentv1.CreateHostedPaymentSessionResponse, error) {
+			t.Fatal("checkout POST must not call Payment directly")
 			if req.GetOrderId() != "order-1" {
 				t.Fatalf("orderID = %q, want order-1", req.GetOrderId())
 			}
@@ -151,18 +154,30 @@ func TestCheckoutRedirectsToHostedPaymentWithoutClearingCart(t *testing.T) {
 		},
 	}
 	rec := httptest.NewRecorder()
+	checkoutSvc := &fakes.CheckoutService{SubmitFn: func(ctx context.Context, request *checkoutv1.SubmitCheckoutRequest) (*checkoutv1.SubmitCheckoutResponse, error) {
+		if request.GetBuyerUserId() != "user-1" || request.GetIntentKey() != "intent-1" || request.GetMerchantId() != "merchant-1" {
+			t.Fatalf("wrong checkout identity: %v", request)
+		}
+		if request.GetTotalCents() != 1700 || len(request.GetItems()) != 2 || request.GetItems()[0].GetName() != "Phone" || request.GetItems()[1].GetName() != "Case" {
+			t.Fatalf("checkout did not use authoritative prices and names: %v", request)
+		}
+		if request.GetShippingAddress().GetCountry() != "US" || request.GetBuyerEmail() != "buyer@example.com" {
+			t.Fatalf("missing buyer and shipping context: %v", request)
+		}
+		return &checkoutv1.SubmitCheckoutResponse{CheckoutId: "checkout-1", State: checkoutv1.CheckoutState_CHECKOUT_STATE_CREATING_ORDER}, nil
+	}}
 	req := httptest.NewRequest(http.MethodPost, "/cart/checkout", strings.NewReader(checkoutForm(url.Values{"merchant_id": {"merchant-1"}, "checkout_intent_key": {"intent-1"}})))
 	req.Host = "localhost:8080"
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.AddCookie(&http.Cookie{Name: auth.AccessCookieName, Value: signedAccessToken(t, "user-1")})
 	req.AddCookie(&http.Cookie{Name: "cart_id", Value: "cart-1"})
 
-	newTestRouter(t, routerDeps{cart: cartSvc, products: productsSvc, inventory: inventorySvc, orders: ordersSvc, payment: paymentSvc}).ServeHTTP(rec, req)
+	newTestRouter(t, routerDeps{cart: cartSvc, products: productsSvc, inventory: inventorySvc, orders: ordersSvc, payment: paymentSvc, checkout: checkoutSvc}).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusSeeOther {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusSeeOther)
 	}
-	wantLocation := "http://localhost:8097/pay?callback_url=http%3A%2F%2Flocalhost%3A8080%2Fcallbacks%2Fhosted-payment&order_id=order-1&payment_session_id=sess-1&return_url=http%3A%2F%2Flocalhost%3A8080%2Forders%2Forder-1"
+	wantLocation := "/checkouts/checkout-1"
 	if got := rec.Header().Get("Location"); got != wantLocation {
 		t.Fatalf("location = %q, want %q", got, wantLocation)
 	}
@@ -172,8 +187,8 @@ func TestCheckoutRedirectsToHostedPaymentWithoutClearingCart(t *testing.T) {
 	if len(removed) != 0 {
 		t.Fatalf("removed = %v, want none on checkout", removed)
 	}
-	if reservedOrderID != "order-1" {
-		t.Fatalf("reserved order = %q, want order-1", reservedOrderID)
+	if reservedOrderID != "" {
+		t.Fatalf("web reserved stock directly for %q", reservedOrderID)
 	}
 }
 
@@ -232,7 +247,7 @@ func checkoutIntentFromHTML(body string) string {
 	return rest[:j]
 }
 
-func TestCartCheckoutMarksOrderFailedWhenReserveFails(t *testing.T) {
+func TestCartCheckoutDoesNotReserveBeforeAsynchronousResult(t *testing.T) {
 	for _, reason := range []string{"insufficient stock", "stock not initialized"} {
 		t.Run(reason, func(t *testing.T) {
 			cartSvc := &fakes.CartService{
@@ -281,6 +296,9 @@ func TestCartCheckoutMarksOrderFailedWhenReserveFails(t *testing.T) {
 					return &paymentv1.CreateHostedPaymentSessionResponse{OrderId: req.GetOrderId()}, nil
 				},
 			}
+			checkoutSvc := &fakes.CheckoutService{SubmitFn: func(ctx context.Context, request *checkoutv1.SubmitCheckoutRequest) (*checkoutv1.SubmitCheckoutResponse, error) {
+				return &checkoutv1.SubmitCheckoutResponse{CheckoutId: "checkout-pending"}, nil
+			}}
 			rec := httptest.NewRecorder()
 			req := httptest.NewRequest(http.MethodPost, "/cart/checkout", strings.NewReader(checkoutForm(url.Values{"merchant_id": {"merchant-1"}, "checkout_intent_key": {"intent-fail"}})))
 			req.Host = "localhost:8080"
@@ -288,13 +306,13 @@ func TestCartCheckoutMarksOrderFailedWhenReserveFails(t *testing.T) {
 			req.AddCookie(&http.Cookie{Name: auth.AccessCookieName, Value: signedAccessToken(t, "user-1")})
 			req.AddCookie(&http.Cookie{Name: "cart_id", Value: "cart-1"})
 
-			newTestRouter(t, routerDeps{cart: cartSvc, products: productsSvc, inventory: inventorySvc, orders: ordersSvc, payment: paymentSvc}).ServeHTTP(rec, req)
+			newTestRouter(t, routerDeps{cart: cartSvc, products: productsSvc, inventory: inventorySvc, orders: ordersSvc, payment: paymentSvc, checkout: checkoutSvc}).ServeHTTP(rec, req)
 
-			if rec.Code != http.StatusConflict {
-				t.Fatalf("status = %d, want %d", rec.Code, http.StatusConflict)
+			if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/checkouts/checkout-pending" {
+				t.Fatalf("checkout should be pending, got %d %s", rec.Code, rec.Header().Get("Location"))
 			}
-			if failedStatus != ordersv1.OrderStatus_ORDER_STATUS_FAILED {
-				t.Fatalf("order status = %v, want FAILED", failedStatus)
+			if failedStatus != ordersv1.OrderStatus_ORDER_STATUS_UNSPECIFIED {
+				t.Fatalf("web finalized an order directly: %v", failedStatus)
 			}
 			if paymentCalled {
 				t.Fatal("hosted payment session should not be created when reserve fails")

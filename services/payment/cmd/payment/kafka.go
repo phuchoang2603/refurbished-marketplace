@@ -9,13 +9,13 @@ import (
 	"github.com/phuchoang2603/refurbished-marketplace/shared/messaging"
 )
 
-func runInventoryReservedConsumer(ctx context.Context, svc *service.Service, bootstrap []string, groupID string) error {
+func runCheckoutCommandConsumer(ctx context.Context, svc *service.Service, bootstrap []string, groupID string) error {
 	consumer, err := messaging.NewKafkaConsumer(messaging.KafkaConsumerConfig{
 		BootstrapServers: bootstrap,
 		GroupID:          groupID,
-		Topics:           []string{messaging.EventTypeInventoryReserved},
+		Topics:           []string{messaging.EventTypeCheckoutCreateSession, messaging.EventTypeCheckoutCancelSession},
 		TracerName:       "payment",
-	}, svc.KafkaInventoryReservedHandler())
+	}, svc.HandleCheckoutCommand)
 	if err != nil {
 		return err
 	}
@@ -27,7 +27,7 @@ func runInventoryReservedConsumer(ctx context.Context, svc *service.Service, boo
 
 	sharedlog.Info(
 		"kafka consumer started",
-		"topic", messaging.EventTypeInventoryReserved,
+		"topics", "checkout payment commands",
 		"group", groupID,
 	)
 	return consumer.Run(ctx)

@@ -68,7 +68,7 @@ func TestOrderPageShowsHostedPaymentStatus(t *testing.T) {
 	if strings.Contains(html, "Resume payment") {
 		t.Fatalf("did not expect resume payment after failed hosted session in %q", html)
 	}
-	if len(removed) != 1 || removed[0] != "prod-1" {
-		t.Fatalf("removed = %v, want [prod-1] after failed payment", removed)
+	if len(removed) != 0 {
+		t.Fatalf("cart was drained before the order became paid: %v", removed)
 	}
 }

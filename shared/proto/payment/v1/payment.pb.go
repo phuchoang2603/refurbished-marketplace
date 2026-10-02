@@ -704,9 +704,8 @@ const file_shared_proto_payment_v1_payment_proto_rawDesc = "" +
 	"%HOSTED_PAYMENT_SESSION_STATUS_PENDING\x10\x01\x12+\n" +
 	"'HOSTED_PAYMENT_SESSION_STATUS_SUCCEEDED\x10\x02\x12(\n" +
 	"$HOSTED_PAYMENT_SESSION_STATUS_FAILED\x10\x03\x12)\n" +
-	"%HOSTED_PAYMENT_SESSION_STATUS_EXPIRED\x10\x042\xef\x02\n" +
-	"\x0ePaymentService\x12{\n" +
-	"\x1aCreateHostedPaymentSession\x12-.payment.v1.CreateHostedPaymentSessionRequest\x1a..payment.v1.CreateHostedPaymentSessionResponse\x12u\n" +
+	"%HOSTED_PAYMENT_SESSION_STATUS_EXPIRED\x10\x042\xf2\x01\n" +
+	"\x0ePaymentService\x12u\n" +
 	"\x1eGetHostedPaymentSessionByOrder\x121.payment.v1.GetHostedPaymentSessionByOrderRequest\x1a .payment.v1.HostedPaymentSession\x12i\n" +
 	"\x14HandleGatewayWebhook\x12'.payment.v1.HandleGatewayWebhookRequest\x1a(.payment.v1.HandleGatewayWebhookResponseBTZRgithub.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1;paymentv1b\x06proto3"
 
@@ -743,14 +742,12 @@ var file_shared_proto_payment_v1_payment_proto_depIdxs = []int32{
 	2, // 3: payment.v1.CreateHostedPaymentSessionRequest.items:type_name -> payment.v1.HostedPaymentLineItem
 	0, // 4: payment.v1.HostedPaymentSession.status:type_name -> payment.v1.HostedPaymentSessionStatus
 	0, // 5: payment.v1.HandleGatewayWebhookRequest.status:type_name -> payment.v1.HostedPaymentSessionStatus
-	4, // 6: payment.v1.PaymentService.CreateHostedPaymentSession:input_type -> payment.v1.CreateHostedPaymentSessionRequest
-	6, // 7: payment.v1.PaymentService.GetHostedPaymentSessionByOrder:input_type -> payment.v1.GetHostedPaymentSessionByOrderRequest
-	8, // 8: payment.v1.PaymentService.HandleGatewayWebhook:input_type -> payment.v1.HandleGatewayWebhookRequest
-	5, // 9: payment.v1.PaymentService.CreateHostedPaymentSession:output_type -> payment.v1.CreateHostedPaymentSessionResponse
-	7, // 10: payment.v1.PaymentService.GetHostedPaymentSessionByOrder:output_type -> payment.v1.HostedPaymentSession
-	9, // 11: payment.v1.PaymentService.HandleGatewayWebhook:output_type -> payment.v1.HandleGatewayWebhookResponse
-	9, // [9:12] is the sub-list for method output_type
-	6, // [6:9] is the sub-list for method input_type
+	6, // 6: payment.v1.PaymentService.GetHostedPaymentSessionByOrder:input_type -> payment.v1.GetHostedPaymentSessionByOrderRequest
+	8, // 7: payment.v1.PaymentService.HandleGatewayWebhook:input_type -> payment.v1.HandleGatewayWebhookRequest
+	7, // 8: payment.v1.PaymentService.GetHostedPaymentSessionByOrder:output_type -> payment.v1.HostedPaymentSession
+	9, // 9: payment.v1.PaymentService.HandleGatewayWebhook:output_type -> payment.v1.HandleGatewayWebhookResponse
+	8, // [8:10] is the sub-list for method output_type
+	6, // [6:8] is the sub-list for method input_type
 	6, // [6:6] is the sub-list for extension type_name
 	6, // [6:6] is the sub-list for extension extendee
 	0, // [0:6] is the sub-list for field type_name

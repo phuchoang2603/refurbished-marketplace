@@ -32,6 +32,13 @@ type OrderItem struct {
 	CreatedAt      time.Time
 }
 
+type OrdersCheckoutCommand struct {
+	CheckoutID  uuid.UUID
+	OrderID     uuid.UUID
+	RequestHash []byte
+	CreatedAt   time.Time
+}
+
 type OrdersInbox struct {
 	MessageID  string
 	ReceivedAt time.Time

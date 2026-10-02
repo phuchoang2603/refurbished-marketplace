@@ -7,6 +7,7 @@ import (
 	webAuth "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/auth"
 	shared "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
 	cartv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/cart/v1"
+	checkoutv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1"
 	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
 	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
 	productsv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1"
@@ -68,59 +69,42 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	order, err := h.deps.Orders.CreateOrder(r.Context(), buyerUserID, merchantID, items, totalCents, intentKey)
-	if err != nil {
-		if st, ok := status.FromError(err); ok && st.Code() == codes.FailedPrecondition {
-			rotateCheckoutIntent(w, r, cartID, merchantID)
-		}
-		shared.WriteGRPCError(w, r, err)
-		return
-	}
-	if err := shared.HoldStockForOrder(r.Context(), h.deps.Inventory, h.deps.Orders, order); err != nil {
-		if st, ok := status.FromError(err); ok && st.Code() == codes.FailedPrecondition {
-			rotateCheckoutIntent(w, r, cartID, merchantID)
-		}
-		shared.WriteGRPCError(w, r, err)
-		return
-	}
-
-	orderPageURL := shared.OrderPageURLWithConfig(h.deps.HostedPayment, r, order.GetId())
+	orderPageURL := shared.OrderPageURLWithConfig(h.deps.HostedPayment, r, "{order_id}")
 	if orderPageURL == "" {
 		shared.WriteBadRequest(w, r, "hosted payment unavailable")
 		return
 	}
-	lineItems := make([]*paymentv1.HostedPaymentLineItem, 0, len(items))
+	if h.deps.Checkout == nil {
+		shared.WriteBadRequest(w, r, "checkout unavailable")
+		return
+	}
+	lineItems := make([]*checkoutv1.CheckoutLine, 0, len(items))
 	for _, item := range items {
-		lineItems = append(lineItems, &paymentv1.HostedPaymentLineItem{
+		lineItems = append(lineItems, &checkoutv1.CheckoutLine{
 			ProductId:      item.GetProductId(),
 			Name:           productNames[item.GetProductId()],
 			Quantity:       item.GetQuantity(),
 			UnitPriceCents: item.GetUnitPriceCents(),
 		})
 	}
-	hostedSession, err := h.deps.Payment.CreateHostedPaymentSession(r.Context(), &paymentv1.CreateHostedPaymentSessionRequest{
-		OrderId: order.GetId(),
-		Buyer: &paymentv1.PartySnapshot{
-			Id:    buyerUserID,
-			Email: webAuth.EmailFromContext(r.Context()),
+	checkout, err := h.deps.Checkout.SubmitCheckout(r.Context(), &checkoutv1.SubmitCheckoutRequest{
+		BuyerUserId: buyerUserID, IntentKey: intentKey, MerchantId: merchantID,
+		BuyerEmail: webAuth.EmailFromContext(r.Context()), TotalCents: totalCents,
+		Currency: "USD", ReturnUrl: orderPageURL, Items: lineItems,
+		ShippingAddress: &checkoutv1.CheckoutAddress{
+			Name: shipping.GetName(), Line1: shipping.GetLine1(), Line2: shipping.GetLine2(),
+			City: shipping.GetCity(), Region: shipping.GetRegion(),
+			PostalCode: shipping.GetPostalCode(), Country: shipping.GetCountry(),
 		},
-		Merchant:        &paymentv1.PartySnapshot{Id: merchantID},
-		TotalCents:      totalCents,
-		Currency:        "USD",
-		ReturnUrl:       orderPageURL,
-		ShippingAddress: shipping,
-		Items:           lineItems,
 	})
 	if err != nil {
+		if status.Code(err) == codes.AlreadyExists {
+			rotateCheckoutIntent(w, r, cartID, merchantID)
+		}
 		shared.WriteGRPCError(w, r, err)
 		return
 	}
-	hostedPaymentURL := shared.BuildHostedPaymentURL(h.deps.HostedPayment, r, hostedSession)
-	if hostedPaymentURL == "" {
-		shared.WriteBadRequest(w, r, "hosted payment unavailable")
-		return
-	}
-	shared.Redirect(w, r, hostedPaymentURL, http.StatusSeeOther)
+	shared.Redirect(w, r, "/checkouts/"+checkout.GetCheckoutId(), http.StatusSeeOther)
 }
 
 type checkoutError struct {

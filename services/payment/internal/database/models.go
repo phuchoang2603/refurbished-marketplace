@@ -12,6 +12,22 @@ import (
 	"github.com/google/uuid"
 )
 
+type PaymentCheckoutCallback struct {
+	OrderID    uuid.UUID
+	Outcome    string
+	ReceivedAt time.Time
+}
+
+type PaymentCheckoutSession struct {
+	OrderID           uuid.UUID
+	CheckoutID        uuid.UUID
+	RequestHash       []byte
+	CreateOperationID uuid.NullUUID
+	CreateVersion     sql.NullInt64
+	Status            string
+	CreatedAt         time.Time
+}
+
 type PaymentInbox struct {
 	MessageID  string
 	ReceivedAt time.Time

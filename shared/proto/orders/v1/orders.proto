@@ -7,10 +7,8 @@ option go_package = "github.com/phuchoang2603/refurbished-marketplace/shared/pro
 import "google/protobuf/timestamp.proto";
 
 service OrdersService {
-  rpc CreateOrder(CreateOrderRequest) returns (Order);
   rpc GetOrderByID(GetOrderByIDRequest) returns (Order);
   rpc ListOrdersByBuyer(ListOrdersByBuyerRequest) returns (ListOrdersByBuyerResponse);
-  rpc UpdateOrderStatus(UpdateOrderStatusRequest) returns (Order);
 }
 
 enum OrderStatus {

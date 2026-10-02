@@ -86,6 +86,7 @@ services:
       ORDERS_SVC_ADDR: orders:9093
       CART_SVC_ADDR: cart:9094
       PAYMENT_SVC_ADDR: payment:9096
+      CHECKOUT_SVC_ADDR: checkout:9099
       HOSTED_PAYMENT_BASE_URL: https://pay-dev.phuchoang.sbs
       PUBLIC_BASE_URL: https://shop-dev.phuchoang.sbs
       HOSTED_PAYMENT_CALLBACK_BASE_URL: http://web:8080
@@ -184,6 +185,27 @@ services:
       name: orders_db
       owner: orders_app
       secretName: orders-app
+      usernameKey: username
+      passwordKey: password
+      instances: 1
+      storageSize: 1Gi
+
+  checkout:
+    enabled: true
+    image: checkout
+    port: 9099
+    protocol: grpc
+    env:
+      KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap.kafka.svc:9092
+    migration:
+      enabled: true
+      image: checkout-migrator
+    db:
+      host: checkout-db-rw
+      port: 5432
+      name: checkout_db
+      owner: checkout_app
+      secretName: checkout-app
       usernameKey: username
       passwordKey: password
       instances: 1

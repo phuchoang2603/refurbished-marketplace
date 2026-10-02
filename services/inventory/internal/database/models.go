@@ -19,6 +19,14 @@ type Inventory struct {
 	UpdatedAt    time.Time
 }
 
+type InventoryCheckoutOperation struct {
+	OrderID     uuid.UUID
+	CheckoutID  uuid.UUID
+	ReserveHash []byte
+	Status      string
+	UpdatedAt   time.Time
+}
+
 type InventoryInbox struct {
 	MessageID  string
 	ReceivedAt time.Time

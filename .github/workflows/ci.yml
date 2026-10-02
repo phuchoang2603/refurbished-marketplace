@@ -22,6 +22,7 @@ env:
     ./services/search/...
     ./services/inventory/...
     ./services/orders/...
+    ./services/checkout/...
     ./services/cart/...
     ./services/payment/...
     ./services/web/...
@@ -71,6 +72,7 @@ jobs:
       search: ${{ steps.filter.outputs.search }}
       inventory: ${{ steps.filter.outputs.inventory }}
       orders: ${{ steps.filter.outputs.orders }}
+      checkout: ${{ steps.filter.outputs.checkout }}
       payment: ${{ steps.filter.outputs.payment }}
       cart: ${{ steps.filter.outputs.cart }}
       web: ${{ steps.filter.outputs.web }}
@@ -141,6 +143,17 @@ jobs:
               - 'shared/testutil/kafka/**'
               - 'go.work*'
               - '.github/workflows/ci.yml'
+            checkout:
+              - 'services/checkout/**'
+              - 'shared/proto/**'
+              - 'shared/messaging/**'
+              - 'shared/runtime/**'
+              - 'shared/observe/log/**'
+              - 'shared/observe/trace/**'
+              - 'shared/observe/metric/**'
+              - 'shared/testutil/postgres/**'
+              - 'go.work*'
+              - '.github/workflows/ci.yml'
             payment:
               - 'services/payment/**'
               - 'shared/proto/**'
@@ -185,6 +198,7 @@ jobs:
           - search
           - inventory
           - orders
+          - checkout
           - payment
           - cart
           - web
@@ -221,6 +235,7 @@ jobs:
           - search
           - inventory
           - orders
+          - checkout
           - payment
           - cart
           - web

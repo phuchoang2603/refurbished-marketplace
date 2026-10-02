@@ -28,10 +28,6 @@ func (c *PaymentClient) Close() error {
 	return nil
 }
 
-func (c *PaymentClient) CreateHostedPaymentSession(ctx context.Context, req *paymentv1.CreateHostedPaymentSessionRequest) (*paymentv1.CreateHostedPaymentSessionResponse, error) {
-	return c.client.CreateHostedPaymentSession(ctx, req)
-}
-
 func (c *PaymentClient) GetHostedPaymentSessionByOrder(ctx context.Context, orderID string) (*paymentv1.HostedPaymentSession, error) {
 	return c.client.GetHostedPaymentSessionByOrder(ctx, &paymentv1.GetHostedPaymentSessionByOrderRequest{OrderId: orderID})
 }

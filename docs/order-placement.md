@@ -1,150 +1,70 @@
-# Merchant-scoped order, inventory, and payment flow
+# Merchant-scoped checkout saga
 
-Core contract between `cart`, `orders`, `inventory`, and `payment`, including the hosted-payment redirect used in development (and the in-cluster simulator).
-
-## Core model
-
-- `cart` stores ephemeral cart state and requires web-supplied `merchant_id`, `product_name`, and `unit_price_cents` on item writes.
-- `orders` accepts only merchant-scoped order creation with a per-buyer `idempotency_key`.
-- `web` calls inventory `ReserveStock` after `CreateOrder` returns, before hosted payment. Kafka `orders.created` is a safety net if gRPC already held stock.
-- `payment` creates or reuses one hosted payment session per order and one payment transaction per order.
+Checkout is a durable, PostgreSQL-backed coordinator. Cart state is ephemeral; Orders owns orders, Inventory owns stock, and Payment owns hosted sessions and gateway outcomes. No buyer-facing service directly reserves checkout stock or creates a payment session.
 
 ## Flow
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant WEB as Web
-    participant SIM as Simulator
-    participant CRT as Cart
-    participant ORD as Orders
-    participant K as Kafka
-    participant INV as Inventory
-    participant PAY as Payment
+    participant B as Buyer
+    participant W as Web
+    participant C as Checkout
+    participant K as Kafka (outbox)
+    participant O as Orders
+    participant I as Inventory
+    participant P as Payment
+    participant G as Hosted gateway
 
-    Note over WEB,CRT: Ephemeral phase
-    WEB->>CRT: AddCartItem merchant, snapshot, qty
-    CRT-->>WEB: OK
-
-    Note over WEB,ORD: CreateOrder then ReserveStock
-    WEB->>ORD: CreateOrder merchant, total, idempotency key
-    ORD->>ORD: Persist order pending
-    ORD->>K: Emit orders.created
-    ORD-->>WEB: order id
-    WEB->>INV: ReserveStock gRPC
-    INV->>INV: Hold stock idempotent with Kafka consumer
-    INV->>K: Emit inventory.reserved
-
-    Note over WEB,SIM: Hosted payment
-    WEB->>PAY: CreateHostedPaymentSession get-or-create
-    PAY-->>WEB: session metadata
-    WEB->>SIM: 303 hosted payment URL
-    SIM->>WEB: POST hosted payment callback
-    WEB->>PAY: HandleGatewayWebhook
-    WEB->>CRT: Remove paid product IDs if cart cookie present
-    SIM->>WEB: Redirect browser to order page
-
-    Note over K,INV: Kafka safety net
-    K->>INV: Consume orders.created
-    INV->>INV: No-op if reservations already exist
-
-    Note over K,PAY: Payment loop
-    K->>PAY: Consume inventory.reserved
-    PAY->>PAY: Ensure payment transaction for order
-    PAY->>K: Emit payment.succeeded
-    K->>INV: Consume payment.succeeded
-    INV->>INV: Commit reservation
-    K->>ORD: Consume payment.succeeded
-    ORD->>ORD: Status paid
-
-    Note over K,ORD: Reservation failure
-    INV->>K: Emit inventory.reservation-failed
-    K->>ORD: Consume inventory.reservation-failed
-    ORD->>ORD: Status failed
+    B->>W: Submit one merchant cart group (stable intent key)
+    W->>W: Revalidate products, merchant, shipping, and totals
+    W->>C: SubmitCheckout(snapshot, buyer, intent key)
+    C->>C: Persist saga + outbox atomically
+    C-->>W: Checkout ID
+    W-->>B: Pending/progress page
+    C->>K: checkout.order-create.requested.v1
+    K->>O: Create pending order
+    O->>K: checkout.order-created.v1
+    K->>C: Correlated order result
+    C->>K: checkout.stock-reserve.requested.v1
+    K->>I: Reserve all lines or reject all
+    I->>K: checkout.stock-reserved.v1 / checkout.stock-rejected.v1
+    K->>C: Correlated stock result
+    C->>K: checkout.payment-session-create.requested.v1 (only after reserved)
+    K->>P: Create or reuse hosted session
+    P->>K: checkout.payment-session-ready.v1
+    K->>C: Session ready
+    B->>W: Poll buyer-scoped checkout progress
+    W->>C: GetCheckout
+    W-->>B: Redirect to gateway only when session ready
+    B->>G: Complete payment
+    G->>W: Gateway callback
+    W->>P: Forward callback (never finalize order)
+    P->>K: checkout.payment-succeeded.v1 / checkout.payment-failed.v1
+    K->>C: Persist definitive outcome
+    C->>K: checkout.stock-commit.requested.v1 / checkout.stock-cancel.requested.v1
+    K->>I: Commit or release hold
+    I->>K: checkout.stock-committed.v1 / checkout.stock-released.v1
+    K->>C: Settlement acknowledgement
+    C->>K: checkout.order-finalize.requested.v1
+    K->>O: Mark order paid / failed
+    O->>K: checkout.order-finalized.v1
+    K->>C: Finalization acknowledgement
+    W->>W: Drain paid cart items only after observing paid order
 ```
 
-## Responsibilities
+If stock is rejected, Checkout compensates the pending order; the buyer never sees a payment page. A session timeout does not imply payment failed: Checkout requests cancellation/verification and retains uncertain outcomes for manual review rather than releasing stock while a charge might exist. Late contradictory success is recorded as a financial exception.
 
-### Web
+## Ownership and retries
 
-- Orchestrates browser checkout: `CreateOrder` with a checkout intent UUID, then inventory `ReserveStock`, then hosted payment redirect. If reserve fails, marks the order failed and does not redirect to pay.
-- Does not drain the cart on checkout POST. After a successful hosted-payment callback (or paid order page), removes paid product IDs when a `cart_id` cookie is present.
-- Resume payment on unpaid pending orders re-holds stock (idempotent `ReserveStock`) then reuses or refreshes the hosted session.
-- Builds the buyer-facing hosted payment URL from payment session metadata and gateway configuration.
-- Accepts hosted gateway callbacks and forwards terminal outcomes to `payment` over gRPC.
+- **Checkout** stores the saga, inbox, outbox, deadlines, and exception records in PostgreSQL. It correlates each command/result to the checkout and retries durable due work after restarts.
+- **Orders** creates and finalizes orders only on Checkout commands. An order remains pending until Checkout receives stock settlement acknowledgement and issues finalization.
+- **Inventory** accepts Checkout reserve/cancel/commit commands, fences cancel-before-reserve with an order tombstone, and returns durable idempotent results. `orders.created` does not reserve stock.
+- **Payment** accepts Checkout session-create/cancel commands, records gateway callback outcomes, and returns uncertain cancellation as uncertain. It does not create sessions from `inventory.reserved`.
+- **Web** submits a validated snapshot once per intent, displays buyer-scoped progress, forwards gateway callbacks, and leaves cart items until payment succeeds. The legacy direct `POST /orders`, `ReserveStock`, `CreateOrder`, `UpdateOrderStatus`, and `CreateHostedPaymentSession` RPCs are removed.
 
-### Cart
+All command and result topics are versioned `checkout.*.v1`. Each producer's Debezium connector publishes its own outbox rows; consumers use inbox deduplication. The Checkout database is the source of truth for recovery, not a Kafka consumer offset or a browser redirect. See `services/checkout/README.md` for states and reconciliation rules.
 
-- Stores `product_id`, `merchant_id`, `quantity`, `product_name`, and `unit_price_cents` in Redis/Valkey.
-- Validates that `cart_id`, `product_id`, and `merchant_id` are present and UUID-shaped.
-- Does not derive merchant ownership from products.
+## Rollout gate
 
-### Orders
-
-- Accepts merchant-scoped PlaceOrder with required `idempotency_key` unique per buyer.
-- Persists the order and emits one `orders.created` outbox event. Does not call products or inventory.
-- Stores `merchant_id` on the order record.
-- Stores order items with `product_id`, `quantity`, `unit_price_cents`, and `line_total_cents`.
-- Consumes `inventory.reservation-failed`, `payment.succeeded`, and `payment.failed` to update order status.
-
-### Inventory
-
-- Stores aggregate stock in `inventory` and reservation ownership in inventory-local reservation records (composite key `order_id`, `product_id`).
-- Consumes `orders.created` and reserves all order item lines idempotently per `order_id` if gRPC has not already held stock.
-- Exposes `ReserveStock` and stock-read gRPC used by web.
-- Emits `inventory.reserved` when the order is fully reserved.
-- Emits `inventory.reservation-failed` when the order cannot be fully reserved.
-- Consumes `payment.succeeded` and `payment.failed` to commit or release reserved stock.
-
-### Payment
-
-- Stores hosted payment session state by `order_id` (`payment_intents`) plus buyer/merchant snapshots and line items for the gateway page.
-- Reuses `order_id` as the idempotency anchor for hosted session creation.
-- Consumes `inventory.reserved` and does not insert a second payment transaction when hosted-session create already wrote one.
-- Applies hosted gateway outcomes from the web edge and emits `payment.succeeded` or `payment.failed` through the payment outbox.
-- Periodically expires PENDING hosted sessions past `expires_at` (default 30m TTL, sweep every 1m), marks them `EXPIRED`, and emits `payment.failed` so inventory releases reserved stock and orders move to failed. If the payment transaction does not exist yet, the expired intent is caught up when `inventory.reserved` creates the transaction.
-
-### Simulator
-
-- In-cluster hosted payment simulator under `tools/payment-gateway-simulator`.
-- Renders a mock hosted payment page, posts a terminal callback to `services/web`, and redirects the browser back to the marketplace order page.
-
-## Event contracts
-
-### `orders.created`
-
-Produced by `orders` once per created order.
-
-Carries:
-
-- `order_id`
-- `buyer_user_id`
-- `merchant_id`
-- `total_cents`
-- `items[]` with `product_id` and `quantity`
-
-### `inventory.reserved`
-
-Produced by `inventory` once per fully reserved order.
-
-Carries:
-
-- `order_id`
-- `merchant_id`
-- `total_cents`
-
-### `inventory.reservation-failed`
-
-Produced by `inventory` once per order that cannot be fully reserved.
-
-Carries:
-
-- `order_id`
-
-### `payment.succeeded` / `payment.failed`
-
-Produced by `payment` once per payment transaction outcome.
-
-Carries:
-
-- `order_id`
+On a **fresh** environment, apply Checkout, Orders, Inventory, and Payment migrations, start all four outbox connectors and command/result consumers, then verify their health before permitting checkout traffic. Simulate duplicates, unavailable stock, lost acknowledgement, failed/late payment, expiry, and worker restart. Inspect pending-age, compensation, and unresolved financial exceptions before and after. This change does not migrate pre-existing checkouts; do not open buyer traffic until these checks pass.

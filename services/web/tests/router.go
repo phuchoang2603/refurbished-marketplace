@@ -24,6 +24,7 @@ type routerDeps struct {
 	orders        *fakes.OrdersService
 	cart          *fakes.CartService
 	payment       *fakes.PaymentService
+	checkout      *fakes.CheckoutService
 	hostedPayment shared.HostedPaymentConfig
 }
 
@@ -43,7 +44,7 @@ func newTestRouter(t *testing.T, deps routerDeps) http.Handler {
 	if deps.search == nil {
 		deps.search = &fakes.SearchService{}
 	}
-	h := handlers.New(deps.users, deps.products, deps.inventory, deps.search, deps.orders, deps.cart, deps.payment, hostedPayment, authconfig.DefaultConfig(testJWTSecret))
+	h := handlers.New(deps.users, deps.products, deps.inventory, deps.search, deps.orders, deps.cart, deps.payment, deps.checkout, hostedPayment, authconfig.DefaultConfig(testJWTSecret))
 	router := chi.NewRouter()
 	h.Register(router)
 	return router

@@ -1,0 +1,150 @@
+syntax = "proto3";
+
+package checkout.v1;
+
+option go_package = "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1;checkoutv1";
+
+message CheckoutMessage {
+  MessageContext context = 1;
+  oneof payload {
+    CreateOrder create_order = 2;
+    OrderCreated order_created = 3;
+    OrderRejected order_rejected = 4;
+    ReserveStock reserve_stock = 5;
+    StockReserved stock_reserved = 6;
+    StockRejected stock_rejected = 7;
+    CancelStock cancel_stock = 8;
+    StockReleased stock_released = 9;
+    CreatePaymentSession create_payment_session = 10;
+    PaymentSessionReady payment_session_ready = 11;
+    PaymentSessionRejected payment_session_rejected = 12;
+    CancelPaymentSession cancel_payment_session = 13;
+    PaymentCancelled payment_cancelled = 14;
+    PaymentSucceeded payment_succeeded = 15;
+    PaymentFailed payment_failed = 16;
+    PaymentUncertain payment_uncertain = 17;
+    CommitStock commit_stock = 18;
+    StockCommitted stock_committed = 19;
+    FinalizeOrder finalize_order = 20;
+    OrderFinalized order_finalized = 21;
+  }
+}
+
+message MessageContext {
+  string message_id = 1;
+  string checkout_id = 2;
+  string operation_id = 3;
+  string causation_id = 4;
+  string order_id = 5;
+  uint64 workflow_version = 6;
+}
+
+message CheckoutLine {
+  string product_id = 1;
+  string name = 2;
+  int32 quantity = 3;
+  int64 unit_price_cents = 4;
+}
+
+message CheckoutAddress {
+  string name = 1;
+  string line1 = 2;
+  string line2 = 3;
+  string city = 4;
+  string region = 5;
+  string postal_code = 6;
+  string country = 7;
+}
+
+message CreateOrder {
+  string buyer_user_id = 1;
+  string merchant_id = 2;
+  int64 total_cents = 3;
+  string currency = 4;
+  repeated CheckoutLine items = 5;
+}
+
+message OrderCreated {}
+
+message OrderRejected {
+  string reason = 1;
+}
+
+message ReserveStock {
+  string merchant_id = 1;
+  int64 total_cents = 2;
+  repeated CheckoutLine items = 3;
+}
+
+message StockReserved {}
+
+message StockRejected {
+  string reason = 1;
+}
+
+message CancelStock {
+  string reason = 1;
+}
+
+message StockReleased {}
+
+message CreatePaymentSession {
+  string buyer_user_id = 1;
+  string buyer_email = 2;
+  string merchant_id = 3;
+  int64 total_cents = 4;
+  string currency = 5;
+  CheckoutAddress shipping_address = 6;
+  repeated CheckoutLine items = 7;
+  string return_url = 8;
+  string reservation_operation_id = 9;
+}
+
+message PaymentSessionReady {
+  string payment_session_id = 1;
+  string return_url = 2;
+  int64 expires_at_unix_ms = 3;
+}
+
+message PaymentSessionRejected {
+  string reason = 1;
+}
+
+message CancelPaymentSession {
+  string payment_session_id = 1;
+  string reason = 2;
+}
+
+message PaymentCancelled {}
+
+message PaymentSucceeded {
+  string payment_session_id = 1;
+}
+
+message PaymentFailed {
+  string payment_session_id = 1;
+  string reason = 2;
+}
+
+message PaymentUncertain {
+  string payment_session_id = 1;
+  string reason = 2;
+}
+
+message CommitStock {}
+
+message StockCommitted {}
+
+message FinalizeOrder {
+  FinalOrderStatus status = 1;
+}
+
+message OrderFinalized {
+  FinalOrderStatus status = 1;
+}
+
+enum FinalOrderStatus {
+  FINAL_ORDER_STATUS_UNSPECIFIED = 0;
+  FINAL_ORDER_STATUS_PAID = 1;
+  FINAL_ORDER_STATUS_FAILED = 2;
+}

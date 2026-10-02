@@ -28,24 +28,10 @@ func (c *OrdersClient) Close() error {
 	return nil
 }
 
-func (c *OrdersClient) CreateOrder(ctx context.Context, buyerUserID, merchantID string, items []*ordersv1.CreateOrderItem, totalCents int64, idempotencyKey string) (*ordersv1.Order, error) {
-	return c.client.CreateOrder(ctx, &ordersv1.CreateOrderRequest{
-		BuyerUserId:    buyerUserID,
-		MerchantId:     merchantID,
-		Items:          items,
-		TotalCents:     totalCents,
-		IdempotencyKey: idempotencyKey,
-	})
-}
-
 func (c *OrdersClient) GetOrderByID(ctx context.Context, id string) (*ordersv1.Order, error) {
 	return c.client.GetOrderByID(ctx, &ordersv1.GetOrderByIDRequest{Id: id})
 }
 
 func (c *OrdersClient) ListOrdersByBuyer(ctx context.Context, buyerUserID string, limit, offset int32) (*ordersv1.ListOrdersByBuyerResponse, error) {
 	return c.client.ListOrdersByBuyer(ctx, &ordersv1.ListOrdersByBuyerRequest{BuyerUserId: buyerUserID, Limit: limit, Offset: offset})
-}
-
-func (c *OrdersClient) UpdateOrderStatus(ctx context.Context, id string, status ordersv1.OrderStatus) (*ordersv1.Order, error) {
-	return c.client.UpdateOrderStatus(ctx, &ordersv1.UpdateOrderStatusRequest{Id: id, Status: status})
 }

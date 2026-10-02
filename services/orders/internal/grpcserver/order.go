@@ -48,47 +48,6 @@ func mapOrder(o service.Order) *ordersv1.Order {
 	}
 }
 
-func (s *Server) CreateOrder(ctx context.Context, req *ordersv1.CreateOrderRequest) (*ordersv1.Order, error) {
-	buyerID, err := grpcerr.ParseUUID(req.GetBuyerUserId(), "buyer user id")
-	if err != nil {
-		return nil, err
-	}
-	merchantID, err := grpcerr.ParseUUID(req.GetMerchantId(), "merchant id")
-	if err != nil {
-		return nil, err
-	}
-	items := make([]service.OrderItemInput, 0, len(req.GetItems()))
-	for _, item := range req.GetItems() {
-		productID, err := grpcerr.ParseUUID(item.GetProductId(), "product id")
-		if err != nil {
-			return nil, err
-		}
-		items = append(items, service.OrderItemInput{ProductID: productID, Quantity: item.GetQuantity(), UnitPriceCents: item.GetUnitPriceCents()})
-	}
-	idempotencyKey, err := grpcerr.ParseUUID(req.GetIdempotencyKey(), "idempotency key")
-	if err != nil {
-		return nil, err
-	}
-
-	order, err := s.svc.CreateOrder(ctx, buyerID, merchantID, items, req.TotalCents, idempotencyKey)
-	if err != nil {
-		return nil, grpcerr.Map(
-			err,
-			grpcerr.Mapping{Err: service.ErrInvalidBuyerID, Code: codes.InvalidArgument},
-			grpcerr.Mapping{Err: service.ErrInvalidMerchantID, Code: codes.InvalidArgument},
-			grpcerr.Mapping{Err: service.ErrInvalidProductID, Code: codes.InvalidArgument},
-			grpcerr.Mapping{Err: service.ErrInvalidQuantity, Code: codes.InvalidArgument},
-			grpcerr.Mapping{Err: service.ErrInvalidUnitPriceCents, Code: codes.InvalidArgument},
-			grpcerr.Mapping{Err: service.ErrInvalidTotalCents, Code: codes.InvalidArgument},
-			grpcerr.Mapping{Err: service.ErrInvalidIdempotencyKey, Code: codes.InvalidArgument},
-			grpcerr.Mapping{Err: service.ErrIdempotencyConflict, Code: codes.AlreadyExists},
-			grpcerr.Mapping{Err: service.ErrOrderNotPayable, Code: codes.FailedPrecondition},
-		)
-	}
-
-	return mapOrder(order), nil
-}
-
 func (s *Server) GetOrderByID(ctx context.Context, req *ordersv1.GetOrderByIDRequest) (*ordersv1.Order, error) {
 	id, err := grpcerr.ParseUUID(req.GetId(), "id")
 	if err != nil {
@@ -124,22 +83,4 @@ func (s *Server) ListOrdersByBuyer(ctx context.Context, req *ordersv1.ListOrders
 	}
 
 	return &ordersv1.ListOrdersByBuyerResponse{Orders: out}, nil
-}
-
-func (s *Server) UpdateOrderStatus(ctx context.Context, req *ordersv1.UpdateOrderStatusRequest) (*ordersv1.Order, error) {
-	id, err := grpcerr.ParseUUID(req.GetId(), "id")
-	if err != nil {
-		return nil, err
-	}
-
-	order, err := s.svc.UpdateOrderStatus(ctx, id, req.GetStatus().String())
-	if err != nil {
-		return nil, grpcerr.Map(
-			err,
-			grpcerr.Mapping{Err: service.ErrInvalidStatus, Code: codes.InvalidArgument},
-			grpcerr.Mapping{Err: service.ErrOrderNotFound, Code: codes.NotFound, Message: "order not found"},
-		)
-	}
-
-	return mapOrder(order), nil
 }

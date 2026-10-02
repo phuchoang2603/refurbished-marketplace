@@ -148,68 +148,6 @@ func TestPaymentService_ExpireDueSessions(t *testing.T) {
 		}
 	})
 
-	t.Run("expired before inventory.reserved catch-up is idempotent", func(t *testing.T) {
-		svc, queries := newPaymentFixture(t)
-		ctx := t.Context()
-
-		orderID := uuid.New()
-		merchantID := uuid.New()
-		_ = createTestSession(t, svc, orderID)
-
-		past := time.Now().UTC().Add(-time.Minute)
-		if err := queries.SetPaymentIntentExpiresAt(ctx, database.SetPaymentIntentExpiresAtParams{
-			OrderID:   orderID,
-			ExpiresAt: dberr.OptionalNullTime(past),
-		}); err != nil {
-			t.Fatalf("SetPaymentIntentExpiresAt: %v", err)
-		}
-		if err := svc.ExpireDueSessions(ctx); err != nil {
-			t.Fatalf("ExpireDueSessions: %v", err)
-		}
-
-		handler := svc.KafkaInventoryReservedHandler()
-		if err := handler(ctx, messaging.KafkaMessage{
-			Topic:     messaging.EventTypeInventoryReserved,
-			Partition: 0,
-			Offset:    42,
-			Value:     inventoryReservedPayload(orderID, merchantID, 4200),
-		}); err != nil {
-			t.Fatalf("KafkaInventoryReservedHandler: %v", err)
-		}
-
-		txRow, err := queries.GetPaymentTransactionByOrderID(ctx, orderID)
-		if err != nil {
-			t.Fatalf("GetPaymentTransactionByOrderID: %v", err)
-		}
-		if txRow.Status != service.PaymentTxStatusFailed {
-			t.Fatalf("transaction status: got %q want FAILED", txRow.Status)
-		}
-
-		outbox, err := queries.ListPaymentOutboxByAggregateID(ctx, orderID)
-		if err != nil {
-			t.Fatalf("ListPaymentOutboxByAggregateID: %v", err)
-		}
-		if len(outbox) != 1 {
-			t.Fatalf("outbox rows: got %d want 1", len(outbox))
-		}
-
-		if err := handler(ctx, messaging.KafkaMessage{
-			Topic:     messaging.EventTypeInventoryReserved,
-			Partition: 0,
-			Offset:    42,
-			Value:     inventoryReservedPayload(orderID, merchantID, 4200),
-		}); err != nil {
-			t.Fatalf("KafkaInventoryReservedHandler retry: %v", err)
-		}
-		outbox2, err := queries.ListPaymentOutboxByAggregateID(ctx, orderID)
-		if err != nil {
-			t.Fatalf("ListPaymentOutboxByAggregateID after retry: %v", err)
-		}
-		if len(outbox2) != 1 {
-			t.Fatalf("outbox rows after retry: got %d want 1", len(outbox2))
-		}
-	})
-
 	t.Run("gateway webhook cannot overwrite expired session", func(t *testing.T) {
 		svc, queries := newPaymentFixture(t)
 		ctx := t.Context()

@@ -29,6 +29,7 @@ func New(
 	orders shared.OrdersService,
 	cart shared.CartService,
 	payment shared.PaymentService,
+	checkout shared.CheckoutService,
 	hostedPayment shared.HostedPaymentConfig,
 	authCfg authconfig.Config,
 ) *Handler {
@@ -40,6 +41,7 @@ func New(
 		Orders:        orders,
 		Cart:          cart,
 		Payment:       payment,
+		Checkout:      checkout,
 		HostedPayment: hostedPayment,
 	}
 	return &Handler{
@@ -66,8 +68,8 @@ func (h *Handler) Register(router chi.Router) {
 			h.products.RegisterProtectedPages(r)
 			h.products.RegisterProtectedActions(r)
 			h.cart.RegisterProtectedActions(r)
+			h.cart.RegisterProtectedPages(r)
 			h.orders.RegisterPages(r)
-			h.orders.RegisterActions(r)
 		})
 	})
 

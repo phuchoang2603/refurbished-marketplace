@@ -83,11 +83,48 @@ entities:
       authSource: catalog
       replicaSet: catalog-mongodb
       outboxCollection: catalog.catalog_outbox
+  checkout:
+    topics:
+      - name: checkout.order-create.requested.v1
+        partitions: 1
+        retention: 86400000
+      - name: checkout.stock-reserve.requested.v1
+        partitions: 1
+        retention: 86400000
+      - name: checkout.stock-cancel.requested.v1
+        partitions: 1
+        retention: 86400000
+      - name: checkout.stock-commit.requested.v1
+        partitions: 1
+        retention: 86400000
+      - name: checkout.payment-session-create.requested.v1
+        partitions: 1
+        retention: 86400000
+      - name: checkout.payment-session-cancel.requested.v1
+        partitions: 1
+        retention: 86400000
+      - name: checkout.order-finalize.requested.v1
+        partitions: 1
+        retention: 86400000
+    connector:
+      name: checkout-outbox
+      sourceSecretName: checkout-app
+      databaseName: checkout_db
+      databaseHost: checkout-db-rw
+      databasePort: 5432
+      outboxTable: public.checkout_outbox
+      publicationAutocreateMode: filtered
   orders:
     topics:
-      - name: orders.created
+      - name: checkout.order-created.v1
         partitions: 1
-        retention: 86400000 # 1 day
+        retention: 86400000
+      - name: checkout.order-rejected.v1
+        partitions: 1
+        retention: 86400000
+      - name: checkout.order-finalized.v1
+        partitions: 1
+        retention: 86400000
     connector:
       name: orders-outbox
       sourceSecretName: orders-app
@@ -98,10 +135,22 @@ entities:
       publicationAutocreateMode: filtered
   payment:
     topics:
-      - name: payment.succeeded
+      - name: checkout.payment-session-ready.v1
         partitions: 1
         retention: 86400000
-      - name: payment.failed
+      - name: checkout.payment-session-rejected.v1
+        partitions: 1
+        retention: 86400000
+      - name: checkout.payment-cancelled.v1
+        partitions: 1
+        retention: 86400000
+      - name: checkout.payment-succeeded.v1
+        partitions: 1
+        retention: 86400000
+      - name: checkout.payment-failed.v1
+        partitions: 1
+        retention: 86400000
+      - name: checkout.payment-uncertain.v1
         partitions: 1
         retention: 86400000
     connector:
@@ -114,10 +163,16 @@ entities:
       publicationAutocreateMode: filtered
   inventory:
     topics:
-      - name: inventory.reserved
+      - name: checkout.stock-reserved.v1
         partitions: 1
         retention: 86400000
-      - name: inventory.reservation-failed
+      - name: checkout.stock-rejected.v1
+        partitions: 1
+        retention: 86400000
+      - name: checkout.stock-released.v1
+        partitions: 1
+        retention: 86400000
+      - name: checkout.stock-committed.v1
         partitions: 1
         retention: 86400000
     connector:

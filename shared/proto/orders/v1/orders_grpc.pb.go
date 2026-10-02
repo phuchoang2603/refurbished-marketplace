@@ -19,20 +19,16 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	OrdersService_CreateOrder_FullMethodName       = "/orders.v1.OrdersService/CreateOrder"
 	OrdersService_GetOrderByID_FullMethodName      = "/orders.v1.OrdersService/GetOrderByID"
 	OrdersService_ListOrdersByBuyer_FullMethodName = "/orders.v1.OrdersService/ListOrdersByBuyer"
-	OrdersService_UpdateOrderStatus_FullMethodName = "/orders.v1.OrdersService/UpdateOrderStatus"
 )
 
 // OrdersServiceClient is the client API for OrdersService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type OrdersServiceClient interface {
-	CreateOrder(ctx context.Context, in *CreateOrderRequest, opts ...grpc.CallOption) (*Order, error)
 	GetOrderByID(ctx context.Context, in *GetOrderByIDRequest, opts ...grpc.CallOption) (*Order, error)
 	ListOrdersByBuyer(ctx context.Context, in *ListOrdersByBuyerRequest, opts ...grpc.CallOption) (*ListOrdersByBuyerResponse, error)
-	UpdateOrderStatus(ctx context.Context, in *UpdateOrderStatusRequest, opts ...grpc.CallOption) (*Order, error)
 }
 
 type ordersServiceClient struct {
@@ -41,16 +37,6 @@ type ordersServiceClient struct {
 
 func NewOrdersServiceClient(cc grpc.ClientConnInterface) OrdersServiceClient {
 	return &ordersServiceClient{cc}
-}
-
-func (c *ordersServiceClient) CreateOrder(ctx context.Context, in *CreateOrderRequest, opts ...grpc.CallOption) (*Order, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Order)
-	err := c.cc.Invoke(ctx, OrdersService_CreateOrder_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *ordersServiceClient) GetOrderByID(ctx context.Context, in *GetOrderByIDRequest, opts ...grpc.CallOption) (*Order, error) {
@@ -73,24 +59,12 @@ func (c *ordersServiceClient) ListOrdersByBuyer(ctx context.Context, in *ListOrd
 	return out, nil
 }
 
-func (c *ordersServiceClient) UpdateOrderStatus(ctx context.Context, in *UpdateOrderStatusRequest, opts ...grpc.CallOption) (*Order, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(Order)
-	err := c.cc.Invoke(ctx, OrdersService_UpdateOrderStatus_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // OrdersServiceServer is the server API for OrdersService service.
 // All implementations must embed UnimplementedOrdersServiceServer
 // for forward compatibility.
 type OrdersServiceServer interface {
-	CreateOrder(context.Context, *CreateOrderRequest) (*Order, error)
 	GetOrderByID(context.Context, *GetOrderByIDRequest) (*Order, error)
 	ListOrdersByBuyer(context.Context, *ListOrdersByBuyerRequest) (*ListOrdersByBuyerResponse, error)
-	UpdateOrderStatus(context.Context, *UpdateOrderStatusRequest) (*Order, error)
 	mustEmbedUnimplementedOrdersServiceServer()
 }
 
@@ -101,17 +75,11 @@ type OrdersServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedOrdersServiceServer struct{}
 
-func (UnimplementedOrdersServiceServer) CreateOrder(context.Context, *CreateOrderRequest) (*Order, error) {
-	return nil, status.Error(codes.Unimplemented, "method CreateOrder not implemented")
-}
 func (UnimplementedOrdersServiceServer) GetOrderByID(context.Context, *GetOrderByIDRequest) (*Order, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetOrderByID not implemented")
 }
 func (UnimplementedOrdersServiceServer) ListOrdersByBuyer(context.Context, *ListOrdersByBuyerRequest) (*ListOrdersByBuyerResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListOrdersByBuyer not implemented")
-}
-func (UnimplementedOrdersServiceServer) UpdateOrderStatus(context.Context, *UpdateOrderStatusRequest) (*Order, error) {
-	return nil, status.Error(codes.Unimplemented, "method UpdateOrderStatus not implemented")
 }
 func (UnimplementedOrdersServiceServer) mustEmbedUnimplementedOrdersServiceServer() {}
 func (UnimplementedOrdersServiceServer) testEmbeddedByValue()                       {}
@@ -132,24 +100,6 @@ func RegisterOrdersServiceServer(s grpc.ServiceRegistrar, srv OrdersServiceServe
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&OrdersService_ServiceDesc, srv)
-}
-
-func _OrdersService_CreateOrder_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateOrderRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(OrdersServiceServer).CreateOrder(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: OrdersService_CreateOrder_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(OrdersServiceServer).CreateOrder(ctx, req.(*CreateOrderRequest))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _OrdersService_GetOrderByID_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -188,24 +138,6 @@ func _OrdersService_ListOrdersByBuyer_Handler(srv interface{}, ctx context.Conte
 	return interceptor(ctx, in, info, handler)
 }
 
-func _OrdersService_UpdateOrderStatus_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateOrderStatusRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(OrdersServiceServer).UpdateOrderStatus(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: OrdersService_UpdateOrderStatus_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(OrdersServiceServer).UpdateOrderStatus(ctx, req.(*UpdateOrderStatusRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // OrdersService_ServiceDesc is the grpc.ServiceDesc for OrdersService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -214,20 +146,12 @@ var OrdersService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*OrdersServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "CreateOrder",
-			Handler:    _OrdersService_CreateOrder_Handler,
-		},
-		{
 			MethodName: "GetOrderByID",
 			Handler:    _OrdersService_GetOrderByID_Handler,
 		},
 		{
 			MethodName: "ListOrdersByBuyer",
 			Handler:    _OrdersService_ListOrdersByBuyer_Handler,
-		},
-		{
-			MethodName: "UpdateOrderStatus",
-			Handler:    _OrdersService_UpdateOrderStatus_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

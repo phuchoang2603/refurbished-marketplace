@@ -14,6 +14,7 @@ type Config struct {
 	OrdersAddr    string
 	CartAddr      string
 	PaymentAddr   string
+	CheckoutAddr  string
 }
 
 type Clients struct {
@@ -24,6 +25,7 @@ type Clients struct {
 	Orders    *OrdersClient
 	Cart      *CartClient
 	Payment   *PaymentClient
+	Checkout  *CheckoutClient
 }
 
 func New(cfg Config) (*Clients, error) {
@@ -82,6 +84,17 @@ func New(cfg Config) (*Clients, error) {
 		closeClient(cartClient)
 		return nil, fmt.Errorf("payment grpc client: %w", err)
 	}
+	checkoutClient, err := newCheckoutClient(cfg.CheckoutAddr)
+	if err != nil {
+		closeClient(usersClient)
+		closeClient(productsClient)
+		closeClient(inventoryClient)
+		closeClient(searchClient)
+		closeClient(ordersClient)
+		closeClient(cartClient)
+		closeClient(paymentClient)
+		return nil, fmt.Errorf("checkout grpc client: %w", err)
+	}
 
 	return &Clients{
 		Users:     usersClient,
@@ -91,6 +104,7 @@ func New(cfg Config) (*Clients, error) {
 		Orders:    ordersClient,
 		Cart:      cartClient,
 		Payment:   paymentClient,
+		Checkout:  checkoutClient,
 	}, nil
 }
 
@@ -105,6 +119,7 @@ func (c *Clients) Close() {
 	closeClient(c.Orders)
 	closeClient(c.Cart)
 	closeClient(c.Payment)
+	closeClient(c.Checkout)
 }
 
 func closeClient(client interface{ Close() error }) {

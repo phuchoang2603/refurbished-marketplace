@@ -19,6 +19,13 @@ import (
 )
 
 func (s *Service) ApplyGatewayWebhook(ctx context.Context, orderID uuid.UUID, paymentSessionID, status, failureReason string) error {
+	checkoutSession, checkoutErr := s.queries.GetCheckoutPaymentSession(ctx, orderID)
+	if checkoutErr == nil {
+		return s.applyCheckoutGatewayWebhook(ctx, checkoutSession, paymentSessionID, status, failureReason)
+	}
+	if !errors.Is(checkoutErr, sql.ErrNoRows) {
+		return checkoutErr
+	}
 	intent, err := loadPaymentIntentByOrderID(ctx, s.queries, orderID)
 	if err != nil {
 		return err

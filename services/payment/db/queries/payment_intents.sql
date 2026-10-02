@@ -121,6 +121,11 @@ WHERE
     status = 'PENDING'
     AND expires_at IS NOT NULL
     AND expires_at < NOW()
+    AND NOT EXISTS (
+        SELECT 1
+        FROM payment_checkout_sessions
+        WHERE order_id = payment_intents.order_id
+    )
 ORDER BY expires_at
 LIMIT $1;
 

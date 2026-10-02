@@ -214,6 +214,14 @@ func (s *Service) updateOrderStatusWithQueries(ctx context.Context, q *database.
 		return ErrInvalidStatus
 	}
 
+	isCheckoutOrder, err := q.IsCheckoutOrder(ctx, id)
+	if err != nil {
+		return err
+	}
+	if isCheckoutOrder {
+		return ErrOrderNotPayable
+	}
+
 	_, err = q.UpdateOrderStatus(ctx, database.UpdateOrderStatusParams{ID: id, Status: normalizedStatus})
 	if err != nil {
 		return dberr.MapErrNoRows(err, ErrOrderNotFound)

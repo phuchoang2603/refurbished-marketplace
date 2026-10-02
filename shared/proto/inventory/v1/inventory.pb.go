@@ -398,11 +398,10 @@ const file_shared_proto_inventory_v1_inventory_proto_rawDesc = "" +
 	"\vtotal_cents\x18\x03 \x01(\x03R\n" +
 	"totalCents\x124\n" +
 	"\x05items\x18\x04 \x03(\v2\x1e.inventory.v1.ReserveStockItemR\x05items\"\x16\n" +
-	"\x14ReserveStockResponse2\x86\x02\n" +
+	"\x14ReserveStockResponse2\xaf\x01\n" +
 	"\x10InventoryService\x12>\n" +
 	"\bGetStock\x12\x1d.inventory.v1.GetStockRequest\x1a\x13.inventory.v1.Stock\x12[\n" +
-	"\x0eGetStocksByIDs\x12#.inventory.v1.GetStocksByIDsRequest\x1a$.inventory.v1.GetStocksByIDsResponse\x12U\n" +
-	"\fReserveStock\x12!.inventory.v1.ReserveStockRequest\x1a\".inventory.v1.ReserveStockResponseBXZVgithub.com/phuchoang2603/refurbished-marketplace/shared/proto/inventory/v1;inventoryv1b\x06proto3"
+	"\x0eGetStocksByIDs\x12#.inventory.v1.GetStocksByIDsRequest\x1a$.inventory.v1.GetStocksByIDsResponseBXZVgithub.com/phuchoang2603/refurbished-marketplace/shared/proto/inventory/v1;inventoryv1b\x06proto3"
 
 var (
 	file_shared_proto_inventory_v1_inventory_proto_rawDescOnce sync.Once
@@ -431,12 +430,10 @@ var file_shared_proto_inventory_v1_inventory_proto_depIdxs = []int32{
 	4, // 1: inventory.v1.ReserveStockRequest.items:type_name -> inventory.v1.ReserveStockItem
 	1, // 2: inventory.v1.InventoryService.GetStock:input_type -> inventory.v1.GetStockRequest
 	2, // 3: inventory.v1.InventoryService.GetStocksByIDs:input_type -> inventory.v1.GetStocksByIDsRequest
-	5, // 4: inventory.v1.InventoryService.ReserveStock:input_type -> inventory.v1.ReserveStockRequest
-	0, // 5: inventory.v1.InventoryService.GetStock:output_type -> inventory.v1.Stock
-	3, // 6: inventory.v1.InventoryService.GetStocksByIDs:output_type -> inventory.v1.GetStocksByIDsResponse
-	6, // 7: inventory.v1.InventoryService.ReserveStock:output_type -> inventory.v1.ReserveStockResponse
-	5, // [5:8] is the sub-list for method output_type
-	2, // [2:5] is the sub-list for method input_type
+	0, // 4: inventory.v1.InventoryService.GetStock:output_type -> inventory.v1.Stock
+	3, // 5: inventory.v1.InventoryService.GetStocksByIDs:output_type -> inventory.v1.GetStocksByIDsResponse
+	4, // [4:6] is the sub-list for method output_type
+	2, // [2:4] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
 	2, // [2:2] is the sub-list for extension extendee
 	0, // [0:2] is the sub-list for field type_name

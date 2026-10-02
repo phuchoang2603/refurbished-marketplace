@@ -57,6 +57,9 @@ templ OrderDetailSection(order sharedviews.OrderView) {
 </p>
 			if order.PaymentStatus != "" {
 				<p><strong>Payment status:</strong> @badge.Badge(order.PaymentStatus)</p>
+				if order.Status == "PENDING" {
+					<p role="status" class="text-sm text-muted-foreground">Payment is being reconciled and stock settlement is pending. Your order is not final yet.</p>
+				}
 				if order.PaymentFailureReason != "" {
 					<p class="text-sm text-muted-foreground">{ order.PaymentFailureReason }</p>
 				}

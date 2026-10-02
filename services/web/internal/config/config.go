@@ -22,6 +22,7 @@ type Config struct {
 	OrdersAddr      string
 	CartAddr        string
 	PaymentAddr     string
+	CheckoutAddr    string
 	JWTSecret       string
 	GatewayBaseURL  string
 	PublicBaseURL   string
@@ -46,6 +47,7 @@ func LoadConfig() Config {
 		OrdersAddr:      strings.TrimSpace(os.Getenv("ORDERS_SVC_ADDR")),
 		CartAddr:        strings.TrimSpace(os.Getenv("CART_SVC_ADDR")),
 		PaymentAddr:     strings.TrimSpace(os.Getenv("PAYMENT_SVC_ADDR")),
+		CheckoutAddr:    strings.TrimSpace(os.Getenv("CHECKOUT_SVC_ADDR")),
 		JWTSecret:       strings.TrimSpace(os.Getenv("JWT_SECRET")),
 		GatewayBaseURL:  gatewayBaseURL,
 		PublicBaseURL:   strings.TrimRight(strings.TrimSpace(os.Getenv("PUBLIC_BASE_URL")), "/"),
@@ -77,6 +79,9 @@ func ValidateConfig(cfg Config) error {
 	}
 	if strings.TrimSpace(cfg.PaymentAddr) == "" {
 		return errors.New("PAYMENT_SVC_ADDR is required")
+	}
+	if strings.TrimSpace(cfg.CheckoutAddr) == "" {
+		return errors.New("CHECKOUT_SVC_ADDR is required")
 	}
 	if strings.TrimSpace(cfg.JWTSecret) == "" {
 		return errors.New("JWT_SECRET is required")

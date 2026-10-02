@@ -53,6 +53,7 @@ func main() {
 		OrdersAddr:    cfg.OrdersAddr,
 		CartAddr:      cfg.CartAddr,
 		PaymentAddr:   cfg.PaymentAddr,
+		CheckoutAddr:  cfg.CheckoutAddr,
 	})
 	if err != nil {
 		sharedlog.Fatal("clients", "err", err)
@@ -67,6 +68,7 @@ func main() {
 		deps.Orders,
 		deps.Cart,
 		deps.Payment,
+		deps.Checkout,
 		sharedhandlers.HostedPaymentConfig{
 			GatewayBaseURL:  cfg.GatewayBaseURL,
 			PublicBaseURL:   cfg.PublicBaseURL,

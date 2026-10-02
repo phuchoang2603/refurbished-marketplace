@@ -27,6 +27,11 @@ func (h *Handler) RegisterPages(r chi.Router) {
 	r.Get("/cart", h.handleGetCart)
 }
 
+func (h *Handler) RegisterProtectedPages(r chi.Router) {
+	r.Get("/checkouts/{id}", h.handleCheckoutProgressPage)
+	r.Get("/checkouts/{id}/progress", h.handleCheckoutProgress)
+}
+
 func (h *Handler) mapCartView(w http.ResponseWriter, r *http.Request, c *cartv1.Cart) (sharedviews.CartView, error) {
 	items := make([]sharedviews.CartItemView, 0, len(c.GetItems()))
 	groups := make(map[string]*sharedviews.CartMerchantGroupView, len(c.GetItems()))

@@ -14,12 +14,12 @@ func runReservationConsumer(ctx context.Context, svc *service.Service, bootstrap
 		BootstrapServers: bootstrap,
 		GroupID:          groupID,
 		Topics: []string{
-			messaging.EventTypeOrderCreated,
-			messaging.EventTypePaymentSucceeded,
-			messaging.EventTypePaymentFailed,
+			messaging.EventTypeCheckoutReserveStock,
+			messaging.EventTypeCheckoutCancelStock,
+			messaging.EventTypeCheckoutCommitStock,
 		},
 		TracerName: "inventory",
-	}, svc.KafkaReservationHandler(), "orders.created,payment.*")
+	}, svc.HandleCheckoutCommand, "checkout stock commands")
 }
 
 func runProductCreatedConsumer(ctx context.Context, svc *service.Service, bootstrap []string, groupID string) error {

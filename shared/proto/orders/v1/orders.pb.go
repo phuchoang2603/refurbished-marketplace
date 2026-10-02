@@ -658,12 +658,10 @@ const file_shared_proto_orders_v1_orders_proto_rawDesc = "" +
 	"\x18ORDER_STATUS_UNSPECIFIED\x10\x00\x12\x18\n" +
 	"\x14ORDER_STATUS_PENDING\x10\x01\x12\x15\n" +
 	"\x11ORDER_STATUS_PAID\x10\x02\x12\x17\n" +
-	"\x13ORDER_STATUS_FAILED\x10\x032\xbd\x02\n" +
-	"\rOrdersService\x12>\n" +
-	"\vCreateOrder\x12\x1d.orders.v1.CreateOrderRequest\x1a\x10.orders.v1.Order\x12@\n" +
+	"\x13ORDER_STATUS_FAILED\x10\x032\xb1\x01\n" +
+	"\rOrdersService\x12@\n" +
 	"\fGetOrderByID\x12\x1e.orders.v1.GetOrderByIDRequest\x1a\x10.orders.v1.Order\x12^\n" +
-	"\x11ListOrdersByBuyer\x12#.orders.v1.ListOrdersByBuyerRequest\x1a$.orders.v1.ListOrdersByBuyerResponse\x12J\n" +
-	"\x11UpdateOrderStatus\x12#.orders.v1.UpdateOrderStatusRequest\x1a\x10.orders.v1.OrderBRZPgithub.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1;ordersv1b\x06proto3"
+	"\x11ListOrdersByBuyer\x12#.orders.v1.ListOrdersByBuyerRequest\x1a$.orders.v1.ListOrdersByBuyerResponseBRZPgithub.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1;ordersv1b\x06proto3"
 
 var (
 	file_shared_proto_orders_v1_orders_proto_rawDescOnce sync.Once
@@ -700,16 +698,12 @@ var file_shared_proto_orders_v1_orders_proto_depIdxs = []int32{
 	3,  // 5: orders.v1.CreateOrderRequest.items:type_name -> orders.v1.CreateOrderItem
 	2,  // 6: orders.v1.ListOrdersByBuyerResponse.orders:type_name -> orders.v1.Order
 	0,  // 7: orders.v1.UpdateOrderStatusRequest.status:type_name -> orders.v1.OrderStatus
-	4,  // 8: orders.v1.OrdersService.CreateOrder:input_type -> orders.v1.CreateOrderRequest
-	5,  // 9: orders.v1.OrdersService.GetOrderByID:input_type -> orders.v1.GetOrderByIDRequest
-	6,  // 10: orders.v1.OrdersService.ListOrdersByBuyer:input_type -> orders.v1.ListOrdersByBuyerRequest
-	8,  // 11: orders.v1.OrdersService.UpdateOrderStatus:input_type -> orders.v1.UpdateOrderStatusRequest
-	2,  // 12: orders.v1.OrdersService.CreateOrder:output_type -> orders.v1.Order
-	2,  // 13: orders.v1.OrdersService.GetOrderByID:output_type -> orders.v1.Order
-	7,  // 14: orders.v1.OrdersService.ListOrdersByBuyer:output_type -> orders.v1.ListOrdersByBuyerResponse
-	2,  // 15: orders.v1.OrdersService.UpdateOrderStatus:output_type -> orders.v1.Order
-	12, // [12:16] is the sub-list for method output_type
-	8,  // [8:12] is the sub-list for method input_type
+	5,  // 8: orders.v1.OrdersService.GetOrderByID:input_type -> orders.v1.GetOrderByIDRequest
+	6,  // 9: orders.v1.OrdersService.ListOrdersByBuyer:input_type -> orders.v1.ListOrdersByBuyerRequest
+	2,  // 10: orders.v1.OrdersService.GetOrderByID:output_type -> orders.v1.Order
+	7,  // 11: orders.v1.OrdersService.ListOrdersByBuyer:output_type -> orders.v1.ListOrdersByBuyerResponse
+	10, // [10:12] is the sub-list for method output_type
+	8,  // [8:10] is the sub-list for method input_type
 	8,  // [8:8] is the sub-list for extension type_name
 	8,  // [8:8] is the sub-list for extension extendee
 	0,  // [0:8] is the sub-list for field type_name

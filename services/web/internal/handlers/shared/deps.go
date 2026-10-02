@@ -4,6 +4,7 @@ import (
 	"context"
 
 	cartv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/cart/v1"
+	checkoutv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1"
 	inventoryv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/inventory/v1"
 	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
 	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
@@ -27,7 +28,6 @@ type ProductsService interface {
 type InventoryService interface {
 	GetStock(ctx context.Context, productID string) (*inventoryv1.Stock, error)
 	GetStocksByIDs(ctx context.Context, productIDs []string) (*inventoryv1.GetStocksByIDsResponse, error)
-	ReserveStock(ctx context.Context, orderID, merchantID string, totalCents int64, items []*inventoryv1.ReserveStockItem) error
 }
 
 type SearchService interface {
@@ -35,10 +35,8 @@ type SearchService interface {
 }
 
 type OrdersService interface {
-	CreateOrder(ctx context.Context, buyerUserID, merchantID string, items []*ordersv1.CreateOrderItem, totalCents int64, idempotencyKey string) (*ordersv1.Order, error)
 	GetOrderByID(ctx context.Context, id string) (*ordersv1.Order, error)
 	ListOrdersByBuyer(ctx context.Context, buyerUserID string, limit, offset int32) (*ordersv1.ListOrdersByBuyerResponse, error)
-	UpdateOrderStatus(ctx context.Context, id string, status ordersv1.OrderStatus) (*ordersv1.Order, error)
 }
 
 type CartService interface {
@@ -50,9 +48,13 @@ type CartService interface {
 }
 
 type PaymentService interface {
-	CreateHostedPaymentSession(ctx context.Context, req *paymentv1.CreateHostedPaymentSessionRequest) (*paymentv1.CreateHostedPaymentSessionResponse, error)
 	GetHostedPaymentSessionByOrder(ctx context.Context, orderID string) (*paymentv1.HostedPaymentSession, error)
 	HandleGatewayWebhook(ctx context.Context, req *paymentv1.HandleGatewayWebhookRequest) (*paymentv1.HandleGatewayWebhookResponse, error)
+}
+
+type CheckoutService interface {
+	SubmitCheckout(ctx context.Context, request *checkoutv1.SubmitCheckoutRequest) (*checkoutv1.SubmitCheckoutResponse, error)
+	GetCheckout(ctx context.Context, request *checkoutv1.GetCheckoutRequest) (*checkoutv1.CheckoutStatus, error)
 }
 
 type Dependencies struct {
@@ -63,5 +65,6 @@ type Dependencies struct {
 	Orders        OrdersService
 	Cart          CartService
 	Payment       PaymentService
+	Checkout      CheckoutService
 	HostedPayment HostedPaymentConfig
 }

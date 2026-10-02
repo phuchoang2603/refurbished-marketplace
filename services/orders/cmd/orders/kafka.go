@@ -14,12 +14,11 @@ func runOrderResultConsumer(ctx context.Context, svc *service.Service, bootstrap
 		BootstrapServers: bootstrap,
 		GroupID:          groupID,
 		Topics: []string{
-			messaging.EventTypeInventoryReservationFailed,
-			messaging.EventTypePaymentSucceeded,
-			messaging.EventTypePaymentFailed,
+			messaging.EventTypeCheckoutCreateOrder,
+			messaging.EventTypeCheckoutFinalizeOrder,
 		},
 		TracerName: "orders",
-	}, svc.KafkaOrderResultHandler())
+	}, svc.HandleCheckoutCommand)
 	if err != nil {
 		return err
 	}
@@ -31,7 +30,7 @@ func runOrderResultConsumer(ctx context.Context, svc *service.Service, bootstrap
 
 	sharedlog.Info(
 		"kafka consumer started",
-		"topics", "inventory/payment results",
+		"topics", "checkout order commands",
 		"group", groupID,
 	)
 	return consumer.Run(ctx)

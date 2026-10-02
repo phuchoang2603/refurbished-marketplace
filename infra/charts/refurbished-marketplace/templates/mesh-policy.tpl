@@ -51,7 +51,7 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "7"
 spec:
-  description: Allow web and kubelet to {{ $name }} gRPC. Unknown identities are denied when enforce is true.
+  description: Allow only required callers to {{ $name }} gRPC. Unknown identities are denied when enforce is true.
   endpointSelector:
     matchLabels:
       app: {{ $name }}
@@ -69,6 +69,7 @@ spec:
         - ports:
             - port: {{ $svc.port | quote }}
               protocol: TCP
+{{- if has $name (list "checkout" "orders" "inventory" "products" "search" "users" "cart" "payment") }}
     - fromEndpoints:
         - matchLabels:
             app: web
@@ -80,6 +81,7 @@ spec:
         - ports:
             - port: {{ $svc.port | quote }}
               protocol: TCP
+{{- end }}
 {{- end }}
 {{- end }}
 ---

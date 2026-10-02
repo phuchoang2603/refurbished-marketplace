@@ -7,7 +7,6 @@ option go_package = "github.com/phuchoang2603/refurbished-marketplace/shared/pro
 service InventoryService {
   rpc GetStock(GetStockRequest) returns (Stock);
   rpc GetStocksByIDs(GetStocksByIDsRequest) returns (GetStocksByIDsResponse);
-  rpc ReserveStock(ReserveStockRequest) returns (ReserveStockResponse);
 }
 
 message Stock {

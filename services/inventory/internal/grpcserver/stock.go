@@ -54,35 +54,3 @@ func (s *Server) GetStocksByIDs(ctx context.Context, req *inventoryv1.GetStocksB
 	}
 	return &inventoryv1.GetStocksByIDsResponse{Stocks: out}, nil
 }
-
-func (s *Server) ReserveStock(ctx context.Context, req *inventoryv1.ReserveStockRequest) (*inventoryv1.ReserveStockResponse, error) {
-	orderID, err := grpcerr.ParseUUID(req.GetOrderId(), "order id")
-	if err != nil {
-		return nil, err
-	}
-	merchantID, err := grpcerr.ParseUUID(req.GetMerchantId(), "merchant id")
-	if err != nil {
-		return nil, err
-	}
-	items := make([]service.ReservationItemInput, 0, len(req.GetItems()))
-	for _, item := range req.GetItems() {
-		productID, err := grpcerr.ParseUUID(item.GetProductId(), "product id")
-		if err != nil {
-			return nil, err
-		}
-		items = append(items, service.ReservationItemInput{ProductID: productID, Quantity: item.GetQuantity()})
-	}
-	err = s.svc.ReserveStock(ctx, orderID, merchantID, req.GetTotalCents(), items)
-	if err != nil {
-		return nil, grpcerr.Map(
-			err,
-			grpcerr.Mapping{Err: service.ErrInvalidMerchantID, Code: codes.InvalidArgument},
-			grpcerr.Mapping{Err: service.ErrInvalidQuantity, Code: codes.InvalidArgument},
-			grpcerr.Mapping{Err: service.ErrInvalidProductID, Code: codes.InvalidArgument},
-			grpcerr.Mapping{Err: service.ErrInventoryNotFound, Code: codes.FailedPrecondition},
-			grpcerr.Mapping{Err: service.ErrInsufficientStock, Code: codes.FailedPrecondition},
-			grpcerr.Mapping{Err: service.ErrReservationAlreadyFailed, Code: codes.FailedPrecondition},
-		)
-	}
-	return &inventoryv1.ReserveStockResponse{}, nil
-}

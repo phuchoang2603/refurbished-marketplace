@@ -1,0 +1,44 @@
+package checkout
+
+import templpkg "github.com/a-h/templ"
+import card "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/components/card"
+import page "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/components/page"
+import sharedviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/shared"
+import checkoutv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1"
+
+templ ProgressPage(status *checkoutv1.CheckoutStatus) {
+	@sharedviews.AppShell("Checkout", sharedviews.DefaultNav, Progress(status))
+}
+
+templ Progress(status *checkoutv1.CheckoutStatus) {
+	@card.Card(card.CardArgs{Attributes: templpkg.Attributes{"id": "checkout-progress"}}) {
+		@page.Header("Checkout", "Your checkout is progressing securely in the background.")
+		@card.CardContent(card.CardContentArgs{Class: "grid gap-4"}) {
+			if status.GetState() == checkoutv1.CheckoutState_CHECKOUT_STATE_FAILED {
+				<p role="status">Checkout could not be completed. No payment page was opened.</p>
+				<a class="underline" href="/cart">Return to cart</a>
+			} else if status.GetState() == checkoutv1.CheckoutState_CHECKOUT_STATE_COMPLETED {
+				<p role="status">Your order is complete.</p>
+				<a class="underline" href={ templpkg.SafeURL("/orders/" + status.GetOrderId()) }>View order</a>
+			} else if status.GetState() == checkoutv1.CheckoutState_CHECKOUT_STATE_NEEDS_REVIEW {
+				<p role="status">Payment needs review. Please do not try to pay again. Your order is still being investigated.</p>
+			} else {
+				<div data-on-interval__duration.2s.leading={ "@get('/checkouts/" + status.GetCheckoutId() + "/progress')" }>
+					<p role="status">
+						if status.GetState() == checkoutv1.CheckoutState_CHECKOUT_STATE_READY_TO_PAY {
+							Payment is ready. Opening the secure payment page…
+						} else if status.GetState() == checkoutv1.CheckoutState_CHECKOUT_STATE_RECONCILING ||
+							status.GetState() == checkoutv1.CheckoutState_CHECKOUT_STATE_COMMITTING_STOCK ||
+							status.GetState() == checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK ||
+							status.GetState() == checkoutv1.CheckoutState_CHECKOUT_STATE_FINALIZING_PAID ||
+							status.GetState() == checkoutv1.CheckoutState_CHECKOUT_STATE_FINALIZING_FAILED {
+							Payment is being settled. Please keep this page or return later.
+						} else {
+							Preparing your order and reserving stock. You have not paid yet.
+						}
+					</p>
+				</div>
+			}
+		}
+	}
+}

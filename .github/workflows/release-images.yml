@@ -77,6 +77,15 @@ jobs:
           - image: orders-migrator
             dockerfile: infra/docker/goose-migrator.Dockerfile
             build_args: MIGRATIONS_DIR=services/orders/db/migrations
+          - image: checkout
+            dockerfile: infra/docker/go-service.Dockerfile
+            build_args: |
+              BUILD_PKG=./services/checkout/cmd/checkout
+              BUILD_BIN=checkout
+              EXPOSE_PORT=9099
+          - image: checkout-migrator
+            dockerfile: infra/docker/goose-migrator.Dockerfile
+            build_args: MIGRATIONS_DIR=services/checkout/db/migrations
           - image: cart
             dockerfile: infra/docker/go-service.Dockerfile
             build_args: |

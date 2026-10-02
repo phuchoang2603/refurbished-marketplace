@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package checkout.v1;
+
+option go_package = "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1;checkoutv1";
+
+import "shared/proto/checkout/v1/events.proto";
+
+service CheckoutService {
+  rpc SubmitCheckout(SubmitCheckoutRequest) returns (SubmitCheckoutResponse);
+  rpc GetCheckout(GetCheckoutRequest) returns (CheckoutStatus);
+}
+
+message SubmitCheckoutRequest {
+  string buyer_user_id = 1;
+  string intent_key = 2;
+  string merchant_id = 3;
+  string buyer_email = 4;
+  int64 total_cents = 5;
+  string currency = 6;
+  repeated CheckoutLine items = 7;
+  CheckoutAddress shipping_address = 8;
+  string return_url = 9;
+}
+
+message SubmitCheckoutResponse {
+  string checkout_id = 1;
+  CheckoutState state = 2;
+}
+
+message GetCheckoutRequest {
+  string checkout_id = 1;
+  string buyer_user_id = 2;
+}
+
+message CheckoutStatus {
+  string checkout_id = 1;
+  string order_id = 2;
+  CheckoutState state = 3;
+  string payment_session_id = 4;
+  string return_url = 5;
+  string failure_reason = 6;
+  string buyer_user_id = 7;
+}
+
+enum CheckoutState {
+  CHECKOUT_STATE_UNSPECIFIED = 0;
+  CHECKOUT_STATE_ACCEPTED = 1;
+  CHECKOUT_STATE_CREATING_ORDER = 2;
+  CHECKOUT_STATE_RESERVING_STOCK = 3;
+  CHECKOUT_STATE_CREATING_SESSION = 4;
+  CHECKOUT_STATE_READY_TO_PAY = 5;
+  CHECKOUT_STATE_COMMITTING_STOCK = 6;
+  CHECKOUT_STATE_RELEASING_STOCK = 7;
+  CHECKOUT_STATE_FINALIZING_PAID = 8;
+  CHECKOUT_STATE_FINALIZING_FAILED = 9;
+  CHECKOUT_STATE_COMPLETED = 10;
+  CHECKOUT_STATE_FAILED = 11;
+  CHECKOUT_STATE_RECONCILING = 12;
+  CHECKOUT_STATE_NEEDS_REVIEW = 13;
+}

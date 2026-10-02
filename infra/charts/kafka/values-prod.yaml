@@ -7,24 +7,31 @@ kafka:
     size: 10Gi
 
 entities:
+  checkout:
+    topics:
+      - { name: checkout.order-create.requested.v1, partitions: 6, retention: 604800000 }
+      - { name: checkout.stock-reserve.requested.v1, partitions: 6, retention: 604800000 }
+      - { name: checkout.stock-cancel.requested.v1, partitions: 6, retention: 604800000 }
+      - { name: checkout.stock-commit.requested.v1, partitions: 6, retention: 604800000 }
+      - { name: checkout.payment-session-create.requested.v1, partitions: 6, retention: 604800000 }
+      - { name: checkout.payment-session-cancel.requested.v1, partitions: 6, retention: 604800000 }
+      - { name: checkout.order-finalize.requested.v1, partitions: 6, retention: 604800000 }
   orders:
     topics:
-      - name: orders.created
-        partitions: 10
-        retention: 604800000
+      - { name: checkout.order-created.v1, partitions: 6, retention: 604800000 }
+      - { name: checkout.order-rejected.v1, partitions: 6, retention: 604800000 }
+      - { name: checkout.order-finalized.v1, partitions: 6, retention: 604800000 }
   payment:
     topics:
-      - name: payment.succeeded
-        partitions: 6
-        retention: 604800000
-      - name: payment.failed
-        partitions: 6
-        retention: 604800000
+      - { name: checkout.payment-session-ready.v1, partitions: 6, retention: 604800000 }
+      - { name: checkout.payment-session-rejected.v1, partitions: 6, retention: 604800000 }
+      - { name: checkout.payment-cancelled.v1, partitions: 6, retention: 604800000 }
+      - { name: checkout.payment-succeeded.v1, partitions: 6, retention: 604800000 }
+      - { name: checkout.payment-failed.v1, partitions: 6, retention: 604800000 }
+      - { name: checkout.payment-uncertain.v1, partitions: 6, retention: 604800000 }
   inventory:
     topics:
-      - name: inventory.reserved
-        partitions: 6
-        retention: 604800000
-      - name: inventory.reservation-failed
-        partitions: 6
-        retention: 604800000
+      - { name: checkout.stock-reserved.v1, partitions: 6, retention: 604800000 }
+      - { name: checkout.stock-rejected.v1, partitions: 6, retention: 604800000 }
+      - { name: checkout.stock-released.v1, partitions: 6, retention: 604800000 }
+      - { name: checkout.stock-committed.v1, partitions: 6, retention: 604800000 }
