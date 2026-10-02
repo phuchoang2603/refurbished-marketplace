@@ -21,7 +21,7 @@ func main() {
 	runtime.InitLogging("users")
 	addr := runtime.EnvOr("GRPC_ADDR", ":9091")
 
-	db, err := runtime.OpenPostgres(runtime.MustEnv("DB_URL"))
+	db, err := runtime.OpenPostgres(runtime.PostgresURLFromEnv())
 	if err != nil {
 		sharedlog.Fatal("open postgres", "err", err)
 	}

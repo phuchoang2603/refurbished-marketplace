@@ -120,6 +120,10 @@ spec:
               value: {{ $svc.db.port | quote }}
             - name: DB_NAME
               value: {{ $svc.db.name | quote }}
+{{- if eq $name "users" }}
+            - name: DB_URL
+              value: {{ printf "postgres://$(DB_USER):$(DB_PASSWORD)@%s:%v/%s?sslmode=disable" $svc.db.host $svc.db.port $svc.db.name | quote }}
+{{- end }}
 {{- end }}
 {{- if $svc.mongo }}
             - name: MONGO_USER
