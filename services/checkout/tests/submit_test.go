@@ -13,6 +13,7 @@ import (
 	testpostgres "github.com/phuchoang2603/refurbished-marketplace/shared/testutil/postgres"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/proto"
 )
 
 func newCheckoutDB(t *testing.T) *sql.DB {
@@ -54,9 +55,9 @@ func TestSubmitIdempotencyAndOwnership(t *testing.T) {
 	if checkoutCount != 1 || outboxCount != 1 {
 		t.Fatalf("expected one checkout and command, got %d and %d", checkoutCount, outboxCount)
 	}
-	conflict := *request
+	conflict := proto.Clone(request).(*checkoutv1.SubmitCheckoutRequest)
 	conflict.BuyerEmail = "other@example.com"
-	_, err = server.SubmitCheckout(t.Context(), &conflict)
+	_, err = server.SubmitCheckout(t.Context(), conflict)
 	if status.Code(err) != codes.AlreadyExists {
 		t.Fatalf("conflicting key should be rejected: %v", err)
 	}

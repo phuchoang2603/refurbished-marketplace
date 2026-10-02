@@ -2,7 +2,6 @@ package service
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/phuchoang2603/refurbished-marketplace/services/payment/internal/database"
 	"github.com/phuchoang2603/refurbished-marketplace/shared/err/dberr"
@@ -66,22 +65,6 @@ func loadPaymentIntentByOrderID(ctx context.Context, q *database.Queries, orderI
 		return database.PaymentIntent{}, dberr.MapErrNoRows(err, ErrIntentNotFound)
 	}
 	return row, nil
-}
-
-func parseOrderUUIDs(msg interface {
-	GetOrderId() string
-	GetMerchantId() string
-},
-) (orderID, merchantID uuid.UUID, err error) {
-	orderID, err = uuid.Parse(msg.GetOrderId())
-	if err != nil {
-		return uuid.Nil, uuid.Nil, fmt.Errorf("order_id: %w", err)
-	}
-	merchantID, err = uuid.Parse(msg.GetMerchantId())
-	if err != nil {
-		return uuid.Nil, uuid.Nil, fmt.Errorf("merchant_id: %w", err)
-	}
-	return orderID, merchantID, nil
 }
 
 func paymentTransactionIsTerminal(status string) bool {

@@ -44,7 +44,7 @@ func TestDeadlineRetryAfterWorkerRestart(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 	var operationID string
 	seen := map[string]bool{}
 	for rows.Next() {

@@ -5,6 +5,9 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
+	"net"
+	"net/url"
+	"os"
 	"regexp"
 	"strings"
 
@@ -14,6 +17,19 @@ import (
 )
 
 const maxDBQueryTextLen = 1024
+
+func PostgresURLFromEnv() string {
+	if os.Getenv("DB_HOST") == "" {
+		return MustEnv("DB_URL")
+	}
+	return (&url.URL{
+		Scheme:   "postgres",
+		User:     url.UserPassword(MustEnv("DB_USER"), MustEnv("DB_PASSWORD")),
+		Host:     net.JoinHostPort(MustEnv("DB_HOST"), MustEnv("DB_PORT")),
+		Path:     "/" + MustEnv("DB_NAME"),
+		RawQuery: "sslmode=disable",
+	}).String()
+}
 
 // sqlcNameRe matches `-- name: GetUserByEmail :one` that sqlc embeds in queries.
 var sqlcNameRe = regexp.MustCompile(`(?m)^--\s*name:\s*(\S+)`)

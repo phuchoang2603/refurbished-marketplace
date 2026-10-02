@@ -24,7 +24,7 @@ func main() {
 		sharedlog.Fatal("config", "err", err)
 	}
 
-	db, err := runtime.OpenPostgres(runtime.MustEnv("DB_URL"))
+	db, err := runtime.OpenPostgres(runtime.PostgresURLFromEnv())
 	if err != nil {
 		sharedlog.Fatal("open postgres", "err", err)
 	}

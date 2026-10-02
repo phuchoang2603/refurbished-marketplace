@@ -41,7 +41,7 @@ func (service *Service) ProcessDue(ctx context.Context) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 	queries := database.New(tx)
 	rows, err := queries.ClaimDueCheckouts(ctx, 1)
 	if err != nil || len(rows) == 0 {

@@ -2,12 +2,10 @@ package service
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/phuchoang2603/refurbished-marketplace/services/inventory/internal/database"
 	"github.com/phuchoang2603/refurbished-marketplace/shared/messaging"
 	sharedtrace "github.com/phuchoang2603/refurbished-marketplace/shared/observe/trace"
-	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
 	productsv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1"
 
 	"github.com/google/uuid"
@@ -21,42 +19,6 @@ type ReservationItemInput struct {
 
 func commandReserveInboxID(orderID uuid.UUID) string {
 	return "inventory.reserve-command/" + orderID.String()
-}
-
-func parseOrderCreatedReservation(msg *ordersv1.OrderCreated) (uuid.UUID, uuid.UUID, int64, []ReservationItemInput, error) {
-	orderID, err := uuid.Parse(msg.GetOrderId())
-	if err != nil {
-		return uuid.Nil, uuid.Nil, 0, nil, fmt.Errorf("order_id: %w", err)
-	}
-	merchantID, err := uuid.Parse(msg.GetMerchantId())
-	if err != nil {
-		return uuid.Nil, uuid.Nil, 0, nil, fmt.Errorf("merchant_id: %w", err)
-	}
-	if msg.GetTotalCents() <= 0 {
-		return uuid.Nil, uuid.Nil, 0, nil, fmt.Errorf("total_cents: invalid")
-	}
-	if len(msg.GetItems()) == 0 {
-		return uuid.Nil, uuid.Nil, 0, nil, fmt.Errorf("items: missing")
-	}
-
-	aggregated := make(map[uuid.UUID]int32, len(msg.GetItems()))
-	for _, item := range msg.GetItems() {
-		productID, err := uuid.Parse(item.GetProductId())
-		if err != nil {
-			return uuid.Nil, uuid.Nil, 0, nil, fmt.Errorf("product_id: %w", err)
-		}
-		if err := validatePositiveQuantity(item.GetQuantity()); err != nil {
-			return uuid.Nil, uuid.Nil, 0, nil, err
-		}
-		aggregated[productID] += item.GetQuantity()
-	}
-
-	items := make([]ReservationItemInput, 0, len(aggregated))
-	for productID, quantity := range aggregated {
-		items = append(items, ReservationItemInput{ProductID: productID, Quantity: quantity})
-	}
-
-	return orderID, merchantID, msg.GetTotalCents(), items, nil
 }
 
 func reserveOrderItems(ctx context.Context, q *database.Queries, orderID uuid.UUID, items []ReservationItemInput) error {

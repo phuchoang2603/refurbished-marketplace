@@ -60,13 +60,6 @@ func validateNonNegativeQuantity(quantity int32) error {
 	return nil
 }
 
-func validatePositiveQuantity(quantity int32) error {
-	if quantity <= 0 {
-		return ErrInvalidQuantity
-	}
-	return nil
-}
-
 func mapDBInventory(i database.Inventory) Inventory {
 	return Inventory{
 		ProductID:    i.ProductID,
