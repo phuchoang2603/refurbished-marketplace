@@ -2,14 +2,11 @@ package grpcserver
 
 import (
 	"context"
-	"strings"
 
 	"github.com/google/uuid"
-	authconfig "github.com/phuchoang2603/refurbished-marketplace/shared/auth/config"
-	sharedjwt "github.com/phuchoang2603/refurbished-marketplace/shared/auth/jwt"
+	"github.com/phuchoang2603/refurbished-marketplace/shared/auth/grpcauth"
 	checkoutv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1"
 	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/metadata"
 	"google.golang.org/grpc/status"
 )
 
@@ -34,35 +31,30 @@ type Submitter interface {
 type Server struct {
 	checkoutv1.UnimplementedCheckoutServiceServer
 	reader Reader
-	auth   authconfig.Config
 }
 
-func New(reader Reader, auth authconfig.Config) *Server {
-	return &Server{reader: reader, auth: auth}
+func New(reader Reader) *Server {
+	return &Server{reader: reader}
 }
 
-func (server *Server) authenticatedBuyer(ctx context.Context) (string, error) {
-	values, ok := metadata.FromIncomingContext(ctx)
-	if !ok || len(values.Get("authorization")) != 1 {
-		return "", status.Error(codes.Unauthenticated, "access token required")
+func authenticatedBuyer(ctx context.Context) (uuid.UUID, error) {
+	claims, ok := grpcauth.ClaimsFromContext(ctx)
+	if !ok {
+		return uuid.Nil, status.Error(codes.Unauthenticated, "access token required")
 	}
-	raw, ok := strings.CutPrefix(values.Get("authorization")[0], "Bearer ")
-	if !ok || raw == "" {
-		return "", status.Error(codes.Unauthenticated, "access token required")
+	buyerID, err := uuid.Parse(claims.Subject)
+	if err != nil || buyerID == uuid.Nil {
+		return uuid.Nil, status.Error(codes.Unauthenticated, "invalid buyer identity")
 	}
-	claims, err := sharedjwt.ParseAndValidate(raw, server.auth.JWTSecret, "access", server.auth.JWTIssuer, server.auth.JWTAudience)
-	if err != nil {
-		return "", status.Error(codes.Unauthenticated, "invalid access token")
-	}
-	return claims.Subject, nil
+	return buyerID, nil
 }
 
 func (server *Server) SubmitCheckout(ctx context.Context, request *checkoutv1.SubmitCheckoutRequest) (*checkoutv1.SubmitCheckoutResponse, error) {
-	buyerID, err := server.authenticatedBuyer(ctx)
+	buyerID, err := authenticatedBuyer(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if request == nil || request.GetBuyerUserId() != buyerID {
+	if request == nil || request.GetBuyerUserId() != buyerID.String() {
 		return nil, status.Error(codes.PermissionDenied, "checkout buyer does not match access token")
 	}
 	submitter, ok := server.reader.(Submitter)
@@ -73,7 +65,7 @@ func (server *Server) SubmitCheckout(ctx context.Context, request *checkoutv1.Su
 }
 
 func (server *Server) GetCheckout(ctx context.Context, request *checkoutv1.GetCheckoutRequest) (*checkoutv1.CheckoutStatus, error) {
-	authenticatedBuyer, err := server.authenticatedBuyer(ctx)
+	buyerID, err := authenticatedBuyer(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -84,11 +76,7 @@ func (server *Server) GetCheckout(ctx context.Context, request *checkoutv1.GetCh
 	if err != nil || checkoutID == uuid.Nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid checkout id")
 	}
-	buyerID, err := uuid.Parse(authenticatedBuyer)
-	if err != nil || buyerID == uuid.Nil {
-		return nil, status.Error(codes.Unauthenticated, "invalid buyer identity")
-	}
-	if request.GetBuyerUserId() != authenticatedBuyer {
+	if request.GetBuyerUserId() != buyerID.String() {
 		return nil, status.Error(codes.NotFound, "checkout not found")
 	}
 	view, err := server.reader.GetCheckout(ctx, checkoutID)

@@ -9,6 +9,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/phuchoang2603/refurbished-marketplace/services/checkout/internal/grpcserver"
 	authconfig "github.com/phuchoang2603/refurbished-marketplace/shared/auth/config"
+	"github.com/phuchoang2603/refurbished-marketplace/shared/auth/grpcauth"
 	checkoutv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -27,7 +28,22 @@ func authenticatedContext(t *testing.T, subject string) context.Context {
 	if err != nil {
 		t.Fatal(err)
 	}
-	return metadata.NewIncomingContext(t.Context(), metadata.Pairs("authorization", "Bearer "+token))
+	ctx := metadata.NewIncomingContext(t.Context(), metadata.Pairs("authorization", "Bearer "+token))
+	claims, err := grpcauth.Authenticate(ctx, authconfig.DefaultConfig(checkoutTestJWTSecret))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return grpcauth.ContextWithClaims(ctx, claims)
+}
+
+func TestCheckoutRequiresAuthenticatedBuyer(t *testing.T) {
+	server := grpcserver.New(checkoutReader{})
+	_, err := server.GetCheckout(t.Context(), &checkoutv1.GetCheckoutRequest{
+		CheckoutId: uuid.NewString(), BuyerUserId: uuid.NewString(),
+	})
+	if status.Code(err) != codes.Unauthenticated {
+		t.Fatalf("missing claims must be rejected: %v", err)
+	}
 }
 
 type checkoutReader struct {
@@ -45,7 +61,7 @@ func TestGetCheckoutBuyerOwnership(t *testing.T) {
 		CheckoutID: checkoutID, BuyerUserID: buyerID,
 		State:            checkoutv1.CheckoutState_CHECKOUT_STATE_READY_TO_PAY,
 		PaymentSessionID: "hosted-session",
-	}}, authconfig.DefaultConfig(checkoutTestJWTSecret))
+	}})
 	buyerContext := authenticatedContext(t, buyerID.String())
 
 	_, err := server.GetCheckout(buyerContext, &checkoutv1.GetCheckoutRequest{

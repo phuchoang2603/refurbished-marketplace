@@ -6,6 +6,7 @@ import (
 	webAuth "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/auth"
 	shared "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
 	sharedviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/shared"
+	"github.com/phuchoang2603/refurbished-marketplace/shared/auth/grpcauth"
 )
 
 func (h *Handler) authUserFromRequest(r *http.Request) (string, string, sharedviews.AuthState, bool) {
@@ -24,6 +25,7 @@ func (h *Handler) requireAccessToken() func(http.Handler) http.Handler {
 
 			ctx := webAuth.ContextWithUserID(r.Context(), userID)
 			ctx = webAuth.ContextWithEmail(ctx, email)
+			ctx = grpcauth.WithAccessToken(ctx, webAuth.AccessTokenFromRequest(r))
 			ctx = sharedviews.WithAuthState(ctx, sharedviews.AuthState{Authenticated: true})
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
@@ -37,6 +39,7 @@ func (h *Handler) viewAuth(next http.Handler) http.Handler {
 		if ok {
 			ctx = webAuth.ContextWithUserID(ctx, userID)
 			ctx = webAuth.ContextWithEmail(ctx, email)
+			ctx = grpcauth.WithAccessToken(ctx, webAuth.AccessTokenFromRequest(r))
 		}
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})

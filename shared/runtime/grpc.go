@@ -22,6 +22,8 @@ type GRPCServerConfig struct {
 	ServiceName     string
 	Register        func(*grpc.Server)
 	ShutdownTimeout time.Duration
+	// UnaryInterceptors run after the access log so rejected calls are still logged.
+	UnaryInterceptors []grpc.UnaryServerInterceptor
 }
 
 func ServeGRPC(ctx context.Context, cfg GRPCServerConfig) error {
@@ -30,7 +32,8 @@ func ServeGRPC(ctx context.Context, cfg GRPCServerConfig) error {
 		return err
 	}
 
-	opts := append(sharedtrace.GRPCServerOptions(), grpc.ChainUnaryInterceptor(unaryAccessLog))
+	interceptors := append([]grpc.UnaryServerInterceptor{unaryAccessLog}, cfg.UnaryInterceptors...)
+	opts := append(sharedtrace.GRPCServerOptions(), grpc.ChainUnaryInterceptor(interceptors...))
 	server := grpc.NewServer(opts...)
 	cfg.Register(server)
 	reflection.Register(server)

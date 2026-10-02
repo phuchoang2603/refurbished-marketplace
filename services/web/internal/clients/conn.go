@@ -1,6 +1,7 @@
 package clients
 
 import (
+	"github.com/phuchoang2603/refurbished-marketplace/shared/auth/grpcauth"
 	sharedtrace "github.com/phuchoang2603/refurbished-marketplace/shared/observe/trace"
 
 	"google.golang.org/grpc"
@@ -10,6 +11,7 @@ import (
 func newConn(addr string) (*grpc.ClientConn, error) {
 	opts := append([]grpc.DialOption{
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithChainUnaryInterceptor(grpcauth.UnaryClientInterceptor()),
 	}, sharedtrace.GRPCDialOptions()...)
 	conn, err := grpc.NewClient(addr, opts...)
 	if err != nil {

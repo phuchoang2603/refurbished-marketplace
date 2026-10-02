@@ -8,7 +8,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/phuchoang2603/refurbished-marketplace/services/checkout/internal/grpcserver"
 	"github.com/phuchoang2603/refurbished-marketplace/services/checkout/internal/service"
-	authconfig "github.com/phuchoang2603/refurbished-marketplace/shared/auth/config"
 	checkoutv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1"
 	testpostgres "github.com/phuchoang2603/refurbished-marketplace/shared/testutil/postgres"
 	"google.golang.org/grpc/codes"
@@ -35,7 +34,7 @@ func checkoutRequest() *checkoutv1.SubmitCheckoutRequest {
 
 func TestSubmitIdempotencyAndOwnership(t *testing.T) {
 	db := newCheckoutDB(t)
-	server := grpcserver.New(service.New(db), authconfig.DefaultConfig(checkoutTestJWTSecret))
+	server := grpcserver.New(service.New(db))
 	request := checkoutRequest()
 	buyerContext := authenticatedContext(t, request.GetBuyerUserId())
 	first, err := server.SubmitCheckout(buyerContext, request)
@@ -78,7 +77,7 @@ func TestSubmitIdempotencyAndOwnership(t *testing.T) {
 
 func TestConcurrentSubmitEmitsOneOrder(t *testing.T) {
 	db := newCheckoutDB(t)
-	server := grpcserver.New(service.New(db), authconfig.DefaultConfig(checkoutTestJWTSecret))
+	server := grpcserver.New(service.New(db))
 	request := checkoutRequest()
 	buyerContext := authenticatedContext(t, request.GetBuyerUserId())
 	var wait sync.WaitGroup

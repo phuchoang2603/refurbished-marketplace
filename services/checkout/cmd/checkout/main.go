@@ -10,6 +10,7 @@ import (
 	"github.com/phuchoang2603/refurbished-marketplace/services/checkout/internal/grpcserver"
 	"github.com/phuchoang2603/refurbished-marketplace/services/checkout/internal/service"
 	authconfig "github.com/phuchoang2603/refurbished-marketplace/shared/auth/config"
+	"github.com/phuchoang2603/refurbished-marketplace/shared/auth/grpcauth"
 	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
 	checkoutv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1"
 	"github.com/phuchoang2603/refurbished-marketplace/shared/runtime"
@@ -80,7 +81,10 @@ func main() {
 		Addr:        config.GRPCAddr,
 		ServiceName: "checkout",
 		Register: func(server *grpc.Server) {
-			checkoutv1.RegisterCheckoutServiceServer(server, grpcserver.New(checkoutService, authconfig.DefaultConfig(runtime.MustEnv("JWT_SECRET"))))
+			checkoutv1.RegisterCheckoutServiceServer(server, grpcserver.New(checkoutService))
+		},
+		UnaryInterceptors: []grpc.UnaryServerInterceptor{
+			grpcauth.UnaryServerInterceptor(authconfig.DefaultConfig(runtime.MustEnv("JWT_SECRET"))),
 		},
 	}); err != nil {
 		sharedlog.Fatal("grpc serve", "err", err)
