@@ -47,7 +47,7 @@ func (service *Service) HandleResult(ctx context.Context, kafkaMessage messaging
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 	queries := database.New(tx)
 	row, err := queries.LockCheckout(ctx, checkoutID)
 	if err != nil {

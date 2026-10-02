@@ -19,7 +19,7 @@ func (service *Service) applyCheckoutGatewayWebhook(ctx context.Context, checkou
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 	queries := database.New(tx)
 	intent, err := queries.GetPaymentIntentByOrderIDForUpdate(ctx, checkoutSession.OrderID)
 	if err != nil {

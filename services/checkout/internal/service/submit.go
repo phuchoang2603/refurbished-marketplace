@@ -62,7 +62,7 @@ func (service *Service) SubmitCheckout(ctx context.Context, request *checkoutv1.
 	if err != nil {
 		return nil, err
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }()
 	queries := database.New(tx)
 	row, err := queries.InsertCheckout(ctx, database.InsertCheckoutParams{
 		ID: checkoutID, BuyerUserID: buyerID, MerchantID: merchantID,
