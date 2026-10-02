@@ -20,6 +20,9 @@ spec:
     name: {{ $svc.db.secretName }}
     creationPolicy: Owner
     template:
+      metadata:
+        labels:
+          cnpg.io/reload: "true"
       type: kubernetes.io/basic-auth
       engineVersion: v2
       data:
