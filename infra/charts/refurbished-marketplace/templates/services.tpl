@@ -107,23 +107,21 @@ spec:
 {{- end }}
           env:
 {{- if $svc.db }}
-            - name: DB_USER
+            - name: PGUSER
               value: {{ $owner | quote }}
-            - name: DB_PASSWORD
+            - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ $svc.db.secretName }}
                   key: {{ $svc.db.passwordKey }}
-            - name: DB_HOST
+            - name: PGHOST
               value: {{ $svc.db.host | quote }}
-            - name: DB_PORT
+            - name: PGPORT
               value: {{ $svc.db.port | quote }}
-            - name: DB_NAME
+            - name: PGDATABASE
               value: {{ $svc.db.name | quote }}
-{{- if eq $name "users" }}
-            - name: DB_URL
-              value: {{ printf "postgres://$(DB_USER):$(DB_PASSWORD)@%s:%v/%s?sslmode=disable" $svc.db.host $svc.db.port $svc.db.name | quote }}
-{{- end }}
+            - name: PGSSLMODE
+              value: "disable"
 {{- end }}
 {{- if $svc.mongo }}
             - name: MONGO_USER

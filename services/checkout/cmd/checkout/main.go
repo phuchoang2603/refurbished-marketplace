@@ -9,6 +9,7 @@ import (
 
 	"github.com/phuchoang2603/refurbished-marketplace/services/checkout/internal/grpcserver"
 	"github.com/phuchoang2603/refurbished-marketplace/services/checkout/internal/service"
+	authconfig "github.com/phuchoang2603/refurbished-marketplace/shared/auth/config"
 	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
 	checkoutv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1"
 	"github.com/phuchoang2603/refurbished-marketplace/shared/runtime"
@@ -24,7 +25,7 @@ func main() {
 		sharedlog.Fatal("config", "err", err)
 	}
 
-	db, err := runtime.OpenPostgres(runtime.PostgresURLFromEnv())
+	db, err := runtime.OpenPostgres()
 	if err != nil {
 		sharedlog.Fatal("open postgres", "err", err)
 	}
@@ -79,7 +80,7 @@ func main() {
 		Addr:        config.GRPCAddr,
 		ServiceName: "checkout",
 		Register: func(server *grpc.Server) {
-			checkoutv1.RegisterCheckoutServiceServer(server, grpcserver.New(checkoutService))
+			checkoutv1.RegisterCheckoutServiceServer(server, grpcserver.New(checkoutService, authconfig.DefaultConfig(runtime.MustEnv("JWT_SECRET"))))
 		},
 	}); err != nil {
 		sharedlog.Fatal("grpc serve", "err", err)

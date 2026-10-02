@@ -6,109 +6,105 @@ The payment capability defines how reserved orders are charged, how payment outc
 
 ## Requirements
 
-### Requirement: Payment consumes order-created events
-
-The payment service MUST consume successful inventory reservation events and MUST NOT create a second payment transaction from that path when the transaction already exists from hosted-session create.
-
-#### Scenario: Inventory reservation is received
-
-- **WHEN** the service receives an inventory-reserved event for an order that already has a payment transaction
-- **THEN** it SHALL deduplicate the message and SHALL NOT insert another payment transaction for that order
-
-#### Scenario: Inventory reservation fails upstream
-
-- **WHEN** inventory emits a reservation-failed event for an order
-- **THEN** the payment service SHALL NOT create a payment transaction for that order from the failed reservation path
-
-#### Scenario: Terminal session already recorded when reservation arrives
-
-- **WHEN** the hosted session is already FAILED or EXPIRED and `inventory.reserved` is processed
-- **THEN** the service SHALL apply the terminal payment outcome for that order if it has not already been emitted
-
 ### Requirement: Payment emits order-level outcome events after reservation
 
-The payment service MUST emit order-level payment success and failure events from hosted gateway outcomes only for orders whose inventory reservation and payment state allow a terminal outcome to be published.
+Payment MUST create hosted sessions only after Checkout reports that stock is reserved and MUST publish definitive, correlated payment outcomes to Checkout. Payment MUST NOT independently direct Orders or Inventory to finalize a checkout.
 
 #### Scenario: Reserved order payment completes
 
-- **WHEN** an order payment transaction for a reserved order succeeds or fails through the hosted gateway flow
-- **THEN** the service SHALL write a corresponding order-level outbox event for downstream consumers
+- **WHEN** a hosted session for a confirmed reservation succeeds or fails
+- **THEN** Payment SHALL persist the result and a correlated outcome for Checkout in one transaction
+
+#### Scenario: Session command arrives without a reservation authorization
+
+- **WHEN** a session-create command lacks Checkout's valid reservation context
+- **THEN** Payment SHALL reject the command without creating a payable session
 
 ### Requirement: Payment persists inbox and outbox state
 
-The payment service MUST store inbox and outbox records in PostgreSQL.
+The payment service MUST store inbox and outbox records in PostgreSQL and MUST atomically persist processed command identities, session/outcome changes, and emitted results.
 
 #### Scenario: Message is processed
 
-- **WHEN** the service processes a Kafka message
-- **THEN** it SHALL record the message in the inbox before advancing offsets
+- **WHEN** the service processes a checkout command
+- **THEN** it SHALL commit its inbox record, the corresponding payment state, and any result outbox row before advancing offsets
 
 ### Requirement: Payment creates hosted payment sessions by order identifier
 
-The payment service MUST create a hosted payment session using `order_id` as the idempotency anchor and MUST return hosted-session metadata that the web edge can use to redirect the buyer.
+Payment MUST create a hosted payment session using `order_id` as the single-attempt idempotency anchor and MUST publish correlated session metadata for Checkout to expose to the buyer only after reservation.
 
 #### Scenario: Hosted payment session is requested for a new order
 
-- **WHEN** the web edge requests a hosted payment session for an order with buyer id, merchant id, amount, shipping address, and return context
-- **THEN** the payment service SHALL persist the hosted session and payment transaction and return session metadata including `order_id`, `payment_session_id`, and the return URL
+- **WHEN** Checkout requests a hosted session with buyer, merchant, amount, shipping, line items, return context, and confirmed reservation
+- **THEN** Payment SHALL persist one hosted session and transaction and publish a correlated ready result including order id, session id, and return URL
 
 #### Scenario: Hosted payment session is requested again for the same order
 
-- **WHEN** the web edge repeats the hosted payment session request for an order that already has a stored PENDING session
-- **THEN** the payment service SHALL return stored session metadata for that `order_id` instead of creating a second independent payment identity
+- **WHEN** Checkout repeats a request for an order with a stored PENDING session and identical facts
+- **THEN** Payment SHALL publish or return the existing session metadata without minting a new payment identity
+
+#### Scenario: Checkout facts conflict
+
+- **WHEN** a repeat request changes an order's charge or party facts
+- **THEN** Payment SHALL reject it without changing the existing session or transaction
 
 ### Requirement: Payment accepts hosted gateway outcome callbacks
 
-The payment service MUST accept hosted gateway payment outcomes over its internal gRPC contract and update payment state idempotently.
+Payment MUST authenticate the gateway callback as supported by the configured gateway integration, match the session identity, store verified outcomes idempotently, and notify Checkout. A late or contradictory success MUST be retained as a financial exception, never silently converted to failure or automatically mark an unreserved order paid.
 
 #### Scenario: Gateway reports a terminal payment result
 
-- **WHEN** the web edge forwards a successful or failed terminal payment result for an order or payment session
-- **THEN** the payment service SHALL update the corresponding payment state and emit the order-level payment outcome expected by downstream consumers
+- **WHEN** web forwards a verified success or failure callback for the matching session
+- **THEN** Payment SHALL persist one definitive result and publish a correlated outcome to Checkout
 
 #### Scenario: Gateway repeats a terminal payment result
 
-- **WHEN** the web edge forwards the same terminal callback again
-- **THEN** the payment service SHALL treat the repeat as idempotent and SHALL NOT emit duplicate terminal outcomes for downstream consumers
+- **WHEN** the gateway repeats the same terminal callback
+- **THEN** Payment SHALL acknowledge the repeat without emitting an additional effective outcome
+
+#### Scenario: Gateway reports contradictory late success
+
+- **WHEN** a verified success arrives after the session was cancelled or expired
+- **THEN** Payment SHALL preserve evidence of the success and report a reconciliation exception to Checkout rather than discard it
 
 ### Requirement: Payment expires abandoned hosted sessions
 
-The payment service MUST periodically expire PENDING hosted payment sessions whose `expires_at` is in the past, mark them EXPIRED (distinct from FAILED), and emit `payment.failed` so downstream services can release reserved stock and fail the order.
+Payment MUST distinguish EXPIRED from FAILED. For Checkout-owned sessions, Payment MUST record EXPIRED and report a correlated definitive failure to Checkout only when the gateway explicitly confirms expiry without capture. A local deadline alone MUST NOT mark these sessions EXPIRED or FAILED: Checkout requests cancellation or verification and keeps uncertain outcomes unresolved. The existing automatic sweep remains limited to pre-Checkout hosted sessions.
 
 #### Scenario: Pending session past expires_at is swept
 
-- **WHEN** a hosted payment session remains PENDING after its `expires_at` timestamp
-- **THEN** the payment service SHALL mark the session EXPIRED and emit an order-level `payment.failed` outbox event
+- **WHEN** a PENDING Checkout session passes its expiry deadline and the gateway explicitly confirms no capture
+- **THEN** Payment SHALL mark the session EXPIRED and publish a correlated definitive result with an expiry reason to Checkout; without confirmation, the sweep SHALL leave the outcome uncertain for Checkout to reconcile
 
 #### Scenario: Gateway reports expired as distinct from declined
 
-- **WHEN** the hosted gateway posts an EXPIRED outcome for a PENDING session
-- **THEN** the payment service SHALL store status EXPIRED (not FAILED) and SHALL emit `payment.failed` for downstream consumers
+- **WHEN** the deadline passes but the gateway outcome is uncertain
+- **THEN** Payment SHALL leave the Checkout session pending verification, report an unresolved status on cancellation, and SHALL NOT assert that no payment occurred
 
 ### Requirement: Payment snapshots commerce facts when creating a hosted session
 
-The payment service MUST persist nested buyer and merchant snapshots (marketplace ids, optional buyer email), amount, currency, shipping address, and line items (product id, name, quantity, unit price) on hosted-session create so a later fraud gateway can score from stored commerce facts without waiting for Kafka. The payment service MUST NOT call the users service to hydrate party fields.
+Payment MUST persist nested buyer and merchant snapshots (marketplace ids, optional buyer email), amount, currency, shipping address, and line items (product id, name, quantity, unit price) supplied by Checkout with the hosted session, without calling Users to hydrate party fields.
 
 #### Scenario: Session create includes charge and party facts
 
-- **WHEN** the web edge requests a hosted payment session with `order_id`, nested buyer and merchant ids, total cents, currency, shipping address, named line items, and return URL
-- **THEN** the payment service SHALL store those facts with the session and SHALL create the order payment transaction in the same operation
+- **WHEN** Checkout requests a session with order id, buyer and merchant ids, total cents, currency, usable shipping, named line items, and return URL
+- **THEN** Payment SHALL store the facts and create the corresponding transaction in the same operation
 
 #### Scenario: Session create omits required commerce facts
 
-- **WHEN** the web edge requests a hosted payment session without a usable shipping address (at least line1, city, postal code, and country) or without buyer or merchant id
-- **THEN** the payment service SHALL reject the request and SHALL NOT create a session
+- **WHEN** Checkout requests a session without a usable shipping address (line1, city, postal code, and country) or buyer or merchant id
+- **THEN** Payment SHALL reject it and SHALL NOT create a payable session
 
 ### Requirement: Hosted payment session is one-shot per order
 
-The payment service MUST treat `order_id` as a single payment attempt. It MUST NOT mint a new `payment_session_id` after the session is FAILED, EXPIRED, or SUCCEEDED.
+Payment MUST treat `order_id` as one payment attempt and MUST NOT mint another `payment_session_id` after SUCCEEDED, FAILED, or EXPIRED.
 
 #### Scenario: Repeat create while pending
 
-- **WHEN** the web edge repeats hosted-session create for an order whose session is still PENDING
-- **THEN** the service SHALL return the existing session metadata without creating a second payment identity
+- **WHEN** Checkout repeats a hosted-session command while the same order's session remains PENDING
+- **THEN** Payment SHALL return or republish the existing session identity without creating another
 
 #### Scenario: Repeat create after terminal session
 
-- **WHEN** the web edge requests hosted-session create for an order whose session is SUCCEEDED, FAILED, or EXPIRED
-- **THEN** the service SHALL reject the request and SHALL NOT refresh or replace the session
+- **WHEN** Checkout requests a new hosted session for an order with a terminal attempt
+- **THEN** Payment SHALL reject the command and SHALL NOT refresh or replace the session

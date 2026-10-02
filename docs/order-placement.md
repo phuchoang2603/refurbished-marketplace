@@ -53,7 +53,7 @@ sequenceDiagram
     W->>W: Drain paid cart items only after observing paid order
 ```
 
-If stock is rejected, Checkout compensates the pending order; the buyer never sees a payment page. A session timeout does not imply payment failed: Checkout requests cancellation/verification and retains uncertain outcomes for manual review rather than releasing stock while a charge might exist. Late contradictory success is recorded as a financial exception.
+If stock is rejected, Checkout compensates the pending order; the buyer never sees a payment page. A session timeout does not imply payment failed: Checkout requests cancellation/verification and retains uncertain outcomes for manual review rather than releasing stock while a charge might exist. An explicit gateway expiry callback is definitive: Payment records `EXPIRED` (distinct from a decline), reports a correlated result, and Checkout releases stock before failing the order. Late contradictory success is recorded as a financial exception.
 
 ## Ownership and retries
 

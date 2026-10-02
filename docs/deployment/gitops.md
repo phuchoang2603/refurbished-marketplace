@@ -63,6 +63,8 @@ The `platform` root owns the operators, CRDs, cloudflared, and the telemetry pip
 
 MongoDB is the products catalog source of truth; Meilisearch is its storefront projection. PostgreSQL schema migrations still initialize new empty databases before their services start.
 
+PostgreSQL services and migration jobs use the same `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`, and `PGSSLMODE` settings. Helm reads each database password from its service secret; neither service code nor the goose connection string embeds or interpolates the password. Set these PostgreSQL environment variables when connecting locally as well.
+
 ## Ordering and convergence
 
 Marketplace child annotations give this local order:

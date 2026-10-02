@@ -6,6 +6,30 @@ Own marketplace available and reserved quantity, order-level reservations, and r
 
 ## Requirements
 
+### Requirement: Inventory processes Checkout reservation commands
+
+Inventory MUST consume Checkout's correlated reserve, commit, and release commands idempotently, and report each result from its own committed transaction. An `orders.created` event MUST NOT independently reserve stock for a saga checkout.
+
+#### Scenario: Order-created event arrives without Checkout command
+
+- **WHEN** Inventory observes an `orders.created` event for a saga checkout before a reserve command
+- **THEN** it SHALL NOT reserve stock or emit `inventory.reserved` from that event alone
+
+#### Scenario: Reservation command is redelivered
+
+- **WHEN** Checkout's reserve command is redelivered for the same order
+- **THEN** Inventory SHALL NOT double-hold stock and SHALL report the existing definitive reservation result
+
+#### Scenario: Reservation cannot be completed
+
+- **WHEN** one or more lines cannot be fully reserved
+- **THEN** Inventory SHALL leave no partial active hold and SHALL report a correlated reservation failure
+
+#### Scenario: Web attempts a direct checkout reserve
+
+- **WHEN** web attempts to reserve stock for checkout using the removed synchronous path
+- **THEN** the service or mesh SHALL reject the mutation and SHALL NOT create a hold
+
 ### Requirement: Inventory owns the stock ledger
 
 The inventory service SHALL persist `available_qty` and `reserved_qty` per product identifier. It SHALL NOT store listing documents (name, description, price, merchant). Product identifiers SHALL NOT require a foreign key to a catalog SQL table.
@@ -61,70 +85,27 @@ Inventory SHALL consume ProductCreated on `products.created` in a consumer group
 
 ### Requirement: Inventory manages reservations
 
-The inventory service MUST reserve, commit, and release stock using reservation records it owns for each reserved order line.
+Inventory MUST reserve, commit, and release stock using order-owned reservation records, with idempotent, correlated results for Checkout. A release/cancel decision MUST fence later reserve commands for that order so a delayed command cannot recreate a hold after checkout failure.
 
 #### Scenario: Stock is reserved
 
-- **WHEN** a reservation request for an order is accepted
-- **THEN** the service SHALL move quantity from available to reserved and persist a reservation record for the order and product
+- **WHEN** Checkout requests reservation for an order with available stock
+- **THEN** Inventory SHALL move quantity from available to reserved, persist order-owned records, and report a correlated reserved result
 
 #### Scenario: Payment succeeds
 
-- **WHEN** payment succeeds for a reservation
-- **THEN** the service SHALL commit the reservation owned by that order and product
+- **WHEN** Checkout requests stock commit after confirmed payment success
+- **THEN** Inventory SHALL commit that order's active reservations once and report stock committed
 
 #### Scenario: Payment fails or times out
 
-- **WHEN** payment fails or a reservation expires
-- **THEN** the service SHALL release the reserved quantity back to available stock for that order-owned reservation
+- **WHEN** Checkout requests release after a definitive failed or cancelled payment
+- **THEN** Inventory SHALL release that order's active reservations once and report stock released or absent
 
-### Requirement: Inventory consumes order item events
+#### Scenario: Cancel precedes delayed reserve
 
-The inventory service MUST consume order-level `orders.created` events that include item lines and process reservation **idempotently** per order so a Kafka delivery after the gRPC reserve command does not double-hold stock.
-
-#### Scenario: Order is created
-
-- **WHEN** the service receives `orders.created` for an order with item lines
-- **THEN** it SHALL record the message idempotently and attempt reservation for each referenced product only when that order does not already have an active reservation from the command path
-
-#### Scenario: Reservation is fully successful
-
-- **WHEN** the service reserves all item lines for an order (command path or Kafka path)
-- **THEN** it SHALL emit an order-level `inventory.reserved` event for that order at most once for a successful hold
-
-#### Scenario: Reservation cannot be completed
-
-- **WHEN** the service cannot reserve one or more item lines for an order on the Kafka path and no prior successful command-path reservation exists
-- **THEN** it SHALL avoid leaving a partial active reservation for that order and emit an order-level `inventory.reservation_failed` event
-
-#### Scenario: Command-path failure is terminal for Kafka replay
-
-- **WHEN** ReserveStock has already failed for an order and ProductCreated later seeds stock
-- **THEN** a subsequent `orders.created` delivery SHALL NOT hold quantity or emit `inventory.reserved` for that order
-
-### Requirement: Inventory exposes ReserveStock over gRPC
-
-The inventory service MUST expose an internal gRPC reservation command that holds all lines for one order idempotently so web can reserve stock before hosted payment.
-
-#### Scenario: Reserve command succeeds
-
-- **WHEN** a trusted caller requests reservation for an order with item lines and sufficient available stock
-- **THEN** the service SHALL move quantity from available to reserved, persist reservation records for that order, and emit `inventory.reserved` once for a successful full-order hold
-
-#### Scenario: Reserve command is retried
-
-- **WHEN** the same order is reserved again after a successful hold
-- **THEN** the service SHALL NOT increase reserved quantity again and SHALL treat the request as success for the existing reservation
-
-#### Scenario: Reserve command cannot hold the full order
-
-- **WHEN** one or more lines cannot be reserved
-- **THEN** the service SHALL NOT leave a partial active reservation for that order, SHALL fail the command, and SHALL emit `inventory.reservation_failed` when an order-level failure signal is required for downstream consumers
-
-#### Scenario: Reserve command is retried after failure
-
-- **WHEN** the same order is reserved again after a failed hold, including after stock later becomes available
-- **THEN** the service SHALL NOT hold quantity for that order and SHALL fail the command
+- **WHEN** Inventory durably accepts a cancellation before an earlier reserve command is delivered
+- **THEN** Inventory SHALL reject the later reserve without holding stock and SHALL report the reservation as absent or released
 
 ### Requirement: Inventory exposes stock reads
 

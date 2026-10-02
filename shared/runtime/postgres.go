@@ -5,9 +5,6 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
-	"net"
-	"net/url"
-	"os"
 	"regexp"
 	"strings"
 
@@ -18,30 +15,17 @@ import (
 
 const maxDBQueryTextLen = 1024
 
-func PostgresURLFromEnv() string {
-	if os.Getenv("DB_HOST") == "" {
-		return MustEnv("DB_URL")
-	}
-	return (&url.URL{
-		Scheme:   "postgres",
-		User:     url.UserPassword(MustEnv("DB_USER"), MustEnv("DB_PASSWORD")),
-		Host:     net.JoinHostPort(MustEnv("DB_HOST"), MustEnv("DB_PORT")),
-		Path:     "/" + MustEnv("DB_NAME"),
-		RawQuery: "sslmode=disable",
-	}).String()
-}
-
 // sqlcNameRe matches `-- name: GetUserByEmail :one` that sqlc embeds in queries.
 var sqlcNameRe = regexp.MustCompile(`(?m)^--\s*name:\s*(\S+)`)
 
-// OpenPostgres opens an instrumented *sql.DB for Postgres.
+// OpenPostgres opens an instrumented *sql.DB using standard PostgreSQL environment variables.
 // The caller must import a postgres driver (e.g. github.com/lib/pq).
 // Query spans nest under the active request/consumer context; statement
 // text is truncated and bound args are never recorded. Span names prefer
 // the sqlc `-- name:` comment when present.
-func OpenPostgres(dbURL string) (*sql.DB, error) {
+func OpenPostgres() (*sql.DB, error) {
 	db, err := otelsql.Open(
-		"postgres", dbURL,
+		"postgres", "",
 		otelsql.WithAttributes(semconv.DBSystemNamePostgreSQL),
 		otelsql.WithSpanOptions(otelsql.SpanOptions{
 			DisableErrSkip:       true,

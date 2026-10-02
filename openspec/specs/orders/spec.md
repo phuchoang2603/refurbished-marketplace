@@ -6,6 +6,25 @@ Define merchant-scoped order persistence, buyer intent idempotency, and order li
 
 ## Requirements
 
+### Requirement: Orders finalize checkout only on saga commands
+
+Orders MUST finalize checkout orders only on correlated commands from Checkout after stock settlement. Orders MUST NOT independently finalize checkout orders from inventory reservation or payment outcome events.
+
+#### Scenario: Stock was committed after payment
+
+- **WHEN** Checkout commands paid finalization after Inventory confirms stock commit
+- **THEN** Orders SHALL update the pending order to paid and emit a correlated finalization result
+
+#### Scenario: Stock was released after definitive failure
+
+- **WHEN** Checkout commands failed finalization after Inventory confirms stock release or absence
+- **THEN** Orders SHALL update the pending order to failed and emit a correlated finalization result
+
+#### Scenario: Conflicting finalization command arrives
+
+- **WHEN** Orders receives a duplicate or contradictory finalization for an already terminal order
+- **THEN** Orders SHALL acknowledge exact duplicates without mutation and reject conflicting outcomes for reconciliation
+
 ### Requirement: Orders are merchant-scoped records
 
 The orders capability MUST persist each created order with exactly one caller-supplied `merchant_id` and MUST accept only merchant-scoped order creation requests.
@@ -27,41 +46,22 @@ The orders capability MUST persist each created order with exactly one caller-su
 
 ### Requirement: Orders write order-level outbox events
 
-The orders capability MUST write one outbox row per created order, not one outbox row per order item, and the order-created payload MUST include the item lines required for downstream consumers. Reservation for checkout MUST NOT depend on that outbox row being consumed before place-order returns.
+The orders capability MUST write one outbox row per created order, not one outbox row per order item, and the order-created payload MUST include the item lines required for downstream consumers. Checkout order creation MUST be driven by Checkout's idempotent command, and checkout reservation MUST wait for Checkout to observe the correlated order-created result.
 
 #### Scenario: Merchant order is created
 
-- **WHEN** an order is persisted successfully
-- **THEN** the service SHALL store the order, its items, and one order-created outbox row in the same transaction
+- **WHEN** an order is persisted successfully in response to Checkout's command
+- **THEN** the service SHALL store the order, its items, and one correlated order-created outbox row in the same transaction
 
 #### Scenario: Order-created payload is published
 
 - **WHEN** the service writes the order-created outbox row
-- **THEN** the payload SHALL include the order identifier, buyer identifier, merchant identifier, total amount, and each order item's product identifier and quantity
+- **THEN** the payload SHALL include the checkout and order identifiers, buyer identifier, merchant identifier, total amount, and each order item's product identifier and quantity
 
 #### Scenario: Place-order returns before Kafka consume
 
-- **WHEN** place-order has persisted the order
-- **THEN** the caller SHALL be able to reserve stock over gRPC and proceed to hosted payment without waiting for `orders.created` to be consumed
-
-### Requirement: Orders consume payment results
-
-The orders service MUST consume order-level payment success and failure events and inventory reservation failure events and update order state.
-
-#### Scenario: Payment succeeds
-
-- **WHEN** the service receives the order-level payment success event for an order
-- **THEN** the order SHALL be updated to the paid state
-
-#### Scenario: Payment fails
-
-- **WHEN** the service receives the order-level payment failure event for an order
-- **THEN** the order SHALL be updated to the failed state
-
-#### Scenario: Inventory reservation fails
-
-- **WHEN** the service receives the order-level inventory reservation failure event for an order
-- **THEN** the order SHALL be updated to the failed state
+- **WHEN** Orders has persisted a new checkout order but its order-created event is delayed
+- **THEN** Checkout SHALL remain pending and SHALL NOT reserve stock before observing the correlated order-created result
 
 ### Requirement: Place order is idempotent per buyer intent
 
@@ -89,14 +89,14 @@ The orders capability MUST accept a caller-supplied `idempotency_key` on place-o
 
 ### Requirement: Place order persists without calling products
 
-The orders capability MUST persist merchant-scoped orders and emit `orders.created`. It MUST NOT call products to reserve stock.
+Orders MUST persist merchant-scoped orders and emit `orders.created` without calling Products or Inventory. Checkout MUST request reservation only after the correlated order-created result is committed.
 
 #### Scenario: Stock is available
 
-- **WHEN** place-order persists a new order
-- **THEN** the service SHALL return the pending order so the caller can reserve stock and open hosted payment
+- **WHEN** Orders processes a checkout order command
+- **THEN** Orders SHALL persist the pending order and report its creation without synchronously reserving stock or creating payment
 
 #### Scenario: Retry after successful persist
 
-- **WHEN** place-order is retried with the same buyer and `idempotency_key` after the order was created
-- **THEN** the service SHALL return the existing order without inserting another row
+- **WHEN** the same checkout order command is retried after the order was created
+- **THEN** Orders SHALL return or re-emit the original correlated outcome without inserting another order

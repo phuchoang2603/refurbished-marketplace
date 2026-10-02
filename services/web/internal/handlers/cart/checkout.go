@@ -87,7 +87,7 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 			UnitPriceCents: item.GetUnitPriceCents(),
 		})
 	}
-	checkout, err := h.deps.Checkout.SubmitCheckout(r.Context(), &checkoutv1.SubmitCheckoutRequest{
+	checkout, err := h.deps.Checkout.SubmitCheckout(webAuth.OutgoingAccessContext(r), &checkoutv1.SubmitCheckoutRequest{
 		BuyerUserId: buyerUserID, IntentKey: intentKey, MerchantId: merchantID,
 		BuyerEmail: webAuth.EmailFromContext(r.Context()), TotalCents: totalCents,
 		Currency: "USD", ReturnUrl: orderPageURL, Items: lineItems,

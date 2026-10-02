@@ -3,6 +3,7 @@ package cart
 import (
 	"net/http"
 
+	webAuth "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/auth"
 	shared "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
 	checkoutviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/checkout"
 	checkoutv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1"
@@ -24,7 +25,7 @@ func (h *Handler) getOwnedCheckout(w http.ResponseWriter, r *http.Request) (*che
 		shared.WriteBadRequest(w, r, "checkout unavailable")
 		return nil, false
 	}
-	status, err := h.deps.Checkout.GetCheckout(r.Context(), &checkoutv1.GetCheckoutRequest{
+	status, err := h.deps.Checkout.GetCheckout(webAuth.OutgoingAccessContext(r), &checkoutv1.GetCheckoutRequest{
 		CheckoutId: checkoutID, BuyerUserId: buyerUserID,
 	})
 	if err != nil {

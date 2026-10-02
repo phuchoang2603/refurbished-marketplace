@@ -12,8 +12,11 @@ import (
 )
 
 func (service *Service) applyCheckoutGatewayWebhook(ctx context.Context, checkoutSession database.PaymentCheckoutSession, sessionID, outcome, failureReason string) error {
-	if outcome != HostedPaymentSessionStatusSucceeded && outcome != HostedPaymentSessionStatusFailed {
+	if outcome != HostedPaymentSessionStatusSucceeded && outcome != HostedPaymentSessionStatusFailed && outcome != HostedPaymentSessionStatusExpired {
 		return ErrInvalidSessionFacts
+	}
+	if outcome == HostedPaymentSessionStatusExpired && failureReason == "" {
+		failureReason = "session expired"
 	}
 	tx, err := service.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -50,7 +53,7 @@ func (service *Service) applyCheckoutGatewayWebhook(ctx context.Context, checkou
 			return err
 		}
 		transactionStatus := PaymentTxStatusSucceeded
-		if outcome == HostedPaymentSessionStatusFailed {
+		if outcome != HostedPaymentSessionStatusSucceeded {
 			transactionStatus = PaymentTxStatusFailed
 		}
 		if _, err := queries.UpdatePaymentTransactionGatewayResult(ctx, database.UpdatePaymentTransactionGatewayResultParams{
@@ -65,7 +68,7 @@ func (service *Service) applyCheckoutGatewayWebhook(ctx context.Context, checkou
 	}
 	topic := messaging.EventTypeCheckoutPaymentSucceeded
 	var payload any = &checkoutv1.PaymentSucceeded{PaymentSessionId: sessionID}
-	if outcome == HostedPaymentSessionStatusFailed {
+	if outcome != HostedPaymentSessionStatusSucceeded {
 		topic = messaging.EventTypeCheckoutPaymentFailed
 		payload = &checkoutv1.PaymentFailed{PaymentSessionId: sessionID, Reason: failureReason}
 	}

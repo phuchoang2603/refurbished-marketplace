@@ -179,7 +179,7 @@ func cancelCheckoutSession(ctx context.Context, queries *database.Queries, check
 	switch intent.Status {
 	case HostedPaymentSessionStatusSucceeded:
 		return messaging.EventTypeCheckoutPaymentSucceeded, &checkoutv1.PaymentSucceeded{PaymentSessionId: intent.PaymentSessionID.String}, nil
-	case HostedPaymentSessionStatusFailed:
+	case HostedPaymentSessionStatusFailed, HostedPaymentSessionStatusExpired:
 		return messaging.EventTypeCheckoutPaymentCancelled, &checkoutv1.PaymentCancelled{}, nil
 	default:
 		return messaging.EventTypeCheckoutPaymentUncertain, &checkoutv1.PaymentUncertain{

@@ -50,14 +50,22 @@ spec:
           env:
             - name: GOOSE_DRIVER
               value: "postgres"
-            - name: DB_USER
+            - name: PGUSER
               value: {{ $owner | quote }}
-            - name: DB_PASSWORD
+            - name: PGPASSWORD
               valueFrom:
                 secretKeyRef:
                   name: {{ $svc.db.secretName }}
                   key: {{ $svc.db.passwordKey }}
+            - name: PGHOST
+              value: {{ $svc.db.host | quote }}
+            - name: PGPORT
+              value: {{ $svc.db.port | quote }}
+            - name: PGDATABASE
+              value: {{ $svc.db.name | quote }}
+            - name: PGSSLMODE
+              value: "disable"
             - name: GOOSE_DBSTRING
-              value: {{ printf "host=%s port=%v user=$(DB_USER) password=$(DB_PASSWORD) dbname=%s sslmode=disable" $svc.db.host $svc.db.port $svc.db.name | quote }}
+              value: "sslmode=disable"
 {{- end }}
 {{- end }}

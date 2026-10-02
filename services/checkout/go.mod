@@ -3,8 +3,10 @@ module github.com/phuchoang2603/refurbished-marketplace/services/checkout
 go 1.26.5
 
 require (
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
 	github.com/lib/pq v1.12.3
+	github.com/phuchoang2603/refurbished-marketplace/shared/auth v0.0.0
 	github.com/phuchoang2603/refurbished-marketplace/shared/messaging v0.0.0
 	github.com/phuchoang2603/refurbished-marketplace/shared/observe/log v0.0.0
 	github.com/phuchoang2603/refurbished-marketplace/shared/proto v0.0.0

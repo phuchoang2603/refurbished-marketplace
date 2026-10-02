@@ -1,7 +1,6 @@
 package tests
 
 import (
-	"context"
 	"database/sql"
 	"sync"
 	"testing"
@@ -9,6 +8,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/phuchoang2603/refurbished-marketplace/services/checkout/internal/grpcserver"
 	"github.com/phuchoang2603/refurbished-marketplace/services/checkout/internal/service"
+	authconfig "github.com/phuchoang2603/refurbished-marketplace/shared/auth/config"
 	checkoutv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1"
 	testpostgres "github.com/phuchoang2603/refurbished-marketplace/shared/testutil/postgres"
 	"google.golang.org/grpc/codes"
@@ -35,13 +35,14 @@ func checkoutRequest() *checkoutv1.SubmitCheckoutRequest {
 
 func TestSubmitIdempotencyAndOwnership(t *testing.T) {
 	db := newCheckoutDB(t)
-	server := grpcserver.New(service.New(db))
+	server := grpcserver.New(service.New(db), authconfig.DefaultConfig(checkoutTestJWTSecret))
 	request := checkoutRequest()
-	first, err := server.SubmitCheckout(t.Context(), request)
+	buyerContext := authenticatedContext(t, request.GetBuyerUserId())
+	first, err := server.SubmitCheckout(buyerContext, request)
 	if err != nil || first.GetCheckoutId() == "" {
 		t.Fatalf("submit: %v, %v", first, err)
 	}
-	again, err := server.SubmitCheckout(t.Context(), request)
+	again, err := server.SubmitCheckout(buyerContext, request)
 	if err != nil || first.GetCheckoutId() != again.GetCheckoutId() {
 		t.Fatalf("idempotent retry: %v, %v", again, err)
 	}
@@ -57,17 +58,17 @@ func TestSubmitIdempotencyAndOwnership(t *testing.T) {
 	}
 	conflict := proto.Clone(request).(*checkoutv1.SubmitCheckoutRequest)
 	conflict.BuyerEmail = "other@example.com"
-	_, err = server.SubmitCheckout(t.Context(), conflict)
+	_, err = server.SubmitCheckout(buyerContext, conflict)
 	if status.Code(err) != codes.AlreadyExists {
 		t.Fatalf("conflicting key should be rejected: %v", err)
 	}
-	_, err = server.GetCheckout(t.Context(), &checkoutv1.GetCheckoutRequest{
+	_, err = server.GetCheckout(buyerContext, &checkoutv1.GetCheckoutRequest{
 		CheckoutId: first.GetCheckoutId(), BuyerUserId: uuid.NewString(),
 	})
 	if status.Code(err) != codes.NotFound {
 		t.Fatalf("other buyer should not access status: %v", err)
 	}
-	owned, err := server.GetCheckout(t.Context(), &checkoutv1.GetCheckoutRequest{
+	owned, err := server.GetCheckout(buyerContext, &checkoutv1.GetCheckoutRequest{
 		CheckoutId: first.GetCheckoutId(), BuyerUserId: request.GetBuyerUserId(),
 	})
 	if err != nil || owned.GetState() != checkoutv1.CheckoutState_CHECKOUT_STATE_CREATING_ORDER || owned.GetOrderId() == "" {
@@ -77,13 +78,14 @@ func TestSubmitIdempotencyAndOwnership(t *testing.T) {
 
 func TestConcurrentSubmitEmitsOneOrder(t *testing.T) {
 	db := newCheckoutDB(t)
-	server := grpcserver.New(service.New(db))
+	server := grpcserver.New(service.New(db), authconfig.DefaultConfig(checkoutTestJWTSecret))
 	request := checkoutRequest()
+	buyerContext := authenticatedContext(t, request.GetBuyerUserId())
 	var wait sync.WaitGroup
 	results := make(chan string, 8)
 	for range 8 {
 		wait.Go(func() {
-			result, err := server.SubmitCheckout(context.Background(), request)
+			result, err := server.SubmitCheckout(buyerContext, request)
 			if err != nil {
 				results <- err.Error()
 				return

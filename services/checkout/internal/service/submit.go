@@ -127,7 +127,7 @@ func validateSubmit(request *checkoutv1.SubmitCheckoutRequest) (uuid.UUID, uuid.
 	if buyerError != nil || merchantError != nil || buyerID == uuid.Nil || merchantID == uuid.Nil {
 		return uuid.Nil, uuid.Nil, errors.New("buyer and merchant IDs must be valid")
 	}
-	if strings.TrimSpace(request.GetIntentKey()) == "" || strings.TrimSpace(request.GetBuyerEmail()) == "" ||
+	if strings.TrimSpace(request.GetIntentKey()) == "" ||
 		strings.TrimSpace(request.GetCurrency()) == "" || strings.TrimSpace(request.GetReturnUrl()) == "" ||
 		request.GetShippingAddress() == nil || len(request.GetItems()) == 0 || request.GetTotalCents() <= 0 {
 		return uuid.Nil, uuid.Nil, errors.New("checkout facts must be complete")

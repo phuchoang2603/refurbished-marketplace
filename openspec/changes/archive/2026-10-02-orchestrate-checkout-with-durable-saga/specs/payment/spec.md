@@ -63,17 +63,17 @@ Payment MUST authenticate the gateway callback as supported by the configured ga
 
 ### Requirement: Payment expires abandoned hosted sessions
 
-Payment MUST expire abandoned PENDING sessions after their deadline and distinguish EXPIRED from FAILED. It MUST report expiry to Checkout for compensation only when payment is definitively not captured; uncertain gateway outcomes MUST be reported as unresolved instead of as failure.
+Payment MUST distinguish EXPIRED from FAILED. For Checkout-owned sessions, Payment MUST record EXPIRED and report a correlated definitive failure to Checkout only when the gateway explicitly confirms expiry without capture. A local deadline alone MUST NOT mark these sessions EXPIRED or FAILED: Checkout requests cancellation or verification and keeps uncertain outcomes unresolved. The existing automatic sweep remains limited to pre-Checkout hosted sessions.
 
 #### Scenario: Pending session past expires_at is swept
 
-- **WHEN** Payment confirms a PENDING session has expired without capture
-- **THEN** it SHALL mark the session EXPIRED and publish a correlated definitive expiry result to Checkout
+- **WHEN** a PENDING Checkout session passes its expiry deadline and the gateway explicitly confirms no capture
+- **THEN** Payment SHALL mark the session EXPIRED and publish a correlated definitive result with an expiry reason to Checkout; without confirmation, the sweep SHALL leave the outcome uncertain for Checkout to reconcile
 
 #### Scenario: Gateway reports expired as distinct from declined
 
 - **WHEN** the deadline passes but the gateway outcome is uncertain
-- **THEN** Payment SHALL publish or expose an unresolved status and SHALL NOT assert that no payment occurred
+- **THEN** Payment SHALL leave the Checkout session pending verification, report an unresolved status on cancellation, and SHALL NOT assert that no payment occurred
 
 ### Requirement: Payment snapshots commerce facts when creating a hosted session
 
