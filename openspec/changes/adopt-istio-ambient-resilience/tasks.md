@@ -1,0 +1,38 @@
+## 1. Platform Prerequisites
+
+- [x] 1.1 Coordinate a separately owned `talos-proxmox` change that installs the pinned Gateway API 1.5.1 Experimental CRDs, sets Istio default HTTP retries to zero, enables ingress-to-waypoint routing, and collects Istio proxy retry/overflow/ejection signals; verify its dev/prod platform chart renders and `HTTPRoute.retry` is accepted in production before application retry routes are enabled. Platform edits stay in `talos-proxmox` commits.
+- [x] 1.2 Verify production Istio GatewayClasses, ztunnel, the platform-owned waypoint prerequisites, retry CRD schema, and proxy telemetry are ready; capture the cluster checks or block dependent application rollout until the prerequisite is met.
+
+## 2. Declarative Ambient Security
+
+- [x] 2.1 Render single-owner `ecommerce` and `kafka` Namespace objects with ambient labels from `infra/argocd/app-of-apps/` ahead of child Applications; verify root render creates both labels exactly once in dev and prod.
+- [x] 2.2 Render namespace-scoped STRICT PeerAuthentication for `ecommerce` in the marketplace chart and `kafka` in the Kafka chart; verify Helm output includes two policies and no Cilium authentication resource.
+- [x] 2.3 Remove the CiliumNetworkPolicy templates and `meshPolicy` values from marketplace, MongoDB, and Meilisearch charts; verify their dev/prod renders contain no CiliumNetworkPolicy and still retain database, connector, secret, and RBAC resources.
+- [ ] 2.4 Validate in production that operators, CNPG, MongoDB, Meilisearch, Kafka brokers, Connect → Mongo, kubelet probes, and OTLP egress work under strict ambient enrollment; record mTLS evidence and resolve any blocking management path before accepting the rollout.
+
+## 3. Istio Browser Ingress
+
+- [x] 3.1 Update `infra/charts/refurbished-marketplace/templates/ingress.tpl` for the `istio` Gateway, HTTPRoutes, and `TunnelBinding` subjects targeting `ecommerce-ingress-istio`; verify chart renders shop/pay and shop-dev/pay-dev without `cilium` Gateway references.
+- [ ] 3.2 If Istio's generated Service requests an unnecessary LoadBalancer IP, set its Service type to ClusterIP via Gateway infrastructure configuration; verify `ecommerce-ingress-istio.ecommerce.svc.cluster.local:80` resolves inside production and neither public route depends on an L2 VIP.
+- [ ] 3.3 Verify production Cloudflare → Istio Gateway → Web/simulator routing, hostname isolation, forwarded HTTPS scheme/host, and hosted callback URL behavior; retain render checks for the dev and production host overlays.
+
+## 4. Native Resilience Policies
+
+- [ ] 4.1 Render a Service-traffic `istio-waypoint` Gateway in `ecommerce` and opt selected HTTP/gRPC Services into it; verify Service labels, Gateway acceptance, and effective east-west routes while Kafka and database Services remain ztunnel-only.
+- [x] 4.2 Enable ingress-to-waypoint routing only for selected backend Services once the platform flag is ready; verify Web ingress passes through the expected waypoint and nonselected resources do not inherit it. No ingress backend is waypoint-enrolled, so no Service opts in; the ingress Envoy enforces the shop/pay route policies directly.
+- [ ] 4.3 Add service-scoped DestinationRules for connection limits, pending-request limits, and retry budgets; gate outlier ejection on more than one healthy replica and verify a single-endpoint Service stays reachable during backend faults.
+- [ ] 4.4 Configure bounded HTTPRoute timeouts and opt-in retry attempts/backoff for verified read-only HTTP routes; verify rendered retry fields are admitted by the Experimental CRD and Envoy enforces finite total/per-try budgets.
+- [ ] 4.5 Validate method-specific waypoint routing for safe unary gRPC reads and identical `SubmitCheckout` RPCs, then configure bounded transport-only retries for those verified methods; verify an identical retry yields one checkout/outbox command, changed facts conflict, and no gRPC application-status retry is claimed.
+- [ ] 4.6 Verify ingress has no automatic retry for checkout/cart/payment/callback POSTs and the waypoint does not auto-retry unsafe cart/payment mutations; inspect effective retry config after disabling platform defaults and simulate a lost HTTP response with no repeated Web snapshot build.
+
+## 5. Saga-Safe Cleanup
+
+- [x] 5.1 Remove callback-driven cart draining and its unused status helper from `services/web/`, retaining paid-order-only idempotent removal; verify repeated SUCCEEDED and FAILED/EXPIRED callbacks leave cart lines until the order is PAID.
+- [x] 5.2 Remove the uncalled pre-saga Payment session creation path, non-Checkout callback fallback, and non-Checkout automatic expiry worker with exclusive SQL/tests; verify current Checkout-owned session creation, deduplicated callbacks, expiry reconciliation, and late-success handling still pass focused payment tests.
+- [x] 5.3 Review orphaned payment protobuf request/response types and unused `ClearCart` client/API paths after call-site checks; remove only dead definitions, regenerate protobuf code if changed, and verify dependent Go modules build without restoring pre-saga behavior.
+
+## 6. Documentation and End-to-End Validation
+
+- [x] 6.1 Update `README.md`, `docs/architecture.md`, networking/GitOps/observability guides, diagram source/export, and `openspec/config.yaml` to describe Istio ingress, ambient mTLS, native resilience, and platform Cilium CNI ownership; verify no active docs or source comments claim Cilium Gateway/SPIRE or an unconditional checkout no-retry ban.
+- [x] 6.2 Render and lint all affected Helm charts and app-of-apps roots for dev/prod, and run `openspec validate adopt-istio-ambient-resilience --strict`; verify GatewayClass, namespace labels, mTLS policies, retry safety, and no obsolete Cilium resources in the output.
+- [ ] 6.3 On a fresh production cluster, exercise successful checkout, payment callback replay, Kafka Connect → Mongo, waypoint overload/retry/ejection, and proxy/application telemetry; record production acceptance results without a dev deployment.
