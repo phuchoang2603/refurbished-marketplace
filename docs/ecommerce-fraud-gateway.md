@@ -210,7 +210,7 @@ Instead of customer-to-terminal distance, model customer familiarity: usual devi
 
 ## Current gap
 
-Hosted-session create, redirect, callback, expiry, and order-level `payment.succeeded` / `payment.failed` are implemented against `tools/payment-gateway-simulator`. What is not built:
+Checkout-owned hosted-session create, redirect, deduplicated callbacks, and correlated `checkout.payment-*.v1` results are implemented against `tools/payment-gateway-simulator`. What is not built:
 
 - a real card-capturing gateway
 - device/network signal collection

@@ -40,5 +40,5 @@ kubectl apply --server-side -f infra/argocd/dev/root.yaml
 | ------------------------------------- | -------------------------------------------------------------------- |
 | GitHub Actions, GHCR                  | [docs/deployment/ci.md](docs/deployment/ci.md)                       |
 | Argo CD GitOps                        | [docs/deployment/gitops.md](docs/deployment/gitops.md)               |
-| Cilium + Gateway + Cloudflare         | [docs/deployment/cilium.md](docs/deployment/cilium.md)               |
+| Istio ambient + Gateway + Cloudflare  | [docs/deployment/networking.md](docs/deployment/networking.md)       |
 | Observability (Grafana, traces, logs) | [docs/deployment/observability.md](docs/deployment/observability.md) |

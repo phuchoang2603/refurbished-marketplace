@@ -31,9 +31,10 @@ Checkout: [docs/order-placement.md](docs/order-placement.md).
 - Redis/Valkey for cart state.
 - Kafka (Strimzi) + Debezium outbox (Postgres and Mongo).
 - `templ` + Datastar for server-rendered HTML.
-- Kubernetes / Helm: CloudNativePG, Strimzi, MCK, Cilium Gateway API, External Secrets.
+- Kubernetes / Helm: CloudNativePG, Strimzi, MCK, Istio Gateway API, External Secrets.
+- Istio ambient: strict mTLS for `ecommerce` and `kafka`, plus a waypoint with connection limits, retry budgets, and outlier handling for domain gRPC. Cilium remains the platform CNI.
 - GitOps: one Argo CD per Talos environment; `talos-proxmox` owns shared operators and this repo owns marketplace Applications.
-- Cloudflare Tunnel to Cilium Gateway for shop and pay; HyperDX stays on the prod LAN.
+- Cloudflare Tunnel to Istio Gateway for shop and pay; HyperDX stays on the prod LAN.
 - Nix/devenv for local tooling; OpenSpec for change proposals.
 
 ## Development

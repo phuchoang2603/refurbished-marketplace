@@ -37,7 +37,7 @@ Go, protobuf, `kubectl`, `helm`, Doppler, OpenSpec. On enter, devenv runs tasks 
 
 ## Browser
 
-Cloudflare Tunnel → Cilium Gateway (`cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`).
+Cloudflare Tunnel → Istio Gateway (`ecommerce-ingress-istio.ecommerce.svc.cluster.local:80`).
 
 | Hostname                 | Backend                     |
 | ------------------------ | --------------------------- |

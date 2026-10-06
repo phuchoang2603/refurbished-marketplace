@@ -25,7 +25,7 @@ The agent parses log bodies that start with `{` and promotes these slog keys:
 
 All other keys (`service`, `order_id`, …) stay in `LogAttributes`. Keep those five keys stable; renaming them breaks trace-to-log navigation.
 
-The marketplace charts render no scrape resources, dashboards, or policies for telemetry. Services open no metrics port, and marketplace CiliumNetworkPolicies are ingress-only, so OTLP egress to `observability` is not restricted. Hubble and Gateway proxy spans are outside the application telemetry path.
+The marketplace charts render no scrape resources, dashboards, or policies for telemetry, and services open no metrics port. OTLP egress from ambient-enrolled pods to the non-enrolled `otel-agent` leaves through ztunnel as plaintext. Collecting Istio ingress, waypoint, and ztunnel retry, overflow, and outlier-ejection signals is the platform-owned agent's job in `talos-proxmox`; those signals stay separate from application spans and RED metrics.
 
 ## Platform prerequisites
 

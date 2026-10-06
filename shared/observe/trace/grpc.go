@@ -23,7 +23,7 @@ func GRPCServerOptions() []grpc.ServerOption {
 }
 
 // GRPCDialOptions returns dial options that install OpenTelemetry stats handling
-// and HTTP/2 keepalives so Cilium mTLS handshakes are not paid on every idle reconnect.
+// and HTTP/2 keepalives so mesh mTLS handshakes are not paid on every idle reconnect.
 func GRPCDialOptions() []grpc.DialOption {
 	return []grpc.DialOption{
 		grpc.WithStatsHandler(otelgrpc.NewClientHandler()),

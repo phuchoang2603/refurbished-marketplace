@@ -46,20 +46,21 @@ For production use `doppler-token.prd.secret.yaml` and `infra/argocd/prod/root.y
 
 Child Applications inherit the root Git revision through `$ARGOCD_APP_SOURCE_TARGET_REVISION`. Dev converts that revision to the immutable image tag `$ARGOCD_APP_REVISION`; production uses `:main`. Doppler config names do not belong in Helm or Argo values.
 
-The marketplace chart's `TunnelBinding` publishes shop/pay through the platform's `ClusterTunnel/talos-proxmox`; the Cloudflare operator creates their DNS records. The origin is `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`. See [cilium.md](cilium.md#edge).
+The marketplace chart's `TunnelBinding` publishes shop/pay through the platform's `ClusterTunnel/talos-proxmox`; the Cloudflare operator creates their DNS records. The origin is `http://ecommerce-ingress-istio.ecommerce.svc.cluster.local:80`. See [networking.md](networking.md#edge).
 
 ## Marketplace ownership
 
-| Application               | Marketplace-owned resources                                                             | Namespace                    |
-| ------------------------- | --------------------------------------------------------------------------------------- | ---------------------------- |
-| `secret-store`            | `SecretStore/doppler`, the single owner shared by every marketplace ExternalSecret      | `ecommerce`                  |
-| `mongodb`                 | `MongoDBCommunity`, credentials, workload RBAC, Cilium policy                           | `ecommerce`                  |
-| `meilisearch`             | Meilisearch workload/PVC, credentials, Cilium policy                                    | `ecommerce`                  |
-| `refurbished-marketplace` | CNPG Clusters, ExternalSecrets, migrations, services, Gateway/HTTPRoutes, TunnelBinding | `ecommerce`                  |
-| `kafka`                   | Kafka/NodePool, topics, Connect/connectors, secret-reader RBAC, UI                      | `kafka`, RBAC in `ecommerce` |
-| `cloudflare-tunnel`       | platform-owned in `talos-proxmox`                                                       | `cloudflare-operator-system` |
+| Application               | Marketplace-owned resources                                                                                                    | Namespace                    |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------- |
+| root (`<env>-root`)       | `ecommerce` and `kafka` Namespaces with `istio.io/dataplane-mode: ambient`                                                     | cluster                      |
+| `secret-store`            | `SecretStore/doppler`, the single owner shared by every marketplace ExternalSecret                                             | `ecommerce`                  |
+| `mongodb`                 | `MongoDBCommunity`, credentials, workload RBAC                                                                                 | `ecommerce`                  |
+| `meilisearch`             | Meilisearch workload/PVC, credentials                                                                                          | `ecommerce`                  |
+| `refurbished-marketplace` | CNPG Clusters, ExternalSecrets, migrations, services, Gateways/HTTPRoutes, TunnelBinding, PeerAuthentication, DestinationRules | `ecommerce`                  |
+| `kafka`                   | Kafka/NodePool, topics, Connect/connectors, secret-reader RBAC, UI, PeerAuthentication                                         | `kafka`, RBAC in `ecommerce` |
+| `cloudflare-tunnel`       | platform-owned in `talos-proxmox`                                                                                              | `cloudflare-operator-system` |
 
-The `platform` root owns the operators, CRDs, the Cloudflare tunnel and its cloudflared, and the telemetry pipeline (`otel-agent` in both environments; ClickHouse and HyperDX on prod). Marketplace workloads only export OTLP to `otel-agent`; see [observability.md](observability.md). The marketplace `secret-store` Application owns `SecretStore/doppler` in `ecommerce`; no other chart renders it. Cilium, Gateway API CRDs, and storage are also owned by `talos-proxmox`.
+The `platform` root owns the operators, CRDs, the Cloudflare tunnel and its cloudflared, and the telemetry pipeline (`otel-agent` in both environments; ClickHouse and HyperDX on prod). Marketplace workloads only export OTLP to `otel-agent`; see [observability.md](observability.md). The marketplace `secret-store` Application owns `SecretStore/doppler` in `ecommerce`; no other chart renders it. Cilium, Istio, Gateway API CRDs, and storage are also owned by `talos-proxmox`. Child Applications do not use `CreateNamespace`; only the root creates and labels the marketplace namespaces.
 
 MongoDB is the products catalog source of truth; Meilisearch is its storefront projection. PostgreSQL schema migrations still initialize new empty databases before their services start.
 
@@ -70,7 +71,7 @@ PostgreSQL services and migration jobs use the same `PGHOST`, `PGPORT`, `PGDATAB
 Marketplace child annotations give this local order:
 
 ```text
-secret-store (1) → MongoDB + Meilisearch (2) → marketplace (3) → Kafka (4)
+namespaces (0) → secret-store (1) → MongoDB + Meilisearch (2) → marketplace (3) → Kafka (4)
 ```
 
 Waves order submission of child Applications only; they do not wait for each child to become Healthy and do not order the marketplace root against `platform`. Children converge asynchronously: unlimited retries with backoff (capped at five minutes) and `SkipDryRunOnMissingResource` absorb CRDs, storage, and secret stores that platform Applications have not finished installing. The only manual prerequisite is `ecommerce/doppler-token`.
@@ -94,10 +95,12 @@ A child stuck retrying shows its last sync error in the environment's Argo CD UI
 infra/argocd/
 ├── app-of-apps/
 │   ├── values.yaml
-│   └── templates/applications.tpl
+│   └── templates/
+│       ├── applications.tpl
+│       └── namespaces.tpl
 ├── project.yaml
 ├── dev/root.yaml
 └── prod/root.yaml
 ```
 
-See [ci.md](ci.md) for image publication, [cilium.md](cilium.md) for networking, and [observability.md](observability.md) for the telemetry contract. Platform details live in `talos-proxmox`'s [GitOps architecture](https://github.com/phuchoang2603/talos-proxmox/blob/main/docs/architecture/gitops.md) and [cluster access](https://github.com/phuchoang2603/talos-proxmox/blob/main/docs/operations/cluster-access.md) guides.
+See [ci.md](ci.md) for image publication, [networking.md](networking.md) for networking, and [observability.md](observability.md) for the telemetry contract. Platform details live in `talos-proxmox`'s [GitOps architecture](https://github.com/phuchoang2603/talos-proxmox/blob/main/docs/architecture/gitops.md) and [cluster access](https://github.com/phuchoang2603/talos-proxmox/blob/main/docs/operations/cluster-access.md) guides.

@@ -19,11 +19,11 @@ Go marketplace services behind a server-rendered web edge. Browser traffic never
 
 ## Runtime topology
 
-![Marketplace runtime: Cloudflare Tunnel and Cilium Gateway, domain services and stores, local GitOps, and ClickStack telemetry](diagrams/architecture.svg)
+![Marketplace runtime: Cloudflare Tunnel and Istio Gateway, domain services and stores, local GitOps, and ClickStack telemetry](diagrams/architecture.svg)
 
 Editable source: [diagrams/architecture.excalidraw](diagrams/architecture.excalidraw).
 
-East-west calls are ClusterIP plus CiliumNetworkPolicy (optional required mTLS). Kafka uses Strimzi TLS, not mesh mTLS. Mongo `27017` and Meilisearch `7700` are allow-listed without SPIRE.
+`ecommerce` and `kafka` are enrolled in Istio ambient with `STRICT` mTLS, so all east-west traffic, including Kafka Connect → Mongo and Search → Meilisearch, is mutually authenticated by ztunnel. Domain gRPC Services also route through a service waypoint for connection limits, retry budgets, and outlier handling; Kafka and data stores stay ztunnel-only. Kafka keeps its own Strimzi TLS. Proxy retries are opt-in for replay-safe operations only and never replace the checkout saga's durable recovery.
 
 ## Catalog write vs read
 
@@ -49,9 +49,10 @@ Details: [order-placement.md](order-placement.md).
 | GitOps   | `talos-proxmox` `platform` root installs shared operators; this repo's roots deploy application consumers locally |
 | Images   | GHCR `ghcr.io/phuchoang2603/refurbished-marketplace/<name>:<sha>` (dev) or `:main` (prod)                         |
 | Secrets  | Doppler → External Secrets; `ecommerce/doppler-token` applied per environment                                     |
-| Ingress  | Cloudflare Tunnel → Cilium Gateway API (`gatewayClassName: cilium`)                                               |
+| Ingress  | Cloudflare Tunnel → Istio Gateway API (`gatewayClassName: istio`)                                                 |
+| Network  | Cilium CNI and Istio ambient (ztunnel, waypoint) installed by `talos-proxmox`                                     |
 | Observe  | Apps export OTLP traces and metrics to `otel-agent` and log JSON to stdout; ClickHouse + HyperDX on prod          |
 
-Each cluster's Argo CD runs its own marketplace root alongside the platform root. The platform supplies operators and the telemetry pipeline; the marketplace root submits `secret-store` (wave 1), MongoDB and Meilisearch (2), services (3), then Kafka (4). These waves do not wait for child health: children retry while platform dependencies converge. The per-cluster `otel-agent` forwards both dev and prod telemetry to ClickHouse and HyperDX on prod.
+Each cluster's Argo CD runs its own marketplace root alongside the platform root. The platform supplies operators and the telemetry pipeline; the marketplace root creates the ambient-enrolled `ecommerce` and `kafka` namespaces (wave 0), then submits `secret-store` (wave 1), MongoDB and Meilisearch (2), services (3), then Kafka (4). These waves do not wait for child health: children retry while platform dependencies converge. The per-cluster `otel-agent` forwards both dev and prod telemetry to ClickHouse and HyperDX on prod.
 
-See [deployment/gitops.md](deployment/gitops.md), [deployment/cilium.md](deployment/cilium.md), and [deployment/observability.md](deployment/observability.md).
+See [deployment/gitops.md](deployment/gitops.md), [deployment/networking.md](deployment/networking.md), and [deployment/observability.md](deployment/observability.md).

@@ -25,7 +25,7 @@ Marketplace resources do not use the platform `ClusterSecretStore/doppler`. That
 
 `meilisearch-master-key` is mounted on Meilisearch and the search service. The Doppler value must be at least 16 bytes. Plaintext Meilisearch keys are not committed.
 
-`CLOUDFLARE_TUNNEL_TOKEN` lives in the `talos-proxmox` Doppler project, not here. Its tunnel's Public Hostnames point at `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`.
+`CLOUDFLARE_TUNNEL_TOKEN` lives in the `talos-proxmox` Doppler project, not here. Its tunnel's Public Hostnames point at `http://ecommerce-ingress-istio.ecommerce.svc.cluster.local:80`.
 
 ## Bootstrap service token
 
