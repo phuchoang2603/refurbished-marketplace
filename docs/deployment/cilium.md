@@ -8,11 +8,11 @@ Already on the cluster (from talos-proxmox):
 - WireGuard encryption, Envoy L7 proxy, cluster name/id as set in that repo
 - L2 IP pools (`cilium-network` Application) and platform Gateways such as the Argo CD UI in `argo-cd`; Hubble UI is not required and may be absent
 
-This repo only consumes that dataplane: marketplace `Gateway`/`HTTPRoute` (`gatewayClassName: cilium`) and Cloudflare origin DNS. Do not add WireGuard/Envoy/ClusterMesh values here.
+This repo only consumes that dataplane: marketplace `Gateway`/`HTTPRoute` (`gatewayClassName: cilium`) and a `TunnelBinding` for the platform's Cloudflare tunnel. Do not add WireGuard/Envoy/ClusterMesh values here.
 
 Marketplace browser traffic: Cloudflare Tunnel → Cilium Gateway API.
 
-Cilium 1.18 Gateway Services are `LoadBalancer`. `cloudflared` uses in-cluster DNS (not the L2 VIP):
+Cilium 1.18 Gateway Services are `LoadBalancer`. `cloudflared` reaches the Gateway Service through in-cluster DNS (not the L2 VIP):
 
 `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`
 
@@ -85,7 +85,7 @@ Git + Argo sync, no app code change:
 2. `meshPolicy.enforce: false` — observe / open default-deny.
 3. `meshPolicy.enabled: false` — remove CNPs entirely.
 
-Then sync the marketplace Application. Cloudflare hostnames stay put.
+Then sync the marketplace Application. The `TunnelBinding` and Cloudflare hostnames stay put.
 
 ## GitOps
 
@@ -102,19 +102,20 @@ Then sync the marketplace Application. Cloudflare hostnames stay put.
 
 HTTPRoutes set `X-Forwarded-Proto: https` and `X-Forwarded-Host` so hosted-payment callbacks are not rewritten to HTTP (POST → Cloudflare 301 → GET → 405).
 
-Cloudflare Zero Trust Public Hostnames (not in Git):
+The chart renders `TunnelBinding/ecommerce-ingress` (`ingress.tunnel`) with both hostnames as subjects of the `cilium-gateway-ecommerce-ingress` Service. The `talos-proxmox` Cloudflare operator adds them to the environment's `ClusterTunnel/talos-proxmox`, restarts `cloudflared`, and creates each hostname's proxied CNAME and `_managed.<hostname>` ownership TXT record. Deleting the binding, or disabling `ingress.tunnel`, removes the records. Nothing is configured in the Cloudflare dashboard.
 
-- `shop-dev.phuchoang.sbs` / `pay-dev.phuchoang.sbs` (dev) → `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`
-- `shop.phuchoang.sbs` / `pay.phuchoang.sbs` (prod) → same origin DNS on the prod cluster
+The operator refuses a hostname that already has a DNS record it does not own. Delete such a record in Cloudflare and the binding converges on its next retry.
 
 TLS terminates at Cloudflare. No marketplace TLS Secret on the Gateway. Do not reuse the platform Argo CD or HyperDX Gateways for shop/pay.
 
 ```bash
 kubectl get gateway,httproute -n ecommerce
 kubectl get svc -n ecommerce -l gateway.networking.k8s.io/gateway-name=ecommerce-ingress
-kubectl get pods -n cloudflare-tunnel
+kubectl get tunnelbinding -n ecommerce
+kubectl describe tunnelbinding ecommerce-ingress -n ecommerce   # DNS and config events
+kubectl get pods -n cloudflare-operator-system
 ```
 
 ## Rollback
 
-Disable marketplace `ingress.enabled` and sync, or repoint Cloudflare hostnames. Cilium itself stays with talos-proxmox.
+Disable marketplace `ingress.tunnel.enabled` (removes the public hostnames) or `ingress.enabled` and sync. Cilium itself stays with talos-proxmox.

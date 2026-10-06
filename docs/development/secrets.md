@@ -2,7 +2,7 @@
 
 Application secret values are **not** committed to Git. The platform-owned External Secrets Operator syncs this repository's `ExternalSecret` resources through the marketplace-owned namespaced `SecretStore/doppler` in `ecommerce`. The bootstrap token Secret is also created in `ecommerce`.
 
-Marketplace resources do not use the platform `ClusterSecretStore/doppler`. That store reads the `talos-proxmox` Doppler project and delivers platform credentials such as the Cloudflare Tunnel token to cloudflared.
+Marketplace resources do not use the platform `ClusterSecretStore/doppler`. That store reads the `talos-proxmox` Doppler project and delivers platform credentials such as the Cloudflare operator's API token. Public hostnames need no marketplace secret: the operator creates their DNS records from the chart's `TunnelBinding`.
 
 ## Doppler project
 

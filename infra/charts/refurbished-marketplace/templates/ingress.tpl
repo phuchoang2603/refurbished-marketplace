@@ -90,4 +90,28 @@ spec:
       backendRefs:
         - name: payment-gateway-simulator
           port: {{ index .Values.services "payment-gateway-simulator" "port" }}
+{{- with .Values.ingress.tunnel }}
+{{- if .enabled }}
+---
+# The talos-proxmox Cloudflare operator routes these hostnames through its ClusterTunnel to the
+# Gateway Service Cilium creates, and owns their DNS records.
+apiVersion: networking.cfargotunnel.com/v1alpha1
+kind: TunnelBinding
+metadata:
+  name: {{ $gatewayName }}
+  namespace: {{ $.Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "6"
+subjects:
+  - name: cilium-gateway-{{ $gatewayName }}
+    spec:
+      fqdn: {{ $webHost | quote }}
+  - name: cilium-gateway-{{ $gatewayName }}
+    spec:
+      fqdn: {{ $simHost | quote }}
+tunnelRef:
+  kind: ClusterTunnel
+  name: {{ required "ingress.tunnel.clusterTunnel is required when ingress.tunnel.enabled is true" .clusterTunnel }}
+{{- end }}
+{{- end }}
 {{- end }}

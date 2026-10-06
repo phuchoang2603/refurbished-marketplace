@@ -2,7 +2,7 @@
 
 Talos **dev** and **prod** each run their own Argo CD in namespace `argo-cd`, installed by the [`talos-proxmox`](https://github.com/phuchoang2603/talos-proxmox) platform OpenTofu root. Each Argo CD manages only its local cluster and hosts two independent roots:
 
-1. `platform` from `talos-proxmox` installs shared operators, the Doppler `ClusterSecretStore`, storage, observability, and Cloudflare Tunnel.
+1. `platform` from `talos-proxmox` installs shared operators, the Doppler `ClusterSecretStore`, storage, observability, and the Cloudflare operator with its `ClusterTunnel`.
 2. `dev-root` / `prod-root` from this repository deploy marketplace-owned resources that consume those platform APIs.
 
 All marketplace Applications destine `https://kubernetes.default.svc`. There are no cluster registrations or cross-environment kubeconfigs.
@@ -46,20 +46,20 @@ For production use `doppler-token.prd.secret.yaml` and `infra/argocd/prod/root.y
 
 Child Applications inherit the root Git revision through `$ARGOCD_APP_SOURCE_TARGET_REVISION`. Dev converts that revision to the immutable image tag `$ARGOCD_APP_REVISION`; production uses `:main`. Doppler config names do not belong in Helm or Argo values.
 
-Cloudflare Public Hostnames remain in Zero Trust. The shop/pay origin is `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`.
+The marketplace chart's `TunnelBinding` publishes shop/pay through the platform's `ClusterTunnel/talos-proxmox`; the Cloudflare operator creates their DNS records. The origin is `http://cilium-gateway-ecommerce-ingress.ecommerce.svc.cluster.local:80`. See [cilium.md](cilium.md#edge).
 
 ## Marketplace ownership
 
-| Application               | Marketplace-owned resources                                                        | Namespace                    |
-| ------------------------- | ---------------------------------------------------------------------------------- | ---------------------------- |
-| `secret-store`            | `SecretStore/doppler`, the single owner shared by every marketplace ExternalSecret | `ecommerce`                  |
-| `mongodb`                 | `MongoDBCommunity`, credentials, workload RBAC, Cilium policy                      | `ecommerce`                  |
-| `meilisearch`             | Meilisearch workload/PVC, credentials, Cilium policy                               | `ecommerce`                  |
-| `refurbished-marketplace` | CNPG Clusters, ExternalSecrets, migrations, services, Gateway/HTTPRoutes           | `ecommerce`                  |
-| `kafka`                   | Kafka/NodePool, topics, Connect/connectors, secret-reader RBAC, UI                 | `kafka`, RBAC in `ecommerce` |
-| `cloudflare-tunnel`       | platform-owned in `talos-proxmox`                                                  | `cloudflare-tunnel`          |
+| Application               | Marketplace-owned resources                                                             | Namespace                    |
+| ------------------------- | --------------------------------------------------------------------------------------- | ---------------------------- |
+| `secret-store`            | `SecretStore/doppler`, the single owner shared by every marketplace ExternalSecret      | `ecommerce`                  |
+| `mongodb`                 | `MongoDBCommunity`, credentials, workload RBAC, Cilium policy                           | `ecommerce`                  |
+| `meilisearch`             | Meilisearch workload/PVC, credentials, Cilium policy                                    | `ecommerce`                  |
+| `refurbished-marketplace` | CNPG Clusters, ExternalSecrets, migrations, services, Gateway/HTTPRoutes, TunnelBinding | `ecommerce`                  |
+| `kafka`                   | Kafka/NodePool, topics, Connect/connectors, secret-reader RBAC, UI                      | `kafka`, RBAC in `ecommerce` |
+| `cloudflare-tunnel`       | platform-owned in `talos-proxmox`                                                       | `cloudflare-operator-system` |
 
-The `platform` root owns the operators, CRDs, cloudflared, and the telemetry pipeline (`otel-agent` in both environments; ClickHouse and HyperDX on prod). Marketplace workloads only export OTLP to `otel-agent`; see [observability.md](observability.md). The marketplace `secret-store` Application owns `SecretStore/doppler` in `ecommerce`; no other chart renders it. Cilium, Gateway API CRDs, and storage are also owned by `talos-proxmox`.
+The `platform` root owns the operators, CRDs, the Cloudflare tunnel and its cloudflared, and the telemetry pipeline (`otel-agent` in both environments; ClickHouse and HyperDX on prod). Marketplace workloads only export OTLP to `otel-agent`; see [observability.md](observability.md). The marketplace `secret-store` Application owns `SecretStore/doppler` in `ecommerce`; no other chart renders it. Cilium, Gateway API CRDs, and storage are also owned by `talos-proxmox`.
 
 MongoDB is the products catalog source of truth; Meilisearch is its storefront projection. PostgreSQL schema migrations still initialize new empty databases before their services start.
 
