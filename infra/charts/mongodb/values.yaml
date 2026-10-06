@@ -33,8 +33,3 @@ externalSecrets:
   secretStoreRef:
     kind: SecretStore
     name: doppler
-
-meshPolicy:
-  enforce: true
-  connectNamespace: kafka
-  connectCluster: ecommerce-connect-cluster

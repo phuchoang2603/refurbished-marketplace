@@ -17,7 +17,7 @@ metadata:
   labels:
     app: {{ $name }}
 spec:
-  replicas: 1
+  replicas: {{ default 1 $svc.replicas }}
   selector:
     matchLabels:
       app: {{ $name }}
@@ -180,6 +180,9 @@ metadata:
   namespace: {{ $.Release.Namespace }}
   labels:
     app: {{ $name }}
+{{- if and $.Values.mesh.waypoint.enabled (has $name $.Values.mesh.resilience.services) }}
+    istio.io/use-waypoint: {{ $.Values.mesh.waypoint.name }}
+{{- end }}
 spec:
   selector:
     app: {{ $name }}

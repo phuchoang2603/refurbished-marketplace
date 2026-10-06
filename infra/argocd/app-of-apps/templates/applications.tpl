@@ -41,7 +41,6 @@ spec:
     retry:
 {{- toYaml $.Values.syncRetry | nindent 6 }}
     syncOptions:
-      - CreateNamespace=true
       - ServerSideApply=true
       - SkipDryRunOnMissingResource=true
 {{- end }}
@@ -87,8 +86,6 @@ spec:
     retry:
 {{- toYaml .Values.syncRetry | nindent 6 }}
     syncOptions:
-      - CreateNamespace=true
       - ServerSideApply=true
       - SkipDryRunOnMissingResource=true
-    # Argo owns the ecommerce namespace (do not template a Namespace in the chart).
 {{- end }}

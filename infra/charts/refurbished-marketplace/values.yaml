@@ -13,18 +13,93 @@ ingress:
   tunnel:
     enabled: true
     clusterTunnel: talos-proxmox
-  # Timeouts only. No HTTP retries: checkout POST and hosted-payment callbacks are not idempotent at this layer.
-  timeouts:
-    request: 30s
-    backendRequest: 25s
+  # Web and simulator GETs only read, so transient backend failures retry within the total budget.
+  reads:
+    method: GET
+    timeouts:
+      request: 30s
+      backendRequest: 9s
+    retry:
+      attempts: 2
+      backoff: 100ms
+      codes: [502, 503]
+  # Everything else, including checkout, cart, hosted-payment, and callback POSTs, never retries.
+  writes:
+    timeouts:
+      request: 30s
+      backendRequest: 25s
 
-# Cilium mutual-auth / SPIRE is cluster Helm in talos-proxmox. CNPs are rendered here.
-meshPolicy:
-  enabled: true
-  # false = allow-lists without default-deny (observe unknown traffic still allowed).
-  enforce: true
-  # Requires cilium-spire Ready on the cluster.
-  mutualAuth: true
+# Istio ambient is platform-installed; the app-of-apps root enrolls this namespace.
+mesh:
+  waypoint:
+    enabled: true
+    name: waypoint
+    replicas: 1
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 500m
+        memory: 256Mi
+  # gRPC Services whose east-west traffic goes through the waypoint. Kafka, databases, and the
+  # browser-facing HTTP Services stay on ztunnel only.
+  resilience:
+    services:
+      - users
+      - products
+      - search
+      - inventory
+      - orders
+      - checkout
+      - cart
+      - payment
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http2MaxRequests: 256
+        http1MaxPendingRequests: 64
+    retryBudget:
+      percent: 20
+      minRetryConcurrency: 3
+    # Rendered only for Services with more than one replica, so a sole endpoint is never ejected.
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 10s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+    # Unary methods that are safe to replay; an identical SubmitCheckout returns the original
+    # checkout. Istio retries connect failures, refused streams, and gRPC UNAVAILABLE/CANCELLED.
+    # Every other method, including cart and payment mutations, is routed without retries.
+    grpcRetries:
+      timeouts:
+        request: 10s
+        backendRequest: 3s
+      retry:
+        attempts: 2
+        backoff: 50ms
+      methods:
+        users:
+          - users.v1.UsersService/GetUserByID
+        products:
+          - products.v1.ProductsService/GetProductByID
+          - products.v1.ProductsService/GetProductsByIDs
+        search:
+          - search.v1.SearchService/SearchProducts
+        inventory:
+          - inventory.v1.InventoryService/GetStock
+          - inventory.v1.InventoryService/GetStocksByIDs
+        orders:
+          - orders.v1.OrdersService/GetOrderByID
+          - orders.v1.OrdersService/ListOrdersByBuyer
+        checkout:
+          - checkout.v1.CheckoutService/SubmitCheckout
+          - checkout.v1.CheckoutService/GetCheckout
+        cart:
+          - cart.v1.CartService/GetCart
+        payment:
+          - payment.v1.PaymentService/GetHostedPaymentSessionByOrder
 
 defaults:
   otel:

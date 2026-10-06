@@ -34,6 +34,3 @@ externalSecrets:
   secretStoreRef:
     kind: SecretStore
     name: doppler
-
-meshPolicy:
-  enforce: true

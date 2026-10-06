@@ -21,6 +21,12 @@ global:
   imageTag: main
   imagePullPolicy: Always
 
+# The root is the only owner of these namespaces and their Istio ambient enrollment;
+# child Applications target them but never create or relabel them.
+namespaces:
+  - ecommerce
+  - kafka
+
 marketplace:
   enabled: true
   valueFiles: []
