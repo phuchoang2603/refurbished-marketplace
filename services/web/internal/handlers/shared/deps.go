@@ -44,7 +44,6 @@ type CartService interface {
 	AddCartItem(ctx context.Context, cartID, productID, merchantID, productName string, quantity int32, unitPriceCents int64) (*cartv1.Cart, error)
 	SetCartItemQuantity(ctx context.Context, cartID, productID, merchantID, productName string, quantity int32, unitPriceCents int64) (*cartv1.Cart, error)
 	RemoveCartItems(ctx context.Context, cartID string, productIDs []string) (*cartv1.Cart, error)
-	ClearCart(ctx context.Context, cartID string) error
 }
 
 type PaymentService interface {

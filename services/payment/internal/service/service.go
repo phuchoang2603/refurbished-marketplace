@@ -11,7 +11,6 @@ var (
 	ErrIntentNotFound      = errors.New("payment intent not found")
 	ErrTransactionNotFound = errors.New("payment transaction not found")
 	ErrSessionMismatch     = errors.New("payment session does not match order")
-	ErrSessionTerminal     = errors.New("hosted payment session is already terminal")
 	ErrInvalidSessionFacts = errors.New("buyer, merchant, amount, and shipping are required")
 )
 

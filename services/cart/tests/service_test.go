@@ -145,24 +145,6 @@ func TestCartLifecycle(t *testing.T) {
 			t.Fatalf("unexpected remaining items: %+v", updated.Items)
 		}
 	})
-
-	t.Run("clear cart", func(t *testing.T) {
-		cartID := uuid.NewString()
-		itemID := uuid.NewString()
-		_, err := svc.AddCartItem(ctx, cartID, itemID, uuid.NewString(), testProductName, 2, testUnitPrice)
-		if err != nil {
-			t.Fatalf("add item: %v", err)
-		}
-
-		if err := svc.ClearCart(ctx, cartID); err != nil {
-			t.Fatalf("clear cart: %v", err)
-		}
-
-		_, err = svc.GetCart(ctx, cartID)
-		if err != nil {
-			t.Fatalf("expected no error getting cart, got %v", err)
-		}
-	})
 }
 
 func TestCartValidation(t *testing.T) {

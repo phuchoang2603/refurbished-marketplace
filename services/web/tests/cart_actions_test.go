@@ -14,7 +14,6 @@ import (
 	checkoutv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1"
 	inventoryv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/inventory/v1"
 	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
-	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
 	productsv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1"
 
 	"google.golang.org/grpc/codes"
@@ -119,40 +118,6 @@ func TestCheckoutSubmitsSnapshotAndRedirectsToProgress(t *testing.T) {
 			return nil
 		},
 	}
-	paymentSvc := &fakes.PaymentService{
-		CreateSessionFn: func(ctx context.Context, req *paymentv1.CreateHostedPaymentSessionRequest) (*paymentv1.CreateHostedPaymentSessionResponse, error) {
-			t.Fatal("checkout POST must not call Payment directly")
-			if req.GetOrderId() != "order-1" {
-				t.Fatalf("orderID = %q, want order-1", req.GetOrderId())
-			}
-			if req.GetMerchant().GetId() != "merchant-1" {
-				t.Fatalf("merchant_id = %q, want merchant-1", req.GetMerchant().GetId())
-			}
-			if req.GetBuyer().GetId() != "user-1" {
-				t.Fatalf("buyer_id = %q, want user-1", req.GetBuyer().GetId())
-			}
-			if req.GetBuyer().GetEmail() != "buyer@example.com" {
-				t.Fatalf("buyer email = %q", req.GetBuyer().GetEmail())
-			}
-			if req.GetShippingAddress().GetCountry() != "US" || req.GetShippingAddress().GetLine1() == "" {
-				t.Fatalf("shipping = %+v", req.GetShippingAddress())
-			}
-			if req.GetTotalCents() != 1700 {
-				t.Fatalf("total_cents = %d, want 1700", req.GetTotalCents())
-			}
-			if len(req.GetItems()) != 2 {
-				t.Fatalf("items = %d, want 2", len(req.GetItems()))
-			}
-			if req.GetItems()[0].GetName() != "Phone" || req.GetItems()[1].GetName() != "Case" {
-				t.Fatalf("item names = %q %q", req.GetItems()[0].GetName(), req.GetItems()[1].GetName())
-			}
-			return &paymentv1.CreateHostedPaymentSessionResponse{
-				OrderId:          "order-1",
-				PaymentSessionId: "sess-1",
-				ReturnUrl:        req.GetReturnUrl(),
-			}, nil
-		},
-	}
 	rec := httptest.NewRecorder()
 	checkoutSvc := &fakes.CheckoutService{SubmitFn: func(ctx context.Context, request *checkoutv1.SubmitCheckoutRequest) (*checkoutv1.SubmitCheckoutResponse, error) {
 		if request.GetBuyerUserId() != "user-1" || request.GetIntentKey() != "intent-1" || request.GetMerchantId() != "merchant-1" {
@@ -172,7 +137,7 @@ func TestCheckoutSubmitsSnapshotAndRedirectsToProgress(t *testing.T) {
 	req.AddCookie(&http.Cookie{Name: auth.AccessCookieName, Value: signedAccessToken(t, "user-1")})
 	req.AddCookie(&http.Cookie{Name: "cart_id", Value: "cart-1"})
 
-	newTestRouter(t, routerDeps{cart: cartSvc, products: productsSvc, inventory: inventorySvc, orders: ordersSvc, payment: paymentSvc, checkout: checkoutSvc}).ServeHTTP(rec, req)
+	newTestRouter(t, routerDeps{cart: cartSvc, products: productsSvc, inventory: inventorySvc, orders: ordersSvc, checkout: checkoutSvc}).ServeHTTP(rec, req)
 
 	if rec.Code != http.StatusSeeOther {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusSeeOther)
@@ -289,13 +254,6 @@ func TestCartCheckoutDoesNotReserveBeforeAsynchronousResult(t *testing.T) {
 					return &ordersv1.Order{Id: id, Status: st}, nil
 				},
 			}
-			paymentCalled := false
-			paymentSvc := &fakes.PaymentService{
-				CreateSessionFn: func(ctx context.Context, req *paymentv1.CreateHostedPaymentSessionRequest) (*paymentv1.CreateHostedPaymentSessionResponse, error) {
-					paymentCalled = true
-					return &paymentv1.CreateHostedPaymentSessionResponse{OrderId: req.GetOrderId()}, nil
-				},
-			}
 			checkoutSvc := &fakes.CheckoutService{SubmitFn: func(ctx context.Context, request *checkoutv1.SubmitCheckoutRequest) (*checkoutv1.SubmitCheckoutResponse, error) {
 				return &checkoutv1.SubmitCheckoutResponse{CheckoutId: "checkout-pending"}, nil
 			}}
@@ -306,16 +264,13 @@ func TestCartCheckoutDoesNotReserveBeforeAsynchronousResult(t *testing.T) {
 			req.AddCookie(&http.Cookie{Name: auth.AccessCookieName, Value: signedAccessToken(t, "user-1")})
 			req.AddCookie(&http.Cookie{Name: "cart_id", Value: "cart-1"})
 
-			newTestRouter(t, routerDeps{cart: cartSvc, products: productsSvc, inventory: inventorySvc, orders: ordersSvc, payment: paymentSvc, checkout: checkoutSvc}).ServeHTTP(rec, req)
+			newTestRouter(t, routerDeps{cart: cartSvc, products: productsSvc, inventory: inventorySvc, orders: ordersSvc, checkout: checkoutSvc}).ServeHTTP(rec, req)
 
 			if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/checkouts/checkout-pending" {
 				t.Fatalf("checkout should be pending, got %d %s", rec.Code, rec.Header().Get("Location"))
 			}
 			if failedStatus != ordersv1.OrderStatus_ORDER_STATUS_UNSPECIFIED {
 				t.Fatalf("web finalized an order directly: %v", failedStatus)
-			}
-			if paymentCalled {
-				t.Fatal("hosted payment session should not be created when reserve fails")
 			}
 		})
 	}

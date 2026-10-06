@@ -16,7 +16,7 @@ func newConn(addr string) (*grpc.ClientConn, error) {
 		return nil, err
 	}
 	// grpc.NewClient is lazy; Connect now so checkout is not the first
-	// RPC (Cilium mTLS + HTTP/2 setup) to orders/payment.
+	// RPC (mesh mTLS + HTTP/2 setup) to orders/payment.
 	conn.Connect()
 	return conn, nil
 }

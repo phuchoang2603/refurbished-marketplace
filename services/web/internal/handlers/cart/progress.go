@@ -7,8 +7,6 @@ import (
 	shared "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
 	checkoutviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/checkout"
 	checkoutv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1"
-	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
-
 	"github.com/starfederation/datastar-go/datastar"
 )
 
@@ -40,8 +38,8 @@ func (h *Handler) paymentURL(r *http.Request, status *checkoutv1.CheckoutStatus)
 		status.GetPaymentSessionId() == "" || status.GetReturnUrl() == "" {
 		return ""
 	}
-	return shared.BuildHostedPaymentURL(h.deps.HostedPayment, r, &paymentv1.CreateHostedPaymentSessionResponse{
-		OrderId: status.GetOrderId(), PaymentSessionId: status.GetPaymentSessionId(), ReturnUrl: status.GetReturnUrl(),
+	return shared.BuildHostedPaymentURL(h.deps.HostedPayment, r, shared.HostedPaymentSession{
+		OrderID: status.GetOrderId(), PaymentSessionID: status.GetPaymentSessionId(), ReturnURL: status.GetReturnUrl(),
 	})
 }
 

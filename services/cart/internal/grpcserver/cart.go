@@ -99,13 +99,3 @@ func (s *Server) RemoveCartItems(ctx context.Context, req *cartv1.RemoveCartItem
 	}
 	return mapCart(c), nil
 }
-
-func (s *Server) ClearCart(ctx context.Context, req *cartv1.ClearCartRequest) (*cartv1.Empty, error) {
-	if _, err := grpcerr.ParseUUID(req.GetCartId(), "cart id"); err != nil {
-		return nil, err
-	}
-	if err := s.cart.ClearCart(ctx, req.GetCartId()); err != nil {
-		return nil, grpcerr.Map(err, grpcerr.Mapping{Err: service.ErrInvalidCartID, Code: codes.InvalidArgument})
-	}
-	return &cartv1.Empty{}, nil
-}

@@ -5,8 +5,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-
-	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
 )
 
 type HostedPaymentConfig struct {
@@ -110,14 +108,20 @@ func absolutizeWebURL(cfg HostedPaymentConfig, r *http.Request, raw string) stri
 	return base + raw
 }
 
-func BuildHostedPaymentURL(cfg HostedPaymentConfig, r *http.Request, session *paymentv1.CreateHostedPaymentSessionResponse) string {
-	if session == nil || cfg.GatewayBaseURL == "" || session.GetPaymentSessionId() == "" {
+type HostedPaymentSession struct {
+	OrderID          string
+	PaymentSessionID string
+	ReturnURL        string
+}
+
+func BuildHostedPaymentURL(cfg HostedPaymentConfig, r *http.Request, session HostedPaymentSession) string {
+	if cfg.GatewayBaseURL == "" || session.PaymentSessionID == "" {
 		return ""
 	}
 	v := url.Values{}
-	v.Set("order_id", session.GetOrderId())
-	v.Set("payment_session_id", session.GetPaymentSessionId())
-	v.Set("return_url", absolutizeWebURL(cfg, r, session.GetReturnUrl()))
+	v.Set("order_id", session.OrderID)
+	v.Set("payment_session_id", session.PaymentSessionID)
+	v.Set("return_url", absolutizeWebURL(cfg, r, session.ReturnURL))
 	callbackBase := strings.TrimRight(strings.TrimSpace(cfg.CallbackBaseURL), "/")
 	if callbackBase == "" {
 		callbackBase = webBaseURL(cfg, r)

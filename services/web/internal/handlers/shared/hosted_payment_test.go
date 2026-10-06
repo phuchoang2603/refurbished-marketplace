@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	shared "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
-	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
 )
 
 func TestRequestBaseURLUsesForwardedProto(t *testing.T) {
@@ -38,10 +37,10 @@ func TestBuildHostedPaymentURLUsesCallbackBaseURL(t *testing.T) {
 		GatewayBaseURL:  "https://pay.example",
 		PublicBaseURL:   "https://shop.example",
 		CallbackBaseURL: "http://web:8080",
-	}, req, &paymentv1.CreateHostedPaymentSessionResponse{
-		OrderId:          "order-1",
-		PaymentSessionId: "sess-1",
-		ReturnUrl:        "https://shop.example/orders/order-1",
+	}, req, shared.HostedPaymentSession{
+		OrderID:          "order-1",
+		PaymentSessionID: "sess-1",
+		ReturnURL:        "https://shop.example/orders/order-1",
 	})
 
 	want := "https://pay.example/pay?callback_url=http%3A%2F%2Fweb%3A8080%2Fcallbacks%2Fhosted-payment&order_id=order-1&payment_session_id=sess-1&return_url=https%3A%2F%2Fshop.example%2Forders%2Forder-1"

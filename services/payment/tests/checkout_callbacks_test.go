@@ -2,17 +2,14 @@ package tests
 
 import (
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
-	"github.com/phuchoang2603/refurbished-marketplace/services/payment/internal/database"
 	"github.com/phuchoang2603/refurbished-marketplace/services/payment/internal/service"
-	"github.com/phuchoang2603/refurbished-marketplace/shared/err/dberr"
 	"github.com/phuchoang2603/refurbished-marketplace/shared/messaging"
 	checkoutv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1"
 )
 
-func TestCheckoutGatewayCallbacksAndExpiry(t *testing.T) {
+func TestCheckoutGatewayCallbacksDeduplicate(t *testing.T) {
 	paymentService, queries := newPaymentFixture(t)
 	checkoutID, orderID := uuid.NewString(), uuid.NewString()
 	request := createCheckoutPaymentRequest()
@@ -22,18 +19,6 @@ func TestCheckoutGatewayCallbacksAndExpiry(t *testing.T) {
 	session, err := paymentService.GetHostedPaymentSessionByOrder(t.Context(), uuid.MustParse(orderID))
 	if err != nil {
 		t.Fatal(err)
-	}
-	if err := queries.SetPaymentIntentExpiresAt(t.Context(), database.SetPaymentIntentExpiresAtParams{
-		OrderID: uuid.MustParse(orderID), ExpiresAt: dberr.OptionalNullTime(time.Now().Add(-time.Minute)),
-	}); err != nil {
-		t.Fatal(err)
-	}
-	if err := paymentService.ExpireDueSessions(t.Context()); err != nil {
-		t.Fatal(err)
-	}
-	stillPending, err := paymentService.GetHostedPaymentSessionByOrder(t.Context(), uuid.MustParse(orderID))
-	if err != nil || stillPending.Status != service.HostedPaymentSessionStatusPending {
-		t.Fatalf("checkout expiry must be reconciled by Checkout: %v %v", stillPending, err)
 	}
 	for range 2 {
 		if err := paymentService.ApplyGatewayWebhook(t.Context(), uuid.MustParse(orderID), session.PaymentSessionID, service.HostedPaymentSessionStatusSucceeded, ""); err != nil {

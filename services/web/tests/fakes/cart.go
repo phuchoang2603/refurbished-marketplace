@@ -11,7 +11,6 @@ type CartService struct {
 	AddFn        func(context.Context, string, string, string, string, int32, int64) (*cartv1.Cart, error)
 	SetQtyFn     func(context.Context, string, string, string, string, int32, int64) (*cartv1.Cart, error)
 	RemoveManyFn func(context.Context, string, []string) (*cartv1.Cart, error)
-	ClearCartFn  func(context.Context, string) error
 }
 
 func (f *CartService) GetCart(ctx context.Context, cartID string) (*cartv1.Cart, error) {
@@ -40,11 +39,4 @@ func (f *CartService) RemoveCartItems(ctx context.Context, cartID string, produc
 		return f.RemoveManyFn(ctx, cartID, productIDs)
 	}
 	return &cartv1.Cart{}, nil
-}
-
-func (f *CartService) ClearCart(ctx context.Context, cartID string) error {
-	if f.ClearCartFn != nil {
-		return f.ClearCartFn(ctx, cartID)
-	}
-	return nil
 }

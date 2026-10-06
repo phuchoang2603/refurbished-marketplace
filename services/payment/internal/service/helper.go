@@ -66,22 +66,3 @@ func loadPaymentIntentByOrderID(ctx context.Context, q *database.Queries, orderI
 	}
 	return row, nil
 }
-
-func paymentTransactionIsTerminal(status string) bool {
-	return status == PaymentTxStatusSucceeded || status == PaymentTxStatusFailed
-}
-
-func hostedPaymentSessionIsTerminal(status string) bool {
-	return status == HostedPaymentSessionStatusSucceeded || status == HostedPaymentSessionStatusFailed || status == HostedPaymentSessionStatusExpired
-}
-
-func hostedPaymentSessionMapsToSuccess(status string) bool {
-	return status == HostedPaymentSessionStatusSucceeded
-}
-
-func defaultPaymentCurrency(currency string) string {
-	if currency == "" {
-		return "USD"
-	}
-	return currency
-}

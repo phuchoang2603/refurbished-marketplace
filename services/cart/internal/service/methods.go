@@ -166,13 +166,6 @@ func (s *Service) RemoveCartItems(ctx context.Context, cartID string, productIDs
 	return cart, nil
 }
 
-func (s *Service) ClearCart(ctx context.Context, cartID string) error {
-	if err := validateUUID(cartID, ErrInvalidCartID); err != nil {
-		return err
-	}
-	return s.deleteCart(ctx, cartID)
-}
-
 func validateSnapshot(productName string, unitPriceCents int64) error {
 	if strings.TrimSpace(productName) == "" || unitPriceCents <= 0 {
 		return ErrInvalidSnapshot

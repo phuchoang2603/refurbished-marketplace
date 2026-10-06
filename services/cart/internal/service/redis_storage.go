@@ -49,7 +49,3 @@ func (s *Service) saveCart(ctx context.Context, cart Cart) error {
 	}
 	return s.client.Set(ctx, cartKey(cart.CartID), buf, s.cartTTL()).Err()
 }
-
-func (s *Service) deleteCart(ctx context.Context, cartID string) error {
-	return s.client.Del(ctx, cartKey(cartID)).Err()
-}
