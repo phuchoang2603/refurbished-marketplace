@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"strings"
 
-	carthandlers "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/cart"
 	shared "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
 	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
 
@@ -69,17 +68,6 @@ func (h *Handler) handleHostedPaymentCallback(w http.ResponseWriter, r *http.Req
 		}
 		shared.WriteGRPCError(w, r, err)
 		return
-	}
-
-	if carthandlers.HostedSessionDrainsCartStatus(statusValue) && h.deps.Orders != nil {
-		order, err := h.deps.Orders.GetOrderByID(r.Context(), strings.TrimSpace(req.OrderID))
-		if err == nil && order != nil {
-			ids := make([]string, 0, len(order.GetItems()))
-			for _, item := range order.GetItems() {
-				ids = append(ids, item.GetProductId())
-			}
-			carthandlers.DrainPaidProductIDs(w, r, h.deps.Cart, ids, order.GetMerchantId())
-		}
 	}
 
 	w.WriteHeader(http.StatusNoContent)
