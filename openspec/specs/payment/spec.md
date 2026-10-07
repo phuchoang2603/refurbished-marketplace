@@ -67,19 +67,24 @@ Payment MUST authenticate the gateway callback as supported by the configured ga
 - **WHEN** a verified success arrives after the session was cancelled or expired
 - **THEN** Payment SHALL preserve evidence of the success and report a reconciliation exception to Checkout rather than discard it
 
-### Requirement: Payment expires abandoned hosted sessions
+### Requirement: Payment reconciles Checkout-owned session expiry
 
-Payment MUST distinguish EXPIRED from FAILED. For Checkout-owned sessions, Payment MUST record EXPIRED and report a correlated definitive failure to Checkout only when the gateway explicitly confirms expiry without capture. A local deadline alone MUST NOT mark these sessions EXPIRED or FAILED: Checkout requests cancellation or verification and keeps uncertain outcomes unresolved. The existing automatic sweep remains limited to pre-Checkout hosted sessions.
+Payment MUST distinguish EXPIRED from FAILED. For Checkout-owned sessions, Payment MUST record EXPIRED and report a correlated definitive failure to Checkout only when the gateway explicitly confirms expiry without capture. A local deadline alone MUST NOT mark a session EXPIRED or FAILED: Checkout requests cancellation or verification and keeps uncertain outcomes unresolved. Payment SHALL NOT run a non-Checkout automatic expiry sweep or create an unreserved hosted session.
 
-#### Scenario: Pending session past expires_at is swept
+#### Scenario: Pending session passes its deadline
 
 - **WHEN** a PENDING Checkout session passes its expiry deadline and the gateway explicitly confirms no capture
-- **THEN** Payment SHALL mark the session EXPIRED and publish a correlated definitive result with an expiry reason to Checkout; without confirmation, the sweep SHALL leave the outcome uncertain for Checkout to reconcile
+- **THEN** Payment SHALL mark the session EXPIRED and publish a correlated definitive result with an expiry reason to Checkout; without confirmation, Payment SHALL leave the outcome uncertain for Checkout to reconcile
 
-#### Scenario: Gateway reports expired as distinct from declined
+#### Scenario: Gateway reports unresolved outcome
 
-- **WHEN** the deadline passes but the gateway outcome is uncertain
+- **WHEN** the gateway cannot prove that capture did not occur after a local deadline
 - **THEN** Payment SHALL leave the Checkout session pending verification, report an unresolved status on cancellation, and SHALL NOT assert that no payment occurred
+
+#### Scenario: No independent session expiry
+
+- **WHEN** a Checkout-owned session is merely past its local deadline
+- **THEN** Payment SHALL NOT expire it through an independent automatic session sweep
 
 ### Requirement: Payment snapshots commerce facts when creating a hosted session
 
