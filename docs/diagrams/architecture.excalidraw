@@ -858,7 +858,7 @@
       "angle": 0,
       "backgroundColor": "transparent",
       "boundElements": null,
-      "fileId": "icon-b8de473b4a7395861836",
+      "fileId": "icon-istio",
       "fillStyle": "solid",
       "frameId": null,
       "groupIds": [],
@@ -879,7 +879,7 @@
       "strokeStyle": "solid",
       "strokeWidth": 2,
       "updated": 1790791455164,
-      "version": 1,
+      "version": 2,
       "versionNonce": 1911888902
     },
     {
@@ -1241,7 +1241,7 @@
       "angle": 0,
       "backgroundColor": "transparent",
       "boundElements": null,
-      "fileId": "icon-b8de473b4a7395861836",
+      "fileId": "icon-istio",
       "fillStyle": "solid",
       "frameId": null,
       "groupIds": [],
@@ -1262,7 +1262,7 @@
       "strokeStyle": "solid",
       "strokeWidth": 2,
       "updated": 1790791455164,
-      "version": 1,
+      "version": 2,
       "versionNonce": 1911888902
     },
     {
@@ -3510,43 +3510,6 @@
       "updated": 1790786169159,
       "version": 1,
       "versionNonce": 2092194617,
-      "verticalAlign": "top"
-    },
-    {
-      "id": "event-notes",
-      "type": "text",
-      "x": 1936,
-      "y": 430,
-      "width": 288.0,
-      "height": 400.0,
-      "angle": 0,
-      "autoResize": true,
-      "backgroundColor": "transparent",
-      "boundElements": null,
-      "containerId": null,
-      "fillStyle": "solid",
-      "fontFamily": 3,
-      "fontSize": 16,
-      "frameId": null,
-      "groupIds": [],
-      "index": "b1R",
-      "isDeleted": false,
-      "lineHeight": 1.25,
-      "link": null,
-      "locked": false,
-      "opacity": 100,
-      "originalText": "kafka namespace: ambient +\nSTRICT mTLS (broker TLS stays)\n\nOutbox rows → Debezium CDC\n→ Kafka topics:\n\nproducts.created\n  → Search + Inventory\n\ncheckout.*.v1 commands\n  → Orders, Inventory, Payment\n\ncheckout.*.v1 results\n  → Checkout inbox\n\nConsumers: inbox + idempotent\nwrites; no cross-service tx.\n\n(4) publish serves both the\ncatalog and saga flows.",
-      "roughness": 0,
-      "roundness": null,
-      "seed": 471222547,
-      "strokeColor": "#874b1a",
-      "strokeStyle": "solid",
-      "strokeWidth": 2,
-      "text": "kafka namespace: ambient +\nSTRICT mTLS (broker TLS stays)\n\nOutbox rows → Debezium CDC\n→ Kafka topics:\n\nproducts.created\n  → Search + Inventory\n\ncheckout.*.v1 commands\n  → Orders, Inventory, Payment\n\ncheckout.*.v1 results\n  → Checkout inbox\n\nConsumers: inbox + idempotent\nwrites; no cross-service tx.\n\n(4) publish serves both the\ncatalog and saga flows.",
-      "textAlign": "left",
-      "updated": 1790786597314,
-      "version": 2,
-      "versionNonce": 365031473,
       "verticalAlign": "top"
     },
     {
@@ -8039,12 +8002,6 @@
       "mimeType": "image/svg+xml",
       "created": 1
     },
-    "icon-b8de473b4a7395861836": {
-      "id": "icon-b8de473b4a7395861836",
-      "dataURL": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjU2LjAiIGhlaWdodD0iMjU2LjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDUxMiA1MTIiPjxwYXRoIGZpbGw9IiNlODMwMzAiIGQ9Ik0yMTUuNSAzMjcuOUwxNzQuOSAyNTZsNDAuNi03MS45aDgwLjlMMzM3IDI1NmwtNDAuNiA3MS45eiIvPjxwYXRoIGZpbGw9IiM2YjkxYzciIGQ9Im0yMTUuNSA1MDEuN2wtNDAuNi03MS45bDQwLjYtNzEuOWg4MC45bDQwLjYgNzEuOWwtNDAuNiA3MS45eiIvPjxwYXRoIGZpbGw9IiNmOWMzMWYiIGQ9Im0yMTUuNSAxNTRsLTQwLjYtNzEuOWw0MC42LTcxLjloODAuOUwzMzcgODIuMUwyOTYuNCAxNTR6Ii8+PHBhdGggZmlsbD0iIzc5NWFhNSIgZD0ibTM2NS43IDQxNC44bC00MC42LTcxLjlsNDAuNi03MS45aDgwLjlsNDAuNiA3MS45bC00MC42IDcxLjl6Ii8+PHBhdGggZmlsbD0iI2YxNzQyMyIgZD0iTTM2NS43IDI0MC45TDMyNS4xIDE2OWw0MC42LTcxLjloODAuOWw0MC42IDcxLjlsLTQwLjYgNzEuOXoiLz48cGF0aCBmaWxsPSIjOTdjNjM5IiBkPSJtNjUuNCA0MTQuOGwtNDAuNi03MS45TDY1LjQgMjcxaDgwLjlsNDAuNiA3MS45bC00MC42IDcxLjl6Ii8+PHBhdGggZmlsbD0iI2M5ZGI3MCIgZD0iTTY1LjQgMjQwLjlMMjQuOCAxNjlsNDAuNi03MS45aDgwLjlsNDAuNiA3MS45bC00MC42IDcxLjl6Ii8+PHBhdGggZmlsbD0iIzE0MWExZiIgZD0iTTMwMi40IDMzOC4xaC05Mi45TDE2My4xIDI1Nmw0Ni40LTgyLjFoOTIuOWw0Ni40IDgyLjF6bS04MC45LTIwLjVoNjguOWwzNC44LTYxLjZsLTM0LjgtNjEuNmgtNjguOUwxODYuNyAyNTZ6TTMwMi40IDUxMmgtOTIuOWwtNDYuNC04Mi4xbDQ2LjQtODIuMWg5Mi45bDQ2LjQgODIuMXptLTgwLjktMjAuNmg2OC45bDM0LjgtNjEuNmwtMzQuOC02MS42aC02OC45bC0zNC44IDYxLjZ6bTgwLjktMzI3LjFoLTkyLjlsLTQ2LjQtODIuMUwyMDkuNSAwaDkyLjlsNDYuNCA4Mi4xem0tODAuOS0yMC42aDY4LjlsMzQuOC02MS42bC0zNC44LTYxLjZoLTY4LjlsLTM0LjggNjEuNnptMjMxLjEgMjgxLjRoLTkyLjlMMzEzLjMgMzQzbDQ2LjQtODIuMWg5Mi45TDQ5OSAzNDN6bS04MC45LTIwLjZoNjguOWwzNC44LTYxLjZsLTM0LjgtNjEuNmgtNjguOWwtMzQuOCA2MS42em04MC45LTE1My4zaC05Mi45bC00Ni40LTgyLjFMMzU5LjcgODdoOTIuOWw0Ni40IDgyLjF6bS04MC45LTIwLjZoNjguOWwzNC44LTYxLjZsLTM0LjgtNjEuNmgtNjguOUwzMzYuOSAxNjl6TTE1Mi4zIDQyNS4xSDU5LjRMMTMgMzQyLjlsNDYuNC04Mi4xaDkyLjlsNDYuNCA4Mi4xem0tODAuOS0yMC42aDY4LjlsMzQuOC02MS42bC0zNC44LTYxLjZINzEuNGwtMzQuOCA2MS42em04MC45LTE1My4zSDU5LjRMMTMgMTY5LjFMNTkuNCA4N2g5Mi45bDQ2LjQgODIuMXptLTgwLjktMjAuNmg2OC45bDM0LjgtNjEuNmwtMzQuOC02MS42SDcxLjRMMzYuNiAxNjl6Ii8+PC9zdmc+",
-      "mimeType": "image/svg+xml",
-      "created": 2
-    },
     "icon-44dde9691111da5fe7dd": {
       "id": "icon-44dde9691111da5fe7dd",
       "dataURL": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjU2LjAiIGhlaWdodD0iMjU2LjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDI0IDI0Ij48ZyBmaWxsPSJub25lIiBzdHJva2U9IiNlODU5MGMiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIyIj48cmVjdCB3aWR0aD0iMjAiIGhlaWdodD0iMTQiIHg9IjIiIHk9IjUiIHJ4PSIyIi8+PHBhdGggZD0iTTIgMTBoMjBNNiAxNGgyIi8+PC9nPjwvc3ZnPg==",
@@ -8176,6 +8133,12 @@
       "dataURL": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjU2LjAiIGhlaWdodD0iMjU2LjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDI0IDI0Ij48ZyBmaWxsPSJub25lIiBzdHJva2U9IiM2NzQxYjAiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIgc3Ryb2tlLXdpZHRoPSIyIj48cmVjdCB3aWR0aD0iOCIgaGVpZ2h0PSI4IiB4PSIzIiB5PSIzIiByeD0iMiIvPjxwYXRoIGQ9Ik03IDExdjRhMiAyIDAgMCAwIDIgMmg0Ii8+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgeD0iMTMiIHk9IjEzIiByeD0iMiIvPjwvZz48L3N2Zz4=",
       "mimeType": "image/svg+xml",
       "created": 1790966890119
+    },
+    "icon-istio": {
+      "id": "icon-istio",
+      "dataURL": "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjU2LjAiIGhlaWdodD0iMjU2LjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgdmlld0JveD0iMCAwIDEyOCAxMjgiPjxwYXRoIGZpbGw9IiM1MTZiYWEiIGQ9Ik01OC44MDIuMDEzYS4xMy4xMyAwIDAgMC0uMDczLjExVjEwMS43M2MwIC4wNjQuMDUuMTE5LjExMy4xMjZsNDcuOTE4IDUuMzQ5YS4xMy4xMyAwIDAgMCAuMTQ0LS4xMTRhLjE0LjE0IDAgMCAwLS4wMTQtLjA2N0w1OC45NzIuMDczYS4xMjcuMTI3IDAgMCAwLS4xNy0uMDZtLTUuNTM1IDM1LjU1YS4xMjcuMTI3IDAgMCAwLS4xNy4wNmwtMzEuOTkgNzEuNGEuMTMuMTMgMCAwIDAtLjAxLjA3Yy4wMS4wNy4wNzcuMTE2LjE0Ny4xMDZsMzEuOTktNS40ODJhLjEyLjEyIDAgMCAwIC4xMDMtLjEyM2wuMDA0LTY1LjkxOGEuMTMuMTMgMCAwIDAtLjA3NC0uMTE0ek0yMS4zMjEgMTExLjg2YS4xMi4xMiAwIDAgMC0uMTIuMDczYS4xMjYuMTI2IDAgMCAwIC4wNjMuMTY3bDMyLjAzIDE1Ljg5MmMuMDMuMDEuMDY0LjAxLjA5MyAwbDUzLjAwNi0xNS44OTJhLjEzLjEzIDAgMCAwIC4wNy0uMDkzYS4xMjYuMTI2IDAgMCAwLS4xMDMtLjE0N3oiLz48L3N2Zz4K",
+      "mimeType": "image/svg+xml",
+      "created": 2
     }
   }
 }
