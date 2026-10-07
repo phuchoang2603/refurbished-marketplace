@@ -81,7 +81,7 @@ curl -fsS -o /dev/null -w '%{http_code}\n' https://shop.phuchoang.sbs/
 # Complete one checkout in the browser (login → cart → pay simulator → return).
 ```
 
-Operators in non-enrolled platform namespaces (CNPG, MongoDB, Strimzi) and telemetry collectors reach enrolled pods without an Istio identity. Verify their reconciliation under `STRICT` during production acceptance and fix any broken management path explicitly rather than falling back to `PERMISSIVE`.
+Under `STRICT`, ztunnel rejects plaintext from non-enrolled pods. `talos-proxmox` therefore enrolls the CNPG and Strimzi operators and the `otel-cluster` scraper in ambient at the pod level, so their calls to enrolled pods use mesh mTLS; the MongoDB operator needs no pod access. Mesh traffic reaches enrolled pods on HBONE port 15008, which Strimzi's generated NetworkPolicies do not allow, so the Kafka chart adds `NetworkPolicy/allow-hbone` for Strimzi pods. Fix any other broken management path the same way rather than falling back to `PERMISSIVE`.
 
 ## Rollback
 
