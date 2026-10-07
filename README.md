@@ -15,7 +15,7 @@ Learning project for distributed Go services around a refurbished-goods marketpl
 | `services/orders`    | Order lifecycle               | Merchant-scoped PostgreSQL, outbox/Kafka           |
 | `services/payment`   | Hosted payment sessions       | Gateway callbacks, Kafka outcomes                  |
 
-![Marketplace architecture: Istio ingress and waypoint, ambient mTLS services and datastores, Kafka events, GitOps, and observability](docs/diagrams/architecture.svg)
+![Marketplace architecture: Istio ingress, ambient mTLS services and datastores, Kafka events, GitOps, and observability](docs/diagrams/architecture.svg)
 
 Full topology, ports, and GitOps: [docs/architecture.md](docs/architecture.md).
 Catalog vs stock vs search: [docs/catalog-inventory-search.md](docs/catalog-inventory-search.md).

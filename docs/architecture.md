@@ -19,7 +19,7 @@ Go marketplace services behind a server-rendered web edge. Browser traffic never
 
 ## Runtime topology
 
-![Marketplace runtime: Cloudflare Tunnel to the Istio ingress gateway, Web and the waypoint in front of the gRPC services, ztunnel-only datastores, Kafka CDC, GitOps delivery, and ClickStack telemetry](diagrams/architecture.svg)
+![Marketplace runtime: Cloudflare Tunnel and Istio Gateway, domain services behind the ambient waypoint with ztunnel-only stores, local GitOps, and ClickStack telemetry](diagrams/architecture.svg)
 
 Editable source: [diagrams/architecture.excalidraw](diagrams/architecture.excalidraw).
 
