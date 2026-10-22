@@ -27,7 +27,7 @@ Only Checkout references `checkout-payment-gateway`. Chart defaults/dev render n
 
 Gateway prerequisite (managed in the gateway repository): `GATEWAY_INTEGRATIONS_JSON` supplies the same integration UUID to Edge and notifier, the SHA-256 API key hash, `synthetic: false`, and `webhook: {url, secret, events}`. Use `http://web.ecommerce.svc.cluster.local:8080/webhooks/payment-gateway` and subscribe to `attempt.declined`, `payment.succeeded`, and `payment.expired`. The raw API key and webhook secret are the two marketplace Doppler keys above. Credential provisioning and production migration remain deferred; no secrets are created by this change.
 
-Kafka Connect reads only catalog, inventory, orders and checkout credentials through its generated Roles. There is no Payment Postgres secret or `payment-outbox` connector.
+Kafka Connect reads only catalog, inventory, orders and checkout credentials through its generated Roles.
 
 `mongodb-catalog-app` is mounted on products and read by the Kafka Connect products-outbox Mongo connector (Role in `ecommerce`). The SCRAM user is `catalog`, authenticated against database `catalog` (same DB as listings/outbox), with `readWrite` there. There is no products Postgres secret after catalog cutover.
 

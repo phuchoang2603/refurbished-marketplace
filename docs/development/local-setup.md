@@ -43,7 +43,7 @@ Cloudflare Tunnel → Istio Gateway (`ecommerce-ingress-istio.ecommerce.svc.clus
 | ------------------------ | ------- |
 | `shop-dev.phuchoang.sbs` | `web`   |
 
-Dev has no payment gateway. Checkout submission returns unavailable without creating an order or reserving stock; hosted-payment flows are prod-only. The marketplace no longer publishes `pay-dev`.
+Dev has no payment gateway. Checkout submission returns unavailable without creating an order or reserving stock; hosted-payment flows are prod-only.
 
 Smoke-check:
 

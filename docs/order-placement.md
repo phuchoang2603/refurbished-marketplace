@@ -65,6 +65,6 @@ All command and result topics are versioned `checkout.*.v1`. Each producer's Deb
 
 ## Rollout gate
 
-Production migration and cluster end-to-end verification are deferred. Before rollout, configure the gateway integration and matching marketplace credentials, backfill existing product grading, disable new checkout submission and drain all Payment-owned sessions and settlement work. Then apply Checkout migration `002` with the new gateway configuration and remove the Payment database, workloads, Kafka topics/connector and simulator routes. The gateway owns its hosted hostname; the marketplace publishes only shop.
+Production cluster end-to-end verification is deferred. Before rollout, configure the gateway integration and matching marketplace credentials, then deploy with the new gateway configuration. The gateway owns its hosted hostname; the marketplace publishes only shop.
 
 After rollout, verify approve, decline-then-approve, expiry, webhook redelivery and stock settlement using isolated fixtures. Confirm each event has one durable effect and accepted workflows remain buyer-queryable. Dev has no gateway and returns checkout unavailable. Do not treat local chart validation as a completed production migration or cluster smoke test.

@@ -57,7 +57,7 @@ When a payment deadline (the gateway expiry plus a configured grace) passes with
 
 ### Requirement: Gateway credentials and data handling
 
-Checkout SHALL authenticate to the gateway with an integration API key and hold the webhook signing secret, both from cluster secrets and neither logged. The marketplace SHALL NOT collect, store or forward card numbers; card entry happens only on the gateway's hosted page. Logs SHALL NOT contain the API key, signing secret, checkout token or raw webhook bodies.
+Checkout SHALL reach the gateway and receive webhooks over plaintext HTTP carried by the Istio ambient mesh, which provides STRICT mTLS, without application TLS or certificates. It SHALL still authenticate to the gateway with an integration API key, because mesh identity does not identify the integration, and SHALL verify webhook signatures, because they authenticate the payload. It SHALL hold the API key and webhook signing secret from cluster secrets, neither logged. The marketplace SHALL NOT collect, store or forward card numbers; card entry happens only on the gateway's hosted page. Logs SHALL NOT contain the API key, signing secret, checkout token or raw webhook bodies.
 
 #### Scenario: Missing gateway configuration
 

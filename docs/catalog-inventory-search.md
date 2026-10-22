@@ -14,8 +14,6 @@ Products persists listings and a ProductCreated outbox document in MongoDB. Debe
 
 Web sends catalog fields and explicit non-negative initial quantity to CreateProduct. Category must be `phone`, `laptop`, `tablet`, `accessory`, `headphones`, `smartwatch`, `game_console` or `camera`; condition must be `excellent`, `good` or `fair`. Both persist in listings, reads and ProductCreated. Missing quantity is invalid; explicit zero is valid. Products commits the listing and a `catalog_outbox` document atomically in a replica-set transaction. Debezium Mongo watches that collection and publishes ProductCreated to `products.created`, keyed by product id. Never save the listing and then rely on a separate best-effort Kafka publish from the products process.
 
-The grading migration command `go run ./services/products/cmd/backfill-grading` previews missing fields; `-apply` fills only absent category/condition with `accessory`/`good`. Production execution is deferred.
-
 The event contains a stable event id, schema version, occurrence time, product id, initial product version, catalog fields, and explicit initial quantity. Outbox retries retain the same event identity.
 
 Inventory consumes the event in `inventory-product-created`, separate from reservation/payment consumption, validates it, and commits inbox identity and initial stock in one transaction before acknowledging it. Search consumes the same event in `search-product-created` and upserts catalog fields (`id`, name, description, price, merchant, created_at). It does not index `initial_qty`. CreateProduct does not wait for the index upsert. There is no search-projection rebuild/backfill path; a wiped cluster fills the index from new ProductCreated events.

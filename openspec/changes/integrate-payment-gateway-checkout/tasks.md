@@ -6,7 +6,7 @@
 
 ## 2. Products
 
-- [x] 2.1 Validate and persist category and condition against the fixed sets, return them on all reads and in `ProductCreated`; add a backfill setting `accessory` / `good` on existing documents
+- [x] 2.1 Validate and persist category and condition against the fixed sets, return them on all reads and in `ProductCreated`
 
 ## 3. Checkout
 
@@ -41,4 +41,4 @@
 - [x] 6.2 Add a network policy admitting the gateway's notifier pods in `payment-gateway` to web's webhook port
 - [x] 6.3 Remove payment Postgres keys from the Debezium connector secrets and document the new Doppler keys
 - [x] 6.4 Update architecture, checkout flow, tracing, secrets and GitOps docs that describe the Payment service or simulator
-- [ ] 6.5 Run the Migration Plan in prod: configure the integration, backfill grading, drain, deploy, hand over the `pay` hostname, smoke test approve / decline-then-approve / expiry and confirm each webhook was accepted once
+- [ ] 6.5 Run the Rollout in prod: configure the integration, deploy, hand over the `pay` hostname, smoke test approve / decline-then-approve / expiry and confirm each webhook was accepted once

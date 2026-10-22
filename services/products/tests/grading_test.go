@@ -2,7 +2,6 @@ package tests
 
 import (
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/grpcserver"
@@ -70,50 +69,5 @@ func TestGradingPersistsInReadsAndEvents(t *testing.T) {
 				t.Fatalf("event grading lost: %v", &event)
 			}
 		}
-	}
-}
-
-func TestGradingBackfillDryRunAndIdempotency(t *testing.T) {
-	store := newProductsStore(t)
-	collection := store.Database().Collection("listings")
-	legacyID, partialID, gradedID := uuid.NewString(), uuid.NewString(), uuid.NewString()
-	legacy := func(id string) bson.M {
-		return bson.M{"_id": id, "name": "Legacy", "price_cents": 1000, "merchant_id": uuid.NewString(), "created_at": time.Now(), "updated_at": time.Now()}
-	}
-	partial := legacy(partialID)
-	partial["category"] = "camera"
-	graded := legacy(gradedID)
-	graded["category"] = "phone"
-	graded["condition"] = "excellent"
-	if _, err := collection.InsertMany(t.Context(), []any{legacy(legacyID), partial, graded}); err != nil {
-		t.Fatal(err)
-	}
-	dry, err := store.BackfillGrading(t.Context(), false)
-	if err != nil || dry.Category != 1 || dry.Condition != 2 {
-		t.Fatalf("dry=%v err=%v", dry, err)
-	}
-	var unchanged bson.M
-	if err := collection.FindOne(t.Context(), bson.M{"_id": legacyID}).Decode(&unchanged); err != nil {
-		t.Fatal(err)
-	}
-	if _, ok := unchanged["category"]; ok {
-		t.Fatal("dry run wrote category")
-	}
-	if _, ok := unchanged["condition"]; ok {
-		t.Fatal("dry run wrote condition")
-	}
-	applied, err := store.BackfillGrading(t.Context(), true)
-	if err != nil || applied != dry {
-		t.Fatalf("apply=%v err=%v", applied, err)
-	}
-	for id, want := range map[string][2]string{legacyID: {"accessory", "good"}, partialID: {"camera", "good"}, gradedID: {"phone", "excellent"}} {
-		p, err := store.GetListingByID(t.Context(), uuid.MustParse(id))
-		if err != nil || p.Category != want[0] || p.Condition != want[1] {
-			t.Fatalf("read=%v err=%v", p, err)
-		}
-	}
-	repeated, err := store.BackfillGrading(t.Context(), true)
-	if err != nil || repeated.Category != 0 || repeated.Condition != 0 {
-		t.Fatalf("repeat=%v err=%v", repeated, err)
 	}
 }

@@ -6,7 +6,7 @@ The gateway (payment-gateway-fraud-detection, `build-minimum-payment-gateway`) r
 
 - Its JSON API is ClusterIP-only and authenticated by an integration API key from Edge configuration. `POST /v1/payments` takes the full snapshot and `Idempotency-Key`; merchant and customer IDs are derived, so there is no provisioning call.
 - Its hosted page is public at `/checkout/{session_id}`.
-- Its notifier POSTs `attempt.declined`, `payment.succeeded` and `payment.expired` JSON `{event_id, type, payment_id, order_reference, attempt_id, status, reason, occurred_at}` with `Idempotency-Key: <event_id>` and `Gateway-Signature: t=<unix>,v1=<hex HMAC-SHA256(secret, t "." body)>`, retrying about 12 times over 24 hours. Cluster-local HTTP URLs are allowed.
+- Its notifier POSTs `attempt.declined`, `payment.succeeded` and `payment.expired` JSON `{event_id, type, payment_id, order_reference, attempt_id, status, reason, occurred_at}` with `Idempotency-Key: <event_id>` and `Gateway-Signature: t=<unix>,v1=<hex HMAC-SHA256(secret, t "." body)>`, retrying about 12 times over 24 hours. In-cluster service URLs (`*.svc.cluster.local`, `*.svc`) may use plaintext HTTP; external URLs must be HTTPS.
 - It has no cancel command. A payment expires 15 minutes after creation, and never while an attempt outcome is unknown.
 - Its fraud model is trained on line category (`phone`, `laptop`, `tablet`, `accessory`, `headphones`, `smartwatch`, `game_console`, `camera`), condition (`excellent`, `good`, `fair`) and account ages.
 
@@ -22,14 +22,13 @@ The gateway (payment-gateway-fraud-detection, `build-minimum-payment-gateway`) r
 **Non-Goals:**
 
 - Keeping the Payment service, its Kafka contract or the simulator as a fallback.
-- Migrating in-flight Payment sessions (see Migration Plan).
 - Showing per-attempt declines in marketplace pages; the hosted page shows them.
 
 ## Decisions
 
 ### Category and condition on products
 
-`shared/proto/products/v1` `Product` and `CreateProductRequest` gain `category` and `condition` as strings validated against fixed sets in the products service, stored in the Mongo catalog document and in the `ProductCreated` event. The seller form adds two selects. A one-off migration sets `accessory` / `good` on existing documents. Strings rather than proto enums keep the values identical to the gateway contract without a mapping table.
+`shared/proto/products/v1` `Product` and `CreateProductRequest` gain `category` and `condition` as strings validated against fixed sets in the products service, stored in the Mongo catalog document and in the `ProductCreated` event. The seller form adds two selects. Strings rather than proto enums keep the values identical to the gateway contract without a mapping table.
 
 Alternative: free-text condition in the description. Rejected because the gateway needs a categorical value.
 
@@ -64,25 +63,19 @@ Migration `002` renames `payment_session_id` to `gateway_payment_id` and `paymen
 
 ### Configuration and environments
 
-Set only in the prod overlay: `PAYMENT_GATEWAY_URL` (`http://edge.payment-gateway.svc.cluster.local:8080`), `PAYMENT_GATEWAY_API_KEY` and `PAYMENT_GATEWAY_WEBHOOK_SECRET` from the `checkout-payment-gateway` ExternalSecret, and `CHECKOUT_RETURN_BASE_URL`. With no URL configured, `SubmitCheckout` returns `UNAVAILABLE` and web shows that checkout is unavailable; no order or reservation is created. Checkout's egress to the gateway and the notifier's ingress to web leave the ambient mesh, so the API key and HMAC signature, not mesh identity, authenticate them.
+Set only in the prod overlay: `PAYMENT_GATEWAY_URL` (`http://edge.payment-gateway.svc.cluster.local:8080`), `PAYMENT_GATEWAY_API_KEY` and `PAYMENT_GATEWAY_WEBHOOK_SECRET` from the `checkout-payment-gateway` ExternalSecret, and `CHECKOUT_RETURN_BASE_URL`. With no URL configured, `SubmitCheckout` returns `UNAVAILABLE` and web shows that checkout is unavailable; no order or reservation is created. Transport security for both directions comes from the Istio ambient mesh: `ecommerce` is enrolled and listed in Edge's `callerNamespaces`, so Checkout-to-Edge calls and notifier-to-web webhooks get STRICT mTLS with no application TLS or certificates. Application secrets remain for what the mesh cannot do: the API key identifies the merchant integration (mesh identity identifies only the namespace) and the HMAC signature authenticates the event payload. Per-path (L7) mesh policy would need an ambient waypoint and is a possible later increment.
 
 ## Risks / Trade-offs
 
 - [Gateway down while stock is reserved] → The operation retries until the preparation deadline, then stock is released; buyers see a failed checkout rather than a stuck one.
 - [Webhook delivery fails for hours] → The deadline status read resolves the checkout without webhooks.
 - [Forged in-cluster webhook] → Signature check before any state read, body size limit, network policy limited to the notifier; forged requests cost one HMAC.
-- [Existing listings lack grading] → Backfill defaults; sellers can edit later. Fraud features for those early orders are approximate.
 - [Buyer pays after the marketplace gave up] → The gateway never expires a payment with an unknown attempt, and a late success raises the existing financial exception.
 - [Dev loses a working checkout] → Accepted until a sandbox gateway integration exists.
 - [Two repos must land in order] → Marketplace prod values switch only after the gateway is serving with the marketplace integration configured.
 
-## Migration Plan
+## Rollout
 
 1. In the gateway, configure the marketplace integration (API key, webhook URL above, signing secret, subscribed events) and store the API key and signing secret in Doppler prod for both repos.
-2. Deploy the products change and run the grading backfill.
-3. Disable checkout submission in prod and wait until no checkout is in READY_TO_PAY or settling under the Payment service.
-4. Deploy Checkout and web with migration `002`, the new ExternalSecret and prod gateway values.
-5. Remove the Payment workload, database, Kafka topics, `payment-outbox` connector, simulator and `pay` HTTPRoute in the same release; hand the `pay` tunnel hostname to the gateway's hosted page.
-6. Smoke test in prod: approve with `4242…`, decline then approve on the same page, and let one payment expire; confirm each webhook was accepted once.
-
-Rollback is a revert of the release while no gateway payment is open; the dropped Payment database is not restored, so step 3's drain is what keeps rollback safe.
+2. Deploy Checkout and web with the new ExternalSecret and prod gateway values; the `pay` tunnel hostname belongs to the gateway's hosted page.
+3. Smoke test in prod: approve with `4242…`, decline then approve on the same page, and let one payment expire; confirm each webhook was accepted once.

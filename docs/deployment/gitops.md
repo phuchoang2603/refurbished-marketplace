@@ -50,7 +50,7 @@ The marketplace chart's `TunnelBinding` publishes shop through the platform's `C
 
 Production Checkout uses `PAYMENT_GATEWAY_URL=http://edge.payment-gateway.svc.cluster.local:8080`, `CHECKOUT_RETURN_BASE_URL=https://shop.phuchoang.sbs`, and the two keys from `checkout-payment-gateway`; see [secrets.md](../development/secrets.md). The API key identifies the integration at Edge. Defaults/dev leave the gateway disabled and refuse checkout submission. The marketplace no longer renders Payment, its database, or the hosted-page simulator, and publishes no `pay` / `pay-dev` hostname.
 
-Production migration and cluster end-to-end verification are deferred. Provision the gateway integration and matching credentials, backfill product grading and drain Payment-owned sessions before deploying this release; see [the rollout gate](../order-placement.md#rollout-gate). Local Helm renders do not satisfy that gate.
+Production cluster end-to-end verification is deferred. Provision the gateway integration and matching credentials before deploying this release; see [the rollout gate](../order-placement.md#rollout-gate). Local Helm renders do not satisfy that gate.
 
 ## Marketplace ownership
 

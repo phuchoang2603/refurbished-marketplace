@@ -11,7 +11,7 @@ The marketplace runs its own Payment service against `tools/payment-gateway-simu
 - The gateway's notifier POSTs signed webhooks to web's in-cluster `POST /webhooks/payment-gateway`; web forwards body and signature to Checkout. Checkout verifies the HMAC and timestamp, deduplicates `event_id` in its inbox, and maps `payment.succeeded` to stock commit and `payment.expired` to stock release; `attempt.declined` does not end the checkout because the buyer can retry on the hosted page.
 - At its payment deadline Checkout reads the gateway status once instead of cancelling a session: `SUCCEEDED` commits, `EXPIRED` releases, anything else is flagged for review while webhooks keep arriving.
 - **BREAKING** Web drops `/callbacks/hosted-payment`; buyer return pages stay. Cart lines are removed after `SUCCEEDED` or `EXPIRED`.
-- Prod only: Checkout calls the gateway Edge in-cluster with an API key and verifies webhooks with a signing secret, both from Doppler. Dev has no gateway, so checkout submission there is refused with an unavailable message.
+- Prod only: Checkout calls the gateway Edge in-cluster with an API key and verifies webhooks with a signing secret, both from Doppler; the mesh provides mTLS transport in both directions. Dev has no gateway, so checkout submission there is refused with an unavailable message.
 
 Non-goals: card entry inside the marketplace, merging gateway services into this repository, payment cancellation (the gateway has none), a dev gateway, refunds and multi-attempt payment UI in the marketplace, a marketplace traffic simulator.
 
@@ -39,6 +39,5 @@ Non-goals: card entry inside the marketplace, merging gateway services into this
 
 - Code: delete `services/payment`, `shared/proto/payment/v1` and `tools/payment-gateway-simulator`; change `shared/proto/products/v1` (category, condition), `services/products`, `services/checkout` (snapshot, gateway client, operation rows, `HandleGatewayWebhook`, migration), `services/web` (seller form, webhook route), `shared/proto/checkout/v1`, `shared/messaging` payment event types.
 - Infra: `infra/charts/kafka/values.yaml` payment topics and connector, `infra/charts/refurbished-marketplace` (payment and simulator workloads, HTTPRoutes, ExternalSecrets, checkout env, network policy admitting the gateway's notifier to web), Cloudflare tunnel hostnames for `pay` / `pay-dev`, `release-images.yml`, CI path filters.
-- Data: existing products need a category and condition; a migration backfills `accessory` / `good` for listings created before this change.
 - Dependencies: the gateway's `build-minimum-payment-gateway` change deployed in prod, with the marketplace integration configured there (API key, webhook URL `http://web.ecommerce.svc.cluster.local:8080/webhooks/payment-gateway`, signing secret, events `payment.succeeded`, `payment.expired`, `attempt.declined`).
 - Docs: architecture, checkout flow, secrets and GitOps pages that describe the Payment service or simulator.

@@ -1,6 +1,6 @@
 # Ecommerce fraud gateway note
 
-The marketplace integrates with the external payment gateway for hosted card entry, fraud decisions and signed payment outcomes. Checkout owns the durable integration; the marketplace Payment service and hosted-page simulator are removed. A separate historical feature platform remains a future direction.
+The marketplace integrates with the external payment gateway for hosted card entry, fraud decisions and signed payment outcomes. Checkout owns the durable integration. A separate historical feature platform remains a future direction.
 
 ## Direction
 
@@ -157,4 +157,4 @@ Instead of customer-to-terminal distance, model customer familiarity: usual devi
 
 ## Rollout status
 
-Gateway integration configuration, credential provisioning, product backfill, draining Payment-owned sessions, deployment and cluster end-to-end checks remain deferred; see [the rollout gate](order-placement.md#rollout-gate). Defaults/dev have no gateway and refuse checkout submissions. No marketplace traffic simulator or historical feature platform is introduced by this integration.
+Gateway integration configuration, credential provisioning, deployment and cluster end-to-end checks remain deferred; see [the rollout gate](order-placement.md#rollout-gate). Defaults/dev have no gateway and refuse checkout submissions. No marketplace traffic simulator or historical feature platform is introduced by this integration.
