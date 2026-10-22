@@ -33,6 +33,8 @@ type Product struct {
 	UpdatedAt     *timestamppb.Timestamp `protobuf:"bytes,7,opt,name=updated_at,json=updatedAt,proto3" json:"updated_at,omitempty"`
 	AvailableQty  *int32                 `protobuf:"varint,8,opt,name=available_qty,json=availableQty,proto3,oneof" json:"available_qty,omitempty"`
 	ReservedQty   *int32                 `protobuf:"varint,9,opt,name=reserved_qty,json=reservedQty,proto3,oneof" json:"reserved_qty,omitempty"`
+	Category      string                 `protobuf:"bytes,10,opt,name=category,proto3" json:"category,omitempty"`
+	Condition     string                 `protobuf:"bytes,11,opt,name=condition,proto3" json:"condition,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -130,6 +132,20 @@ func (x *Product) GetReservedQty() int32 {
 	return 0
 }
 
+func (x *Product) GetCategory() string {
+	if x != nil {
+		return x.Category
+	}
+	return ""
+}
+
+func (x *Product) GetCondition() string {
+	if x != nil {
+		return x.Condition
+	}
+	return ""
+}
+
 type CreateProductRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -137,6 +153,8 @@ type CreateProductRequest struct {
 	PriceCents    int64                  `protobuf:"varint,3,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"`
 	MerchantId    string                 `protobuf:"bytes,4,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
 	InitialStock  *int32                 `protobuf:"varint,5,opt,name=initial_stock,json=initialStock,proto3,oneof" json:"initial_stock,omitempty"`
+	Category      string                 `protobuf:"bytes,6,opt,name=category,proto3" json:"category,omitempty"`
+	Condition     string                 `protobuf:"bytes,7,opt,name=condition,proto3" json:"condition,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -204,6 +222,20 @@ func (x *CreateProductRequest) GetInitialStock() int32 {
 		return *x.InitialStock
 	}
 	return 0
+}
+
+func (x *CreateProductRequest) GetCategory() string {
+	if x != nil {
+		return x.Category
+	}
+	return ""
+}
+
+func (x *CreateProductRequest) GetCondition() string {
+	if x != nil {
+		return x.Condition
+	}
+	return ""
 }
 
 type GetProductByIDRequest struct {
@@ -342,7 +374,7 @@ var File_shared_proto_products_v1_products_proto protoreflect.FileDescriptor
 
 const file_shared_proto_products_v1_products_proto_rawDesc = "" +
 	"\n" +
-	"'shared/proto/products/v1/products.proto\x12\vproducts.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xfc\x02\n" +
+	"'shared/proto/products/v1/products.proto\x12\vproducts.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xb6\x03\n" +
 	"\aProduct\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12 \n" +
@@ -356,9 +388,12 @@ const file_shared_proto_products_v1_products_proto_rawDesc = "" +
 	"\n" +
 	"updated_at\x18\a \x01(\v2\x1a.google.protobuf.TimestampR\tupdatedAt\x12(\n" +
 	"\ravailable_qty\x18\b \x01(\x05H\x00R\favailableQty\x88\x01\x01\x12&\n" +
-	"\freserved_qty\x18\t \x01(\x05H\x01R\vreservedQty\x88\x01\x01B\x10\n" +
+	"\freserved_qty\x18\t \x01(\x05H\x01R\vreservedQty\x88\x01\x01\x12\x1a\n" +
+	"\bcategory\x18\n" +
+	" \x01(\tR\bcategory\x12\x1c\n" +
+	"\tcondition\x18\v \x01(\tR\tconditionB\x10\n" +
 	"\x0e_available_qtyB\x0f\n" +
-	"\r_reserved_qty\"\xca\x01\n" +
+	"\r_reserved_qty\"\x84\x02\n" +
 	"\x14CreateProductRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12 \n" +
 	"\vdescription\x18\x02 \x01(\tR\vdescription\x12\x1f\n" +
@@ -366,7 +401,9 @@ const file_shared_proto_products_v1_products_proto_rawDesc = "" +
 	"priceCents\x12\x1f\n" +
 	"\vmerchant_id\x18\x04 \x01(\tR\n" +
 	"merchantId\x12(\n" +
-	"\rinitial_stock\x18\x05 \x01(\x05H\x00R\finitialStock\x88\x01\x01B\x10\n" +
+	"\rinitial_stock\x18\x05 \x01(\x05H\x00R\finitialStock\x88\x01\x01\x12\x1a\n" +
+	"\bcategory\x18\x06 \x01(\tR\bcategory\x12\x1c\n" +
+	"\tcondition\x18\a \x01(\tR\tconditionB\x10\n" +
 	"\x0e_initial_stock\"'\n" +
 	"\x15GetProductByIDRequest\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\"+\n" +

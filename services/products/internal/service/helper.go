@@ -13,6 +13,8 @@ func mapListing(p catalog.Listing) Product {
 		ID:          p.ID,
 		Name:        p.Name,
 		Description: p.Description,
+		Category:    p.Category,
+		Condition:   p.Condition,
 		PriceCents:  p.PriceCents,
 		MerchantID:  p.MerchantID,
 		CreatedAt:   p.CreatedAt,

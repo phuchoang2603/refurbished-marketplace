@@ -13,7 +13,7 @@ import (
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
-func (s *Service) CreateProduct(ctx context.Context, name, description string, priceCents int64, merchantID uuid.UUID, initialStock *int32) (Product, error) {
+func (s *Service) CreateProduct(ctx context.Context, name, description, category, condition string, priceCents int64, merchantID uuid.UUID, initialStock *int32) (Product, error) {
 	name = normalizeProductName(name)
 	if name == "" {
 		return Product{}, ErrInvalidProductName
@@ -28,11 +28,20 @@ func (s *Service) CreateProduct(ctx context.Context, name, description string, p
 		return Product{}, ErrInvalidInitialStock
 	}
 
+	if !validCategory(category) {
+		return Product{}, ErrInvalidCategory
+	}
+	if !validCondition(condition) {
+		return Product{}, ErrInvalidCondition
+	}
+
 	now := time.Now().UTC()
 	listing := catalog.Listing{
 		ID:          uuid.New(),
 		Name:        name,
 		Description: normalizeProductDescription(description, name),
+		Category:    category,
+		Condition:   condition,
 		PriceCents:  priceCents,
 		MerchantID:  merchantID,
 		CreatedAt:   now,
@@ -43,7 +52,7 @@ func (s *Service) CreateProduct(ctx context.Context, name, description string, p
 		EventId: eventID.String(), SchemaVersion: 1, OccurredAt: timestamppb.New(listing.CreatedAt),
 		ProductId: listing.ID.String(), ProductVersion: 1, Name: listing.Name,
 		Description: listing.Description, PriceCents: listing.PriceCents, MerchantId: merchantID.String(),
-		InitialQty: initialStock,
+		InitialQty: initialStock, Category: category, Condition: condition,
 	})
 	if err != nil {
 		return Product{}, err

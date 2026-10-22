@@ -32,6 +32,8 @@ type Listing struct {
 	ID          uuid.UUID
 	Name        string
 	Description string
+	Category    string
+	Condition   string
 	PriceCents  int64
 	MerchantID  uuid.UUID
 	CreatedAt   time.Time
@@ -151,6 +153,8 @@ type listingDoc struct {
 	ID          string    `bson:"_id"`
 	Name        string    `bson:"name"`
 	Description string    `bson:"description"`
+	Category    string    `bson:"category"`
+	Condition   string    `bson:"condition"`
 	PriceCents  int64     `bson:"price_cents"`
 	MerchantID  string    `bson:"merchant_id"`
 	CreatedAt   time.Time `bson:"created_at"`
@@ -171,6 +175,8 @@ func listingDocFrom(l Listing) listingDoc {
 		ID:          l.ID.String(),
 		Name:        l.Name,
 		Description: l.Description,
+		Category:    l.Category,
+		Condition:   l.Condition,
 		PriceCents:  l.PriceCents,
 		MerchantID:  l.MerchantID.String(),
 		CreatedAt:   l.CreatedAt,
@@ -203,6 +209,8 @@ func (d listingDoc) toListing() (Listing, error) {
 		ID:          id,
 		Name:        d.Name,
 		Description: d.Description,
+		Category:    d.Category,
+		Condition:   d.Condition,
 		PriceCents:  d.PriceCents,
 		MerchantID:  merchantID,
 		CreatedAt:   d.CreatedAt,

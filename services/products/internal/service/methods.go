@@ -14,6 +14,8 @@ type Product struct {
 	ID          uuid.UUID
 	Name        string
 	Description string
+	Category    string
+	Condition   string
 	PriceCents  int64
 	MerchantID  uuid.UUID
 	CreatedAt   time.Time

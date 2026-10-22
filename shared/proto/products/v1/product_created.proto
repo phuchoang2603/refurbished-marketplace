@@ -14,4 +14,6 @@ message ProductCreated {
   int64 price_cents = 8;
   string merchant_id = 9;
   optional int32 initial_qty = 10;
+  string category = 11;
+  string condition = 12;
 }

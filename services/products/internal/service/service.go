@@ -13,6 +13,8 @@ var (
 	ErrInvalidMerchantID   = errors.New("invalid merchant id")
 	ErrProductNotFound     = errors.New("product not found")
 	ErrInvalidProductID    = errors.New("invalid product id")
+	ErrInvalidCategory     = errors.New("invalid product category")
+	ErrInvalidCondition    = errors.New("invalid product condition")
 	ErrInvalidBatchSize    = errors.New("invalid product batch size")
 )
 

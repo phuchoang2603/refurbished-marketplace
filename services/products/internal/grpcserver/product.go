@@ -17,6 +17,8 @@ func mapProduct(p service.Product) *productsv1.Product {
 		Id:          p.ID.String(),
 		Name:        p.Name,
 		Description: p.Description,
+		Category:    p.Category,
+		Condition:   p.Condition,
 		PriceCents:  p.PriceCents,
 		MerchantId:  p.MerchantID.String(),
 		CreatedAt:   timestamppb.New(p.CreatedAt),
@@ -30,12 +32,14 @@ func (s *Server) CreateProduct(ctx context.Context, req *productsv1.CreateProduc
 		return nil, err
 	}
 
-	p, err := s.svc.CreateProduct(ctx, req.GetName(), req.GetDescription(), req.GetPriceCents(), merchantID, req.InitialStock)
+	p, err := s.svc.CreateProduct(ctx, req.GetName(), req.GetDescription(), req.GetCategory(), req.GetCondition(), req.GetPriceCents(), merchantID, req.InitialStock)
 	if err != nil {
 		return nil, grpcerr.Map(
 			err,
 			grpcerr.Mapping{Err: service.ErrInvalidProductName, Code: codes.InvalidArgument},
 			grpcerr.Mapping{Err: service.ErrInvalidInitialStock, Code: codes.InvalidArgument},
+			grpcerr.Mapping{Err: service.ErrInvalidCategory, Code: codes.InvalidArgument},
+			grpcerr.Mapping{Err: service.ErrInvalidCondition, Code: codes.InvalidArgument},
 			grpcerr.Mapping{Err: service.ErrInvalidPrice, Code: codes.InvalidArgument},
 			grpcerr.Mapping{Err: service.ErrInvalidMerchantID, Code: codes.InvalidArgument},
 		)
