@@ -239,7 +239,8 @@ jobs:
         if: github.event_name == 'schedule' || needs.changes.outputs[matrix.service] == 'true'
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck -C "services/${{ matrix.service }}" -format sarif ./... > govulncheck.sarif
+          govulncheck -C "services/${{ matrix.service }}" -format sarif ./... > govulncheck.raw.sarif
+          jq '(.runs[].results[]? | select(has("stacks")) | .stacks) |= unique' govulncheck.raw.sarif > govulncheck.sarif
 
       - name: Upload SARIF file
         if: github.event_name == 'schedule' || needs.changes.outputs[matrix.service] == 'true'
