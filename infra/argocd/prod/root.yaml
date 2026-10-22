@@ -12,7 +12,8 @@ spec:
   project: refurbished-marketplace
   source:
     repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
-    targetRevision: main
+    # TEMP: verification of integrate-payment-gateway-checkout; revert to main before merge.
+    targetRevision: feat/integrate-payment-gateway-checkout
     path: infra/argocd/app-of-apps
     helm:
       values: |
