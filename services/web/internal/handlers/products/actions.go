@@ -31,7 +31,7 @@ func (h *Handler) handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 		shared.WriteUnavailablePage(w, r, http.StatusServiceUnavailable, productManagementUnavailableView())
 		return
 	}
-	product, err := h.deps.Products.CreateProduct(r.Context(), name, description, priceCents, userID, initialStock)
+	product, err := h.deps.Products.CreateProduct(r.Context(), name, description, r.FormValue("category"), r.FormValue("condition"), priceCents, userID, initialStock)
 	if err != nil {
 		shared.WriteGRPCError(w, r, err)
 		return

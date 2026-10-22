@@ -3,130 +3,117 @@ package tests
 import (
 	"bytes"
 	"context"
-	"encoding/json"
+	"errors"
+	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/phuchoang2603/refurbished-marketplace/services/web/tests/fakes"
-	cartv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/cart/v1"
-	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
-	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
-
+	checkoutv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-func TestHostedPaymentCallbackForwardsToPaymentService(t *testing.T) {
-	var got *paymentv1.HandleGatewayWebhookRequest
-	paymentSvc := &fakes.PaymentService{
-		HandleWebhookFn: func(ctx context.Context, req *paymentv1.HandleGatewayWebhookRequest) (*paymentv1.HandleGatewayWebhookResponse, error) {
-			got = req
-			return &paymentv1.HandleGatewayWebhookResponse{}, nil
-		},
-	}
-
-	body, err := json.Marshal(map[string]string{
-		"order_id":           "11111111-1111-1111-1111-111111111111",
-		"payment_session_id": "sess-1",
-		"status":             "SUCCEEDED",
-	})
-	if err != nil {
-		t.Fatalf("marshal body: %v", err)
-	}
-
-	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPost, "/callbacks/hosted-payment", bytes.NewReader(body))
-	newTestRouter(t, routerDeps{payment: paymentSvc}).ServeHTTP(rec, req)
-
-	if rec.Code != http.StatusNoContent {
-		t.Fatalf("status = %d, want %d body=%q", rec.Code, http.StatusNoContent, rec.Body.String())
-	}
-	if got == nil {
-		t.Fatal("expected HandleGatewayWebhook to be called")
-	}
-	if got.GetOrderId() != "11111111-1111-1111-1111-111111111111" {
-		t.Fatalf("order_id = %q", got.GetOrderId())
-	}
-	if got.GetPaymentSessionId() != "sess-1" {
-		t.Fatalf("payment_session_id = %q", got.GetPaymentSessionId())
-	}
-	if got.GetStatus() != paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_SUCCEEDED {
-		t.Fatalf("status = %v", got.GetStatus())
-	}
-}
-
-func TestHostedPaymentCallbackLeavesCartUntilOrderPaid(t *testing.T) {
-	var removed [][]string
-	cartSvc := &fakes.CartService{
-		RemoveManyFn: func(ctx context.Context, cartID string, productIDs []string) (*cartv1.Cart, error) {
-			removed = append(removed, productIDs)
-			return &cartv1.Cart{CartId: cartID}, nil
-		},
-	}
-	ordersSvc := &fakes.OrdersService{
-		GetFn: func(ctx context.Context, id string) (*ordersv1.Order, error) {
-			return &ordersv1.Order{
-				Id:          id,
-				BuyerUserId: "user-1",
-				MerchantId:  "merchant-1",
-				Status:      ordersv1.OrderStatus_ORDER_STATUS_PENDING,
-				Items:       []*ordersv1.OrderItem{{ProductId: "prod-1", Quantity: 1}},
-			}, nil
-		},
-	}
-	paymentSvc := &fakes.PaymentService{
-		HandleWebhookFn: func(ctx context.Context, req *paymentv1.HandleGatewayWebhookRequest) (*paymentv1.HandleGatewayWebhookResponse, error) {
-			return &paymentv1.HandleGatewayWebhookResponse{}, nil
-		},
-	}
-	router := newTestRouter(t, routerDeps{orders: ordersSvc, cart: cartSvc, payment: paymentSvc})
-
-	for _, callbackStatus := range []string{"SUCCEEDED", "SUCCEEDED", "FAILED", "EXPIRED"} {
-		body, err := json.Marshal(map[string]string{
-			"order_id":           "11111111-1111-1111-1111-111111111111",
-			"payment_session_id": "sess-1",
-			"status":             callbackStatus,
+func TestGatewayWebhookRawForwardingAndResults(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		result checkoutv1.GatewayWebhookResult
+		err    error
+		want   int
+	}{
+		{"accepted", checkoutv1.GatewayWebhookResult_GATEWAY_WEBHOOK_RESULT_ACCEPTED, nil, 204},
+		{"duplicate", checkoutv1.GatewayWebhookResult_GATEWAY_WEBHOOK_RESULT_DUPLICATE, nil, 204},
+		{"rejected", checkoutv1.GatewayWebhookResult_GATEWAY_WEBHOOK_RESULT_REJECTED, nil, 400},
+		{"unspecified", checkoutv1.GatewayWebhookResult_GATEWAY_WEBHOOK_RESULT_UNSPECIFIED, nil, 503},
+		{"invalid", 0, status.Error(codes.InvalidArgument, "secret detail"), 400},
+		{"unavailable", 0, status.Error(codes.Unavailable, "secret detail"), 503},
+		{"internal", 0, errors.New("secret detail"), 503},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			body := []byte(" { \"type\" : \"payment.succeeded\", \"unknown\": [1,2] }\r\n")
+			called := false
+			checkout := &fakes.CheckoutService{WebhookFn: func(_ context.Context, request *checkoutv1.HandleGatewayWebhookRequest) (*checkoutv1.HandleGatewayWebhookResponse, error) {
+				called = true
+				if !bytes.Equal(request.RawBody, body) || request.SignatureHeader != "t=123,v1=00" {
+					t.Fatalf("request changed: %v", request)
+				}
+				return &checkoutv1.HandleGatewayWebhookResponse{Result: tc.result}, tc.err
+			}}
+			r := httptest.NewRequest(http.MethodPost, "/webhooks/payment-gateway", bytes.NewReader(body))
+			r.Header.Set("Gateway-Signature", "t=123,v1=00")
+			r.AddCookie(&http.Cookie{Name: "cart_id", Value: "cart-1"})
+			w := httptest.NewRecorder()
+			newTestRouter(t, routerDeps{checkout: checkout}).ServeHTTP(w, r)
+			if !called || w.Code != tc.want || strings.Contains(w.Body.String(), "secret detail") || w.Header().Get("Set-Cookie") != "" {
+				t.Fatalf("response = %d %s", w.Code, w.Body.String())
+			}
 		})
-		if err != nil {
-			t.Fatalf("marshal body: %v", err)
-		}
-		rec := httptest.NewRecorder()
-		req := httptest.NewRequest(http.MethodPost, "/callbacks/hosted-payment", bytes.NewReader(body))
-		req.AddCookie(&http.Cookie{Name: "cart_id", Value: "cart-1"})
-		router.ServeHTTP(rec, req)
-
-		if rec.Code != http.StatusNoContent {
-			t.Fatalf("%s callback status = %d, want %d", callbackStatus, rec.Code, http.StatusNoContent)
-		}
-	}
-	if len(removed) != 0 {
-		t.Fatalf("callbacks removed cart lines before the order was paid: %v", removed)
 	}
 }
 
-func TestHostedPaymentCallbackMapsNotFound(t *testing.T) {
-	paymentSvc := &fakes.PaymentService{
-		HandleWebhookFn: func(ctx context.Context, req *paymentv1.HandleGatewayWebhookRequest) (*paymentv1.HandleGatewayWebhookResponse, error) {
-			return nil, status.Error(codes.NotFound, "payment session not found")
-		},
+func TestGatewayWebhookBodyLimit(t *testing.T) {
+	for _, size := range []int{64 << 10, (64 << 10) + 1} {
+		t.Run(strconv.Itoa(size), func(t *testing.T) {
+			called := false
+			checkout := &fakes.CheckoutService{WebhookFn: func(_ context.Context, request *checkoutv1.HandleGatewayWebhookRequest) (*checkoutv1.HandleGatewayWebhookResponse, error) {
+				called = true
+				if len(request.RawBody) != size {
+					t.Fatal("body truncated")
+				}
+				return &checkoutv1.HandleGatewayWebhookResponse{Result: checkoutv1.GatewayWebhookResult_GATEWAY_WEBHOOK_RESULT_ACCEPTED}, nil
+			}}
+			r := httptest.NewRequest(http.MethodPost, "/webhooks/payment-gateway", strings.NewReader(strings.Repeat("x", size)))
+			r.ContentLength = -1
+			w := httptest.NewRecorder()
+			newTestRouter(t, routerDeps{checkout: checkout}).ServeHTTP(w, r)
+			want := http.StatusNoContent
+			if size > 64<<10 {
+				want = http.StatusBadRequest
+			}
+			if w.Code != want || called != (size <= 64<<10) {
+				t.Fatalf("size=%d response=%d forwarded=%t", size, w.Code, called)
+			}
+		})
 	}
+}
 
-	body, err := json.Marshal(map[string]string{
-		"order_id":           "11111111-1111-1111-1111-111111111111",
-		"payment_session_id": "sess-1",
-		"status":             "FAILED",
-		"failure_reason":     "Card declined",
-	})
-	if err != nil {
-		t.Fatalf("marshal body: %v", err)
+type brokenWebhookBody struct{}
+
+func (brokenWebhookBody) Read([]byte) (int, error) { return 0, io.ErrUnexpectedEOF }
+func (brokenWebhookBody) Close() error             { return nil }
+
+func TestGatewayWebhookMissingSignatureAndBrokenBody(t *testing.T) {
+	checkout := &fakes.CheckoutService{WebhookFn: func(_ context.Context, request *checkoutv1.HandleGatewayWebhookRequest) (*checkoutv1.HandleGatewayWebhookResponse, error) {
+		if request.SignatureHeader != "" {
+			t.Fatal("invented signature")
+		}
+		return &checkoutv1.HandleGatewayWebhookResponse{Result: checkoutv1.GatewayWebhookResult_GATEWAY_WEBHOOK_RESULT_REJECTED}, nil
+	}}
+	router := newTestRouter(t, routerDeps{checkout: checkout})
+	for _, body := range []io.ReadCloser{io.NopCloser(strings.NewReader("{}")), brokenWebhookBody{}} {
+		r := httptest.NewRequest(http.MethodPost, "/webhooks/payment-gateway", nil)
+		r.Body = body
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, r)
+		if w.Code != 400 {
+			t.Fatalf("status=%d", w.Code)
+		}
 	}
+}
 
-	rec := httptest.NewRecorder()
-	req := httptest.NewRequest(http.MethodPost, "/callbacks/hosted-payment", bytes.NewReader(body))
-	newTestRouter(t, routerDeps{payment: paymentSvc}).ServeHTTP(rec, req)
-
-	if rec.Code != http.StatusNotFound {
-		t.Fatalf("status = %d, want %d", rec.Code, http.StatusNotFound)
+func TestLegacyCallbackRemovedAndWebhookRequiresCheckout(t *testing.T) {
+	router := newTestRouter(t, routerDeps{})
+	for _, tc := range []struct {
+		path string
+		want int
+	}{{"/callbacks/hosted-payment", 404}, {"/webhooks/payment-gateway", 503}} {
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, httptest.NewRequest(http.MethodPost, tc.path, strings.NewReader("{}")))
+		if w.Code != tc.want {
+			t.Fatalf("%s status=%d", tc.path, w.Code)
+		}
 	}
 }

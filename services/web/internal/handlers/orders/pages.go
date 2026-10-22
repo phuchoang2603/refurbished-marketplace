@@ -3,12 +3,14 @@ package orders
 import (
 	"net/http"
 
+	webAuth "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/auth"
+	checkoutv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1"
+
 	carthandlers "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/cart"
 	shared "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/shared"
 	orderviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/orders"
 	sharedviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/shared"
 	ordersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1"
-	paymentv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/payment/v1"
 
 	"github.com/go-chi/chi/v5"
 )
@@ -39,21 +41,6 @@ func applyHostedPaymentState(view *sharedviews.OrderView, status, failureReason 
 	view.PaymentFailureReason = failureReason
 }
 
-func hostedPaymentStatusLabel(status paymentv1.HostedPaymentSessionStatus) string {
-	switch status {
-	case paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_PENDING:
-		return "PENDING"
-	case paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_SUCCEEDED:
-		return "SUCCEEDED"
-	case paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_FAILED:
-		return "FAILED"
-	case paymentv1.HostedPaymentSessionStatus_HOSTED_PAYMENT_SESSION_STATUS_EXPIRED:
-		return "EXPIRED"
-	default:
-		return ""
-	}
-}
-
 func (h *Handler) handleGetOrderByID(w http.ResponseWriter, r *http.Request) {
 	buyerUserID, ok := shared.RequireUserID(w, r)
 	if !ok {
@@ -79,16 +66,16 @@ func (h *Handler) handleGetOrderByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	view := OrderToView(order)
-	if h.deps.Payment != nil {
-		paymentSession, err := h.deps.Payment.GetHostedPaymentSessionByOrder(r.Context(), id)
-		if err == nil && paymentSession != nil {
-			applyHostedPaymentState(&view, hostedPaymentStatusLabel(paymentSession.GetStatus()), paymentSession.GetFailureReason())
+	if h.deps.Checkout != nil {
+		checkout, err := h.deps.Checkout.GetCheckout(webAuth.OutgoingAccessContext(r), &checkoutv1.GetCheckoutRequest{OrderId: id, BuyerUserId: buyerUserID})
+		if err == nil && checkout != nil && checkout.GetOrderId() == id {
+			applyHostedPaymentState(&view, checkout.GetPaymentStatus(), checkout.GetFailureReason())
 		} else if err != nil && !shared.IsUnavailableError(err) && !shared.IsNotFoundError(err) {
 			shared.WriteGRPCError(w, r, err)
 			return
 		}
 	}
-	if order.GetStatus() == ordersv1.OrderStatus_ORDER_STATUS_PAID {
+	if view.PaymentStatus == "SUCCEEDED" || view.PaymentStatus == "EXPIRED" {
 		ids := make([]string, 0, len(order.GetItems()))
 		for _, item := range order.GetItems() {
 			ids = append(ids, item.GetProductId())

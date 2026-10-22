@@ -50,6 +50,7 @@ func TestAddCartItemRedirectsToCart(t *testing.T) {
 func TestCheckoutSubmitsSnapshotAndRedirectsToProgress(t *testing.T) {
 	var removed []string
 	var batchIDs []string
+	batchCalls := 0
 	cartSvc := &fakes.CartService{
 		GetFn: func(ctx context.Context, cartID string) (*cartv1.Cart, error) {
 			return &cartv1.Cart{
@@ -67,10 +68,11 @@ func TestCheckoutSubmitsSnapshotAndRedirectsToProgress(t *testing.T) {
 	}
 	productsSvc := &fakes.ProductsService{
 		GetByIDsFn: func(ctx context.Context, ids []string) (*productsv1.GetProductsByIDsResponse, error) {
+			batchCalls++
 			batchIDs = append([]string{}, ids...)
 			return &productsv1.GetProductsByIDsResponse{Products: []*productsv1.Product{
-				{Id: "prod-1", Name: "Phone", PriceCents: 1200, MerchantId: "merchant-1"},
-				{Id: "prod-2", Name: "Case", PriceCents: 250, MerchantId: "merchant-1"},
+				{Id: "prod-1", Name: "Phone", Category: "phone", Condition: "excellent", PriceCents: 1200, MerchantId: "merchant-1"},
+				{Id: "prod-2", Name: "Case", Category: "accessory", Condition: "fair", PriceCents: 250, MerchantId: "merchant-1"},
 			}}, nil
 		},
 	}
@@ -126,7 +128,10 @@ func TestCheckoutSubmitsSnapshotAndRedirectsToProgress(t *testing.T) {
 		if request.GetTotalCents() != 1700 || len(request.GetItems()) != 2 || request.GetItems()[0].GetName() != "Phone" || request.GetItems()[1].GetName() != "Case" {
 			t.Fatalf("checkout did not use authoritative prices and names: %v", request)
 		}
-		if request.GetShippingAddress().GetCountry() != "US" || request.GetBuyerEmail() != "buyer@example.com" {
+		if request.GetItems()[0].GetCategory() != "phone" || request.GetItems()[0].GetCondition() != "excellent" || request.GetItems()[1].GetCategory() != "accessory" || request.GetItems()[1].GetCondition() != "fair" {
+			t.Fatalf("wrong grading: %v", request)
+		}
+		if request.GetShippingAddress().GetCountry() != "US" {
 			t.Fatalf("missing buyer and shipping context: %v", request)
 		}
 		return &checkoutv1.SubmitCheckoutResponse{CheckoutId: "checkout-1", State: checkoutv1.CheckoutState_CHECKOUT_STATE_CREATING_ORDER}, nil
@@ -146,7 +151,7 @@ func TestCheckoutSubmitsSnapshotAndRedirectsToProgress(t *testing.T) {
 	if got := rec.Header().Get("Location"); got != wantLocation {
 		t.Fatalf("location = %q, want %q", got, wantLocation)
 	}
-	if len(batchIDs) != 2 || batchIDs[0] != "prod-1" || batchIDs[1] != "prod-2" {
+	if batchCalls != 1 || len(batchIDs) != 2 || batchIDs[0] != "prod-1" || batchIDs[1] != "prod-2" {
 		t.Fatalf("batch IDs = %v, want [prod-1 prod-2]", batchIDs)
 	}
 	if len(removed) != 0 {
@@ -310,6 +315,7 @@ func TestCheckoutRejectsMissingShipping(t *testing.T) {
 
 func checkoutForm(extra url.Values) string {
 	v := url.Values{
+		"shipping_name":        {"Test Buyer"},
 		"shipping_line1":       {"1 Main St"},
 		"shipping_city":        {"New York"},
 		"shipping_postal_code": {"10001"},
@@ -319,4 +325,81 @@ func checkoutForm(extra url.Values) string {
 		v[k] = vals
 	}
 	return v.Encode()
+}
+
+func TestCheckoutRevalidationFailsClosed(t *testing.T) {
+	for _, tc := range []struct {
+		name     string
+		products []*productsv1.Product
+		err      error
+		want     int
+	}{
+		{"missing", nil, nil, 409},
+		{"wrong merchant", []*productsv1.Product{{Id: "prod-1", MerchantId: "other-merchant", PriceCents: 1000}}, nil, 409},
+		{"products unavailable", nil, status.Error(codes.Unavailable, "products unavailable"), 503},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			cart := &fakes.CartService{GetFn: func(context.Context, string) (*cartv1.Cart, error) {
+				return &cartv1.Cart{Items: []*cartv1.CartItem{{ProductId: "prod-1", MerchantId: "merchant-1", Quantity: 1}}}, nil
+			}}
+			products := &fakes.ProductsService{GetByIDFn: func(context.Context, string) (*productsv1.Product, error) {
+				t.Fatal("per-item lookup")
+				return nil, nil
+			}, GetByIDsFn: func(context.Context, []string) (*productsv1.GetProductsByIDsResponse, error) {
+				return &productsv1.GetProductsByIDsResponse{Products: tc.products}, tc.err
+			}}
+			checkout := &fakes.CheckoutService{SubmitFn: func(context.Context, *checkoutv1.SubmitCheckoutRequest) (*checkoutv1.SubmitCheckoutResponse, error) {
+				t.Fatal("submitted invalid snapshot")
+				return nil, nil
+			}}
+			r := httptest.NewRequest(http.MethodPost, "/cart/checkout", strings.NewReader(checkoutForm(url.Values{"merchant_id": {"merchant-1"}, "checkout_intent_key": {"intent-1"}})))
+			r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			r.AddCookie(&http.Cookie{Name: auth.AccessCookieName, Value: signedAccessToken(t, "user-1")})
+			r.AddCookie(&http.Cookie{Name: "cart_id", Value: "cart-1"})
+			w := httptest.NewRecorder()
+			newTestRouter(t, routerDeps{cart: cart, products: products, checkout: checkout}).ServeHTTP(w, r)
+			if w.Code != tc.want {
+				t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+			}
+		})
+	}
+}
+
+func TestCheckoutUnavailableAndShippingName(t *testing.T) {
+	for _, tc := range []struct {
+		name, shippingName, accept string
+		want                       int
+		calls                      int
+	}{
+		{"missing name", "", "", 400, 0},
+		{"unavailable", "Buyer", "", 503, 1},
+		{"unavailable popup", "Buyer", "text/event-stream", 200, 1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			calls := 0
+			cart := &fakes.CartService{GetFn: func(context.Context, string) (*cartv1.Cart, error) {
+				return &cartv1.Cart{Items: []*cartv1.CartItem{{ProductId: "prod-1", MerchantId: "merchant-1", Quantity: 1}}}, nil
+			}}
+			products := &fakes.ProductsService{GetByIDsFn: func(context.Context, []string) (*productsv1.GetProductsByIDsResponse, error) {
+				return &productsv1.GetProductsByIDsResponse{Products: []*productsv1.Product{{Id: "prod-1", MerchantId: "merchant-1", PriceCents: 1000, Category: "phone", Condition: "good"}}}, nil
+			}}
+			checkout := &fakes.CheckoutService{SubmitFn: func(context.Context, *checkoutv1.SubmitCheckoutRequest) (*checkoutv1.SubmitCheckoutResponse, error) {
+				calls++
+				return nil, status.Error(codes.Unavailable, "private configuration detail")
+			}}
+			r := httptest.NewRequest(http.MethodPost, "/cart/checkout", strings.NewReader(checkoutForm(url.Values{"merchant_id": {"merchant-1"}, "checkout_intent_key": {"intent-1"}, "shipping_name": {tc.shippingName}})))
+			r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			r.Header.Set("Accept", tc.accept)
+			r.AddCookie(&http.Cookie{Name: auth.AccessCookieName, Value: signedAccessToken(t, "user-1")})
+			r.AddCookie(&http.Cookie{Name: "cart_id", Value: "cart-1"})
+			w := httptest.NewRecorder()
+			newTestRouter(t, routerDeps{cart: cart, products: products, checkout: checkout}).ServeHTTP(w, r)
+			if w.Code != tc.want || calls != tc.calls {
+				t.Fatalf("status=%d calls=%d body=%s", w.Code, calls, w.Body.String())
+			}
+			if tc.calls > 0 && (!strings.Contains(w.Body.String(), "Checkout unavailable") || strings.Contains(w.Body.String(), "private configuration detail")) {
+				t.Fatalf("unfriendly error: %s", w.Body.String())
+			}
+		})
+	}
 }

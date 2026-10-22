@@ -83,14 +83,6 @@ type CheckoutMessage struct {
 	//	*CheckoutMessage_StockRejected
 	//	*CheckoutMessage_CancelStock
 	//	*CheckoutMessage_StockReleased
-	//	*CheckoutMessage_CreatePaymentSession
-	//	*CheckoutMessage_PaymentSessionReady
-	//	*CheckoutMessage_PaymentSessionRejected
-	//	*CheckoutMessage_CancelPaymentSession
-	//	*CheckoutMessage_PaymentCancelled
-	//	*CheckoutMessage_PaymentSucceeded
-	//	*CheckoutMessage_PaymentFailed
-	//	*CheckoutMessage_PaymentUncertain
 	//	*CheckoutMessage_CommitStock
 	//	*CheckoutMessage_StockCommitted
 	//	*CheckoutMessage_FinalizeOrder
@@ -216,78 +208,6 @@ func (x *CheckoutMessage) GetStockReleased() *StockReleased {
 	return nil
 }
 
-func (x *CheckoutMessage) GetCreatePaymentSession() *CreatePaymentSession {
-	if x != nil {
-		if x, ok := x.Payload.(*CheckoutMessage_CreatePaymentSession); ok {
-			return x.CreatePaymentSession
-		}
-	}
-	return nil
-}
-
-func (x *CheckoutMessage) GetPaymentSessionReady() *PaymentSessionReady {
-	if x != nil {
-		if x, ok := x.Payload.(*CheckoutMessage_PaymentSessionReady); ok {
-			return x.PaymentSessionReady
-		}
-	}
-	return nil
-}
-
-func (x *CheckoutMessage) GetPaymentSessionRejected() *PaymentSessionRejected {
-	if x != nil {
-		if x, ok := x.Payload.(*CheckoutMessage_PaymentSessionRejected); ok {
-			return x.PaymentSessionRejected
-		}
-	}
-	return nil
-}
-
-func (x *CheckoutMessage) GetCancelPaymentSession() *CancelPaymentSession {
-	if x != nil {
-		if x, ok := x.Payload.(*CheckoutMessage_CancelPaymentSession); ok {
-			return x.CancelPaymentSession
-		}
-	}
-	return nil
-}
-
-func (x *CheckoutMessage) GetPaymentCancelled() *PaymentCancelled {
-	if x != nil {
-		if x, ok := x.Payload.(*CheckoutMessage_PaymentCancelled); ok {
-			return x.PaymentCancelled
-		}
-	}
-	return nil
-}
-
-func (x *CheckoutMessage) GetPaymentSucceeded() *PaymentSucceeded {
-	if x != nil {
-		if x, ok := x.Payload.(*CheckoutMessage_PaymentSucceeded); ok {
-			return x.PaymentSucceeded
-		}
-	}
-	return nil
-}
-
-func (x *CheckoutMessage) GetPaymentFailed() *PaymentFailed {
-	if x != nil {
-		if x, ok := x.Payload.(*CheckoutMessage_PaymentFailed); ok {
-			return x.PaymentFailed
-		}
-	}
-	return nil
-}
-
-func (x *CheckoutMessage) GetPaymentUncertain() *PaymentUncertain {
-	if x != nil {
-		if x, ok := x.Payload.(*CheckoutMessage_PaymentUncertain); ok {
-			return x.PaymentUncertain
-		}
-	}
-	return nil
-}
-
 func (x *CheckoutMessage) GetCommitStock() *CommitStock {
 	if x != nil {
 		if x, ok := x.Payload.(*CheckoutMessage_CommitStock); ok {
@@ -360,38 +280,6 @@ type CheckoutMessage_StockReleased struct {
 	StockReleased *StockReleased `protobuf:"bytes,9,opt,name=stock_released,json=stockReleased,proto3,oneof"`
 }
 
-type CheckoutMessage_CreatePaymentSession struct {
-	CreatePaymentSession *CreatePaymentSession `protobuf:"bytes,10,opt,name=create_payment_session,json=createPaymentSession,proto3,oneof"`
-}
-
-type CheckoutMessage_PaymentSessionReady struct {
-	PaymentSessionReady *PaymentSessionReady `protobuf:"bytes,11,opt,name=payment_session_ready,json=paymentSessionReady,proto3,oneof"`
-}
-
-type CheckoutMessage_PaymentSessionRejected struct {
-	PaymentSessionRejected *PaymentSessionRejected `protobuf:"bytes,12,opt,name=payment_session_rejected,json=paymentSessionRejected,proto3,oneof"`
-}
-
-type CheckoutMessage_CancelPaymentSession struct {
-	CancelPaymentSession *CancelPaymentSession `protobuf:"bytes,13,opt,name=cancel_payment_session,json=cancelPaymentSession,proto3,oneof"`
-}
-
-type CheckoutMessage_PaymentCancelled struct {
-	PaymentCancelled *PaymentCancelled `protobuf:"bytes,14,opt,name=payment_cancelled,json=paymentCancelled,proto3,oneof"`
-}
-
-type CheckoutMessage_PaymentSucceeded struct {
-	PaymentSucceeded *PaymentSucceeded `protobuf:"bytes,15,opt,name=payment_succeeded,json=paymentSucceeded,proto3,oneof"`
-}
-
-type CheckoutMessage_PaymentFailed struct {
-	PaymentFailed *PaymentFailed `protobuf:"bytes,16,opt,name=payment_failed,json=paymentFailed,proto3,oneof"`
-}
-
-type CheckoutMessage_PaymentUncertain struct {
-	PaymentUncertain *PaymentUncertain `protobuf:"bytes,17,opt,name=payment_uncertain,json=paymentUncertain,proto3,oneof"`
-}
-
 type CheckoutMessage_CommitStock struct {
 	CommitStock *CommitStock `protobuf:"bytes,18,opt,name=commit_stock,json=commitStock,proto3,oneof"`
 }
@@ -423,22 +311,6 @@ func (*CheckoutMessage_StockRejected) isCheckoutMessage_Payload() {}
 func (*CheckoutMessage_CancelStock) isCheckoutMessage_Payload() {}
 
 func (*CheckoutMessage_StockReleased) isCheckoutMessage_Payload() {}
-
-func (*CheckoutMessage_CreatePaymentSession) isCheckoutMessage_Payload() {}
-
-func (*CheckoutMessage_PaymentSessionReady) isCheckoutMessage_Payload() {}
-
-func (*CheckoutMessage_PaymentSessionRejected) isCheckoutMessage_Payload() {}
-
-func (*CheckoutMessage_CancelPaymentSession) isCheckoutMessage_Payload() {}
-
-func (*CheckoutMessage_PaymentCancelled) isCheckoutMessage_Payload() {}
-
-func (*CheckoutMessage_PaymentSucceeded) isCheckoutMessage_Payload() {}
-
-func (*CheckoutMessage_PaymentFailed) isCheckoutMessage_Payload() {}
-
-func (*CheckoutMessage_PaymentUncertain) isCheckoutMessage_Payload() {}
 
 func (*CheckoutMessage_CommitStock) isCheckoutMessage_Payload() {}
 
@@ -538,6 +410,8 @@ type CheckoutLine struct {
 	Name           string                 `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
 	Quantity       int32                  `protobuf:"varint,3,opt,name=quantity,proto3" json:"quantity,omitempty"`
 	UnitPriceCents int64                  `protobuf:"varint,4,opt,name=unit_price_cents,json=unitPriceCents,proto3" json:"unit_price_cents,omitempty"`
+	Category       string                 `protobuf:"bytes,5,opt,name=category,proto3" json:"category,omitempty"`
+	Condition      string                 `protobuf:"bytes,6,opt,name=condition,proto3" json:"condition,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -598,6 +472,20 @@ func (x *CheckoutLine) GetUnitPriceCents() int64 {
 		return x.UnitPriceCents
 	}
 	return 0
+}
+
+func (x *CheckoutLine) GetCategory() string {
+	if x != nil {
+		return x.Category
+	}
+	return ""
+}
+
+func (x *CheckoutLine) GetCondition() string {
+	if x != nil {
+		return x.Condition
+	}
+	return ""
 }
 
 type CheckoutAddress struct {
@@ -1068,454 +956,6 @@ func (*StockReleased) Descriptor() ([]byte, []int) {
 	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{11}
 }
 
-type CreatePaymentSession struct {
-	state                  protoimpl.MessageState `protogen:"open.v1"`
-	BuyerUserId            string                 `protobuf:"bytes,1,opt,name=buyer_user_id,json=buyerUserId,proto3" json:"buyer_user_id,omitempty"`
-	BuyerEmail             string                 `protobuf:"bytes,2,opt,name=buyer_email,json=buyerEmail,proto3" json:"buyer_email,omitempty"`
-	MerchantId             string                 `protobuf:"bytes,3,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
-	TotalCents             int64                  `protobuf:"varint,4,opt,name=total_cents,json=totalCents,proto3" json:"total_cents,omitempty"`
-	Currency               string                 `protobuf:"bytes,5,opt,name=currency,proto3" json:"currency,omitempty"`
-	ShippingAddress        *CheckoutAddress       `protobuf:"bytes,6,opt,name=shipping_address,json=shippingAddress,proto3" json:"shipping_address,omitempty"`
-	Items                  []*CheckoutLine        `protobuf:"bytes,7,rep,name=items,proto3" json:"items,omitempty"`
-	ReturnUrl              string                 `protobuf:"bytes,8,opt,name=return_url,json=returnUrl,proto3" json:"return_url,omitempty"`
-	ReservationOperationId string                 `protobuf:"bytes,9,opt,name=reservation_operation_id,json=reservationOperationId,proto3" json:"reservation_operation_id,omitempty"`
-	unknownFields          protoimpl.UnknownFields
-	sizeCache              protoimpl.SizeCache
-}
-
-func (x *CreatePaymentSession) Reset() {
-	*x = CreatePaymentSession{}
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[12]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CreatePaymentSession) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CreatePaymentSession) ProtoMessage() {}
-
-func (x *CreatePaymentSession) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[12]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CreatePaymentSession.ProtoReflect.Descriptor instead.
-func (*CreatePaymentSession) Descriptor() ([]byte, []int) {
-	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{12}
-}
-
-func (x *CreatePaymentSession) GetBuyerUserId() string {
-	if x != nil {
-		return x.BuyerUserId
-	}
-	return ""
-}
-
-func (x *CreatePaymentSession) GetBuyerEmail() string {
-	if x != nil {
-		return x.BuyerEmail
-	}
-	return ""
-}
-
-func (x *CreatePaymentSession) GetMerchantId() string {
-	if x != nil {
-		return x.MerchantId
-	}
-	return ""
-}
-
-func (x *CreatePaymentSession) GetTotalCents() int64 {
-	if x != nil {
-		return x.TotalCents
-	}
-	return 0
-}
-
-func (x *CreatePaymentSession) GetCurrency() string {
-	if x != nil {
-		return x.Currency
-	}
-	return ""
-}
-
-func (x *CreatePaymentSession) GetShippingAddress() *CheckoutAddress {
-	if x != nil {
-		return x.ShippingAddress
-	}
-	return nil
-}
-
-func (x *CreatePaymentSession) GetItems() []*CheckoutLine {
-	if x != nil {
-		return x.Items
-	}
-	return nil
-}
-
-func (x *CreatePaymentSession) GetReturnUrl() string {
-	if x != nil {
-		return x.ReturnUrl
-	}
-	return ""
-}
-
-func (x *CreatePaymentSession) GetReservationOperationId() string {
-	if x != nil {
-		return x.ReservationOperationId
-	}
-	return ""
-}
-
-type PaymentSessionReady struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	PaymentSessionId string                 `protobuf:"bytes,1,opt,name=payment_session_id,json=paymentSessionId,proto3" json:"payment_session_id,omitempty"`
-	ReturnUrl        string                 `protobuf:"bytes,2,opt,name=return_url,json=returnUrl,proto3" json:"return_url,omitempty"`
-	ExpiresAtUnixMs  int64                  `protobuf:"varint,3,opt,name=expires_at_unix_ms,json=expiresAtUnixMs,proto3" json:"expires_at_unix_ms,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
-}
-
-func (x *PaymentSessionReady) Reset() {
-	*x = PaymentSessionReady{}
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[13]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PaymentSessionReady) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PaymentSessionReady) ProtoMessage() {}
-
-func (x *PaymentSessionReady) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[13]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PaymentSessionReady.ProtoReflect.Descriptor instead.
-func (*PaymentSessionReady) Descriptor() ([]byte, []int) {
-	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{13}
-}
-
-func (x *PaymentSessionReady) GetPaymentSessionId() string {
-	if x != nil {
-		return x.PaymentSessionId
-	}
-	return ""
-}
-
-func (x *PaymentSessionReady) GetReturnUrl() string {
-	if x != nil {
-		return x.ReturnUrl
-	}
-	return ""
-}
-
-func (x *PaymentSessionReady) GetExpiresAtUnixMs() int64 {
-	if x != nil {
-		return x.ExpiresAtUnixMs
-	}
-	return 0
-}
-
-type PaymentSessionRejected struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Reason        string                 `protobuf:"bytes,1,opt,name=reason,proto3" json:"reason,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PaymentSessionRejected) Reset() {
-	*x = PaymentSessionRejected{}
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[14]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PaymentSessionRejected) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PaymentSessionRejected) ProtoMessage() {}
-
-func (x *PaymentSessionRejected) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[14]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PaymentSessionRejected.ProtoReflect.Descriptor instead.
-func (*PaymentSessionRejected) Descriptor() ([]byte, []int) {
-	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{14}
-}
-
-func (x *PaymentSessionRejected) GetReason() string {
-	if x != nil {
-		return x.Reason
-	}
-	return ""
-}
-
-type CancelPaymentSession struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	PaymentSessionId string                 `protobuf:"bytes,1,opt,name=payment_session_id,json=paymentSessionId,proto3" json:"payment_session_id,omitempty"`
-	Reason           string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
-}
-
-func (x *CancelPaymentSession) Reset() {
-	*x = CancelPaymentSession{}
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[15]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *CancelPaymentSession) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*CancelPaymentSession) ProtoMessage() {}
-
-func (x *CancelPaymentSession) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[15]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use CancelPaymentSession.ProtoReflect.Descriptor instead.
-func (*CancelPaymentSession) Descriptor() ([]byte, []int) {
-	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{15}
-}
-
-func (x *CancelPaymentSession) GetPaymentSessionId() string {
-	if x != nil {
-		return x.PaymentSessionId
-	}
-	return ""
-}
-
-func (x *CancelPaymentSession) GetReason() string {
-	if x != nil {
-		return x.Reason
-	}
-	return ""
-}
-
-type PaymentCancelled struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *PaymentCancelled) Reset() {
-	*x = PaymentCancelled{}
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[16]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PaymentCancelled) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PaymentCancelled) ProtoMessage() {}
-
-func (x *PaymentCancelled) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[16]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PaymentCancelled.ProtoReflect.Descriptor instead.
-func (*PaymentCancelled) Descriptor() ([]byte, []int) {
-	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{16}
-}
-
-type PaymentSucceeded struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	PaymentSessionId string                 `protobuf:"bytes,1,opt,name=payment_session_id,json=paymentSessionId,proto3" json:"payment_session_id,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
-}
-
-func (x *PaymentSucceeded) Reset() {
-	*x = PaymentSucceeded{}
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[17]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PaymentSucceeded) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PaymentSucceeded) ProtoMessage() {}
-
-func (x *PaymentSucceeded) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[17]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PaymentSucceeded.ProtoReflect.Descriptor instead.
-func (*PaymentSucceeded) Descriptor() ([]byte, []int) {
-	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{17}
-}
-
-func (x *PaymentSucceeded) GetPaymentSessionId() string {
-	if x != nil {
-		return x.PaymentSessionId
-	}
-	return ""
-}
-
-type PaymentFailed struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	PaymentSessionId string                 `protobuf:"bytes,1,opt,name=payment_session_id,json=paymentSessionId,proto3" json:"payment_session_id,omitempty"`
-	Reason           string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
-}
-
-func (x *PaymentFailed) Reset() {
-	*x = PaymentFailed{}
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[18]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PaymentFailed) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PaymentFailed) ProtoMessage() {}
-
-func (x *PaymentFailed) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[18]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PaymentFailed.ProtoReflect.Descriptor instead.
-func (*PaymentFailed) Descriptor() ([]byte, []int) {
-	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{18}
-}
-
-func (x *PaymentFailed) GetPaymentSessionId() string {
-	if x != nil {
-		return x.PaymentSessionId
-	}
-	return ""
-}
-
-func (x *PaymentFailed) GetReason() string {
-	if x != nil {
-		return x.Reason
-	}
-	return ""
-}
-
-type PaymentUncertain struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	PaymentSessionId string                 `protobuf:"bytes,1,opt,name=payment_session_id,json=paymentSessionId,proto3" json:"payment_session_id,omitempty"`
-	Reason           string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
-}
-
-func (x *PaymentUncertain) Reset() {
-	*x = PaymentUncertain{}
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[19]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *PaymentUncertain) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*PaymentUncertain) ProtoMessage() {}
-
-func (x *PaymentUncertain) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[19]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use PaymentUncertain.ProtoReflect.Descriptor instead.
-func (*PaymentUncertain) Descriptor() ([]byte, []int) {
-	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{19}
-}
-
-func (x *PaymentUncertain) GetPaymentSessionId() string {
-	if x != nil {
-		return x.PaymentSessionId
-	}
-	return ""
-}
-
-func (x *PaymentUncertain) GetReason() string {
-	if x != nil {
-		return x.Reason
-	}
-	return ""
-}
-
 type CommitStock struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -1524,7 +964,7 @@ type CommitStock struct {
 
 func (x *CommitStock) Reset() {
 	*x = CommitStock{}
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[20]
+	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1536,7 +976,7 @@ func (x *CommitStock) String() string {
 func (*CommitStock) ProtoMessage() {}
 
 func (x *CommitStock) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[20]
+	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1549,7 +989,7 @@ func (x *CommitStock) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitStock.ProtoReflect.Descriptor instead.
 func (*CommitStock) Descriptor() ([]byte, []int) {
-	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{20}
+	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{12}
 }
 
 type StockCommitted struct {
@@ -1560,7 +1000,7 @@ type StockCommitted struct {
 
 func (x *StockCommitted) Reset() {
 	*x = StockCommitted{}
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[21]
+	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1572,7 +1012,7 @@ func (x *StockCommitted) String() string {
 func (*StockCommitted) ProtoMessage() {}
 
 func (x *StockCommitted) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[21]
+	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1585,7 +1025,7 @@ func (x *StockCommitted) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StockCommitted.ProtoReflect.Descriptor instead.
 func (*StockCommitted) Descriptor() ([]byte, []int) {
-	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{21}
+	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{13}
 }
 
 type FinalizeOrder struct {
@@ -1597,7 +1037,7 @@ type FinalizeOrder struct {
 
 func (x *FinalizeOrder) Reset() {
 	*x = FinalizeOrder{}
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[22]
+	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1609,7 +1049,7 @@ func (x *FinalizeOrder) String() string {
 func (*FinalizeOrder) ProtoMessage() {}
 
 func (x *FinalizeOrder) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[22]
+	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1622,7 +1062,7 @@ func (x *FinalizeOrder) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FinalizeOrder.ProtoReflect.Descriptor instead.
 func (*FinalizeOrder) Descriptor() ([]byte, []int) {
-	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{22}
+	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *FinalizeOrder) GetStatus() FinalOrderStatus {
@@ -1641,7 +1081,7 @@ type OrderFinalized struct {
 
 func (x *OrderFinalized) Reset() {
 	*x = OrderFinalized{}
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[23]
+	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1653,7 +1093,7 @@ func (x *OrderFinalized) String() string {
 func (*OrderFinalized) ProtoMessage() {}
 
 func (x *OrderFinalized) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[23]
+	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1666,7 +1106,7 @@ func (x *OrderFinalized) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OrderFinalized.ProtoReflect.Descriptor instead.
 func (*OrderFinalized) Descriptor() ([]byte, []int) {
-	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{23}
+	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *OrderFinalized) GetStatus() FinalOrderStatus {
@@ -1680,7 +1120,7 @@ var File_shared_proto_checkout_v1_events_proto protoreflect.FileDescriptor
 
 const file_shared_proto_checkout_v1_events_proto_rawDesc = "" +
 	"\n" +
-	"%shared/proto/checkout/v1/events.proto\x12\vcheckout.v1\"\x9b\f\n" +
+	"%shared/proto/checkout/v1/events.proto\x12\vcheckout.v1\"\x83\a\n" +
 	"\x0fCheckoutMessage\x125\n" +
 	"\acontext\x18\x01 \x01(\v2\x1b.checkout.v1.MessageContextR\acontext\x12=\n" +
 	"\fcreate_order\x18\x02 \x01(\v2\x18.checkout.v1.CreateOrderH\x00R\vcreateOrder\x12@\n" +
@@ -1690,21 +1130,13 @@ const file_shared_proto_checkout_v1_events_proto_rawDesc = "" +
 	"\x0estock_reserved\x18\x06 \x01(\v2\x1a.checkout.v1.StockReservedH\x00R\rstockReserved\x12C\n" +
 	"\x0estock_rejected\x18\a \x01(\v2\x1a.checkout.v1.StockRejectedH\x00R\rstockRejected\x12=\n" +
 	"\fcancel_stock\x18\b \x01(\v2\x18.checkout.v1.CancelStockH\x00R\vcancelStock\x12C\n" +
-	"\x0estock_released\x18\t \x01(\v2\x1a.checkout.v1.StockReleasedH\x00R\rstockReleased\x12Y\n" +
-	"\x16create_payment_session\x18\n" +
-	" \x01(\v2!.checkout.v1.CreatePaymentSessionH\x00R\x14createPaymentSession\x12V\n" +
-	"\x15payment_session_ready\x18\v \x01(\v2 .checkout.v1.PaymentSessionReadyH\x00R\x13paymentSessionReady\x12_\n" +
-	"\x18payment_session_rejected\x18\f \x01(\v2#.checkout.v1.PaymentSessionRejectedH\x00R\x16paymentSessionRejected\x12Y\n" +
-	"\x16cancel_payment_session\x18\r \x01(\v2!.checkout.v1.CancelPaymentSessionH\x00R\x14cancelPaymentSession\x12L\n" +
-	"\x11payment_cancelled\x18\x0e \x01(\v2\x1d.checkout.v1.PaymentCancelledH\x00R\x10paymentCancelled\x12L\n" +
-	"\x11payment_succeeded\x18\x0f \x01(\v2\x1d.checkout.v1.PaymentSucceededH\x00R\x10paymentSucceeded\x12C\n" +
-	"\x0epayment_failed\x18\x10 \x01(\v2\x1a.checkout.v1.PaymentFailedH\x00R\rpaymentFailed\x12L\n" +
-	"\x11payment_uncertain\x18\x11 \x01(\v2\x1d.checkout.v1.PaymentUncertainH\x00R\x10paymentUncertain\x12=\n" +
+	"\x0estock_released\x18\t \x01(\v2\x1a.checkout.v1.StockReleasedH\x00R\rstockReleased\x12=\n" +
 	"\fcommit_stock\x18\x12 \x01(\v2\x18.checkout.v1.CommitStockH\x00R\vcommitStock\x12F\n" +
 	"\x0fstock_committed\x18\x13 \x01(\v2\x1b.checkout.v1.StockCommittedH\x00R\x0estockCommitted\x12C\n" +
 	"\x0efinalize_order\x18\x14 \x01(\v2\x1a.checkout.v1.FinalizeOrderH\x00R\rfinalizeOrder\x12F\n" +
 	"\x0forder_finalized\x18\x15 \x01(\v2\x1b.checkout.v1.OrderFinalizedH\x00R\x0eorderFinalizedB\t\n" +
-	"\apayload\"\xdc\x01\n" +
+	"\apayloadJ\x04\b\n" +
+	"\x10\x12\"\xdc\x01\n" +
 	"\x0eMessageContext\x12\x1d\n" +
 	"\n" +
 	"message_id\x18\x01 \x01(\tR\tmessageId\x12\x1f\n" +
@@ -1713,13 +1145,15 @@ const file_shared_proto_checkout_v1_events_proto_rawDesc = "" +
 	"\foperation_id\x18\x03 \x01(\tR\voperationId\x12!\n" +
 	"\fcausation_id\x18\x04 \x01(\tR\vcausationId\x12\x19\n" +
 	"\border_id\x18\x05 \x01(\tR\aorderId\x12)\n" +
-	"\x10workflow_version\x18\x06 \x01(\x04R\x0fworkflowVersion\"\x87\x01\n" +
+	"\x10workflow_version\x18\x06 \x01(\x04R\x0fworkflowVersion\"\xc1\x01\n" +
 	"\fCheckoutLine\x12\x1d\n" +
 	"\n" +
 	"product_id\x18\x01 \x01(\tR\tproductId\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\x1a\n" +
 	"\bquantity\x18\x03 \x01(\x05R\bquantity\x12(\n" +
-	"\x10unit_price_cents\x18\x04 \x01(\x03R\x0eunitPriceCents\"\xb8\x01\n" +
+	"\x10unit_price_cents\x18\x04 \x01(\x03R\x0eunitPriceCents\x12\x1a\n" +
+	"\bcategory\x18\x05 \x01(\tR\bcategory\x12\x1c\n" +
+	"\tcondition\x18\x06 \x01(\tR\tcondition\"\xb8\x01\n" +
 	"\x0fCheckoutAddress\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\x14\n" +
 	"\x05line1\x18\x02 \x01(\tR\x05line1\x12\x14\n" +
@@ -1751,40 +1185,7 @@ const file_shared_proto_checkout_v1_events_proto_rawDesc = "" +
 	"\x06reason\x18\x01 \x01(\tR\x06reason\"%\n" +
 	"\vCancelStock\x12\x16\n" +
 	"\x06reason\x18\x01 \x01(\tR\x06reason\"\x0f\n" +
-	"\rStockReleased\"\x8c\x03\n" +
-	"\x14CreatePaymentSession\x12\"\n" +
-	"\rbuyer_user_id\x18\x01 \x01(\tR\vbuyerUserId\x12\x1f\n" +
-	"\vbuyer_email\x18\x02 \x01(\tR\n" +
-	"buyerEmail\x12\x1f\n" +
-	"\vmerchant_id\x18\x03 \x01(\tR\n" +
-	"merchantId\x12\x1f\n" +
-	"\vtotal_cents\x18\x04 \x01(\x03R\n" +
-	"totalCents\x12\x1a\n" +
-	"\bcurrency\x18\x05 \x01(\tR\bcurrency\x12G\n" +
-	"\x10shipping_address\x18\x06 \x01(\v2\x1c.checkout.v1.CheckoutAddressR\x0fshippingAddress\x12/\n" +
-	"\x05items\x18\a \x03(\v2\x19.checkout.v1.CheckoutLineR\x05items\x12\x1d\n" +
-	"\n" +
-	"return_url\x18\b \x01(\tR\treturnUrl\x128\n" +
-	"\x18reservation_operation_id\x18\t \x01(\tR\x16reservationOperationId\"\x8f\x01\n" +
-	"\x13PaymentSessionReady\x12,\n" +
-	"\x12payment_session_id\x18\x01 \x01(\tR\x10paymentSessionId\x12\x1d\n" +
-	"\n" +
-	"return_url\x18\x02 \x01(\tR\treturnUrl\x12+\n" +
-	"\x12expires_at_unix_ms\x18\x03 \x01(\x03R\x0fexpiresAtUnixMs\"0\n" +
-	"\x16PaymentSessionRejected\x12\x16\n" +
-	"\x06reason\x18\x01 \x01(\tR\x06reason\"\\\n" +
-	"\x14CancelPaymentSession\x12,\n" +
-	"\x12payment_session_id\x18\x01 \x01(\tR\x10paymentSessionId\x12\x16\n" +
-	"\x06reason\x18\x02 \x01(\tR\x06reason\"\x12\n" +
-	"\x10PaymentCancelled\"@\n" +
-	"\x10PaymentSucceeded\x12,\n" +
-	"\x12payment_session_id\x18\x01 \x01(\tR\x10paymentSessionId\"U\n" +
-	"\rPaymentFailed\x12,\n" +
-	"\x12payment_session_id\x18\x01 \x01(\tR\x10paymentSessionId\x12\x16\n" +
-	"\x06reason\x18\x02 \x01(\tR\x06reason\"X\n" +
-	"\x10PaymentUncertain\x12,\n" +
-	"\x12payment_session_id\x18\x01 \x01(\tR\x10paymentSessionId\x12\x16\n" +
-	"\x06reason\x18\x02 \x01(\tR\x06reason\"\r\n" +
+	"\rStockReleased\"\r\n" +
 	"\vCommitStock\"\x10\n" +
 	"\x0eStockCommitted\"F\n" +
 	"\rFinalizeOrder\x125\n" +
@@ -1809,33 +1210,25 @@ func file_shared_proto_checkout_v1_events_proto_rawDescGZIP() []byte {
 }
 
 var file_shared_proto_checkout_v1_events_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_shared_proto_checkout_v1_events_proto_msgTypes = make([]protoimpl.MessageInfo, 24)
+var file_shared_proto_checkout_v1_events_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_shared_proto_checkout_v1_events_proto_goTypes = []any{
-	(FinalOrderStatus)(0),          // 0: checkout.v1.FinalOrderStatus
-	(*CheckoutMessage)(nil),        // 1: checkout.v1.CheckoutMessage
-	(*MessageContext)(nil),         // 2: checkout.v1.MessageContext
-	(*CheckoutLine)(nil),           // 3: checkout.v1.CheckoutLine
-	(*CheckoutAddress)(nil),        // 4: checkout.v1.CheckoutAddress
-	(*CreateOrder)(nil),            // 5: checkout.v1.CreateOrder
-	(*OrderCreated)(nil),           // 6: checkout.v1.OrderCreated
-	(*OrderRejected)(nil),          // 7: checkout.v1.OrderRejected
-	(*ReserveStock)(nil),           // 8: checkout.v1.ReserveStock
-	(*StockReserved)(nil),          // 9: checkout.v1.StockReserved
-	(*StockRejected)(nil),          // 10: checkout.v1.StockRejected
-	(*CancelStock)(nil),            // 11: checkout.v1.CancelStock
-	(*StockReleased)(nil),          // 12: checkout.v1.StockReleased
-	(*CreatePaymentSession)(nil),   // 13: checkout.v1.CreatePaymentSession
-	(*PaymentSessionReady)(nil),    // 14: checkout.v1.PaymentSessionReady
-	(*PaymentSessionRejected)(nil), // 15: checkout.v1.PaymentSessionRejected
-	(*CancelPaymentSession)(nil),   // 16: checkout.v1.CancelPaymentSession
-	(*PaymentCancelled)(nil),       // 17: checkout.v1.PaymentCancelled
-	(*PaymentSucceeded)(nil),       // 18: checkout.v1.PaymentSucceeded
-	(*PaymentFailed)(nil),          // 19: checkout.v1.PaymentFailed
-	(*PaymentUncertain)(nil),       // 20: checkout.v1.PaymentUncertain
-	(*CommitStock)(nil),            // 21: checkout.v1.CommitStock
-	(*StockCommitted)(nil),         // 22: checkout.v1.StockCommitted
-	(*FinalizeOrder)(nil),          // 23: checkout.v1.FinalizeOrder
-	(*OrderFinalized)(nil),         // 24: checkout.v1.OrderFinalized
+	(FinalOrderStatus)(0),   // 0: checkout.v1.FinalOrderStatus
+	(*CheckoutMessage)(nil), // 1: checkout.v1.CheckoutMessage
+	(*MessageContext)(nil),  // 2: checkout.v1.MessageContext
+	(*CheckoutLine)(nil),    // 3: checkout.v1.CheckoutLine
+	(*CheckoutAddress)(nil), // 4: checkout.v1.CheckoutAddress
+	(*CreateOrder)(nil),     // 5: checkout.v1.CreateOrder
+	(*OrderCreated)(nil),    // 6: checkout.v1.OrderCreated
+	(*OrderRejected)(nil),   // 7: checkout.v1.OrderRejected
+	(*ReserveStock)(nil),    // 8: checkout.v1.ReserveStock
+	(*StockReserved)(nil),   // 9: checkout.v1.StockReserved
+	(*StockRejected)(nil),   // 10: checkout.v1.StockRejected
+	(*CancelStock)(nil),     // 11: checkout.v1.CancelStock
+	(*StockReleased)(nil),   // 12: checkout.v1.StockReleased
+	(*CommitStock)(nil),     // 13: checkout.v1.CommitStock
+	(*StockCommitted)(nil),  // 14: checkout.v1.StockCommitted
+	(*FinalizeOrder)(nil),   // 15: checkout.v1.FinalizeOrder
+	(*OrderFinalized)(nil),  // 16: checkout.v1.OrderFinalized
 }
 var file_shared_proto_checkout_v1_events_proto_depIdxs = []int32{
 	2,  // 0: checkout.v1.CheckoutMessage.context:type_name -> checkout.v1.MessageContext
@@ -1847,29 +1240,19 @@ var file_shared_proto_checkout_v1_events_proto_depIdxs = []int32{
 	10, // 6: checkout.v1.CheckoutMessage.stock_rejected:type_name -> checkout.v1.StockRejected
 	11, // 7: checkout.v1.CheckoutMessage.cancel_stock:type_name -> checkout.v1.CancelStock
 	12, // 8: checkout.v1.CheckoutMessage.stock_released:type_name -> checkout.v1.StockReleased
-	13, // 9: checkout.v1.CheckoutMessage.create_payment_session:type_name -> checkout.v1.CreatePaymentSession
-	14, // 10: checkout.v1.CheckoutMessage.payment_session_ready:type_name -> checkout.v1.PaymentSessionReady
-	15, // 11: checkout.v1.CheckoutMessage.payment_session_rejected:type_name -> checkout.v1.PaymentSessionRejected
-	16, // 12: checkout.v1.CheckoutMessage.cancel_payment_session:type_name -> checkout.v1.CancelPaymentSession
-	17, // 13: checkout.v1.CheckoutMessage.payment_cancelled:type_name -> checkout.v1.PaymentCancelled
-	18, // 14: checkout.v1.CheckoutMessage.payment_succeeded:type_name -> checkout.v1.PaymentSucceeded
-	19, // 15: checkout.v1.CheckoutMessage.payment_failed:type_name -> checkout.v1.PaymentFailed
-	20, // 16: checkout.v1.CheckoutMessage.payment_uncertain:type_name -> checkout.v1.PaymentUncertain
-	21, // 17: checkout.v1.CheckoutMessage.commit_stock:type_name -> checkout.v1.CommitStock
-	22, // 18: checkout.v1.CheckoutMessage.stock_committed:type_name -> checkout.v1.StockCommitted
-	23, // 19: checkout.v1.CheckoutMessage.finalize_order:type_name -> checkout.v1.FinalizeOrder
-	24, // 20: checkout.v1.CheckoutMessage.order_finalized:type_name -> checkout.v1.OrderFinalized
-	3,  // 21: checkout.v1.CreateOrder.items:type_name -> checkout.v1.CheckoutLine
-	3,  // 22: checkout.v1.ReserveStock.items:type_name -> checkout.v1.CheckoutLine
-	4,  // 23: checkout.v1.CreatePaymentSession.shipping_address:type_name -> checkout.v1.CheckoutAddress
-	3,  // 24: checkout.v1.CreatePaymentSession.items:type_name -> checkout.v1.CheckoutLine
-	0,  // 25: checkout.v1.FinalizeOrder.status:type_name -> checkout.v1.FinalOrderStatus
-	0,  // 26: checkout.v1.OrderFinalized.status:type_name -> checkout.v1.FinalOrderStatus
-	27, // [27:27] is the sub-list for method output_type
-	27, // [27:27] is the sub-list for method input_type
-	27, // [27:27] is the sub-list for extension type_name
-	27, // [27:27] is the sub-list for extension extendee
-	0,  // [0:27] is the sub-list for field type_name
+	13, // 9: checkout.v1.CheckoutMessage.commit_stock:type_name -> checkout.v1.CommitStock
+	14, // 10: checkout.v1.CheckoutMessage.stock_committed:type_name -> checkout.v1.StockCommitted
+	15, // 11: checkout.v1.CheckoutMessage.finalize_order:type_name -> checkout.v1.FinalizeOrder
+	16, // 12: checkout.v1.CheckoutMessage.order_finalized:type_name -> checkout.v1.OrderFinalized
+	3,  // 13: checkout.v1.CreateOrder.items:type_name -> checkout.v1.CheckoutLine
+	3,  // 14: checkout.v1.ReserveStock.items:type_name -> checkout.v1.CheckoutLine
+	0,  // 15: checkout.v1.FinalizeOrder.status:type_name -> checkout.v1.FinalOrderStatus
+	0,  // 16: checkout.v1.OrderFinalized.status:type_name -> checkout.v1.FinalOrderStatus
+	17, // [17:17] is the sub-list for method output_type
+	17, // [17:17] is the sub-list for method input_type
+	17, // [17:17] is the sub-list for extension type_name
+	17, // [17:17] is the sub-list for extension extendee
+	0,  // [0:17] is the sub-list for field type_name
 }
 
 func init() { file_shared_proto_checkout_v1_events_proto_init() }
@@ -1886,14 +1269,6 @@ func file_shared_proto_checkout_v1_events_proto_init() {
 		(*CheckoutMessage_StockRejected)(nil),
 		(*CheckoutMessage_CancelStock)(nil),
 		(*CheckoutMessage_StockReleased)(nil),
-		(*CheckoutMessage_CreatePaymentSession)(nil),
-		(*CheckoutMessage_PaymentSessionReady)(nil),
-		(*CheckoutMessage_PaymentSessionRejected)(nil),
-		(*CheckoutMessage_CancelPaymentSession)(nil),
-		(*CheckoutMessage_PaymentCancelled)(nil),
-		(*CheckoutMessage_PaymentSucceeded)(nil),
-		(*CheckoutMessage_PaymentFailed)(nil),
-		(*CheckoutMessage_PaymentUncertain)(nil),
 		(*CheckoutMessage_CommitStock)(nil),
 		(*CheckoutMessage_StockCommitted)(nil),
 		(*CheckoutMessage_FinalizeOrder)(nil),
@@ -1905,7 +1280,7 @@ func file_shared_proto_checkout_v1_events_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_shared_proto_checkout_v1_events_proto_rawDesc), len(file_shared_proto_checkout_v1_events_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   24,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

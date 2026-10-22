@@ -171,6 +171,31 @@ templ CreateProductSection() {
 					}
 					@textarea.Textarea(textarea.TextareaArgs{ID: "product-description", Name: "description", Rows: 5, Required: true, Placeholder: "Condition, included accessories, battery health, and any cosmetic notes."})
 				}
+
+				@form.FormItem(form.FormItemArgs{}) {
+					<label for="product-category">Category</label>
+					<select id="product-category" name="category" required class="h-9 rounded-md border bg-background px-3 text-sm">
+<option value="" disabled selected>Select category</option>
+<option value="phone">Phone</option>
+<option value="laptop">Laptop</option>
+<option value="tablet">Tablet</option>
+<option value="accessory">Accessory</option>
+<option value="headphones">Headphones</option>
+<option value="smartwatch">Smartwatch</option>
+<option value="game_console">Game Console</option>
+<option value="camera">Camera</option>
+					</select>
+				}
+
+				@form.FormItem(form.FormItemArgs{}) {
+					<label for="product-condition">Condition</label>
+					<select id="product-condition" name="condition" required class="h-9 rounded-md border bg-background px-3 text-sm">
+<option value="" disabled selected>Select condition</option>
+<option value="excellent">Excellent</option>
+<option value="good">Good</option>
+<option value="fair">Fair</option>
+					</select>
+				}
 				<div class="grid gap-5 sm:grid-cols-2">
 					@form.FormItem(form.FormItemArgs{}) {
 						@form.FormLabel(form.FormLabelArgs{For: "product-price-cents"}) {

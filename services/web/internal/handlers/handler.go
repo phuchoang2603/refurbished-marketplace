@@ -28,7 +28,6 @@ func New(
 	search shared.SearchService,
 	orders shared.OrdersService,
 	cart shared.CartService,
-	payment shared.PaymentService,
 	checkout shared.CheckoutService,
 	hostedPayment shared.HostedPaymentConfig,
 	authCfg authconfig.Config,
@@ -40,7 +39,6 @@ func New(
 		Search:        search,
 		Orders:        orders,
 		Cart:          cart,
-		Payment:       payment,
 		Checkout:      checkout,
 		HostedPayment: hostedPayment,
 	}
@@ -75,6 +73,6 @@ func (h *Handler) Register(router chi.Router) {
 
 	router.Group(func(r chi.Router) {
 		h.registerStatusRoutes(r)
-		h.registerCallbackRoutes(r)
+		h.registerWebhookRoutes(r)
 	})
 }

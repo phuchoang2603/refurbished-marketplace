@@ -23,28 +23,24 @@ type routerDeps struct {
 	search        *fakes.SearchService
 	orders        *fakes.OrdersService
 	cart          *fakes.CartService
-	payment       *fakes.PaymentService
 	checkout      *fakes.CheckoutService
 	hostedPayment shared.HostedPaymentConfig
-}
-
-var defaultTestHostedPayment = shared.HostedPaymentConfig{
-	GatewayBaseURL: "http://localhost:8097",
 }
 
 func newTestRouter(t *testing.T, deps routerDeps) http.Handler {
 	t.Helper()
 	hostedPayment := deps.hostedPayment
-	if hostedPayment.GatewayBaseURL == "" {
-		hostedPayment = defaultTestHostedPayment
-	}
 	if deps.inventory == nil {
 		deps.inventory = &fakes.InventoryService{}
 	}
 	if deps.search == nil {
 		deps.search = &fakes.SearchService{}
 	}
-	h := handlers.New(deps.users, deps.products, deps.inventory, deps.search, deps.orders, deps.cart, deps.payment, deps.checkout, hostedPayment, authconfig.DefaultConfig(testJWTSecret))
+	var checkout shared.CheckoutService
+	if deps.checkout != nil {
+		checkout = deps.checkout
+	}
+	h := handlers.New(deps.users, deps.products, deps.inventory, deps.search, deps.orders, deps.cart, checkout, hostedPayment, authconfig.DefaultConfig(testJWTSecret))
 	router := chi.NewRouter()
 	h.Register(router)
 	return router

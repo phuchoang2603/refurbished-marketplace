@@ -31,3 +31,7 @@ func (client *CheckoutClient) SubmitCheckout(ctx context.Context, request *check
 func (client *CheckoutClient) GetCheckout(ctx context.Context, request *checkoutv1.GetCheckoutRequest) (*checkoutv1.CheckoutStatus, error) {
 	return client.client.GetCheckout(ctx, request)
 }
+
+func (client *CheckoutClient) HandleGatewayWebhook(ctx context.Context, request *checkoutv1.HandleGatewayWebhookRequest) (*checkoutv1.HandleGatewayWebhookResponse, error) {
+	return client.client.HandleGatewayWebhook(ctx, request)
+}

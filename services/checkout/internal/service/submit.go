@@ -9,6 +9,7 @@ import (
 	"math"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/google/uuid"
 	"github.com/phuchoang2603/refurbished-marketplace/services/checkout/internal/database"
@@ -25,6 +26,9 @@ import (
 const orderDeadline = 2 * time.Minute
 
 func (service *Service) SubmitCheckout(ctx context.Context, request *checkoutv1.SubmitCheckoutRequest) (*checkoutv1.SubmitCheckoutResponse, error) {
+	if service.config.PaymentGatewayURL == "" {
+		return nil, status.Error(codes.Unavailable, "checkout is unavailable")
+	}
 	buyerID, merchantID, err := validateSubmit(request)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, err.Error())
@@ -34,6 +38,16 @@ func (service *Service) SubmitCheckout(ctx context.Context, request *checkoutv1.
 		return nil, status.Error(codes.InvalidArgument, "invalid checkout request")
 	}
 	hash := sha256.Sum256(canonical)
+	existing, err := database.New(service.db).GetCheckoutByIntent(ctx, database.GetCheckoutByIntentParams{BuyerUserID: buyerID, IntentKey: request.GetIntentKey()})
+	if err == nil {
+		if !bytes.Equal(existing.RequestHash, hash[:]) {
+			return nil, status.Error(codes.AlreadyExists, "checkout intent conflicts with original request")
+		}
+		return &checkoutv1.SubmitCheckoutResponse{CheckoutId: existing.ID.String(), State: checkoutv1.CheckoutState(checkoutv1.CheckoutState_value[existing.State])}, nil
+	}
+	if !errors.Is(err, sql.ErrNoRows) {
+		return nil, err
+	}
 	checkoutID := uuid.New()
 	orderID := uuid.New()
 	snapshotRequest := proto.Clone(request).(*checkoutv1.SubmitCheckoutRequest)
@@ -41,6 +55,10 @@ func (service *Service) SubmitCheckout(ctx context.Context, request *checkoutv1.
 	snapshot, err := protojson.Marshal(snapshotRequest)
 	if err != nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid checkout snapshot")
+	}
+	gatewaySnapshot, err := service.freezeGatewaySnapshot(ctx, snapshotRequest, orderID)
+	if err != nil {
+		return nil, err
 	}
 	operationID := uuid.NewSHA1(checkoutID, []byte("create-order"))
 	command := &checkoutv1.CheckoutMessage{
@@ -66,7 +84,7 @@ func (service *Service) SubmitCheckout(ctx context.Context, request *checkoutv1.
 	queries := database.New(tx)
 	row, err := queries.InsertCheckout(ctx, database.InsertCheckoutParams{
 		ID: checkoutID, BuyerUserID: buyerID, MerchantID: merchantID,
-		IntentKey: request.GetIntentKey(), RequestHash: hash[:], Snapshot: snapshot,
+		IntentKey: request.GetIntentKey(), RequestHash: hash[:], Snapshot: snapshot, GatewaySnapshot: gatewaySnapshot,
 		State:      checkoutv1.CheckoutState_CHECKOUT_STATE_CREATING_ORDER.String(),
 		OrderID:    uuid.NullUUID{UUID: orderID, Valid: true},
 		DeadlineAt: sql.NullTime{Time: time.Now().Add(orderDeadline), Valid: true},
@@ -94,7 +112,7 @@ func (service *Service) SubmitCheckout(ctx context.Context, request *checkoutv1.
 	if err := tx.Commit(); err != nil {
 		return nil, err
 	}
-	return &checkoutv1.SubmitCheckoutResponse{CheckoutId: row.ID.String(), State: checkoutv1.CheckoutState_CHECKOUT_STATE_CREATING_ORDER}, nil
+	return &checkoutv1.SubmitCheckoutResponse{CheckoutId: row.ID.String(), State: checkoutv1.CheckoutState(checkoutv1.CheckoutState_value[row.State])}, nil
 }
 
 func (service *Service) GetCheckout(ctx context.Context, checkoutID uuid.UUID) (grpcserver.CheckoutView, error) {
@@ -109,13 +127,23 @@ func (service *Service) GetCheckout(ctx context.Context, checkoutID uuid.UUID) (
 	view := grpcserver.CheckoutView{
 		CheckoutID: row.ID, BuyerUserID: row.BuyerUserID,
 		OrderID: row.OrderID.UUID.String(), State: state,
-		FailureReason: row.FailureReason.String,
+		FailureReason: row.FailureReason.String, PaymentStatus: row.PaymentStatus.String, GatewayPaymentID: row.GatewayPaymentID.String,
 	}
 	if state == checkoutv1.CheckoutState_CHECKOUT_STATE_READY_TO_PAY {
-		view.PaymentSessionID = row.PaymentSessionID.String
-		view.ReturnURL = row.PaymentReturnUrl.String
+		view.HostedCheckoutURL = row.HostedCheckoutUrl.String
 	}
 	return view, nil
+}
+
+func (service *Service) GetCheckoutByOrder(ctx context.Context, orderID uuid.UUID) (grpcserver.CheckoutView, error) {
+	row, err := database.New(service.db).GetCheckoutByOrder(ctx, uuid.NullUUID{UUID: orderID, Valid: true})
+	if errors.Is(err, sql.ErrNoRows) {
+		return grpcserver.CheckoutView{}, status.Error(codes.NotFound, "checkout not found")
+	}
+	if err != nil {
+		return grpcserver.CheckoutView{}, err
+	}
+	return service.GetCheckout(ctx, row.ID)
 }
 
 func validateSubmit(request *checkoutv1.SubmitCheckoutRequest) (uuid.UUID, uuid.UUID, error) {
@@ -132,9 +160,21 @@ func validateSubmit(request *checkoutv1.SubmitCheckoutRequest) (uuid.UUID, uuid.
 		request.GetShippingAddress() == nil || len(request.GetItems()) == 0 || request.GetTotalCents() <= 0 {
 		return uuid.Nil, uuid.Nil, errors.New("checkout facts must be complete")
 	}
+	if len(request.GetItems()) > 100 || !upperASCIICode(request.GetCurrency(), 3) {
+		return uuid.Nil, uuid.Nil, errors.New("invalid currency or item count")
+	}
+	address := request.GetShippingAddress()
+	if address.GetName() == "" || address.GetLine1() == "" || address.GetCity() == "" || !upperASCIICode(address.GetCountry(), 2) {
+		return uuid.Nil, uuid.Nil, errors.New("complete shipping address required")
+	}
+	for _, field := range []string{address.GetName(), address.GetLine1(), address.GetLine2(), address.GetCity(), address.GetRegion(), address.GetPostalCode()} {
+		if !utf8.ValidString(field) || utf8.RuneCountInString(field) > 200 {
+			return uuid.Nil, uuid.Nil, errors.New("invalid shipping address")
+		}
+	}
 	var total int64
 	for _, item := range request.GetItems() {
-		if item == nil || item.GetName() == "" || item.GetQuantity() <= 0 || item.GetUnitPriceCents() <= 0 {
+		if item == nil || !validGrading(item.GetCategory(), item.GetCondition()) || item.GetName() == "" || item.GetQuantity() <= 0 || item.GetUnitPriceCents() <= 0 {
 			return uuid.Nil, uuid.Nil, errors.New("invalid checkout item")
 		}
 		productID, err := uuid.Parse(item.GetProductId())
@@ -147,4 +187,16 @@ func validateSubmit(request *checkoutv1.SubmitCheckoutRequest) (uuid.UUID, uuid.
 		return uuid.Nil, uuid.Nil, errors.New("checkout total does not match items")
 	}
 	return buyerID, merchantID, nil
+}
+
+func upperASCIICode(value string, length int) bool {
+	if len(value) != length {
+		return false
+	}
+	for _, character := range value {
+		if character < 'A' || character > 'Z' {
+			return false
+		}
+	}
+	return true
 }

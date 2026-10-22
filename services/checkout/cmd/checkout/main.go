@@ -15,7 +15,10 @@ import (
 	"github.com/phuchoang2603/refurbished-marketplace/shared/runtime"
 
 	_ "github.com/lib/pq"
+	sharedtrace "github.com/phuchoang2603/refurbished-marketplace/shared/observe/trace"
+	usersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/users/v1"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
@@ -57,7 +60,12 @@ func main() {
 		}
 	}()
 
-	checkoutService := service.New(db)
+	usersConn, err := grpc.NewClient(config.UsersAddr, append(sharedtrace.GRPCDialOptions(), grpc.WithTransportCredentials(insecure.NewCredentials()))...)
+	if err != nil {
+		sharedlog.Fatal("users client", "err", err)
+	}
+	defer func() { _ = usersConn.Close() }()
+	checkoutService := service.New(db, config, usersv1.NewUsersServiceClient(usersConn))
 	metricRegistration, err := checkoutService.RegisterMetrics()
 	if err != nil {
 		sharedlog.Fatal("checkout metrics", "err", err)
@@ -74,6 +82,11 @@ func main() {
 	workers.Go(func() {
 		if err := checkoutService.RunDeadlines(ctx); err != nil && ctx.Err() == nil {
 			sharedlog.Error("checkout deadline worker stopped", "err", err)
+		}
+	})
+	workers.Go(func() {
+		if err := checkoutService.RunGatewayOperations(ctx); err != nil && ctx.Err() == nil {
+			sharedlog.Error("gateway worker stopped", "err", err)
 		}
 	})
 	if err := runtime.ServeGRPC(ctx, runtime.GRPCServerConfig{

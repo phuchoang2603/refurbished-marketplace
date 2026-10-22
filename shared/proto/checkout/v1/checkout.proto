@@ -9,13 +9,15 @@ import "shared/proto/checkout/v1/events.proto";
 service CheckoutService {
   rpc SubmitCheckout(SubmitCheckoutRequest) returns (SubmitCheckoutResponse);
   rpc GetCheckout(GetCheckoutRequest) returns (CheckoutStatus);
+  rpc HandleGatewayWebhook(HandleGatewayWebhookRequest) returns (HandleGatewayWebhookResponse);
 }
 
 message SubmitCheckoutRequest {
   string buyer_user_id = 1;
   string intent_key = 2;
   string merchant_id = 3;
-  string buyer_email = 4;
+  reserved 4;
+  reserved "buyer_email";
   int64 total_cents = 5;
   string currency = 6;
   repeated CheckoutLine items = 7;
@@ -31,16 +33,18 @@ message SubmitCheckoutResponse {
 message GetCheckoutRequest {
   string checkout_id = 1;
   string buyer_user_id = 2;
+  string order_id = 3;
 }
 
 message CheckoutStatus {
   string checkout_id = 1;
   string order_id = 2;
   CheckoutState state = 3;
-  string payment_session_id = 4;
-  string return_url = 5;
+  string gateway_payment_id = 4;
+  string hosted_checkout_url = 5;
   string failure_reason = 6;
   string buyer_user_id = 7;
+  string payment_status = 8;
 }
 
 enum CheckoutState {
@@ -48,7 +52,7 @@ enum CheckoutState {
   CHECKOUT_STATE_ACCEPTED = 1;
   CHECKOUT_STATE_CREATING_ORDER = 2;
   CHECKOUT_STATE_RESERVING_STOCK = 3;
-  CHECKOUT_STATE_CREATING_SESSION = 4;
+  CHECKOUT_STATE_CREATING_PAYMENT = 4;
   CHECKOUT_STATE_READY_TO_PAY = 5;
   CHECKOUT_STATE_COMMITTING_STOCK = 6;
   CHECKOUT_STATE_RELEASING_STOCK = 7;
@@ -58,4 +62,18 @@ enum CheckoutState {
   CHECKOUT_STATE_FAILED = 11;
   CHECKOUT_STATE_RECONCILING = 12;
   CHECKOUT_STATE_NEEDS_REVIEW = 13;
+}
+
+message HandleGatewayWebhookRequest {
+  bytes raw_body = 1;
+  string signature_header = 2;
+}
+message HandleGatewayWebhookResponse {
+  GatewayWebhookResult result = 1;
+}
+enum GatewayWebhookResult {
+  GATEWAY_WEBHOOK_RESULT_UNSPECIFIED = 0;
+  GATEWAY_WEBHOOK_RESULT_ACCEPTED = 1;
+  GATEWAY_WEBHOOK_RESULT_DUPLICATE = 2;
+  GATEWAY_WEBHOOK_RESULT_REJECTED = 3;
 }

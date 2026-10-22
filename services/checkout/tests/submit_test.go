@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/phuchoang2603/refurbished-marketplace/services/checkout/internal/grpcserver"
-	"github.com/phuchoang2603/refurbished-marketplace/services/checkout/internal/service"
 	authconfig "github.com/phuchoang2603/refurbished-marketplace/shared/auth/config"
 	checkoutv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1"
 	testpostgres "github.com/phuchoang2603/refurbished-marketplace/shared/testutil/postgres"
@@ -26,16 +25,16 @@ func newCheckoutDB(t *testing.T) *sql.DB {
 func checkoutRequest() *checkoutv1.SubmitCheckoutRequest {
 	return &checkoutv1.SubmitCheckoutRequest{
 		BuyerUserId: uuid.NewString(), MerchantId: uuid.NewString(), IntentKey: uuid.NewString(),
-		BuyerEmail: "buyer@example.com", Currency: "USD", TotalCents: 2000,
-		Items:           []*checkoutv1.CheckoutLine{{ProductId: uuid.NewString(), Name: "Laptop", Quantity: 2, UnitPriceCents: 1000}},
-		ShippingAddress: &checkoutv1.CheckoutAddress{Name: "Buyer", Country: "US"},
+		Currency: "USD", TotalCents: 2000,
+		Items:           []*checkoutv1.CheckoutLine{{ProductId: uuid.NewString(), Name: "Laptop", Category: "laptop", Condition: "good", Quantity: 2, UnitPriceCents: 1000}},
+		ShippingAddress: &checkoutv1.CheckoutAddress{Name: "Buyer", Line1: "123 Main St", City: "Seattle", Country: "US"},
 		ReturnUrl:       "https://example.com/checkout/return",
 	}
 }
 
 func TestSubmitIdempotencyAndOwnership(t *testing.T) {
 	db := newCheckoutDB(t)
-	server := grpcserver.New(service.New(db), authconfig.DefaultConfig(checkoutTestJWTSecret))
+	server := grpcserver.New(newTestService(db), authconfig.DefaultConfig(checkoutTestJWTSecret))
 	request := checkoutRequest()
 	buyerContext := authenticatedContext(t, request.GetBuyerUserId())
 	first, err := server.SubmitCheckout(buyerContext, request)
@@ -57,7 +56,7 @@ func TestSubmitIdempotencyAndOwnership(t *testing.T) {
 		t.Fatalf("expected one checkout and command, got %d and %d", checkoutCount, outboxCount)
 	}
 	conflict := proto.Clone(request).(*checkoutv1.SubmitCheckoutRequest)
-	conflict.BuyerEmail = "other@example.com"
+	conflict.ShippingAddress.Line1 = "456 Other St"
 	_, err = server.SubmitCheckout(buyerContext, conflict)
 	if status.Code(err) != codes.AlreadyExists {
 		t.Fatalf("conflicting key should be rejected: %v", err)
@@ -78,7 +77,7 @@ func TestSubmitIdempotencyAndOwnership(t *testing.T) {
 
 func TestConcurrentSubmitEmitsOneOrder(t *testing.T) {
 	db := newCheckoutDB(t)
-	server := grpcserver.New(service.New(db), authconfig.DefaultConfig(checkoutTestJWTSecret))
+	server := grpcserver.New(newTestService(db), authconfig.DefaultConfig(checkoutTestJWTSecret))
 	request := checkoutRequest()
 	buyerContext := authenticatedContext(t, request.GetBuyerUserId())
 	var wait sync.WaitGroup
@@ -109,5 +108,29 @@ func TestConcurrentSubmitEmitsOneOrder(t *testing.T) {
 	var outboxCount int
 	if err := db.QueryRowContext(t.Context(), "SELECT count(*) FROM checkout_outbox").Scan(&outboxCount); err != nil || outboxCount != 1 {
 		t.Fatalf("expected one command, got %d: %v", outboxCount, err)
+	}
+}
+
+func TestCheckoutLookupByOrderIsBuyerOwned(t *testing.T) {
+	db := newCheckoutDB(t)
+	server := grpcserver.New(newTestService(db), authconfig.DefaultConfig(checkoutTestJWTSecret))
+	request := checkoutRequest()
+	ctx := authenticatedContext(t, request.GetBuyerUserId())
+	submitted, err := server.SubmitCheckout(ctx, request)
+	if err != nil {
+		t.Fatal(err)
+	}
+	owned, err := server.GetCheckout(ctx, &checkoutv1.GetCheckoutRequest{CheckoutId: submitted.GetCheckoutId(), BuyerUserId: request.GetBuyerUserId()})
+	if err != nil {
+		t.Fatal(err)
+	}
+	byOrder, err := server.GetCheckout(ctx, &checkoutv1.GetCheckoutRequest{OrderId: owned.GetOrderId(), BuyerUserId: request.GetBuyerUserId()})
+	if err != nil || byOrder.GetCheckoutId() != submitted.GetCheckoutId() {
+		t.Fatalf("order lookup %v %v", byOrder, err)
+	}
+	other := uuid.NewString()
+	_, err = server.GetCheckout(authenticatedContext(t, other), &checkoutv1.GetCheckoutRequest{OrderId: owned.GetOrderId(), BuyerUserId: other})
+	if status.Code(err) != codes.NotFound {
+		t.Fatalf("order lookup ownership %v", err)
 	}
 }

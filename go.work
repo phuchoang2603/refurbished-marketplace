@@ -5,7 +5,6 @@ use (
 	./services/checkout
 	./services/inventory
 	./services/orders
-	./services/payment
 	./services/products
 	./services/search
 	./services/users
@@ -24,7 +23,6 @@ use (
 	./shared/testutil/mongo
 	./shared/testutil/postgres
 	./shared/testutil/redis
-	./tools/payment-gateway-simulator
 )
 
 replace (

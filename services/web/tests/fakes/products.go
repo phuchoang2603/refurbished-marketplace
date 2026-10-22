@@ -7,14 +7,14 @@ import (
 )
 
 type ProductsService struct {
-	CreateFn   func(context.Context, string, string, int64, string, int32) (*productsv1.Product, error)
+	CreateFn   func(context.Context, string, string, string, string, int64, string, int32) (*productsv1.Product, error)
 	GetByIDFn  func(context.Context, string) (*productsv1.Product, error)
 	GetByIDsFn func(context.Context, []string) (*productsv1.GetProductsByIDsResponse, error)
 }
 
-func (f *ProductsService) CreateProduct(ctx context.Context, name, description string, priceCents int64, merchantID string, initialStock int32) (*productsv1.Product, error) {
+func (f *ProductsService) CreateProduct(ctx context.Context, name, description, category, condition string, priceCents int64, merchantID string, initialStock int32) (*productsv1.Product, error) {
 	if f.CreateFn != nil {
-		return f.CreateFn(ctx, name, description, priceCents, merchantID, initialStock)
+		return f.CreateFn(ctx, name, description, category, condition, priceCents, merchantID, initialStock)
 	}
 	return &productsv1.Product{}, nil
 }

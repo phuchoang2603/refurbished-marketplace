@@ -6,11 +6,12 @@ INSERT INTO checkouts (
     intent_key,
     request_hash,
     snapshot,
+    gateway_snapshot,
     state,
     order_id,
     deadline_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 ON CONFLICT (buyer_user_id, intent_key) DO NOTHING
 RETURNING *;
 
@@ -29,10 +30,10 @@ SET
     state = $2,
     version = version + 1,
     order_id = COALESCE(sqlc.narg(order_id)::uuid, order_id),
-    payment_session_id
-    = COALESCE(sqlc.narg(payment_session_id)::text, payment_session_id),
-    payment_return_url
-    = COALESCE(sqlc.narg(payment_return_url)::text, payment_return_url),
+    gateway_payment_id
+    = COALESCE(sqlc.narg(gateway_payment_id)::text, gateway_payment_id),
+    hosted_checkout_url
+    = COALESCE(sqlc.narg(hosted_checkout_url)::text, hosted_checkout_url),
     failure_reason = COALESCE(sqlc.narg(failure_reason)::text, failure_reason),
     deadline_at = sqlc.narg(deadline_at)::timestamptz, updated_at = NOW()
 WHERE id = $1 AND version = $3;
@@ -46,3 +47,6 @@ LIMIT $1 FOR UPDATE SKIP LOCKED;
 -- name: DelayCheckoutDeadline :execrows
 UPDATE checkouts SET deadline_at = $2, updated_at = NOW()
 WHERE id = $1 AND version = $3;
+
+-- name: GetCheckoutByOrder :one
+SELECT * FROM checkouts WHERE order_id = $1;

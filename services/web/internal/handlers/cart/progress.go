@@ -34,13 +34,10 @@ func (h *Handler) getOwnedCheckout(w http.ResponseWriter, r *http.Request) (*che
 }
 
 func (h *Handler) paymentURL(r *http.Request, status *checkoutv1.CheckoutStatus) string {
-	if status.GetState() != checkoutv1.CheckoutState_CHECKOUT_STATE_READY_TO_PAY ||
-		status.GetPaymentSessionId() == "" || status.GetReturnUrl() == "" {
+	if status.GetState() != checkoutv1.CheckoutState_CHECKOUT_STATE_READY_TO_PAY {
 		return ""
 	}
-	return shared.BuildHostedPaymentURL(h.deps.HostedPayment, r, shared.HostedPaymentSession{
-		OrderID: status.GetOrderId(), PaymentSessionID: status.GetPaymentSessionId(), ReturnURL: status.GetReturnUrl(),
-	})
+	return status.GetHostedCheckoutUrl()
 }
 
 func (h *Handler) handleCheckoutProgressPage(w http.ResponseWriter, r *http.Request) {

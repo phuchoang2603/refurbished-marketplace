@@ -14,13 +14,14 @@ import (
 )
 
 type CheckoutView struct {
-	CheckoutID       uuid.UUID
-	BuyerUserID      uuid.UUID
-	OrderID          string
-	State            checkoutv1.CheckoutState
-	PaymentSessionID string
-	ReturnURL        string
-	FailureReason    string
+	CheckoutID        uuid.UUID
+	BuyerUserID       uuid.UUID
+	OrderID           string
+	State             checkoutv1.CheckoutState
+	GatewayPaymentID  string
+	HostedCheckoutURL string
+	FailureReason     string
+	PaymentStatus     string
 }
 
 type Reader interface {
@@ -80,7 +81,14 @@ func (server *Server) GetCheckout(ctx context.Context, request *checkoutv1.GetCh
 	if request == nil {
 		return nil, status.Error(codes.InvalidArgument, "checkout request is required")
 	}
-	checkoutID, err := uuid.Parse(request.GetCheckoutId())
+	identifier := request.GetCheckoutId()
+	if request.GetOrderId() != "" {
+		if identifier != "" {
+			return nil, status.Error(codes.InvalidArgument, "provide checkout or order ID")
+		}
+		identifier = request.GetOrderId()
+	}
+	checkoutID, err := uuid.Parse(identifier)
 	if err != nil || checkoutID == uuid.Nil {
 		return nil, status.Error(codes.InvalidArgument, "invalid checkout id")
 	}
@@ -91,7 +99,18 @@ func (server *Server) GetCheckout(ctx context.Context, request *checkoutv1.GetCh
 	if request.GetBuyerUserId() != authenticatedBuyer {
 		return nil, status.Error(codes.NotFound, "checkout not found")
 	}
-	view, err := server.reader.GetCheckout(ctx, checkoutID)
+	var view CheckoutView
+	if request.GetOrderId() != "" {
+		reader, ok := server.reader.(interface {
+			GetCheckoutByOrder(context.Context, uuid.UUID) (CheckoutView, error)
+		})
+		if !ok {
+			return nil, status.Error(codes.Unavailable, "checkout order lookup unavailable")
+		}
+		view, err = reader.GetCheckoutByOrder(ctx, checkoutID)
+	} else {
+		view, err = server.reader.GetCheckout(ctx, checkoutID)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -99,12 +118,23 @@ func (server *Server) GetCheckout(ctx context.Context, request *checkoutv1.GetCh
 		return nil, status.Error(codes.NotFound, "checkout not found")
 	}
 	return &checkoutv1.CheckoutStatus{
-		CheckoutId:       view.CheckoutID.String(),
-		OrderId:          view.OrderID,
-		State:            view.State,
-		PaymentSessionId: view.PaymentSessionID,
-		ReturnUrl:        view.ReturnURL,
-		FailureReason:    view.FailureReason,
-		BuyerUserId:      view.BuyerUserID.String(),
+		CheckoutId:        view.CheckoutID.String(),
+		OrderId:           view.OrderID,
+		State:             view.State,
+		GatewayPaymentId:  view.GatewayPaymentID,
+		HostedCheckoutUrl: view.HostedCheckoutURL,
+		FailureReason:     view.FailureReason,
+		BuyerUserId:       view.BuyerUserID.String(),
+		PaymentStatus:     view.PaymentStatus,
 	}, nil
+}
+
+func (server *Server) HandleGatewayWebhook(ctx context.Context, request *checkoutv1.HandleGatewayWebhookRequest) (*checkoutv1.HandleGatewayWebhookResponse, error) {
+	handler, ok := server.reader.(interface {
+		HandleGatewayWebhook(context.Context, *checkoutv1.HandleGatewayWebhookRequest) (*checkoutv1.HandleGatewayWebhookResponse, error)
+	})
+	if !ok {
+		return nil, status.Error(codes.Unavailable, "gateway webhook handling unavailable")
+	}
+	return handler.HandleGatewayWebhook(ctx, request)
 }

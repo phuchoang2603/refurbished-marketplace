@@ -28,7 +28,7 @@ const (
 	CheckoutState_CHECKOUT_STATE_ACCEPTED          CheckoutState = 1
 	CheckoutState_CHECKOUT_STATE_CREATING_ORDER    CheckoutState = 2
 	CheckoutState_CHECKOUT_STATE_RESERVING_STOCK   CheckoutState = 3
-	CheckoutState_CHECKOUT_STATE_CREATING_SESSION  CheckoutState = 4
+	CheckoutState_CHECKOUT_STATE_CREATING_PAYMENT  CheckoutState = 4
 	CheckoutState_CHECKOUT_STATE_READY_TO_PAY      CheckoutState = 5
 	CheckoutState_CHECKOUT_STATE_COMMITTING_STOCK  CheckoutState = 6
 	CheckoutState_CHECKOUT_STATE_RELEASING_STOCK   CheckoutState = 7
@@ -47,7 +47,7 @@ var (
 		1:  "CHECKOUT_STATE_ACCEPTED",
 		2:  "CHECKOUT_STATE_CREATING_ORDER",
 		3:  "CHECKOUT_STATE_RESERVING_STOCK",
-		4:  "CHECKOUT_STATE_CREATING_SESSION",
+		4:  "CHECKOUT_STATE_CREATING_PAYMENT",
 		5:  "CHECKOUT_STATE_READY_TO_PAY",
 		6:  "CHECKOUT_STATE_COMMITTING_STOCK",
 		7:  "CHECKOUT_STATE_RELEASING_STOCK",
@@ -63,7 +63,7 @@ var (
 		"CHECKOUT_STATE_ACCEPTED":          1,
 		"CHECKOUT_STATE_CREATING_ORDER":    2,
 		"CHECKOUT_STATE_RESERVING_STOCK":   3,
-		"CHECKOUT_STATE_CREATING_SESSION":  4,
+		"CHECKOUT_STATE_CREATING_PAYMENT":  4,
 		"CHECKOUT_STATE_READY_TO_PAY":      5,
 		"CHECKOUT_STATE_COMMITTING_STOCK":  6,
 		"CHECKOUT_STATE_RELEASING_STOCK":   7,
@@ -103,12 +103,63 @@ func (CheckoutState) EnumDescriptor() ([]byte, []int) {
 	return file_shared_proto_checkout_v1_checkout_proto_rawDescGZIP(), []int{0}
 }
 
+type GatewayWebhookResult int32
+
+const (
+	GatewayWebhookResult_GATEWAY_WEBHOOK_RESULT_UNSPECIFIED GatewayWebhookResult = 0
+	GatewayWebhookResult_GATEWAY_WEBHOOK_RESULT_ACCEPTED    GatewayWebhookResult = 1
+	GatewayWebhookResult_GATEWAY_WEBHOOK_RESULT_DUPLICATE   GatewayWebhookResult = 2
+	GatewayWebhookResult_GATEWAY_WEBHOOK_RESULT_REJECTED    GatewayWebhookResult = 3
+)
+
+// Enum value maps for GatewayWebhookResult.
+var (
+	GatewayWebhookResult_name = map[int32]string{
+		0: "GATEWAY_WEBHOOK_RESULT_UNSPECIFIED",
+		1: "GATEWAY_WEBHOOK_RESULT_ACCEPTED",
+		2: "GATEWAY_WEBHOOK_RESULT_DUPLICATE",
+		3: "GATEWAY_WEBHOOK_RESULT_REJECTED",
+	}
+	GatewayWebhookResult_value = map[string]int32{
+		"GATEWAY_WEBHOOK_RESULT_UNSPECIFIED": 0,
+		"GATEWAY_WEBHOOK_RESULT_ACCEPTED":    1,
+		"GATEWAY_WEBHOOK_RESULT_DUPLICATE":   2,
+		"GATEWAY_WEBHOOK_RESULT_REJECTED":    3,
+	}
+)
+
+func (x GatewayWebhookResult) Enum() *GatewayWebhookResult {
+	p := new(GatewayWebhookResult)
+	*p = x
+	return p
+}
+
+func (x GatewayWebhookResult) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (GatewayWebhookResult) Descriptor() protoreflect.EnumDescriptor {
+	return file_shared_proto_checkout_v1_checkout_proto_enumTypes[1].Descriptor()
+}
+
+func (GatewayWebhookResult) Type() protoreflect.EnumType {
+	return &file_shared_proto_checkout_v1_checkout_proto_enumTypes[1]
+}
+
+func (x GatewayWebhookResult) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use GatewayWebhookResult.Descriptor instead.
+func (GatewayWebhookResult) EnumDescriptor() ([]byte, []int) {
+	return file_shared_proto_checkout_v1_checkout_proto_rawDescGZIP(), []int{1}
+}
+
 type SubmitCheckoutRequest struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	BuyerUserId     string                 `protobuf:"bytes,1,opt,name=buyer_user_id,json=buyerUserId,proto3" json:"buyer_user_id,omitempty"`
 	IntentKey       string                 `protobuf:"bytes,2,opt,name=intent_key,json=intentKey,proto3" json:"intent_key,omitempty"`
 	MerchantId      string                 `protobuf:"bytes,3,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
-	BuyerEmail      string                 `protobuf:"bytes,4,opt,name=buyer_email,json=buyerEmail,proto3" json:"buyer_email,omitempty"`
 	TotalCents      int64                  `protobuf:"varint,5,opt,name=total_cents,json=totalCents,proto3" json:"total_cents,omitempty"`
 	Currency        string                 `protobuf:"bytes,6,opt,name=currency,proto3" json:"currency,omitempty"`
 	Items           []*CheckoutLine        `protobuf:"bytes,7,rep,name=items,proto3" json:"items,omitempty"`
@@ -165,13 +216,6 @@ func (x *SubmitCheckoutRequest) GetIntentKey() string {
 func (x *SubmitCheckoutRequest) GetMerchantId() string {
 	if x != nil {
 		return x.MerchantId
-	}
-	return ""
-}
-
-func (x *SubmitCheckoutRequest) GetBuyerEmail() string {
-	if x != nil {
-		return x.BuyerEmail
 	}
 	return ""
 }
@@ -267,6 +311,7 @@ type GetCheckoutRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	CheckoutId    string                 `protobuf:"bytes,1,opt,name=checkout_id,json=checkoutId,proto3" json:"checkout_id,omitempty"`
 	BuyerUserId   string                 `protobuf:"bytes,2,opt,name=buyer_user_id,json=buyerUserId,proto3" json:"buyer_user_id,omitempty"`
+	OrderId       string                 `protobuf:"bytes,3,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -315,17 +360,25 @@ func (x *GetCheckoutRequest) GetBuyerUserId() string {
 	return ""
 }
 
+func (x *GetCheckoutRequest) GetOrderId() string {
+	if x != nil {
+		return x.OrderId
+	}
+	return ""
+}
+
 type CheckoutStatus struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	CheckoutId       string                 `protobuf:"bytes,1,opt,name=checkout_id,json=checkoutId,proto3" json:"checkout_id,omitempty"`
-	OrderId          string                 `protobuf:"bytes,2,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
-	State            CheckoutState          `protobuf:"varint,3,opt,name=state,proto3,enum=checkout.v1.CheckoutState" json:"state,omitempty"`
-	PaymentSessionId string                 `protobuf:"bytes,4,opt,name=payment_session_id,json=paymentSessionId,proto3" json:"payment_session_id,omitempty"`
-	ReturnUrl        string                 `protobuf:"bytes,5,opt,name=return_url,json=returnUrl,proto3" json:"return_url,omitempty"`
-	FailureReason    string                 `protobuf:"bytes,6,opt,name=failure_reason,json=failureReason,proto3" json:"failure_reason,omitempty"`
-	BuyerUserId      string                 `protobuf:"bytes,7,opt,name=buyer_user_id,json=buyerUserId,proto3" json:"buyer_user_id,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state             protoimpl.MessageState `protogen:"open.v1"`
+	CheckoutId        string                 `protobuf:"bytes,1,opt,name=checkout_id,json=checkoutId,proto3" json:"checkout_id,omitempty"`
+	OrderId           string                 `protobuf:"bytes,2,opt,name=order_id,json=orderId,proto3" json:"order_id,omitempty"`
+	State             CheckoutState          `protobuf:"varint,3,opt,name=state,proto3,enum=checkout.v1.CheckoutState" json:"state,omitempty"`
+	GatewayPaymentId  string                 `protobuf:"bytes,4,opt,name=gateway_payment_id,json=gatewayPaymentId,proto3" json:"gateway_payment_id,omitempty"`
+	HostedCheckoutUrl string                 `protobuf:"bytes,5,opt,name=hosted_checkout_url,json=hostedCheckoutUrl,proto3" json:"hosted_checkout_url,omitempty"`
+	FailureReason     string                 `protobuf:"bytes,6,opt,name=failure_reason,json=failureReason,proto3" json:"failure_reason,omitempty"`
+	BuyerUserId       string                 `protobuf:"bytes,7,opt,name=buyer_user_id,json=buyerUserId,proto3" json:"buyer_user_id,omitempty"`
+	PaymentStatus     string                 `protobuf:"bytes,8,opt,name=payment_status,json=paymentStatus,proto3" json:"payment_status,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
 }
 
 func (x *CheckoutStatus) Reset() {
@@ -379,16 +432,16 @@ func (x *CheckoutStatus) GetState() CheckoutState {
 	return CheckoutState_CHECKOUT_STATE_UNSPECIFIED
 }
 
-func (x *CheckoutStatus) GetPaymentSessionId() string {
+func (x *CheckoutStatus) GetGatewayPaymentId() string {
 	if x != nil {
-		return x.PaymentSessionId
+		return x.GatewayPaymentId
 	}
 	return ""
 }
 
-func (x *CheckoutStatus) GetReturnUrl() string {
+func (x *CheckoutStatus) GetHostedCheckoutUrl() string {
 	if x != nil {
-		return x.ReturnUrl
+		return x.HostedCheckoutUrl
 	}
 	return ""
 }
@@ -407,50 +460,157 @@ func (x *CheckoutStatus) GetBuyerUserId() string {
 	return ""
 }
 
+func (x *CheckoutStatus) GetPaymentStatus() string {
+	if x != nil {
+		return x.PaymentStatus
+	}
+	return ""
+}
+
+type HandleGatewayWebhookRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	RawBody         []byte                 `protobuf:"bytes,1,opt,name=raw_body,json=rawBody,proto3" json:"raw_body,omitempty"`
+	SignatureHeader string                 `protobuf:"bytes,2,opt,name=signature_header,json=signatureHeader,proto3" json:"signature_header,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *HandleGatewayWebhookRequest) Reset() {
+	*x = HandleGatewayWebhookRequest{}
+	mi := &file_shared_proto_checkout_v1_checkout_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HandleGatewayWebhookRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HandleGatewayWebhookRequest) ProtoMessage() {}
+
+func (x *HandleGatewayWebhookRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_checkout_v1_checkout_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HandleGatewayWebhookRequest.ProtoReflect.Descriptor instead.
+func (*HandleGatewayWebhookRequest) Descriptor() ([]byte, []int) {
+	return file_shared_proto_checkout_v1_checkout_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *HandleGatewayWebhookRequest) GetRawBody() []byte {
+	if x != nil {
+		return x.RawBody
+	}
+	return nil
+}
+
+func (x *HandleGatewayWebhookRequest) GetSignatureHeader() string {
+	if x != nil {
+		return x.SignatureHeader
+	}
+	return ""
+}
+
+type HandleGatewayWebhookResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Result        GatewayWebhookResult   `protobuf:"varint,1,opt,name=result,proto3,enum=checkout.v1.GatewayWebhookResult" json:"result,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HandleGatewayWebhookResponse) Reset() {
+	*x = HandleGatewayWebhookResponse{}
+	mi := &file_shared_proto_checkout_v1_checkout_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HandleGatewayWebhookResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HandleGatewayWebhookResponse) ProtoMessage() {}
+
+func (x *HandleGatewayWebhookResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_shared_proto_checkout_v1_checkout_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HandleGatewayWebhookResponse.ProtoReflect.Descriptor instead.
+func (*HandleGatewayWebhookResponse) Descriptor() ([]byte, []int) {
+	return file_shared_proto_checkout_v1_checkout_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *HandleGatewayWebhookResponse) GetResult() GatewayWebhookResult {
+	if x != nil {
+		return x.Result
+	}
+	return GatewayWebhookResult_GATEWAY_WEBHOOK_RESULT_UNSPECIFIED
+}
+
 var File_shared_proto_checkout_v1_checkout_proto protoreflect.FileDescriptor
 
 const file_shared_proto_checkout_v1_checkout_proto_rawDesc = "" +
 	"\n" +
-	"'shared/proto/checkout/v1/checkout.proto\x12\vcheckout.v1\x1a%shared/proto/checkout/v1/events.proto\"\xf2\x02\n" +
+	"'shared/proto/checkout/v1/checkout.proto\x12\vcheckout.v1\x1a%shared/proto/checkout/v1/events.proto\"\xe4\x02\n" +
 	"\x15SubmitCheckoutRequest\x12\"\n" +
 	"\rbuyer_user_id\x18\x01 \x01(\tR\vbuyerUserId\x12\x1d\n" +
 	"\n" +
 	"intent_key\x18\x02 \x01(\tR\tintentKey\x12\x1f\n" +
 	"\vmerchant_id\x18\x03 \x01(\tR\n" +
 	"merchantId\x12\x1f\n" +
-	"\vbuyer_email\x18\x04 \x01(\tR\n" +
-	"buyerEmail\x12\x1f\n" +
 	"\vtotal_cents\x18\x05 \x01(\x03R\n" +
 	"totalCents\x12\x1a\n" +
 	"\bcurrency\x18\x06 \x01(\tR\bcurrency\x12/\n" +
 	"\x05items\x18\a \x03(\v2\x19.checkout.v1.CheckoutLineR\x05items\x12G\n" +
 	"\x10shipping_address\x18\b \x01(\v2\x1c.checkout.v1.CheckoutAddressR\x0fshippingAddress\x12\x1d\n" +
 	"\n" +
-	"return_url\x18\t \x01(\tR\treturnUrl\"k\n" +
+	"return_url\x18\t \x01(\tR\treturnUrlJ\x04\b\x04\x10\x05R\vbuyer_email\"k\n" +
 	"\x16SubmitCheckoutResponse\x12\x1f\n" +
 	"\vcheckout_id\x18\x01 \x01(\tR\n" +
 	"checkoutId\x120\n" +
-	"\x05state\x18\x02 \x01(\x0e2\x1a.checkout.v1.CheckoutStateR\x05state\"Y\n" +
+	"\x05state\x18\x02 \x01(\x0e2\x1a.checkout.v1.CheckoutStateR\x05state\"t\n" +
 	"\x12GetCheckoutRequest\x12\x1f\n" +
 	"\vcheckout_id\x18\x01 \x01(\tR\n" +
 	"checkoutId\x12\"\n" +
-	"\rbuyer_user_id\x18\x02 \x01(\tR\vbuyerUserId\"\x96\x02\n" +
+	"\rbuyer_user_id\x18\x02 \x01(\tR\vbuyerUserId\x12\x19\n" +
+	"\border_id\x18\x03 \x01(\tR\aorderId\"\xce\x02\n" +
 	"\x0eCheckoutStatus\x12\x1f\n" +
 	"\vcheckout_id\x18\x01 \x01(\tR\n" +
 	"checkoutId\x12\x19\n" +
 	"\border_id\x18\x02 \x01(\tR\aorderId\x120\n" +
 	"\x05state\x18\x03 \x01(\x0e2\x1a.checkout.v1.CheckoutStateR\x05state\x12,\n" +
-	"\x12payment_session_id\x18\x04 \x01(\tR\x10paymentSessionId\x12\x1d\n" +
-	"\n" +
-	"return_url\x18\x05 \x01(\tR\treturnUrl\x12%\n" +
+	"\x12gateway_payment_id\x18\x04 \x01(\tR\x10gatewayPaymentId\x12.\n" +
+	"\x13hosted_checkout_url\x18\x05 \x01(\tR\x11hostedCheckoutUrl\x12%\n" +
 	"\x0efailure_reason\x18\x06 \x01(\tR\rfailureReason\x12\"\n" +
-	"\rbuyer_user_id\x18\a \x01(\tR\vbuyerUserId*\xe6\x03\n" +
+	"\rbuyer_user_id\x18\a \x01(\tR\vbuyerUserId\x12%\n" +
+	"\x0epayment_status\x18\b \x01(\tR\rpaymentStatus\"c\n" +
+	"\x1bHandleGatewayWebhookRequest\x12\x19\n" +
+	"\braw_body\x18\x01 \x01(\fR\arawBody\x12)\n" +
+	"\x10signature_header\x18\x02 \x01(\tR\x0fsignatureHeader\"Y\n" +
+	"\x1cHandleGatewayWebhookResponse\x129\n" +
+	"\x06result\x18\x01 \x01(\x0e2!.checkout.v1.GatewayWebhookResultR\x06result*\xe6\x03\n" +
 	"\rCheckoutState\x12\x1e\n" +
 	"\x1aCHECKOUT_STATE_UNSPECIFIED\x10\x00\x12\x1b\n" +
 	"\x17CHECKOUT_STATE_ACCEPTED\x10\x01\x12!\n" +
 	"\x1dCHECKOUT_STATE_CREATING_ORDER\x10\x02\x12\"\n" +
 	"\x1eCHECKOUT_STATE_RESERVING_STOCK\x10\x03\x12#\n" +
-	"\x1fCHECKOUT_STATE_CREATING_SESSION\x10\x04\x12\x1f\n" +
+	"\x1fCHECKOUT_STATE_CREATING_PAYMENT\x10\x04\x12\x1f\n" +
 	"\x1bCHECKOUT_STATE_READY_TO_PAY\x10\x05\x12#\n" +
 	"\x1fCHECKOUT_STATE_COMMITTING_STOCK\x10\x06\x12\"\n" +
 	"\x1eCHECKOUT_STATE_RELEASING_STOCK\x10\a\x12\"\n" +
@@ -460,10 +620,16 @@ const file_shared_proto_checkout_v1_checkout_proto_rawDesc = "" +
 	"\x12\x19\n" +
 	"\x15CHECKOUT_STATE_FAILED\x10\v\x12\x1e\n" +
 	"\x1aCHECKOUT_STATE_RECONCILING\x10\f\x12\x1f\n" +
-	"\x1bCHECKOUT_STATE_NEEDS_REVIEW\x10\r2\xb9\x01\n" +
+	"\x1bCHECKOUT_STATE_NEEDS_REVIEW\x10\r*\xae\x01\n" +
+	"\x14GatewayWebhookResult\x12&\n" +
+	"\"GATEWAY_WEBHOOK_RESULT_UNSPECIFIED\x10\x00\x12#\n" +
+	"\x1fGATEWAY_WEBHOOK_RESULT_ACCEPTED\x10\x01\x12$\n" +
+	" GATEWAY_WEBHOOK_RESULT_DUPLICATE\x10\x02\x12#\n" +
+	"\x1fGATEWAY_WEBHOOK_RESULT_REJECTED\x10\x032\xa6\x02\n" +
 	"\x0fCheckoutService\x12Y\n" +
 	"\x0eSubmitCheckout\x12\".checkout.v1.SubmitCheckoutRequest\x1a#.checkout.v1.SubmitCheckoutResponse\x12K\n" +
-	"\vGetCheckout\x12\x1f.checkout.v1.GetCheckoutRequest\x1a\x1b.checkout.v1.CheckoutStatusBVZTgithub.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1;checkoutv1b\x06proto3"
+	"\vGetCheckout\x12\x1f.checkout.v1.GetCheckoutRequest\x1a\x1b.checkout.v1.CheckoutStatus\x12k\n" +
+	"\x14HandleGatewayWebhook\x12(.checkout.v1.HandleGatewayWebhookRequest\x1a).checkout.v1.HandleGatewayWebhookResponseBVZTgithub.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1;checkoutv1b\x06proto3"
 
 var (
 	file_shared_proto_checkout_v1_checkout_proto_rawDescOnce sync.Once
@@ -477,31 +643,37 @@ func file_shared_proto_checkout_v1_checkout_proto_rawDescGZIP() []byte {
 	return file_shared_proto_checkout_v1_checkout_proto_rawDescData
 }
 
-var file_shared_proto_checkout_v1_checkout_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_shared_proto_checkout_v1_checkout_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_shared_proto_checkout_v1_checkout_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_shared_proto_checkout_v1_checkout_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
 var file_shared_proto_checkout_v1_checkout_proto_goTypes = []any{
-	(CheckoutState)(0),             // 0: checkout.v1.CheckoutState
-	(*SubmitCheckoutRequest)(nil),  // 1: checkout.v1.SubmitCheckoutRequest
-	(*SubmitCheckoutResponse)(nil), // 2: checkout.v1.SubmitCheckoutResponse
-	(*GetCheckoutRequest)(nil),     // 3: checkout.v1.GetCheckoutRequest
-	(*CheckoutStatus)(nil),         // 4: checkout.v1.CheckoutStatus
-	(*CheckoutLine)(nil),           // 5: checkout.v1.CheckoutLine
-	(*CheckoutAddress)(nil),        // 6: checkout.v1.CheckoutAddress
+	(CheckoutState)(0),                   // 0: checkout.v1.CheckoutState
+	(GatewayWebhookResult)(0),            // 1: checkout.v1.GatewayWebhookResult
+	(*SubmitCheckoutRequest)(nil),        // 2: checkout.v1.SubmitCheckoutRequest
+	(*SubmitCheckoutResponse)(nil),       // 3: checkout.v1.SubmitCheckoutResponse
+	(*GetCheckoutRequest)(nil),           // 4: checkout.v1.GetCheckoutRequest
+	(*CheckoutStatus)(nil),               // 5: checkout.v1.CheckoutStatus
+	(*HandleGatewayWebhookRequest)(nil),  // 6: checkout.v1.HandleGatewayWebhookRequest
+	(*HandleGatewayWebhookResponse)(nil), // 7: checkout.v1.HandleGatewayWebhookResponse
+	(*CheckoutLine)(nil),                 // 8: checkout.v1.CheckoutLine
+	(*CheckoutAddress)(nil),              // 9: checkout.v1.CheckoutAddress
 }
 var file_shared_proto_checkout_v1_checkout_proto_depIdxs = []int32{
-	5, // 0: checkout.v1.SubmitCheckoutRequest.items:type_name -> checkout.v1.CheckoutLine
-	6, // 1: checkout.v1.SubmitCheckoutRequest.shipping_address:type_name -> checkout.v1.CheckoutAddress
+	8, // 0: checkout.v1.SubmitCheckoutRequest.items:type_name -> checkout.v1.CheckoutLine
+	9, // 1: checkout.v1.SubmitCheckoutRequest.shipping_address:type_name -> checkout.v1.CheckoutAddress
 	0, // 2: checkout.v1.SubmitCheckoutResponse.state:type_name -> checkout.v1.CheckoutState
 	0, // 3: checkout.v1.CheckoutStatus.state:type_name -> checkout.v1.CheckoutState
-	1, // 4: checkout.v1.CheckoutService.SubmitCheckout:input_type -> checkout.v1.SubmitCheckoutRequest
-	3, // 5: checkout.v1.CheckoutService.GetCheckout:input_type -> checkout.v1.GetCheckoutRequest
-	2, // 6: checkout.v1.CheckoutService.SubmitCheckout:output_type -> checkout.v1.SubmitCheckoutResponse
-	4, // 7: checkout.v1.CheckoutService.GetCheckout:output_type -> checkout.v1.CheckoutStatus
-	6, // [6:8] is the sub-list for method output_type
-	4, // [4:6] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	1, // 4: checkout.v1.HandleGatewayWebhookResponse.result:type_name -> checkout.v1.GatewayWebhookResult
+	2, // 5: checkout.v1.CheckoutService.SubmitCheckout:input_type -> checkout.v1.SubmitCheckoutRequest
+	4, // 6: checkout.v1.CheckoutService.GetCheckout:input_type -> checkout.v1.GetCheckoutRequest
+	6, // 7: checkout.v1.CheckoutService.HandleGatewayWebhook:input_type -> checkout.v1.HandleGatewayWebhookRequest
+	3, // 8: checkout.v1.CheckoutService.SubmitCheckout:output_type -> checkout.v1.SubmitCheckoutResponse
+	5, // 9: checkout.v1.CheckoutService.GetCheckout:output_type -> checkout.v1.CheckoutStatus
+	7, // 10: checkout.v1.CheckoutService.HandleGatewayWebhook:output_type -> checkout.v1.HandleGatewayWebhookResponse
+	8, // [8:11] is the sub-list for method output_type
+	5, // [5:8] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_shared_proto_checkout_v1_checkout_proto_init() }
@@ -515,8 +687,8 @@ func file_shared_proto_checkout_v1_checkout_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_shared_proto_checkout_v1_checkout_proto_rawDesc), len(file_shared_proto_checkout_v1_checkout_proto_rawDesc)),
-			NumEnums:      1,
-			NumMessages:   4,
+			NumEnums:      2,
+			NumMessages:   6,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -13,21 +13,26 @@ import (
 )
 
 type Checkout struct {
-	ID               uuid.UUID
-	BuyerUserID      uuid.UUID
-	MerchantID       uuid.UUID
-	IntentKey        string
-	RequestHash      []byte
-	Snapshot         json.RawMessage
-	State            string
-	Version          int64
-	OrderID          uuid.NullUUID
-	PaymentSessionID sql.NullString
-	PaymentReturnUrl sql.NullString
-	FailureReason    sql.NullString
-	DeadlineAt       sql.NullTime
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
+	ID                     uuid.UUID
+	BuyerUserID            uuid.UUID
+	MerchantID             uuid.UUID
+	IntentKey              string
+	RequestHash            []byte
+	Snapshot               json.RawMessage
+	State                  string
+	Version                int64
+	OrderID                uuid.NullUUID
+	GatewayPaymentID       sql.NullString
+	HostedCheckoutUrl      sql.NullString
+	FailureReason          sql.NullString
+	DeadlineAt             sql.NullTime
+	CreatedAt              time.Time
+	UpdatedAt              time.Time
+	GatewaySnapshot        json.RawMessage
+	GatewayExpiresAt       sql.NullTime
+	GatewayLastEventAt     sql.NullTime
+	GatewayStatusCheckedAt sql.NullTime
+	PaymentStatus          sql.NullString
 }
 
 type CheckoutException struct {
@@ -38,6 +43,15 @@ type CheckoutException struct {
 	Details    string
 	ResolvedAt sql.NullTime
 	CreatedAt  time.Time
+}
+
+type CheckoutGatewayOperation struct {
+	CheckoutID         uuid.UUID
+	Request            []byte
+	Attempts           int32
+	NextAttemptAt      time.Time
+	Status             string
+	Tracingspancontext sql.NullString
 }
 
 type CheckoutInbox struct {

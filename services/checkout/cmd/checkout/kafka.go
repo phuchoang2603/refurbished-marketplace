@@ -14,12 +14,6 @@ var resultTopics = []string{
 	messaging.EventTypeCheckoutStockRejected,
 	messaging.EventTypeCheckoutStockReleased,
 	messaging.EventTypeCheckoutStockCommitted,
-	messaging.EventTypeCheckoutSessionReady,
-	messaging.EventTypeCheckoutSessionRejected,
-	messaging.EventTypeCheckoutPaymentCancelled,
-	messaging.EventTypeCheckoutPaymentSucceeded,
-	messaging.EventTypeCheckoutPaymentFailed,
-	messaging.EventTypeCheckoutPaymentUncertain,
 	messaging.EventTypeCheckoutOrderFinalized,
 }
 

@@ -13,7 +13,6 @@ type Config struct {
 	SearchAddr    string
 	OrdersAddr    string
 	CartAddr      string
-	PaymentAddr   string
 	CheckoutAddr  string
 }
 
@@ -24,7 +23,6 @@ type Clients struct {
 	Search    *SearchClient
 	Orders    *OrdersClient
 	Cart      *CartClient
-	Payment   *PaymentClient
 	Checkout  *CheckoutClient
 }
 
@@ -74,16 +72,6 @@ func New(cfg Config) (*Clients, error) {
 		return nil, fmt.Errorf("cart grpc client: %w", err)
 	}
 
-	paymentClient, err := newPaymentClient(cfg.PaymentAddr)
-	if err != nil {
-		closeClient(usersClient)
-		closeClient(productsClient)
-		closeClient(inventoryClient)
-		closeClient(searchClient)
-		closeClient(ordersClient)
-		closeClient(cartClient)
-		return nil, fmt.Errorf("payment grpc client: %w", err)
-	}
 	checkoutClient, err := newCheckoutClient(cfg.CheckoutAddr)
 	if err != nil {
 		closeClient(usersClient)
@@ -92,7 +80,6 @@ func New(cfg Config) (*Clients, error) {
 		closeClient(searchClient)
 		closeClient(ordersClient)
 		closeClient(cartClient)
-		closeClient(paymentClient)
 		return nil, fmt.Errorf("checkout grpc client: %w", err)
 	}
 
@@ -103,7 +90,6 @@ func New(cfg Config) (*Clients, error) {
 		Search:    searchClient,
 		Orders:    ordersClient,
 		Cart:      cartClient,
-		Payment:   paymentClient,
 		Checkout:  checkoutClient,
 	}, nil
 }
@@ -118,7 +104,6 @@ func (c *Clients) Close() {
 	closeClient(c.Search)
 	closeClient(c.Orders)
 	closeClient(c.Cart)
-	closeClient(c.Payment)
 	closeClient(c.Checkout)
 }
 
