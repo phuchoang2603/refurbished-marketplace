@@ -17,22 +17,7 @@ import (
 )
 
 func (service *Service) RunGatewayOperations(ctx context.Context) error {
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
-	for {
-		processed, err := service.ProcessGatewayOperation(ctx)
-		if err != nil && ctx.Err() == nil {
-			sharedlog.Error("gateway operation processing failed", "err", err)
-		}
-		if processed {
-			continue
-		}
-		select {
-		case <-ctx.Done():
-			return nil
-		case <-ticker.C:
-		}
-	}
+	return runWorker(ctx, service.ProcessGatewayOperation, "gateway operation processing failed")
 }
 
 func (service *Service) ProcessGatewayOperation(ctx context.Context) (bool, error) {

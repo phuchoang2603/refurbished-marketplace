@@ -125,12 +125,33 @@ func TestCheckoutLookupByOrderIsBuyerOwned(t *testing.T) {
 		t.Fatal(err)
 	}
 	byOrder, err := server.GetCheckout(ctx, &checkoutv1.GetCheckoutRequest{OrderId: owned.GetOrderId(), BuyerUserId: request.GetBuyerUserId()})
-	if err != nil || byOrder.GetCheckoutId() != submitted.GetCheckoutId() {
+	if err != nil || !proto.Equal(owned, byOrder) {
 		t.Fatalf("order lookup %v %v", byOrder, err)
 	}
 	other := uuid.NewString()
 	_, err = server.GetCheckout(authenticatedContext(t, other), &checkoutv1.GetCheckoutRequest{OrderId: owned.GetOrderId(), BuyerUserId: other})
 	if status.Code(err) != codes.NotFound {
 		t.Fatalf("order lookup ownership %v", err)
+	}
+	for _, state := range []checkoutv1.CheckoutState{
+		checkoutv1.CheckoutState_CHECKOUT_STATE_READY_TO_PAY,
+		checkoutv1.CheckoutState_CHECKOUT_STATE_COMPLETED,
+	} {
+		t.Run(state.String(), func(t *testing.T) {
+			if _, err := db.ExecContext(t.Context(), "UPDATE checkouts SET state=$1, hosted_checkout_url=$2, gateway_payment_id=$3, payment_status=$4 WHERE id=$5", state.String(), "https://pay.example.com/session", "payment-1", "OPEN", submitted.GetCheckoutId()); err != nil {
+				t.Fatal(err)
+			}
+			byID, err := server.GetCheckout(ctx, &checkoutv1.GetCheckoutRequest{CheckoutId: submitted.GetCheckoutId(), BuyerUserId: request.GetBuyerUserId()})
+			if err != nil {
+				t.Fatal(err)
+			}
+			byOrder, err := server.GetCheckout(ctx, &checkoutv1.GetCheckoutRequest{OrderId: owned.GetOrderId(), BuyerUserId: request.GetBuyerUserId()})
+			if err != nil || !proto.Equal(byID, byOrder) {
+				t.Fatalf("lookup views differ: byID=%v byOrder=%v err=%v", byID, byOrder, err)
+			}
+			if (byOrder.GetHostedCheckoutUrl() != "") != (state == checkoutv1.CheckoutState_CHECKOUT_STATE_READY_TO_PAY) {
+				t.Fatalf("unexpected hosted URL for %v: %v", state, byOrder)
+			}
+		})
 	}
 }

@@ -123,6 +123,10 @@ func (service *Service) GetCheckout(ctx context.Context, checkoutID uuid.UUID) (
 	if err != nil {
 		return grpcserver.CheckoutView{}, err
 	}
+	return checkoutView(row), nil
+}
+
+func checkoutView(row database.Checkout) grpcserver.CheckoutView {
 	state := checkoutv1.CheckoutState(checkoutv1.CheckoutState_value[row.State])
 	view := grpcserver.CheckoutView{
 		CheckoutID: row.ID, BuyerUserID: row.BuyerUserID,
@@ -132,7 +136,7 @@ func (service *Service) GetCheckout(ctx context.Context, checkoutID uuid.UUID) (
 	if state == checkoutv1.CheckoutState_CHECKOUT_STATE_READY_TO_PAY {
 		view.HostedCheckoutURL = row.HostedCheckoutUrl.String
 	}
-	return view, nil
+	return view
 }
 
 func (service *Service) GetCheckoutByOrder(ctx context.Context, orderID uuid.UUID) (grpcserver.CheckoutView, error) {
@@ -143,7 +147,7 @@ func (service *Service) GetCheckoutByOrder(ctx context.Context, orderID uuid.UUI
 	if err != nil {
 		return grpcserver.CheckoutView{}, err
 	}
-	return service.GetCheckout(ctx, row.ID)
+	return checkoutView(row), nil
 }
 
 func validateSubmit(request *checkoutv1.SubmitCheckoutRequest) (uuid.UUID, uuid.UUID, error) {

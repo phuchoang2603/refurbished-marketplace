@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/phuchoang2603/refurbished-marketplace/services/checkout/internal/database"
 	"github.com/phuchoang2603/refurbished-marketplace/shared/messaging"
-	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
 	sharedtrace "github.com/phuchoang2603/refurbished-marketplace/shared/observe/trace"
 	checkoutv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1"
 	"go.opentelemetry.io/otel/attribute"
@@ -19,22 +18,7 @@ import (
 const deadlineRetryInterval = 30 * time.Second
 
 func (service *Service) RunDeadlines(ctx context.Context) error {
-	ticker := time.NewTicker(time.Second)
-	defer ticker.Stop()
-	for {
-		processed, err := service.ProcessDue(ctx)
-		if err != nil && ctx.Err() == nil {
-			sharedlog.Error("checkout deadline processing failed", "err", err)
-		}
-		if processed {
-			continue
-		}
-		select {
-		case <-ctx.Done():
-			return nil
-		case <-ticker.C:
-		}
-	}
+	return runWorker(ctx, service.ProcessDue, "checkout deadline processing failed")
 }
 
 func (service *Service) ProcessDue(ctx context.Context) (bool, error) {
