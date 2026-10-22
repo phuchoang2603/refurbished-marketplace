@@ -1,6 +1,6 @@
 # Ecommerce fraud gateway note
 
-Future direction for payment fraud. The marketplace already uses a hosted payment page (in-cluster simulator today). This note is about moving fraud scoring and card capture fully onto a real gateway plus an optional feature platform.
+The marketplace integrates with the external payment gateway for hosted card entry, fraud decisions and signed payment outcomes. Checkout owns the durable integration; the marketplace Payment service and hosted-page simulator are removed. A separate historical feature platform remains a future direction.
 
 ## Direction
 
@@ -26,7 +26,7 @@ Owns commerce facts:
 
 Sends commerce context to the gateway (`order_id` is the session idempotency key).
 
-### Payment gateway (target)
+### Payment gateway
 
 Owns payment execution and fraud logic:
 
@@ -35,9 +35,9 @@ Owns payment execution and fraud logic:
 - payment method capture or tokenization
 - device and network signals
 - fraud scoring and decisioning
-- payment outcome callback to marketplace
+- signed outcome webhooks to marketplace
 
-The gateway may keep its own local customer and merchant records if useful, created lazily when a payment session is created. No separate customer or merchant sync flow is required.
+The gateway derives merchant and customer IDs from the authenticated integration and external seller/buyer IDs. No separate customer or merchant provisioning call is required.
 
 ### Feature platform (not built)
 
@@ -63,100 +63,47 @@ sequenceDiagram
     participant G as Payment Gateway
 
     B->>M: Checkout
-    M->>O: CreateOrder
+    M->>O: Durable order-create command
     O-->>M: order id
-    M->>I: ReserveStock
-    M->>G: CreatePaymentSession order context
-    G-->>M: payment session id, hosted payment url
+    M->>I: Durable stock-reserve command
+    M->>G: POST /v1/payments with frozen order context
+    G-->>M: payment_id, checkout_url, expires_at
     M-->>B: Redirect to hosted payment url
     B->>G: Submit payment details
     G->>G: Score and process payment
     G-->>B: Redirect back to marketplace
-    G->>M: Callback or webhook with outcome
+    G->>M: Signed internal webhook to web, forwarded to Checkout
 ```
 
 ## Idempotency
 
 - `order_id` is the idempotency key for payment-session creation.
-- Repeating CreatePaymentSession for the same `order_id` returns the same active session.
+- Repeating `POST /v1/payments` with the same key and identical snapshot returns the same payment.
 - Refreshing the hosted payment page must not create a second payment attempt by itself.
-- Gateway-side submission and gateway callbacks must also be idempotent.
+- Gateway webhooks are deduplicated by `event_id` in Checkout's inbox, atomically with state and outgoing commands.
 
-Retries after a failed payment can stay under the same `order_id` without creating duplicate live sessions.
+A declined attempt leaves the payment open for another hosted-page attempt. Only `payment.succeeded` or `payment.expired` settles stock; Checkout creates no second gateway payment for the order.
 
 ## Marketplace to gateway contract
 
-Minimum commerce facts. This sketch is a target contract, not the current gRPC field list.
+Checkout sends `POST /v1/payments` to the in-cluster Edge with `Authorization: Bearer <integration API key>` and `Idempotency-Key: <order_id>`. Edge resolves the integration from the key; no integration ID is supplied by Checkout.
 
-### Request sketch
+The frozen JSON snapshot contains `order_reference`, `seller` and `buyer` (`external_id`, `account_created_at`), `amount` (`minor_units`, `currency`), `items` (`product_id`, `category`, `condition`, `quantity`, `unit_price`), `shipping_address` and an HTTPS `return_url`. Product grading comes from Products; seller/buyer account times come from Users. Buyer email is omitted.
 
-```json
-{
-  "order_id": "6a7c...",
-  "buyer": {
-    "marketplace_user_id": "0a61...",
-    "email": "buyer@example.com",
-    "account_created_at": "2026-05-24T12:00:00Z"
-  },
-  "merchant": {
-    "marketplace_merchant_id": "b2b8...",
-    "category": "refurbished_electronics",
-    "account_created_at": "2026-01-10T09:00:00Z"
-  },
-  "order": {
-    "amount_cents": 25999,
-    "currency": "USD",
-    "item_count": 2,
-    "items": [
-      {
-        "product_id": "p-1",
-        "category": "smartphones",
-        "quantity": 1,
-        "unit_price_cents": 19999,
-        "condition": "refurbished_grade_a"
-      }
-    ]
-  },
-  "shipping_address": {
-    "name": "Buyer Name",
-    "line1": "123 Main St",
-    "city": "New York",
-    "region": "NY",
-    "postal_code": "10001",
-    "country": "US"
-  },
-  "redirect": {
-    "return_url": "https://marketplace.example/orders/6a7c.../payment/return"
-  }
-}
-```
+The response carries `payment_id`, `session_id`, `checkout_url` and `expires_at`. Checkout persists the payment ID, hosted URL and expiry before exposing READY_TO_PAY. It resends the stored request after transport failures, and treats conflicting facts as a defect.
 
-### Response sketch
-
-```json
-{
-  "payment_session_id": "ps_...",
-  "hosted_payment_url": "https://gateway.example/pay/ps_...",
-  "expires_at": "2026-05-24T12:20:00Z"
-}
-```
-
-Payment already persists hosted session metadata, buyer/merchant JSON snapshots, named line items, `return_url`, and `expires_at`. A real gateway would still need richer fraud inputs than that snapshot.
+The notifier posts to web's internal `/webhooks/payment-gateway` with `Gateway-Signature: t=<unix>,v1=<HMAC-SHA256(secret, t + "." + body)>`. Checkout verifies the signature and ±5 minute tolerance before applying `payment.succeeded`, `payment.expired` or `attempt.declined`. The route is denied at the public marketplace Gateway. At payment expiry plus grace, one `GET /v1/payments/{payment_id}` resolves terminal status; an error or non-terminal status leaves stock held for review and later webhooks.
 
 ## Gateway fraud inputs
 
 ### Commerce facts from marketplace
 
-- `order_id`
-- `marketplace_user_id`
-- `marketplace_merchant_id`
-- `amount_cents`
-- `currency`
-- `item_count`
-- `product_categories[]`
-- `shipping_country`
-- `customer_account_created_at`
-- `merchant_account_created_at`
+- `order_reference`
+- `seller.external_id` and `buyer.external_id`
+- `seller.account_created_at` and `buyer.account_created_at`
+- `amount.minor_units` and `amount.currency`
+- item category, condition, quantity and unit price
+- shipping address
 
 ### Runtime signals captured by gateway
 
@@ -208,13 +155,6 @@ Instead of customer-to-terminal distance, model customer familiarity: usual devi
 - low-value card testing burst
 - high-velocity retry attack
 
-## Current gap
+## Rollout status
 
-Checkout-owned hosted-session create, redirect, deduplicated callbacks, and correlated `checkout.payment-*.v1` results are implemented against `tools/payment-gateway-simulator`. What is not built:
-
-- a real card-capturing gateway
-- device/network signal collection
-- fraud scoring
-- a feature platform for historical risk features
-
-Checkout still reserves inventory in-process before opening the hosted page; that marketplace rule stays even with an external gateway.
+Gateway integration configuration, credential provisioning, product backfill, draining Payment-owned sessions, deployment and cluster end-to-end checks remain deferred; see [the rollout gate](order-placement.md#rollout-gate). Defaults/dev have no gateway and refuse checkout submissions. No marketplace traffic simulator or historical feature platform is introduced by this integration.

@@ -3,7 +3,7 @@ global:
   imageTag: main
 
 # Namespace that hosts marketplace CNPG databases and app secrets
-# (orders-app, payment-app, inventory-app, mongodb-catalog-app). Kafka itself deploys to Release.Namespace.
+# (orders-app, checkout-app, inventory-app, mongodb-catalog-app). Kafka itself deploys to Release.Namespace.
 appNamespace: ecommerce
 
 kafka:
@@ -97,12 +97,6 @@ entities:
       - name: checkout.stock-commit.requested.v1
         partitions: 1
         retention: 86400000
-      - name: checkout.payment-session-create.requested.v1
-        partitions: 1
-        retention: 86400000
-      - name: checkout.payment-session-cancel.requested.v1
-        partitions: 1
-        retention: 86400000
       - name: checkout.order-finalize.requested.v1
         partitions: 1
         retention: 86400000
@@ -132,34 +126,6 @@ entities:
       databaseHost: orders-db-rw
       databasePort: 5432
       outboxTable: public.orders_outbox
-      publicationAutocreateMode: filtered
-  payment:
-    topics:
-      - name: checkout.payment-session-ready.v1
-        partitions: 1
-        retention: 86400000
-      - name: checkout.payment-session-rejected.v1
-        partitions: 1
-        retention: 86400000
-      - name: checkout.payment-cancelled.v1
-        partitions: 1
-        retention: 86400000
-      - name: checkout.payment-succeeded.v1
-        partitions: 1
-        retention: 86400000
-      - name: checkout.payment-failed.v1
-        partitions: 1
-        retention: 86400000
-      - name: checkout.payment-uncertain.v1
-        partitions: 1
-        retention: 86400000
-    connector:
-      name: payment-outbox
-      sourceSecretName: payment-app
-      databaseName: payment_db
-      databaseHost: payment-db-rw
-      databasePort: 5432
-      outboxTable: public.payment_outbox
       publicationAutocreateMode: filtered
   inventory:
     topics:

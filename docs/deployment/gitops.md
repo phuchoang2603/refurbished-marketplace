@@ -46,19 +46,23 @@ For production use `doppler-token.prd.secret.yaml` and `infra/argocd/prod/root.y
 
 Child Applications inherit the root Git revision through `$ARGOCD_APP_SOURCE_TARGET_REVISION`. Dev converts that revision to the immutable image tag `$ARGOCD_APP_REVISION`; production uses `:main`. Doppler config names do not belong in Helm or Argo values.
 
-The marketplace chart's `TunnelBinding` publishes shop/pay through the platform's `ClusterTunnel/talos-proxmox`; the Cloudflare operator creates their DNS records. The origin is `http://ecommerce-ingress-istio.ecommerce.svc.cluster.local:80`. See [networking.md](networking.md#edge).
+The marketplace chart's `TunnelBinding` publishes shop through the platform's `ClusterTunnel/talos-proxmox`; the Cloudflare operator creates its DNS records. The origin is `http://ecommerce-ingress-istio.ecommerce.svc.cluster.local:80`. See [networking.md](networking.md#edge).
+
+Production Checkout uses `PAYMENT_GATEWAY_URL=http://edge.payment-gateway.svc.cluster.local:8080`, `CHECKOUT_RETURN_BASE_URL=https://shop.phuchoang.sbs`, and the two keys from `checkout-payment-gateway`; see [secrets.md](../development/secrets.md). The API key identifies the integration at Edge. Defaults/dev leave the gateway disabled and refuse checkout submission. The marketplace no longer renders Payment, its database, or the hosted-page simulator, and publishes no `pay` / `pay-dev` hostname.
+
+Production migration and cluster end-to-end verification are deferred. Provision the gateway integration and matching credentials, backfill product grading and drain Payment-owned sessions before deploying this release; see [the rollout gate](../order-placement.md#rollout-gate). Local Helm renders do not satisfy that gate.
 
 ## Marketplace ownership
 
-| Application               | Marketplace-owned resources                                                                                                    | Namespace                    |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ---------------------------- |
-| root (`<env>-root`)       | `ecommerce` and `kafka` Namespaces with `istio.io/dataplane-mode: ambient`                                                     | cluster                      |
-| `secret-store`            | `SecretStore/doppler`, the single owner shared by every marketplace ExternalSecret                                             | `ecommerce`                  |
-| `mongodb`                 | `MongoDBCommunity`, credentials, workload RBAC                                                                                 | `ecommerce`                  |
-| `meilisearch`             | Meilisearch workload/PVC, credentials                                                                                          | `ecommerce`                  |
-| `refurbished-marketplace` | CNPG Clusters, ExternalSecrets, migrations, services, Gateways/HTTPRoutes, TunnelBinding, PeerAuthentication, DestinationRules | `ecommerce`                  |
-| `kafka`                   | Kafka/NodePool, topics, Connect/connectors, secret-reader RBAC, UI, PeerAuthentication                                         | `kafka`, RBAC in `ecommerce` |
-| `cloudflare-tunnel`       | platform-owned in `talos-proxmox`                                                                                              | `cloudflare-operator-system` |
+| Application               | Marketplace-owned resources                                                                                                                              | Namespace                    |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| root (`<env>-root`)       | `ecommerce` and `kafka` Namespaces with `istio.io/dataplane-mode: ambient`                                                                               | cluster                      |
+| `secret-store`            | `SecretStore/doppler`, the single owner shared by every marketplace ExternalSecret                                                                       | `ecommerce`                  |
+| `mongodb`                 | `MongoDBCommunity`, credentials, workload RBAC                                                                                                           | `ecommerce`                  |
+| `meilisearch`             | Meilisearch workload/PVC, credentials                                                                                                                    | `ecommerce`                  |
+| `refurbished-marketplace` | CNPG Clusters, ExternalSecrets, migrations, services, Gateways/HTTPRoutes, TunnelBinding, PeerAuthentication, DestinationRules, gateway webhook policies | `ecommerce`                  |
+| `kafka`                   | Kafka/NodePool, topics, Connect/connectors, secret-reader RBAC, UI, PeerAuthentication                                                                   | `kafka`, RBAC in `ecommerce` |
+| `cloudflare-tunnel`       | platform-owned in `talos-proxmox`                                                                                                                        | `cloudflare-operator-system` |
 
 The `platform` root owns the operators, CRDs, the Cloudflare tunnel and its cloudflared, and the telemetry pipeline (`otel-agent` in both environments; ClickHouse and HyperDX on prod). Marketplace workloads only export OTLP to `otel-agent`; see [observability.md](observability.md). The marketplace `secret-store` Application owns `SecretStore/doppler` in `ecommerce`; no other chart renders it. Cilium, Istio, Gateway API CRDs, and storage are also owned by `talos-proxmox`. Child Applications do not use `CreateNamespace`; only the root creates and labels the marketplace namespaces.
 

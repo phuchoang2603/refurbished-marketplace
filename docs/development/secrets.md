@@ -11,15 +11,23 @@ Marketplace resources do not use the platform `ClusterSecretStore/doppler`. That
 
 ## Application secrets
 
-| Doppler key              | K8s Secret                                | K8s key                            |
-| ------------------------ | ----------------------------------------- | ---------------------------------- |
-| `USERS_APP_PASSWORD`     | `users-app`                               | `password`                         |
-| `PRODUCTS_APP_PASSWORD`  | `mongodb-catalog-app` (ns `ecommerce`)    | `password`, `username` (`catalog`) |
-| `MEILI_MASTER_KEY`       | `meilisearch-master-key` (ns `ecommerce`) | `MEILI_MASTER_KEY`                 |
-| `INVENTORY_APP_PASSWORD` | `inventory-app`                           | `password`                         |
-| `ORDERS_APP_PASSWORD`    | `orders-app`                              | `password`                         |
-| `PAYMENT_APP_PASSWORD`   | `payment-app`                             | `password`                         |
-| `JWT_SECRET`             | `users-auth`                              | `JWT_SECRET`                       |
+| Doppler key                      | K8s Secret                                | K8s key                            |
+| -------------------------------- | ----------------------------------------- | ---------------------------------- |
+| `USERS_APP_PASSWORD`             | `users-app`                               | `password`                         |
+| `PRODUCTS_APP_PASSWORD`          | `mongodb-catalog-app` (ns `ecommerce`)    | `password`, `username` (`catalog`) |
+| `MEILI_MASTER_KEY`               | `meilisearch-master-key` (ns `ecommerce`) | `MEILI_MASTER_KEY`                 |
+| `INVENTORY_APP_PASSWORD`         | `inventory-app`                           | `password`                         |
+| `ORDERS_APP_PASSWORD`            | `orders-app`                              | `password`                         |
+| `CHECKOUT_APP_PASSWORD`          | `checkout-app`                            | `password`                         |
+| `PAYMENT_GATEWAY_API_KEY`        | `checkout-payment-gateway` (prod only)    | `PAYMENT_GATEWAY_API_KEY`          |
+| `PAYMENT_GATEWAY_WEBHOOK_SECRET` | `checkout-payment-gateway` (prod only)    | `PAYMENT_GATEWAY_WEBHOOK_SECRET`   |
+| `JWT_SECRET`                     | `users-auth`                              | `JWT_SECRET`                       |
+
+Only Checkout references `checkout-payment-gateway`. Chart defaults/dev render neither that Secret reference nor its ExternalSecret. The gateway API key is sent as `Authorization: Bearer`; Edge derives the integration ID from its hash, so Checkout has no separate integration-ID environment variable. The webhook signing secret must match the gateway notifier's integration configuration.
+
+Gateway prerequisite (managed in the gateway repository): `GATEWAY_INTEGRATIONS_JSON` supplies the same integration UUID to Edge and notifier, the SHA-256 API key hash, `synthetic: false`, and `webhook: {url, secret, events}`. Use `http://web.ecommerce.svc.cluster.local:8080/webhooks/payment-gateway` and subscribe to `attempt.declined`, `payment.succeeded`, and `payment.expired`. The raw API key and webhook secret are the two marketplace Doppler keys above. Credential provisioning and production migration remain deferred; no secrets are created by this change.
+
+Kafka Connect reads only catalog, inventory, orders and checkout credentials through its generated Roles. There is no Payment Postgres secret or `payment-outbox` connector.
 
 `mongodb-catalog-app` is mounted on products and read by the Kafka Connect products-outbox Mongo connector (Role in `ecommerce`). The SCRAM user is `catalog`, authenticated against database `catalog` (same DB as listings/outbox), with `readWrite` there. There is no products Postgres secret after catalog cutover.
 

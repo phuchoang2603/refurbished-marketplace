@@ -1,7 +1,6 @@
 {{- if .Values.ingress.enabled }}
 {{- $gatewayName := default "ecommerce-ingress" .Values.ingress.name }}
 {{- $webHost := required "ingress.webHostname is required when ingress.enabled is true" .Values.ingress.webHostname }}
-{{- $simHost := required "ingress.simulatorHostname is required when ingress.enabled is true" .Values.ingress.simulatorHostname }}
 {{- $port := default 80 .Values.ingress.port }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
@@ -22,12 +21,11 @@ spec:
       allowedRoutes:
         namespaces:
           from: Same
-{{- range $backend := list (dict "name" "web" "host" $webHost) (dict "name" "payment-gateway-simulator" "host" $simHost) }}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: {{ $backend.name }}
+  name: web
   namespace: {{ $.Release.Namespace }}
   annotations:
     argocd.argoproj.io/sync-wave: "6"
@@ -35,7 +33,7 @@ spec:
   parentRefs:
     - name: {{ $gatewayName }}
   hostnames:
-    - {{ $backend.host | quote }}
+    - {{ $webHost | quote }}
   rules:
 {{- range $rule := list $.Values.ingress.reads $.Values.ingress.writes }}
     - matches:
@@ -53,7 +51,7 @@ spec:
               - name: X-Forwarded-Proto
                 value: https
               - name: X-Forwarded-Host
-                value: {{ $backend.host | quote }}
+                value: {{ $webHost | quote }}
 {{- with $rule.timeouts }}
       timeouts:
 {{- toYaml . | nindent 8 }}
@@ -63,10 +61,29 @@ spec:
 {{- toYaml . | nindent 8 }}
 {{- end }}
       backendRefs:
-        - name: {{ $backend.name }}
-          port: {{ index $.Values.services $backend.name "port" }}
+        - name: web
+          port: {{ $.Values.services.web.port }}
 {{- end }}
-{{- end }}
+---
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: {{ $gatewayName }}-deny-payment-webhook
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "5"
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: {{ $gatewayName }}
+  action: DENY
+  rules:
+    - to:
+        - operation:
+            paths:
+              - /webhooks/payment-gateway
+              - /webhooks/payment-gateway/*
 {{- $origin := printf "http://%s-istio.%s.svc.cluster.local:%v" $gatewayName .Release.Namespace $port }}
 {{- with .Values.ingress.tunnel }}
 {{- if .enabled }}
@@ -85,10 +102,6 @@ subjects:
   - name: {{ $gatewayName }}-istio
     spec:
       fqdn: {{ $webHost | quote }}
-      target: {{ $origin }}
-  - name: {{ $gatewayName }}-istio
-    spec:
-      fqdn: {{ $simHost | quote }}
       target: {{ $origin }}
 tunnelRef:
   kind: ClusterTunnel

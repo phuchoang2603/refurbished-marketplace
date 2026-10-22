@@ -8,12 +8,11 @@ ingress:
   name: ecommerce-ingress
   port: 80
   webHostname: shop-dev.phuchoang.sbs
-  simulatorHostname: pay-dev.phuchoang.sbs
-  # Publishes both hostnames through the platform's Cloudflare tunnel, which creates their DNS records.
+  # Publishes the shop hostname through the platform's Cloudflare tunnel, which creates its DNS records.
   tunnel:
     enabled: true
     clusterTunnel: talos-proxmox
-  # Web and simulator GETs only read, so transient backend failures retry within the total budget.
+  # Web GETs only read, so transient backend failures retry within the total budget.
   reads:
     method: GET
     timeouts:
@@ -23,7 +22,7 @@ ingress:
       attempts: 2
       backoff: 100ms
       codes: [502, 503]
-  # Everything else, including checkout, cart, hosted-payment, and callback POSTs, never retries.
+  # Everything else, including checkout and cart POSTs, never retries.
   writes:
     timeouts:
       request: 30s
@@ -53,7 +52,6 @@ mesh:
       - orders
       - checkout
       - cart
-      - payment
     connectionPool:
       tcp:
         maxConnections: 100
@@ -71,7 +69,7 @@ mesh:
       maxEjectionPercent: 50
     # Unary methods that are safe to replay; an identical SubmitCheckout returns the original
     # checkout. Istio retries connect failures, refused streams, and gRPC UNAVAILABLE/CANCELLED.
-    # Every other method, including cart and payment mutations, is routed without retries.
+    # Every other method, including cart mutations, is routed without retries.
     grpcRetries:
       timeouts:
         request: 10s
@@ -98,8 +96,6 @@ mesh:
           - checkout.v1.CheckoutService/GetCheckout
         cart:
           - cart.v1.CartService/GetCart
-        payment:
-          - payment.v1.PaymentService/GetHostedPaymentSessionByOrder
 
 defaults:
   otel:
@@ -164,11 +160,8 @@ services:
       SEARCH_SVC_ADDR: search:9098
       ORDERS_SVC_ADDR: orders:9093
       CART_SVC_ADDR: cart:9094
-      PAYMENT_SVC_ADDR: payment:9096
       CHECKOUT_SVC_ADDR: checkout:9099
-      HOSTED_PAYMENT_BASE_URL: https://pay-dev.phuchoang.sbs
       PUBLIC_BASE_URL: https://shop-dev.phuchoang.sbs
-      HOSTED_PAYMENT_CALLBACK_BASE_URL: http://web:8080
 
   users:
     enabled: true
@@ -278,6 +271,7 @@ services:
       secretName: users-auth
       secretKey: JWT_SECRET
     env:
+      USERS_SVC_ADDR: users:9091
       KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap.kafka.svc:9092
     migration:
       enabled: true
@@ -304,30 +298,3 @@ services:
       - name: redis
         image: docker.io/valkey/valkey:7.2.5
         port: 6379
-
-  payment:
-    enabled: true
-    image: payment
-    port: 9096
-    protocol: grpc
-    env:
-      KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap.kafka.svc:9092
-    migration:
-      enabled: true
-      image: payment-migrator
-    db:
-      host: payment-db-rw
-      port: 5432
-      name: payment_db
-      owner: payment_app
-      secretName: payment-app
-      usernameKey: username
-      passwordKey: password
-      instances: 1
-      storageSize: 1Gi
-
-  payment-gateway-simulator:
-    enabled: true
-    image: payment-gateway-simulator
-    port: 8097
-    protocol: http

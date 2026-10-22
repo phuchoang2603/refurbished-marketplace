@@ -7,7 +7,7 @@ Runtime layout is in [architecture.md](../architecture.md). This page is how to 
 - [Nix](https://nixos.org/) with [devenv](https://devenv.sh/) for pinned tooling
 - A talos-dev cluster brought up by `talos-proxmox` (its platform root installs dev's own Argo CD)
 - [Doppler](https://doppler.com/) access to projects `talos-proxmox` (kubeconfig) and `refurbished-marketplace` (app secrets) — see [secrets.md](secrets.md)
-- Cloudflare Zero Trust tunnel for `shop-dev.phuchoang.sbs` / `pay-dev.phuchoang.sbs`
+- Cloudflare Zero Trust tunnel for `shop-dev.phuchoang.sbs`
 
 Argo CD runs inside talos-dev and deploys only to that cluster. Fetch its kubeconfig from Doppler, apply the Doppler **dev** token, then the marketplace project and **dev** root. Children retry until the platform operators and CRDs are available, so no readiness wait is needed:
 
@@ -39,10 +39,11 @@ Go, protobuf, `kubectl`, `helm`, Doppler, OpenSpec. On enter, devenv runs tasks 
 
 Cloudflare Tunnel → Istio Gateway (`ecommerce-ingress-istio.ecommerce.svc.cluster.local:80`).
 
-| Hostname                 | Backend                     |
-| ------------------------ | --------------------------- |
-| `shop-dev.phuchoang.sbs` | `web`                       |
-| `pay-dev.phuchoang.sbs`  | `payment-gateway-simulator` |
+| Hostname                 | Backend |
+| ------------------------ | ------- |
+| `shop-dev.phuchoang.sbs` | `web`   |
+
+Dev has no payment gateway. Checkout submission returns unavailable without creating an order or reserving stock; hosted-payment flows are prod-only. The marketplace no longer publishes `pay-dev`.
 
 Smoke-check:
 

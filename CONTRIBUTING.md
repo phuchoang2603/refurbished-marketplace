@@ -7,7 +7,7 @@ Thanks for helping build this project. Guides live under [docs/](docs/), includi
 - [Nix](https://nixos.org/) with [devenv](https://devenv.sh/)
 - A Talos environment brought up by `talos-proxmox` (each environment runs its own Argo CD)
 - [Doppler](https://www.doppler.com/) access to `talos-proxmox` (kubeconfig) and `refurbished-marketplace` (app secrets)
-- Cloudflare tunnel for shop/pay hostnames
+- Cloudflare tunnel for the shop hostname
 
 ## Quick start
 

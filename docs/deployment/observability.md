@@ -73,7 +73,7 @@ GROUP BY ServiceName
 ) ORDER BY signal, ServiceName
 ```
 
-Expect `web`, `users`, `products`, `inventory`, `orders`, `payment`, `checkout`, `cart`, and `search` for all three signals. A service exports RED metrics only after it handles its first request, so exercise the shop before concluding metrics are missing. If a service is missing, check its startup logs for exporter errors and the `otel-agent` pod on the same node.
+Expect `web`, `users`, `products`, `inventory`, `orders`, `checkout`, `cart`, and `search` for all three signals. A service exports RED metrics only after it handles its first request, so exercise the shop before concluding metrics are missing. If a service is missing, check its startup logs for exporter errors and the `otel-agent` pod on the same node.
 
 ## Application RED metrics
 
@@ -99,7 +99,7 @@ Application tracing is initialized through `shared/observe/trace` and `shared/ru
 
 ```text
 Browser → web → domain services → database
-                    │
+                                                              │
                     └→ outbox → Debezium/Connect → Kafka → consumers
                                                               │
                                   node otel-agent ◀────────────┘ → prod ClickHouse → HyperDX
@@ -110,10 +110,12 @@ KafkaConnect enables Strimzi OpenTelemetry tracing and exports to the same `otel
 To verify a checkout, search the **Traces** source:
 
 ```text
-ServiceName:(web OR checkout OR orders OR payment OR products OR inventory OR search OR cart OR users OR connect-debezium)
+ServiceName:(web OR checkout OR orders OR products OR inventory OR search OR cart OR users OR connect-debezium)
 ```
 
 Open a `POST /checkout` span. Expect route/RPC/messaging span names, database child spans where applicable, and `connect-debezium` across asynchronous hops. Gateway proxy spans are not expected.
+
+For payment outcomes, follow `POST /webhooks/payment-gateway` → Checkout `HandleGatewayWebhook` → `checkout_outbox` → Debezium → Inventory commit/release. Orders, Inventory and Checkout keep their tracing outbox columns; there is no Payment outbox. Correlate the gateway delivery with `order_id` and gateway payment ID. Never log the API key, webhook signing secret, hosted checkout URL/token, or raw webhook body. Cluster verification of this waterfall remains deferred until the gateway migration.
 
 ## Structured logging and correlation
 

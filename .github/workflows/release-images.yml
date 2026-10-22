@@ -7,7 +7,6 @@ on:
       - infra/docker/**
       - services/**
       - shared/**
-      - tools/**
       - go.work
       - go.work.sum
       - "**/go.mod"
@@ -17,7 +16,6 @@ on:
       - infra/docker/**
       - services/**
       - shared/**
-      - tools/**
       - go.work
       - go.work.sum
       - "**/go.mod"
@@ -92,21 +90,6 @@ jobs:
               BUILD_PKG=./services/cart/cmd/cart
               BUILD_BIN=cart
               EXPOSE_PORT=9094
-          - image: payment
-            dockerfile: infra/docker/go-service.Dockerfile
-            build_args: |
-              BUILD_PKG=./services/payment/cmd/payment
-              BUILD_BIN=payment
-              EXPOSE_PORT=9096
-          - image: payment-migrator
-            dockerfile: infra/docker/goose-migrator.Dockerfile
-            build_args: MIGRATIONS_DIR=services/payment/db/migrations
-          - image: payment-gateway-simulator
-            dockerfile: infra/docker/go-service.Dockerfile
-            build_args: |
-              BUILD_PKG=./tools/payment-gateway-simulator
-              BUILD_BIN=payment-gateway-simulator
-              EXPOSE_PORT=8097
           - image: connect-debezium
             dockerfile: infra/docker/connect-debezium.Dockerfile
             build_args: ""
