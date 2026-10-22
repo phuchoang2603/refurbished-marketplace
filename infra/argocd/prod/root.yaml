@@ -1,6 +1,6 @@
 # Apply to prod's own Argo CD after talos-proxmox platform bring-up, using the kubeconfig from
 # Doppler talos-proxmox/prod. Apply infra/k8s/doppler-token.prd.secret.yaml and infra/argocd/project.yaml first.
-# Images: GHCR :main. Hosts/Kafka/tunnel: chart values-prod.yaml.
+# Images: GHCR at the verified feature-branch SHA. Hosts/Kafka/tunnel: chart values-prod.yaml.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -20,7 +20,7 @@ spec:
         namePrefix: prod
         global:
           imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
-          imageTag: main
+          imageTag: a84cde3916d7b4c936cdc0386a69e2835edfa395
           imagePullPolicy: Always
         marketplace:
           enabled: true
