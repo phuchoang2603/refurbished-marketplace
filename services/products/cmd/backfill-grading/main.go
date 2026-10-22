@@ -26,7 +26,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "open catalog failed")
 		os.Exit(1)
 	}
-	defer store.Close(context.Background())
+	defer func() { _ = store.Close(context.Background()) }()
 	result, err := store.BackfillGrading(ctx, *apply)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "backfill failed")
