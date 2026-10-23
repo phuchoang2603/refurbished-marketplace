@@ -44,7 +44,7 @@ func TestGetCheckoutBuyerOwnership(t *testing.T) {
 	server := grpcserver.New(checkoutReader{view: grpcserver.CheckoutView{
 		CheckoutID: checkoutID, BuyerUserID: buyerID,
 		State:            checkoutv1.CheckoutState_CHECKOUT_STATE_READY_TO_PAY,
-		GatewayPaymentID: "hosted-session",
+		GatewayPaymentID: "hosted-session", IntentKey: "original-intent",
 	}}, authconfig.DefaultConfig(checkoutTestJWTSecret))
 	buyerContext := authenticatedContext(t, buyerID.String())
 
@@ -58,7 +58,7 @@ func TestGetCheckoutBuyerOwnership(t *testing.T) {
 	response, err := server.GetCheckout(buyerContext, &checkoutv1.GetCheckoutRequest{
 		CheckoutId: checkoutID.String(), BuyerUserId: buyerID.String(),
 	})
-	if err != nil || response.GetGatewayPaymentId() != "hosted-session" {
+	if err != nil || response.GetGatewayPaymentId() != "hosted-session" || response.GetIntentKey() != "original-intent" {
 		t.Fatalf("buyer should see the ready checkout: response=%v error=%v", response, err)
 	}
 }

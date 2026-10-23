@@ -377,6 +377,7 @@ type CheckoutStatus struct {
 	FailureReason     string                 `protobuf:"bytes,6,opt,name=failure_reason,json=failureReason,proto3" json:"failure_reason,omitempty"`
 	BuyerUserId       string                 `protobuf:"bytes,7,opt,name=buyer_user_id,json=buyerUserId,proto3" json:"buyer_user_id,omitempty"`
 	PaymentStatus     string                 `protobuf:"bytes,8,opt,name=payment_status,json=paymentStatus,proto3" json:"payment_status,omitempty"`
+	IntentKey         string                 `protobuf:"bytes,9,opt,name=intent_key,json=intentKey,proto3" json:"intent_key,omitempty"`
 	unknownFields     protoimpl.UnknownFields
 	sizeCache         protoimpl.SizeCache
 }
@@ -463,6 +464,13 @@ func (x *CheckoutStatus) GetBuyerUserId() string {
 func (x *CheckoutStatus) GetPaymentStatus() string {
 	if x != nil {
 		return x.PaymentStatus
+	}
+	return ""
+}
+
+func (x *CheckoutStatus) GetIntentKey() string {
+	if x != nil {
+		return x.IntentKey
 	}
 	return ""
 }
@@ -589,7 +597,7 @@ const file_shared_proto_checkout_v1_checkout_proto_rawDesc = "" +
 	"\vcheckout_id\x18\x01 \x01(\tR\n" +
 	"checkoutId\x12\"\n" +
 	"\rbuyer_user_id\x18\x02 \x01(\tR\vbuyerUserId\x12\x19\n" +
-	"\border_id\x18\x03 \x01(\tR\aorderId\"\xce\x02\n" +
+	"\border_id\x18\x03 \x01(\tR\aorderId\"\xed\x02\n" +
 	"\x0eCheckoutStatus\x12\x1f\n" +
 	"\vcheckout_id\x18\x01 \x01(\tR\n" +
 	"checkoutId\x12\x19\n" +
@@ -599,7 +607,9 @@ const file_shared_proto_checkout_v1_checkout_proto_rawDesc = "" +
 	"\x13hosted_checkout_url\x18\x05 \x01(\tR\x11hostedCheckoutUrl\x12%\n" +
 	"\x0efailure_reason\x18\x06 \x01(\tR\rfailureReason\x12\"\n" +
 	"\rbuyer_user_id\x18\a \x01(\tR\vbuyerUserId\x12%\n" +
-	"\x0epayment_status\x18\b \x01(\tR\rpaymentStatus\"c\n" +
+	"\x0epayment_status\x18\b \x01(\tR\rpaymentStatus\x12\x1d\n" +
+	"\n" +
+	"intent_key\x18\t \x01(\tR\tintentKey\"c\n" +
 	"\x1bHandleGatewayWebhookRequest\x12\x19\n" +
 	"\braw_body\x18\x01 \x01(\fR\arawBody\x12)\n" +
 	"\x10signature_header\x18\x02 \x01(\tR\x0fsignatureHeader\"Y\n" +

@@ -14,10 +14,9 @@ No CiliumNetworkPolicy is rendered. In prod, `NetworkPolicy/web-payment-gateway`
 
 Browser traffic: Cloudflare Tunnel → Istio Gateway → `web`.
 
-| Env  | Hostname                 | Backend |
-| ---- | ------------------------ | ------- |
-| dev  | `shop-dev.phuchoang.sbs` | `web`   |
-| prod | `shop.phuchoang.sbs`     | `web`   |
+| Env  | Hostname             | Backend |
+| ---- | -------------------- | ------- |
+| prod | `shop.phuchoang.sbs` | `web`   |
 
 Istio provisions `Service/ecommerce-ingress-istio` for `Gateway/ecommerce-ingress`. The Gateway's `networking.istio.io/service-type: ClusterIP` annotation keeps it off the Cilium L2 pool; the tunnel reaches it through in-cluster DNS:
 

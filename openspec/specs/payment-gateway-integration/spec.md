@@ -31,12 +31,17 @@ The category and condition of each line SHALL come from the products batch read 
 
 ### Requirement: Verified gateway webhooks
 
-Checkout SHALL accept a gateway webhook only when its `Gateway-Signature` HMAC-SHA256 over `t "." body` matches the configured signing secret and its timestamp is within 5 minutes. It SHALL record each accepted `event_id` in its inbox together with the state change and outgoing Inventory command, so a repeated event ID is acknowledged without another effect. It SHALL match the event to a checkout by gateway payment ID and acknowledge events for unknown payments without effect. `payment.succeeded` SHALL be definitive success and `payment.expired` definitive failure; `attempt.declined` SHALL NOT change checkout state.
+Checkout SHALL accept a gateway webhook only when its `Gateway-Signature` HMAC-SHA256 over `t "." body` matches the configured signing secret and its timestamp is within 5 minutes. It SHALL record each accepted `event_id` in its inbox together with the state change and outgoing Inventory command, so a repeated event ID is acknowledged without another effect. It SHALL match the event to a checkout by gateway payment ID and return a retryable `UNAVAILABLE` error for unrecorded payments without an inbox entry; web SHALL map this to HTTP 503 so the notifier can redeliver after payment creation commits. `payment.succeeded` SHALL be definitive success and `payment.expired` definitive failure; `attempt.declined` SHALL NOT change checkout state.
 
 #### Scenario: Forged webhook
 
 - **WHEN** a webhook arrives with a missing or wrong signature or a stale timestamp
 - **THEN** it is rejected and the checkout does not change
+
+#### Scenario: Webhook precedes the local payment commit
+
+- **WHEN** a correctly signed event arrives before its gateway payment ID is recorded
+- **THEN** Checkout returns a retryable error without acknowledging or deduplicating the event, and accepts its redelivery after the payment is recorded
 
 #### Scenario: Declined attempt then success
 

@@ -55,12 +55,12 @@ The repository SHALL NOT commit plaintext Kubernetes Secret manifests for applic
 
 ### Requirement: Doppler bootstrap secret manifests
 
-The repository SHALL provide example Kubernetes Secret manifests for Doppler service tokens and document manual creation of gitignored `dev` and `prd` bootstrap files under `infra/k8s/`.
+The repository SHALL provide example Kubernetes Secret manifests for Doppler service tokens and document manual creation of the gitignored `prd` bootstrap file under `infra/k8s/`.
 
-#### Scenario: Developer creates talos-dev bootstrap secret
+#### Scenario: Developer creates the bootstrap secret
 
-- **WHEN** a developer prepares talos-dev
-- **THEN** they copy `infra/k8s/doppler-token.dev.secret.yaml.example` to `infra/k8s/doppler-token.dev.secret.yaml` and paste a `dev` config service token
+- **WHEN** a developer prepares the prod development server
+- **THEN** they copy `infra/k8s/doppler-token.prd.secret.yaml.example` to `infra/k8s/doppler-token.prd.secret.yaml` and paste a `prd` config service token
 
 #### Scenario: Operator bootstraps prod cluster secret
 
@@ -78,7 +78,7 @@ The repository SHALL provide Doppler CLI via devenv and set `DOPPLER_PROJECT` an
 
 #### Scenario: Bootstrap applies Doppler secret
 
-- **WHEN** `infra/k8s/doppler-token.dev.secret.yaml` is applied on talos-dev
+- **WHEN** `infra/k8s/doppler-token.prd.secret.yaml` is applied on prod
 - **THEN** Kubernetes Secret `doppler-token` exists in `ecommerce` with key `dopplerToken`
 
 ### Requirement: Provider swap via SecretStore
@@ -92,12 +92,12 @@ Secret provisioning SHALL remain provider-agnostic at the service deployment lay
 
 ### Requirement: Doppler environment configs
 
-Doppler MAY use separate configs for non-production vs production secrets. Bootstrap of `ecommerce/doppler-token` SHALL use kubectl (or equivalent) with the target environment's kubeconfig, fetched from the `talos-proxmox` Doppler project config for that environment.
+The development server SHALL use Doppler config `prd` for application secrets. Bootstrap of `ecommerce/doppler-token` SHALL use kubectl (or equivalent) with the prod kubeconfig, fetched from the `talos-proxmox` Doppler project config `prod`.
 
 #### Scenario: Bootstrap with kubectl
 
-- **WHEN** a contributor bootstraps secrets for dev or prod
-- **THEN** they fetch that environment's `KUBECONFIG` from Doppler project `talos-proxmox` and create `ecommerce/doppler-token` with kubectl against that cluster
+- **WHEN** a contributor bootstraps secrets for prod
+- **THEN** they fetch the prod `KUBECONFIG` from Doppler project `talos-proxmox` and create `ecommerce/doppler-token` with kubectl against that cluster
 
 ### Requirement: Mongo credentials from Doppler
 
@@ -119,7 +119,7 @@ Secrets documentation SHALL list the Doppler remote keys and Kubernetes Secret n
 
 #### Scenario: Operator can bootstrap Mongo passwords
 
-- **WHEN** an operator prepares Doppler configs `dev` and `prd`
+- **WHEN** an operator prepares Doppler config `prd`
 - **THEN** documentation names the Mongo-related Doppler keys to set before the database Application can become Ready
 
 ### Requirement: Products Mongo credentials from Doppler
@@ -165,7 +165,7 @@ Secrets documentation SHALL list the Doppler remote key and Kubernetes Secret na
 
 #### Scenario: Operator can bootstrap the Meilisearch key
 
-- **WHEN** an operator prepares Doppler configs `dev` and `prd`
+- **WHEN** an operator prepares Doppler config `prd`
 - **THEN** documentation names the Meilisearch Doppler key to set before the search Application can become Ready
 
 ### Requirement: Single SecretStore owner
@@ -174,8 +174,8 @@ Secrets documentation SHALL list the Doppler remote key and Kubernetes Secret na
 
 #### Scenario: One Application tracks the store
 
-- **WHEN** the dev or prod root has synced
-- **THEN** `SecretStore/doppler` is tracked only by the `<env>-secret-store` Application and no `SharedResourceWarning` is reported for it
+- **WHEN** the prod root has synced
+- **THEN** `SecretStore/doppler` is tracked only by the `prod-secret-store` Application and no `SharedResourceWarning` is reported for it
 
 #### Scenario: Store failure is isolated
 

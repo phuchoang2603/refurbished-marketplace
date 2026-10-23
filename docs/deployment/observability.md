@@ -10,7 +10,7 @@ The shared telemetry pipeline is installed and administered by `talos-proxmox`: 
 | Metrics | OTLP/gRPC to the same endpoint every 30 s (`OTEL_METRIC_EXPORT_INTERVAL`) | `otel-agent` → prod gateway → `otel_metrics_*` |
 | Logs    | single-line slog JSON on stdout                                           | `otel-agent` filelog → `otel_logs`             |
 
-The `otel-agent` Service uses `internalTrafficPolicy: Local`, so each pod exports to its own node's agent without credentials. The agent adds Kubernetes metadata and sets `k8s.cluster.name` and `deployment.environment` (`dev`/`prod`); the chart does not set them.
+The `otel-agent` Service uses `internalTrafficPolicy: Local`, so each pod exports to its own node's agent without credentials. The agent adds Kubernetes metadata and sets `k8s.cluster.name` and `deployment.environment` (`prod`); the chart does not set them.
 
 Every marketplace pod template carries `resource.opentelemetry.io/service.name: <service>`. The agent's `k8sattributes` reads it, so stdout log records get the same `ServiceName` as the service's spans and metrics. KafkaConnect pods carry `connect-debezium`.
 
@@ -36,11 +36,11 @@ kubectl --kubeconfig="$HOME/.kube/talos-prod.yaml" get applications -n argo-cd o
 kubectl --kubeconfig="$HOME/.kube/talos-prod.yaml" get pods,svc -n observability
 ```
 
-Dev agents forward to prod's gateway at `10.69.12.129:4317`. When prod is down, dev services keep running and telemetry is dropped after the agents' bounded retry. Fetch kubeconfigs as described in [gitops.md](gitops.md#environment-configuration). Retention (7 days), storage, ingest authentication, and HyperDX accounts are documented in `talos-proxmox`'s [cluster access](https://github.com/phuchoang2603/talos-proxmox/blob/main/docs/operations/cluster-access.md) guide.
+Fetch kubeconfigs as described in [gitops.md](gitops.md#environment-configuration). Retention (7 days), storage, ingest authentication, and HyperDX accounts are documented in `talos-proxmox`'s [cluster access](https://github.com/phuchoang2603/talos-proxmox/blob/main/docs/operations/cluster-access.md) guide.
 
 ## HyperDX access
 
-HyperDX is served on prod's internal LAN address `http://10.69.12.128`; it has no public hostname. It shows both environments. Filter by `ResourceAttributes['deployment.environment']` (`dev` or `prod`) when a service runs in both.
+HyperDX is served on prod's internal LAN address `http://10.69.12.128`; it has no public hostname.
 
 The default sources are **Logs** (`otel_logs`), **Traces** (`otel_traces`), and **Metrics** (`otel_metrics_gauge`, `otel_metrics_sum`, `otel_metrics_histogram`).
 
@@ -115,7 +115,7 @@ ServiceName:(web OR checkout OR orders OR products OR inventory OR search OR car
 
 Open a `POST /checkout` span. Expect route/RPC/messaging span names, database child spans where applicable, and `connect-debezium` across asynchronous hops. Gateway proxy spans are not expected.
 
-For payment outcomes, follow `POST /webhooks/payment-gateway` → Checkout `HandleGatewayWebhook` → `checkout_outbox` → Debezium → Inventory commit/release. Orders, Inventory and Checkout keep their tracing outbox columns; there is no Payment outbox. Correlate the gateway delivery with `order_id` and gateway payment ID. Never log the API key, webhook signing secret, hosted checkout URL/token, or raw webhook body. Cluster verification of this waterfall remains deferred until the gateway migration.
+For payment outcomes, follow `POST /webhooks/payment-gateway` → Checkout `HandleGatewayWebhook` → `checkout_outbox` → Debezium → Inventory commit/release. Orders, Inventory and Checkout keep their tracing outbox columns; there is no Payment outbox. Correlate the gateway delivery with `order_id` and gateway payment ID. Never log the API key, webhook signing secret, hosted checkout URL/token, or raw webhook body. Cluster verification of this waterfall remains pending; see the [rollout gate](../order-placement.md#rollout-gate).
 
 ## Structured logging and correlation
 

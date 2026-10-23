@@ -1,6 +1,6 @@
-package service
+package productsv1
 
-func validCategory(value string) bool {
+func ValidCategory(value string) bool {
 	switch value {
 	case "phone", "laptop", "tablet", "accessory", "headphones", "smartwatch", "game_console", "camera":
 		return true
@@ -9,7 +9,7 @@ func validCategory(value string) bool {
 	}
 }
 
-func validCondition(value string) bool {
+func ValidCondition(value string) bool {
 	switch value {
 	case "excellent", "good", "fair":
 		return true

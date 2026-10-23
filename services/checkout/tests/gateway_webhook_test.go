@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"net/http"
 	"testing"
 	"time"
 
@@ -60,4 +61,32 @@ func TestGatewayWebhookRollsBackInboxWhenOutboxFails(t *testing.T) {
 	}
 	sendWebhook(t, svc, "success", "payment.succeeded", orderID)
 	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_COMMITTING_STOCK, 3)
+}
+
+func TestUnmatchedWebhookRetriesUntilPaymentRecorded(t *testing.T) {
+	db := newCheckoutDB(t)
+	svc := gatewayService(t, db, func(w http.ResponseWriter, r *http.Request) { writePayment(t, w) })
+	checkoutID, orderID := submitWithService(t, db, svc)
+	reserveForPayment(t, svc, checkoutID, orderID)
+	request := webhookRequest(t, "early-expiry", "payment.expired", orderID)
+	if response, err := svc.HandleGatewayWebhook(t.Context(), request); status.Code(err) != codes.Unavailable || response != nil {
+		t.Fatalf("unrecorded payment must retry: response=%v error=%v", response, err)
+	}
+	var inbox int
+	if err := db.QueryRowContext(t.Context(), "SELECT count(*) FROM checkout_inbox WHERE message_id='gateway:early-expiry'").Scan(&inbox); err != nil || inbox != 0 {
+		t.Fatalf("unmatched webhook must not be deduplicated: count=%d error=%v", inbox, err)
+	}
+	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_CREATING_PAYMENT, 2)
+	if processed, err := svc.ProcessGatewayOperation(t.Context()); err != nil || !processed {
+		t.Fatalf("record payment: processed=%v error=%v", processed, err)
+	}
+	response, err := svc.HandleGatewayWebhook(t.Context(), request)
+	if err != nil || response.GetResult() != checkoutv1.GatewayWebhookResult_GATEWAY_WEBHOOK_RESULT_ACCEPTED {
+		t.Fatalf("redelivery must apply: response=%v error=%v", response, err)
+	}
+	response, err = svc.HandleGatewayWebhook(t.Context(), request)
+	if err != nil || response.GetResult() != checkoutv1.GatewayWebhookResult_GATEWAY_WEBHOOK_RESULT_DUPLICATE {
+		t.Fatalf("applied event must deduplicate: response=%v error=%v", response, err)
+	}
+	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK, 3)
 }

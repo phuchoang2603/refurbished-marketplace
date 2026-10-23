@@ -17,6 +17,7 @@ import (
 	"github.com/phuchoang2603/refurbished-marketplace/shared/messaging"
 	sharedtrace "github.com/phuchoang2603/refurbished-marketplace/shared/observe/trace"
 	checkoutv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1"
+	productsv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/encoding/protojson"
@@ -130,7 +131,7 @@ func checkoutView(row database.Checkout) grpcserver.CheckoutView {
 	state := checkoutv1.CheckoutState(checkoutv1.CheckoutState_value[row.State])
 	view := grpcserver.CheckoutView{
 		CheckoutID: row.ID, BuyerUserID: row.BuyerUserID,
-		OrderID: row.OrderID.UUID.String(), State: state,
+		OrderID: row.OrderID.UUID.String(), State: state, IntentKey: row.IntentKey,
 		FailureReason: row.FailureReason.String, PaymentStatus: row.PaymentStatus.String, GatewayPaymentID: row.GatewayPaymentID.String,
 	}
 	if state == checkoutv1.CheckoutState_CHECKOUT_STATE_READY_TO_PAY {
@@ -178,7 +179,7 @@ func validateSubmit(request *checkoutv1.SubmitCheckoutRequest) (uuid.UUID, uuid.
 	}
 	var total int64
 	for _, item := range request.GetItems() {
-		if item == nil || !validGrading(item.GetCategory(), item.GetCondition()) || item.GetName() == "" || item.GetQuantity() <= 0 || item.GetUnitPriceCents() <= 0 {
+		if item == nil || !productsv1.ValidCategory(item.GetCategory()) || !productsv1.ValidCondition(item.GetCondition()) || item.GetName() == "" || item.GetQuantity() <= 0 || item.GetUnitPriceCents() <= 0 {
 			return uuid.Nil, uuid.Nil, errors.New("invalid checkout item")
 		}
 		productID, err := uuid.Parse(item.GetProductId())

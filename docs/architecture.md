@@ -33,22 +33,22 @@ Details: [catalog-inventory-search.md](catalog-inventory-search.md).
 
 ## Checkout
 
-`web` submits one validated merchant-scoped snapshot to Checkout and shows buyer-scoped progress. Checkout persists the saga, then commands Orders to create a pending order and Inventory to reserve stock. A durable Checkout operation creates one gateway payment using `order_id` as its idempotency key and a frozen snapshot including product grading and account creation times. The buyer is redirected only after stock is reserved and the gateway payment is recorded. Signed webhooks enter at web's internal `/webhooks/payment-gateway` and are verified and deduplicated in Checkout; it waits for Inventory commit/release acknowledgement before finalizing Orders. Debezium and Kafka deliver versioned `checkout.*.v1` commands/results through service-local inboxes and outboxes. Payment no longer has a marketplace service, database, Kafka contract, or simulator. Dev has no gateway configured and refuses new checkouts. Production migration and cluster end-to-end verification remain deferred; see the [rollout gate](order-placement.md#rollout-gate).
+`web` submits one validated merchant-scoped snapshot to Checkout and shows buyer-scoped progress. Checkout persists the saga, then commands Orders to create a pending order and Inventory to reserve stock. A durable Checkout operation creates one gateway payment using `order_id` as its idempotency key and a frozen snapshot including product grading and account creation times. The buyer is redirected only after stock is reserved and the gateway payment is recorded. Signed webhooks enter at web's internal `/webhooks/payment-gateway` and are verified and deduplicated in Checkout; it waits for Inventory commit/release acknowledgement before finalizing Orders. Debezium and Kafka deliver versioned `checkout.*.v1` commands/results through service-local inboxes and outboxes. Payment no longer has a marketplace service, database, Kafka contract, or simulator. Chart defaults have no gateway configured and refuse new checkouts. Cluster end-to-end verification remains pending; see the [rollout gate](order-placement.md#rollout-gate).
 
 Details: [order-placement.md](order-placement.md).
 
 ## Platform
 
-| Layer    | Where                                                                                                             |
-| -------- | ----------------------------------------------------------------------------------------------------------------- |
-| Clusters | Talos **dev** / **prod** run workloads; each runs its own Argo CD in `argo-cd`                                    |
-| GitOps   | `talos-proxmox` `platform` root installs shared operators; this repo's roots deploy application consumers locally |
-| Images   | GHCR `ghcr.io/phuchoang2603/refurbished-marketplace/<name>:<sha>` (dev) or `:main` (prod)                         |
-| Secrets  | Doppler → External Secrets; `ecommerce/doppler-token` applied per environment                                     |
-| Ingress  | Cloudflare Tunnel → Istio Gateway API (`gatewayClassName: istio`)                                                 |
-| Network  | Cilium CNI and Istio ambient (ztunnel, waypoint) installed by `talos-proxmox`                                     |
-| Observe  | Apps export OTLP traces and metrics to `otel-agent` and log JSON to stdout; ClickHouse + HyperDX on prod          |
+| Layer    | Where                                                                                                                    |
+| -------- | ------------------------------------------------------------------------------------------------------------------------ |
+| Clusters | Talos **prod** is the development server and runs Argo CD in `argo-cd`                                                   |
+| GitOps   | `talos-proxmox` `platform` root installs shared operators; this repo's `prod-root` deploys application consumers locally |
+| Images   | GHCR `ghcr.io/phuchoang2603/refurbished-marketplace/<name>:<sha>` pinned in `values-prod.yaml`                           |
+| Secrets  | Doppler → External Secrets; `ecommerce/doppler-token` applied per environment                                            |
+| Ingress  | Cloudflare Tunnel → Istio Gateway API (`gatewayClassName: istio`)                                                        |
+| Network  | Cilium CNI and Istio ambient (ztunnel, waypoint) installed by `talos-proxmox`                                            |
+| Observe  | Apps export OTLP traces and metrics to `otel-agent` and log JSON to stdout; ClickHouse + HyperDX on prod                 |
 
-Each cluster's Argo CD runs its own marketplace root alongside the platform root. The platform supplies operators and the telemetry pipeline; the marketplace root creates the ambient-enrolled `ecommerce` and `kafka` namespaces (wave 0), then submits `secret-store` (wave 1), MongoDB and Meilisearch (2), services (3), then Kafka (4). These waves do not wait for child health: children retry while platform dependencies converge. The per-cluster `otel-agent` forwards both dev and prod telemetry to ClickHouse and HyperDX on prod.
+The cluster's Argo CD runs `prod-root` alongside the platform root. The platform supplies operators and the telemetry pipeline; the marketplace root creates the ambient-enrolled `ecommerce` and `kafka` namespaces (wave 0), then submits `secret-store` (wave 1), MongoDB and Meilisearch (2), services (3), then Kafka (4). These waves do not wait for child health: children retry while platform dependencies converge. The node-local `otel-agent` forwards telemetry to ClickHouse and HyperDX on prod.
 
 See [deployment/gitops.md](deployment/gitops.md), [deployment/networking.md](deployment/networking.md), and [deployment/observability.md](deployment/observability.md).

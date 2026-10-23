@@ -98,23 +98,7 @@ func (service *Service) HandleResult(ctx context.Context, kafkaMessage messaging
 		}
 	}
 	if step.commandTopic != "" {
-		operationID := uuid.NewSHA1(checkoutID, []byte(step.operation))
-		command := &checkoutv1.CheckoutMessage{Context: &checkoutv1.MessageContext{
-			CheckoutId: checkoutID.String(), OrderId: row.OrderID.UUID.String(),
-			MessageId: operationID.String(), OperationId: operationID.String(),
-			CausationId: messageContext.GetMessageId(), WorkflowVersion: uint64(row.Version + 1),
-		}}
-		if err := setCommandPayload(command, step.commandPayload); err != nil {
-			return err
-		}
-		payload, err := proto.Marshal(command)
-		if err != nil {
-			return err
-		}
-		if err := queries.InsertOutbox(ctx, database.InsertOutboxParams{
-			ID: operationID, AggregateID: checkoutID, EventType: step.commandTopic,
-			Payload: payload, Tracingspancontext: sql.NullString{String: sharedtrace.SerializeContext(ctx), Valid: true},
-		}); err != nil {
+		if err := enqueueCheckoutCommand(ctx, queries, row, step.commandTopic, step.operation, messageContext.GetMessageId(), step.commandPayload); err != nil {
 			return err
 		}
 	}
@@ -216,20 +200,4 @@ func nextTransition(row database.Checkout, topic string, result *checkoutv1.Chec
 		}
 	}
 	return nil, nil
-}
-
-func setCommandPayload(message *checkoutv1.CheckoutMessage, payload any) error {
-	switch value := payload.(type) {
-	case *checkoutv1.ReserveStock:
-		message.Payload = &checkoutv1.CheckoutMessage_ReserveStock{ReserveStock: value}
-	case *checkoutv1.CancelStock:
-		message.Payload = &checkoutv1.CheckoutMessage_CancelStock{CancelStock: value}
-	case *checkoutv1.CommitStock:
-		message.Payload = &checkoutv1.CheckoutMessage_CommitStock{CommitStock: value}
-	case *checkoutv1.FinalizeOrder:
-		message.Payload = &checkoutv1.CheckoutMessage_FinalizeOrder{FinalizeOrder: value}
-	default:
-		return fmt.Errorf("unknown checkout command payload %T", payload)
-	}
-	return nil
 }

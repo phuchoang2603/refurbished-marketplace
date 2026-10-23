@@ -253,14 +253,19 @@ Web MUST NOT require cart removal before checkout readiness. Once Checkout confi
 - **WHEN** the buyer visits the confirmed order page and a cart identity is present
 - **THEN** web SHALL remove the paid product ids with a multi-remove without affecting other merchants' cart items
 
-### Requirement: Web removes cart lines after a terminal hosted payment
+### Requirement: Web removes paid cart lines and retains expired items
 
-The web service MUST remove the order's product IDs from the buyer cart after the gateway payment reached a terminal status (SUCCEEDED or EXPIRED) when a cart identity is available, so an expired payment does not leave those lines for a duplicate checkout of the same reservation. A declined attempt on an open payment MUST NOT remove cart lines.
+The web service MUST remove the order's product IDs from the buyer cart after the gateway payment reaches SUCCEEDED when a cart identity is available. On EXPIRED it MUST retain the cart items and rotate the merchant's checkout intent only if the current cart intent matches the expired checkout's original intent key. A declined attempt on an open payment MUST NOT remove cart lines.
 
 #### Scenario: Buyer returns after a failed hosted payment
 
 - **WHEN** the buyer opens the order page after the gateway payment EXPIRED and a `cart_id` cookie is present
-- **THEN** the web service SHALL multi-remove that order's product IDs from the cart
+- **THEN** the web service SHALL retain the cart items and rotate the matching merchant checkout intent so a new submission creates a fresh checkout
+
+#### Scenario: Buyer revisits an expired order after starting another checkout
+
+- **WHEN** the cart intent no longer matches the expired checkout's original intent key
+- **THEN** the web service SHALL leave the current intent and cart items unchanged
 
 ### Requirement: Web distinguishes pending stock from unavailable stock
 

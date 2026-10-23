@@ -112,7 +112,7 @@ func (service *Service) HandleGatewayWebhook(ctx context.Context, request *check
 	queries := database.New(tx)
 	row, err := queries.LockCheckoutByGatewayPayment(ctx, sql.NullString{String: event.PaymentID, Valid: true})
 	if errors.Is(err, sql.ErrNoRows) {
-		return &checkoutv1.HandleGatewayWebhookResponse{Result: checkoutv1.GatewayWebhookResult_GATEWAY_WEBHOOK_RESULT_ACCEPTED}, nil
+		return nil, status.Error(codes.Unavailable, "gateway payment not recorded yet")
 	}
 	if err != nil {
 		return nil, status.Error(codes.Unavailable, "webhook store unavailable")
@@ -140,41 +140,89 @@ func (service *Service) HandleGatewayWebhook(ctx context.Context, request *check
 }
 
 func (service *Service) applyGatewayOutcome(ctx context.Context, queries *database.Queries, row database.Checkout, eventType, eventID string, occurredAt time.Time) error {
-	state := checkoutv1.CheckoutState(checkoutv1.CheckoutState_value[row.State])
-	succeeded := eventType == "payment.succeeded"
-	expired := eventType == "payment.expired"
-	contradictory := succeeded && (row.PaymentStatus.String == "EXPIRED" || state == checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK || state == checkoutv1.CheckoutState_CHECKOUT_STATE_FINALIZING_FAILED || state == checkoutv1.CheckoutState_CHECKOUT_STATE_FAILED) || expired && (row.PaymentStatus.String == "SUCCEEDED" || state == checkoutv1.CheckoutState_CHECKOUT_STATE_COMMITTING_STOCK || state == checkoutv1.CheckoutState_CHECKOUT_STATE_FINALIZING_PAID || state == checkoutv1.CheckoutState_CHECKOUT_STATE_COMPLETED)
-	if contradictory {
-		if err := queries.InsertException(ctx, database.InsertExceptionParams{ID: uuid.New(), CheckoutID: row.ID, MessageID: sql.NullString{String: eventID, Valid: true}, Kind: "contradictory_payment", Details: "gateway outcome contradicts stock settlement"}); err != nil {
-			return err
-		}
-		sharedlog.WarnContext(ctx, "contradictory gateway outcome", "order_id", row.OrderID.UUID.String(), "gateway_payment_id", row.GatewayPaymentID.String, "event_type", eventType)
-		if state != checkoutv1.CheckoutState_CHECKOUT_STATE_FAILED && state != checkoutv1.CheckoutState_CHECKOUT_STATE_COMPLETED {
-			_, err := queries.AdvanceCheckout(ctx, database.AdvanceCheckoutParams{ID: row.ID, Version: row.Version, State: checkoutv1.CheckoutState_CHECKOUT_STATE_NEEDS_REVIEW.String()})
-			return err
-		}
-		return nil
+	if gatewayOutcomeContradicts(row, eventType) {
+		return recordGatewayContradiction(ctx, queries, row, eventType, eventID)
 	}
 	var paymentStatus sql.NullString
-	if succeeded {
+	switch eventType {
+	case "payment.succeeded":
 		paymentStatus = sql.NullString{String: "SUCCEEDED", Valid: true}
-	}
-	if expired {
+	case "payment.expired":
 		paymentStatus = sql.NullString{String: "EXPIRED", Valid: true}
 	}
 	if err := queries.RecordGatewayEvent(ctx, database.RecordGatewayEventParams{ID: row.ID, Column2: occurredAt, PaymentStatus: paymentStatus}); err != nil {
 		return err
 	}
 	sharedlog.InfoContext(ctx, "gateway outcome accepted", "order_id", row.OrderID.UUID.String(), "gateway_payment_id", row.GatewayPaymentID.String, "event_type", eventType)
-	canSettle := state == checkoutv1.CheckoutState_CHECKOUT_STATE_READY_TO_PAY || state == checkoutv1.CheckoutState_CHECKOUT_STATE_NEEDS_REVIEW && row.PaymentStatus.String == "OPEN"
-	if (!succeeded && !expired) || !canSettle {
+	settlement := gatewaySettlement(row, eventType)
+	if settlement == nil {
 		return nil
 	}
 	if err := queries.ResolvePaymentUncertain(ctx, row.ID); err != nil {
 		return err
 	}
-	if succeeded {
-		return deadlineCommand(ctx, queries, row, checkoutv1.CheckoutState_CHECKOUT_STATE_COMMITTING_STOCK, messaging.EventTypeCheckoutCommitStock, "commit-stock", &checkoutv1.CommitStock{}, time.Now().Add(preparationDeadline))
+	return deadlineCommand(ctx, queries, row, settlement.state, settlement.commandTopic, settlement.operation, settlement.commandPayload, time.Now().Add(preparationDeadline))
+}
+
+func gatewayOutcomeContradicts(row database.Checkout, eventType string) bool {
+	state := checkoutv1.CheckoutState(checkoutv1.CheckoutState_value[row.State])
+	switch eventType {
+	case "payment.succeeded":
+		if row.PaymentStatus.String == "EXPIRED" {
+			return true
+		}
+		switch state {
+		case checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK,
+			checkoutv1.CheckoutState_CHECKOUT_STATE_FINALIZING_FAILED,
+			checkoutv1.CheckoutState_CHECKOUT_STATE_FAILED:
+			return true
+		}
+	case "payment.expired":
+		if row.PaymentStatus.String == "SUCCEEDED" {
+			return true
+		}
+		switch state {
+		case checkoutv1.CheckoutState_CHECKOUT_STATE_COMMITTING_STOCK,
+			checkoutv1.CheckoutState_CHECKOUT_STATE_FINALIZING_PAID,
+			checkoutv1.CheckoutState_CHECKOUT_STATE_COMPLETED:
+			return true
+		}
 	}
-	return deadlineCommand(ctx, queries, row, checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK, messaging.EventTypeCheckoutCancelStock, "cancel-stock", &checkoutv1.CancelStock{Reason: "payment expired"}, time.Now().Add(preparationDeadline))
+	return false
+}
+
+func recordGatewayContradiction(ctx context.Context, queries *database.Queries, row database.Checkout, eventType, eventID string) error {
+	if err := queries.InsertException(ctx, database.InsertExceptionParams{ID: uuid.New(), CheckoutID: row.ID, MessageID: sql.NullString{String: eventID, Valid: true}, Kind: "contradictory_payment", Details: "gateway outcome contradicts stock settlement"}); err != nil {
+		return err
+	}
+	sharedlog.WarnContext(ctx, "contradictory gateway outcome", "order_id", row.OrderID.UUID.String(), "gateway_payment_id", row.GatewayPaymentID.String, "event_type", eventType)
+	state := checkoutv1.CheckoutState(checkoutv1.CheckoutState_value[row.State])
+	if state == checkoutv1.CheckoutState_CHECKOUT_STATE_FAILED || state == checkoutv1.CheckoutState_CHECKOUT_STATE_COMPLETED {
+		return nil
+	}
+	_, err := queries.AdvanceCheckout(ctx, database.AdvanceCheckoutParams{ID: row.ID, Version: row.Version, State: checkoutv1.CheckoutState_CHECKOUT_STATE_NEEDS_REVIEW.String()})
+	return err
+}
+
+func gatewaySettlement(row database.Checkout, eventType string) *transition {
+	state := checkoutv1.CheckoutState(checkoutv1.CheckoutState_value[row.State])
+	if state != checkoutv1.CheckoutState_CHECKOUT_STATE_READY_TO_PAY && (state != checkoutv1.CheckoutState_CHECKOUT_STATE_NEEDS_REVIEW || row.PaymentStatus.String != "OPEN") {
+		return nil
+	}
+	switch eventType {
+	case "payment.succeeded":
+		return &transition{
+			state:        checkoutv1.CheckoutState_CHECKOUT_STATE_COMMITTING_STOCK,
+			commandTopic: messaging.EventTypeCheckoutCommitStock,
+			operation:    "commit-stock", commandPayload: &checkoutv1.CommitStock{},
+		}
+	case "payment.expired":
+		return &transition{
+			state:        checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK,
+			commandTopic: messaging.EventTypeCheckoutCancelStock,
+			operation:    "cancel-stock", commandPayload: &checkoutv1.CancelStock{Reason: "payment expired"},
+		}
+	default:
+		return nil
+	}
 }

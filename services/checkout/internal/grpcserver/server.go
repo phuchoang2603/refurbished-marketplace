@@ -22,6 +22,7 @@ type CheckoutView struct {
 	HostedCheckoutURL string
 	FailureReason     string
 	PaymentStatus     string
+	IntentKey         string
 }
 
 type Reader interface {
@@ -126,6 +127,7 @@ func (server *Server) GetCheckout(ctx context.Context, request *checkoutv1.GetCh
 		FailureReason:     view.FailureReason,
 		BuyerUserId:       view.BuyerUserID.String(),
 		PaymentStatus:     view.PaymentStatus,
+		IntentKey:         view.IntentKey,
 	}, nil
 }
 

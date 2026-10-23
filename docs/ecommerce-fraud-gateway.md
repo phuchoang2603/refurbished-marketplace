@@ -92,7 +92,7 @@ The frozen JSON snapshot contains `order_reference`, `seller` and `buyer` (`exte
 
 The response carries `payment_id`, `session_id`, `checkout_url` and `expires_at`. Checkout persists the payment ID, hosted URL and expiry before exposing READY_TO_PAY. It resends the stored request after transport failures, and treats conflicting facts as a defect.
 
-The notifier posts to web's internal `/webhooks/payment-gateway` with `Gateway-Signature: t=<unix>,v1=<HMAC-SHA256(secret, t + "." + body)>`. Checkout verifies the signature and ±5 minute tolerance before applying `payment.succeeded`, `payment.expired` or `attempt.declined`. The route is denied at the public marketplace Gateway. At payment expiry plus grace, one `GET /v1/payments/{payment_id}` resolves terminal status; an error or non-terminal status leaves stock held for review and later webhooks.
+The notifier posts to web's internal `/webhooks/payment-gateway` with `Gateway-Signature: t=<unix>,v1=<HMAC-SHA256(secret, t + "." + body)>`. Checkout verifies the signature and ±5 minute tolerance before applying `payment.succeeded`, `payment.expired` or `attempt.declined`. A signed event for an unrecorded payment returns HTTP 503 for redelivery after the payment is recorded. The route is denied at the public marketplace Gateway. At payment expiry plus grace, one `GET /v1/payments/{payment_id}` resolves terminal status; an error or non-terminal status leaves stock held for review and later webhooks.
 
 ## Gateway fraud inputs
 
@@ -157,4 +157,4 @@ Instead of customer-to-terminal distance, model customer familiarity: usual devi
 
 ## Rollout status
 
-Gateway integration configuration, credential provisioning, deployment and cluster end-to-end checks remain deferred; see [the rollout gate](order-placement.md#rollout-gate). Defaults/dev have no gateway and refuse checkout submissions. No marketplace traffic simulator or historical feature platform is introduced by this integration.
+Configure the gateway integration and matching credentials before deployment; cluster end-to-end verification remains pending. See [the rollout gate](order-placement.md#rollout-gate). Chart defaults have no gateway and refuse checkout submissions. No marketplace traffic simulator or historical feature platform is introduced by this integration.

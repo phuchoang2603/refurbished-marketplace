@@ -12,15 +12,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func validGrading(category, condition string) bool {
-	switch category {
-	case "phone", "laptop", "tablet", "accessory", "headphones", "smartwatch", "game_console", "camera":
-	default:
-		return false
-	}
-	return condition == "excellent" || condition == "good" || condition == "fair"
-}
-
 func (service *Service) freezeGatewaySnapshot(ctx context.Context, request *checkoutv1.SubmitCheckoutRequest, orderID uuid.UUID) ([]byte, error) {
 	if service.accounts == nil {
 		return nil, status.Error(codes.Unavailable, "account projection unavailable")

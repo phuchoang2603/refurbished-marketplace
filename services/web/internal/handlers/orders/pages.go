@@ -67,21 +67,25 @@ func (h *Handler) handleGetOrderByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	view := OrderToView(order)
+	var checkoutIntentKey string
 	if h.deps.Checkout != nil {
 		checkout, err := h.deps.Checkout.GetCheckout(webAuth.OutgoingAccessContext(r), &checkoutv1.GetCheckoutRequest{OrderId: id, BuyerUserId: buyerUserID})
 		if err == nil && checkout != nil && checkout.GetOrderId() == id {
 			applyHostedPaymentState(&view, checkout.GetPaymentStatus(), checkout.GetFailureReason(), checkout.GetHostedCheckoutUrl())
+			checkoutIntentKey = checkout.GetIntentKey()
 		} else if err != nil && !shared.IsUnavailableError(err) && !shared.IsNotFoundError(err) {
 			shared.WriteGRPCError(w, r, err)
 			return
 		}
 	}
-	if view.PaymentStatus == "SUCCEEDED" || view.PaymentStatus == "EXPIRED" {
+	if view.PaymentStatus == "SUCCEEDED" {
 		ids := make([]string, 0, len(order.GetItems()))
 		for _, item := range order.GetItems() {
 			ids = append(ids, item.GetProductId())
 		}
 		carthandlers.DrainPaidProductIDs(w, r, h.deps.Cart, ids, order.GetMerchantId())
+	} else if view.PaymentStatus == "EXPIRED" {
+		carthandlers.RotateExpiredCheckoutIntent(w, r, order.GetMerchantId(), checkoutIntentKey)
 	}
 
 	shared.WriteHTML(w, r, http.StatusOK, orderviews.OrderDetailPage(view))

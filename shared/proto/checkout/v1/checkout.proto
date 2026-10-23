@@ -45,6 +45,7 @@ message CheckoutStatus {
   string failure_reason = 6;
   string buyer_user_id = 7;
   string payment_status = 8;
+  string intent_key = 9;
 }
 
 enum CheckoutState {

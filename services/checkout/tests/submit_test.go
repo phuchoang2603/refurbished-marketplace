@@ -155,3 +155,25 @@ func TestCheckoutLookupByOrderIsBuyerOwned(t *testing.T) {
 		})
 	}
 }
+
+func TestInvalidGradingRejectedBeforeCheckoutPersistence(t *testing.T) {
+	svc := newTestService(nil)
+	for _, tc := range []struct{ category, condition string }{
+		{"", "good"},
+		{"computer", "good"},
+		{"Phone", "good"},
+		{"phone ", "good"},
+		{"phone", ""},
+		{"phone", "new"},
+		{"phone", "GOOD"},
+		{"phone", "good "},
+	} {
+		t.Run(tc.category+"/"+tc.condition, func(t *testing.T) {
+			request := checkoutRequest()
+			request.Items[0].Category, request.Items[0].Condition = tc.category, tc.condition
+			if _, err := svc.SubmitCheckout(t.Context(), request); status.Code(err) != codes.InvalidArgument {
+				t.Fatalf("invalid grading error=%v", err)
+			}
+		})
+	}
+}

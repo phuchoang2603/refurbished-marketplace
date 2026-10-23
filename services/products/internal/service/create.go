@@ -28,10 +28,10 @@ func (s *Service) CreateProduct(ctx context.Context, name, description, category
 		return Product{}, ErrInvalidInitialStock
 	}
 
-	if !validCategory(category) {
+	if !productsv1.ValidCategory(category) {
 		return Product{}, ErrInvalidCategory
 	}
-	if !validCondition(condition) {
+	if !productsv1.ValidCondition(condition) {
 		return Product{}, ErrInvalidCondition
 	}
 

@@ -78,27 +78,7 @@ func deadlineCommand(ctx context.Context, queries *database.Queries, row databas
 	if updated != 1 {
 		return errors.New("deadline transition lost checkout lock")
 	}
-	operationID := uuid.NewSHA1(row.ID, []byte(operation))
-	command := &checkoutv1.CheckoutMessage{Context: &checkoutv1.MessageContext{
-		MessageId: operationID.String(), CheckoutId: row.ID.String(), OrderId: row.OrderID.UUID.String(),
-		OperationId: operationID.String(), WorkflowVersion: uint64(row.Version + 1),
-	}}
-	switch value := payload.(type) {
-	case *checkoutv1.CancelStock:
-		command.Payload = &checkoutv1.CheckoutMessage_CancelStock{CancelStock: value}
-	case *checkoutv1.CommitStock:
-		command.Payload = &checkoutv1.CheckoutMessage_CommitStock{CommitStock: value}
-	default:
-		return errors.New("unexpected deadline command")
-	}
-	encoded, err := proto.Marshal(command)
-	if err != nil {
-		return err
-	}
-	return queries.InsertOutbox(ctx, database.InsertOutboxParams{
-		ID: operationID, AggregateID: row.ID, EventType: topic,
-		Payload: encoded, Tracingspancontext: sql.NullString{String: sharedtrace.SerializeContext(ctx), Valid: true},
-	})
+	return enqueueCheckoutCommand(ctx, queries, row, topic, operation, "", payload)
 }
 
 func retryLastCommand(ctx context.Context, queries *database.Queries, row database.Checkout) error {
