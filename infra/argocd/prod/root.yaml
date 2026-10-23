@@ -20,7 +20,7 @@ spec:
         namePrefix: prod
         global:
           imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
-          imageTag: 0e3c9530f81da6a978138d588f22d96f95e975b0
+          imageTag: 7990d2fa57d9997ba215dfc6944a04be87a656a2
           imagePullPolicy: Always
         marketplace:
           enabled: true
