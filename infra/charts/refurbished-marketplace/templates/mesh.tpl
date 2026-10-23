@@ -7,6 +7,22 @@ metadata:
 spec:
   mtls:
     mode: STRICT
+---
+# The CloudNativePG operator runs outside the mesh and polls each instance's status port.
+apiVersion: security.istio.io/v1
+kind: PeerAuthentication
+metadata:
+  name: cnpg-status
+  namespace: {{ .Release.Namespace }}
+spec:
+  selector:
+    matchLabels:
+      cnpg.io/podRole: instance
+  mtls:
+    mode: STRICT
+  portLevelMtls:
+    8000:
+      mode: PERMISSIVE
 {{- with .Values.mesh.waypoint }}
 {{- if .enabled }}
 ---
