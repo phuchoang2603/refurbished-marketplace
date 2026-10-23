@@ -82,6 +82,7 @@ jobs:
             users:
               - 'services/users/**'
               - 'shared/proto/**'
+              - 'shared/messaging/**'
               - 'shared/auth/**'
               - 'shared/err/dberr/**'
               - 'shared/err/grpcerr/**'
@@ -149,6 +150,8 @@ jobs:
               - 'shared/observe/trace/**'
               - 'shared/observe/metric/**'
               - 'shared/testutil/postgres/**'
+              - 'shared/testutil/redis/**'
+              - 'shared/testutil/kafka/**'
               - 'go.work*'
               - '.github/workflows/ci.yml'
             cart:

@@ -11,8 +11,8 @@ Go marketplace services behind a server-rendered web edge. Browser traffic never
 | `services/products`  | Listing identity and catalog fields; ProductCreated outbox                                      | MongoDB `catalog` (`listings`, `catalog_outbox`) | gRPC 9092                                     |
 | `services/search`    | Storefront catalog projection; `SearchProducts`                                                 | Meilisearch (not source of truth)                | gRPC 9098                                     |
 | `services/inventory` | Available/reserved quantity, reservations, stock seed from ProductCreated                       | Postgres (`inventory_db`)                        | gRPC 9097                                     |
-| `services/cart`      | Ephemeral carts with merchant + display snapshots                                               | Redis/Valkey (in-pod)                            | gRPC 9094                                     |
-| `services/checkout`  | Durable checkout saga, command/result inbox and outbox, recovery                                | Postgres (`checkout_db`)                         | gRPC 9099                                     |
+| `services/cart`      | Ephemeral carts with merchant + display snapshots                                               | Redis (operator-managed)                         | gRPC 9094                                     |
+| `services/checkout`  | Durable checkout saga, command/result inbox and outbox, recovery                                | Postgres + Redis account projection              | gRPC 9099                                     |
 | `services/orders`    | Merchant-scoped orders and checkout command/results                                             | Postgres (`orders_db`)                           | gRPC 9093                                     |
 
 ## Runtime topology

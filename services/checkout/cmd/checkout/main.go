@@ -7,6 +7,7 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/phuchoang2603/refurbished-marketplace/services/checkout/internal/accounts"
 	"github.com/phuchoang2603/refurbished-marketplace/services/checkout/internal/grpcserver"
 	"github.com/phuchoang2603/refurbished-marketplace/services/checkout/internal/service"
 	authconfig "github.com/phuchoang2603/refurbished-marketplace/shared/auth/config"
@@ -15,10 +16,7 @@ import (
 	"github.com/phuchoang2603/refurbished-marketplace/shared/runtime"
 
 	_ "github.com/lib/pq"
-	sharedtrace "github.com/phuchoang2603/refurbished-marketplace/shared/observe/trace"
-	usersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/users/v1"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 func main() {
@@ -60,12 +58,13 @@ func main() {
 		}
 	}()
 
-	usersConn, err := grpc.NewClient(config.UsersAddr, append(sharedtrace.GRPCDialOptions(), grpc.WithTransportCredentials(insecure.NewCredentials()))...)
+	redisClient, err := runtime.OpenRedis(ctx, config.RedisAddr)
 	if err != nil {
-		sharedlog.Fatal("users client", "err", err)
+		sharedlog.Fatal("open account projection", "err", err)
 	}
-	defer func() { _ = usersConn.Close() }()
-	checkoutService := service.New(db, config, usersv1.NewUsersServiceClient(usersConn))
+	defer func() { _ = redisClient.Close() }()
+	accountProjection := accounts.New(redisClient)
+	checkoutService := service.New(db, config, accountProjection)
 	metricRegistration, err := checkoutService.RegisterMetrics()
 	if err != nil {
 		sharedlog.Fatal("checkout metrics", "err", err)
@@ -76,6 +75,7 @@ func main() {
 		}
 	}()
 	var workers sync.WaitGroup
+	runtime.StartKafkaConsumer(ctx, &workers, accountProjection.Run)
 	runtime.StartKafkaConsumer(ctx, &workers, func(ctx context.Context, brokers []string) error {
 		return runCheckoutResultConsumer(ctx, checkoutService.KafkaResultHandler(), brokers, config.KafkaGroupID)
 	})

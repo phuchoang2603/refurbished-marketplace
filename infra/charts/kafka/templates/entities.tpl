@@ -39,6 +39,9 @@ spec:
   replicas: {{ $.Values.kafka.replicas }}
   config:
     retention.ms: {{ .retention }}
+{{- with .cleanupPolicy }}
+    cleanup.policy: {{ . | quote }}
+{{- end }}
 {{- end }}
 ---
 apiVersion: kafka.strimzi.io/v1
@@ -98,6 +101,9 @@ spec:
     plugin.name: pgoutput
     slot.name: {{ printf "debezium_%s_slot" $entityName }}
     table.include.list: {{ $entity.connector.outboxTable }}
+{{- with $entity.connector.snapshotMode }}
+    snapshot.mode: {{ . | quote }}
+{{- end }}
     tombstones.on.delete: "false"
 {{- if $entity.connector.publicationAutocreateMode }}
     publication.autocreate.mode: {{ $entity.connector.publicationAutocreateMode | quote }}

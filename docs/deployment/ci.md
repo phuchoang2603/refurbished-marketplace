@@ -36,9 +36,9 @@ See [gitops.md](gitops.md).
 | `shared/observe/log/**`          | users, products, inventory, orders, cart, web, search |
 | `shared/observe/trace/**`        | products, inventory, orders, web, search              |
 | `shared/testutil/postgres/**`    | users, inventory, orders                              |
-| `shared/testutil/kafka/**`       | products, inventory, orders, search                   |
+| `shared/testutil/kafka/**`       | products, inventory, orders, search, checkout         |
 | `shared/testutil/meilisearch/**` | search                                                |
 | `shared/testutil/mongo/**`       | products                                              |
-| `shared/testutil/redis/**`       | cart                                                  |
+| `shared/testutil/redis/**`       | cart, checkout                                        |
 
 Local formatting and codegen drift checks (`treefmt`, `codegen:proto`, `codegen:sqlc`) stay out of CI.

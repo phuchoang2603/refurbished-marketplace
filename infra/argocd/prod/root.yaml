@@ -38,7 +38,7 @@ spec:
               - values-prod.yaml
       parameters:
         - name: targetRevision
-          value: $ARGOCD_APP_SOURCE_TARGET_REVISION
+          value: a0ef75ab9dabdb8feedd0be737cd6504bbce48ee
   destination:
     server: https://kubernetes.default.svc
     namespace: argo-cd

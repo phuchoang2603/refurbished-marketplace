@@ -9,10 +9,12 @@ require (
 	github.com/phuchoang2603/refurbished-marketplace/shared/auth v0.0.0
 	github.com/phuchoang2603/refurbished-marketplace/shared/err/dberr v0.0.0
 	github.com/phuchoang2603/refurbished-marketplace/shared/err/grpcerr v0.0.0
+	github.com/phuchoang2603/refurbished-marketplace/shared/messaging v0.0.0
 	github.com/phuchoang2603/refurbished-marketplace/shared/observe/log v0.0.0
 	github.com/phuchoang2603/refurbished-marketplace/shared/proto v0.0.0
 	github.com/phuchoang2603/refurbished-marketplace/shared/runtime v0.0.0
 	github.com/phuchoang2603/refurbished-marketplace/shared/testutil/postgres v0.0.0
+	github.com/pressly/goose/v3 v3.27.3
 	golang.org/x/crypto v0.55.0
 	google.golang.org/grpc v1.83.0
 	google.golang.org/protobuf v1.36.12
@@ -55,12 +57,10 @@ require (
 	github.com/moby/term v0.5.2 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.1.1 // indirect
-	github.com/phuchoang2603/refurbished-marketplace/shared/messaging v0.0.0 // indirect
 	github.com/phuchoang2603/refurbished-marketplace/shared/observe/metric v0.0.0 // indirect
 	github.com/phuchoang2603/refurbished-marketplace/shared/observe/trace v0.0.0 // indirect
 	github.com/pierrec/lz4/v4 v4.1.28 // indirect
 	github.com/power-devops/perfstat v0.0.0-20240221224432-82ca36839d55 // indirect
-	github.com/pressly/goose/v3 v3.27.3 // indirect
 	github.com/redis/go-redis/extra/rediscmd/v9 v9.22.0 // indirect
 	github.com/redis/go-redis/extra/redisotel/v9 v9.22.0 // indirect
 	github.com/redis/go-redis/v9 v9.22.0 // indirect

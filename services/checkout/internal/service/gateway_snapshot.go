@@ -8,8 +8,6 @@ import (
 
 	"github.com/google/uuid"
 	checkoutv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1"
-	usersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/users/v1"
-	"golang.org/x/sync/errgroup"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -24,33 +22,16 @@ func validGrading(category, condition string) bool {
 }
 
 func (service *Service) freezeGatewaySnapshot(ctx context.Context, request *checkoutv1.SubmitCheckoutRequest, orderID uuid.UUID) ([]byte, error) {
-	if service.users == nil {
-		return nil, status.Error(codes.Unavailable, "account service unavailable")
+	if service.accounts == nil {
+		return nil, status.Error(codes.Unavailable, "account projection unavailable")
 	}
-	group, groupCtx := errgroup.WithContext(ctx)
-	accountTime := func(id string) (time.Time, error) {
-		accountCtx, cancel := context.WithTimeout(groupCtx, 5*time.Second)
-		defer cancel()
-		user, err := service.users.GetUserByID(accountCtx, &usersv1.GetUserByIDRequest{Id: id})
-		if err != nil || user.GetId() != id || user.GetCreatedAt() == nil || user.GetCreatedAt().CheckValid() != nil || user.GetCreatedAt().AsTime().IsZero() {
-			return time.Time{}, status.Error(codes.Unavailable, "account facts unavailable")
-		}
-		return user.GetCreatedAt().AsTime().UTC(), nil
+	accountCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
+	defer cancel()
+	times, err := service.accounts.CreatedAt(accountCtx, request.GetMerchantId(), request.GetBuyerUserId())
+	if err != nil || len(times) != 2 || times[0].IsZero() || times[1].IsZero() {
+		return nil, status.Error(codes.Unavailable, "account facts unavailable")
 	}
-	var sellerTime, buyerTime time.Time
-	group.Go(func() error {
-		var err error
-		sellerTime, err = accountTime(request.GetMerchantId())
-		return err
-	})
-	group.Go(func() error {
-		var err error
-		buyerTime, err = accountTime(request.GetBuyerUserId())
-		return err
-	})
-	if err := group.Wait(); err != nil {
-		return nil, err
-	}
+	sellerTime, buyerTime := times[0].UTC(), times[1].UTC()
 	base, err := url.Parse(service.config.CheckoutReturnBaseURL)
 	returned, returnErr := url.Parse(request.GetReturnUrl())
 	if err != nil || returnErr != nil || base == nil || returned == nil || returned.Scheme != "https" || returned.Host != base.Host || returned.User != nil || len(returned.String()) > 2048 {

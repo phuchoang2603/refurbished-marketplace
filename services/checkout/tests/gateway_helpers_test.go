@@ -15,17 +15,18 @@ import (
 
 	"github.com/phuchoang2603/refurbished-marketplace/services/checkout/internal/service"
 	checkoutv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1"
-	usersv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/users/v1"
-	"google.golang.org/grpc"
-	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 var accountCreatedAt = time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC)
 
-type testUsers struct{}
+type testAccounts struct{}
 
-func (testUsers) GetUserByID(_ context.Context, request *usersv1.GetUserByIDRequest, _ ...grpc.CallOption) (*usersv1.User, error) {
-	return &usersv1.User{Id: request.GetId(), CreatedAt: timestamppb.New(accountCreatedAt)}, nil
+func (testAccounts) CreatedAt(_ context.Context, ids ...string) ([]time.Time, error) {
+	times := make([]time.Time, len(ids))
+	for i := range times {
+		times[i] = accountCreatedAt
+	}
+	return times, nil
 }
 
 func testConfig(endpoint string) service.Config {
@@ -33,14 +34,14 @@ func testConfig(endpoint string) service.Config {
 }
 
 func newTestService(db *sql.DB) *service.Service {
-	return service.New(db, testConfig("http://gateway.invalid"), testUsers{})
+	return service.New(db, testConfig("http://gateway.invalid"), testAccounts{})
 }
 
 func gatewayService(t *testing.T, db *sql.DB, handler http.HandlerFunc) *service.Service {
 	t.Helper()
 	server := httptest.NewServer(handler)
 	t.Cleanup(server.Close)
-	return service.New(db, testConfig(server.URL), testUsers{})
+	return service.New(db, testConfig(server.URL), testAccounts{})
 }
 
 func writePayment(t *testing.T, w http.ResponseWriter) {

@@ -37,7 +37,7 @@ func TestGatewayRecoveryReplaysFrozenRequest(t *testing.T) {
 	}
 	server := httptest.NewServer(http.HandlerFunc(handler))
 	t.Cleanup(server.Close)
-	svc := service.New(db, testConfig(server.URL), testUsers{})
+	svc := service.New(db, testConfig(server.URL), testAccounts{})
 	request := checkoutRequest()
 	result, err := svc.SubmitCheckout(t.Context(), request)
 	if err != nil {
@@ -57,7 +57,7 @@ func TestGatewayRecoveryReplaysFrozenRequest(t *testing.T) {
 	if _, err := db.ExecContext(t.Context(), "DROP TRIGGER fail_ready ON checkouts; UPDATE checkout_gateway_operations SET next_attempt_at=NOW()"); err != nil {
 		t.Fatal(err)
 	}
-	recovered := service.New(db, testConfig(server.URL), testUsers{})
+	recovered := service.New(db, testConfig(server.URL), testAccounts{})
 	if _, err := recovered.ProcessGatewayOperation(t.Context()); err != nil {
 		t.Fatal(err)
 	}

@@ -68,6 +68,21 @@ connect:
     periodSeconds: 10
     failureThreshold: 12
 entities:
+  users:
+    topics:
+      - name: users.account-created.v1
+        partitions: 1
+        retention: -1
+        cleanupPolicy: compact
+    connector:
+      name: users-outbox
+      sourceSecretName: users-app
+      databaseName: users_db
+      databaseHost: users-db-rw
+      databasePort: 5432
+      outboxTable: public.users_outbox
+      publicationAutocreateMode: filtered
+      snapshotMode: initial
   products:
     topics:
       - name: products.created

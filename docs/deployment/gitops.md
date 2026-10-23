@@ -68,6 +68,10 @@ The `platform` root owns the operators, CRDs, the Cloudflare tunnel and its clou
 
 MongoDB is the products catalog source of truth; Meilisearch is its storefront projection. PostgreSQL schema migrations still initialize new empty databases before their services start.
 
+Cart and Checkout use separate persistent `Redis` resources (`cart-redis` and `checkout-redis`) from the platform's OT-CONTAINER-KIT Redis operator. Both use AOF and `noeviction`; the checkout projection also recovers its account facts and checkpoint from the retained Users topic. Deploy the Users migration and connector before enabling the new checkout image, and wait for account replay before the checkout smoke test.
+
+For the first cart cutover, keep the old cart pod running while creating `Redis/cart-redis` and its ConfigMap. Pause storefront writes and drain in-flight cart requests. Forward the old cart pod's port 6379 to local 16379 and `service/cart-redis:6379` to local 26379, then run `devenv shell -- go run ./services/cart/cmd/migrate-redis --source 127.0.0.1:16379 --destination 127.0.0.1:26379`. This copies only `cart:*`, preserves remaining TTLs, leaves the source intact, and refuses conflicting destination keys. Switch cart to the new Redis address and remove the sidecar only after the copy succeeds, then resume storefront writes. Keep production's child revision and image SHA pinned until CI publishes the matching images and the cutover is ready.
+
 PostgreSQL services and migration jobs use the same `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`, and `PGSSLMODE` settings. Helm reads each database password from its service secret; neither service code nor the goose connection string embeds or interpolates the password. Set these PostgreSQL environment variables when connecting locally as well.
 
 ## Ordering and convergence

@@ -271,7 +271,7 @@ services:
       secretName: users-auth
       secretKey: JWT_SECRET
     env:
-      USERS_SVC_ADDR: users:9091
+      REDIS_ADDR: checkout-redis:6379
       KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap.kafka.svc:9092
     migration:
       enabled: true
@@ -293,8 +293,15 @@ services:
     port: 9094
     protocol: grpc
     env:
-      REDIS_ADDR: 127.0.0.1:6379
-    sidecars:
-      - name: redis
-        image: docker.io/valkey/valkey:7.2.5
-        port: 6379
+      REDIS_ADDR: cart-redis:6379
+
+redis:
+  image: quay.io/opstree/redis:v7.2.16
+  storageSize: 1Gi
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
+  maxMemory: 128mb

@@ -16,7 +16,7 @@ const (
 type Config struct {
 	GRPCAddr                    string
 	KafkaGroupID                string
-	UsersAddr                   string
+	RedisAddr                   string
 	PaymentGatewayURL           string
 	PaymentGatewayAPIKey        string
 	PaymentGatewayWebhookSecret string
@@ -27,7 +27,7 @@ type Config struct {
 func LoadConfig() Config {
 	config := Config{
 		GRPCAddr:                    strings.TrimSpace(os.Getenv("GRPC_ADDR")),
-		UsersAddr:                   strings.TrimSpace(os.Getenv("USERS_SVC_ADDR")),
+		RedisAddr:                   strings.TrimSpace(os.Getenv("REDIS_ADDR")),
 		PaymentGatewayURL:           strings.TrimSpace(os.Getenv("PAYMENT_GATEWAY_URL")),
 		PaymentGatewayAPIKey:        os.Getenv("PAYMENT_GATEWAY_API_KEY"),
 		PaymentGatewayWebhookSecret: os.Getenv("PAYMENT_GATEWAY_WEBHOOK_SECRET"),
@@ -48,8 +48,8 @@ func LoadConfig() Config {
 	if config.KafkaGroupID == "" {
 		config.KafkaGroupID = defaultKafkaGroupID
 	}
-	if config.UsersAddr == "" {
-		config.UsersAddr = "users:9091"
+	if config.RedisAddr == "" {
+		config.RedisAddr = "checkout-redis:6379"
 	}
 	return config
 }

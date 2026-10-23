@@ -2,6 +2,7 @@
 package messaging
 
 const (
+	EventTypeAccountCreated             = "users.account-created.v1"
 	EventTypeProductCreated             = "products.created"
 	EventTypeOrderCreated               = "orders.created"
 	EventTypeInventoryReserved          = "inventory.reserved"
