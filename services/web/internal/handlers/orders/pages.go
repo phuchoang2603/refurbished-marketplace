@@ -33,7 +33,7 @@ func OrderToView(order *ordersv1.Order) sharedviews.OrderView {
 	for _, item := range order.GetItems() {
 		items = append(items, sharedviews.OrderItemView{ID: item.GetId(), OrderID: item.GetOrderId(), ProductID: item.GetProductId(), Quantity: item.GetQuantity(), UnitPriceCents: item.GetUnitPriceCents(), LineTotalCents: item.GetLineTotalCents(), CreatedAt: shared.FormatTimestamp(item.GetCreatedAt())})
 	}
-	return sharedviews.OrderView{ID: order.GetId(), BuyerUserID: order.GetBuyerUserId(), Status: order.GetStatus().String(), TotalCents: order.GetTotalCents(), Items: items, CreatedAt: shared.FormatTimestamp(order.GetCreatedAt()), UpdatedAt: shared.FormatTimestamp(order.GetUpdatedAt())}
+	return sharedviews.OrderView{ID: order.GetId(), Status: order.GetStatus().String(), TotalCents: order.GetTotalCents(), Items: items, CreatedAt: shared.FormatTimestamp(order.GetCreatedAt()), UpdatedAt: shared.FormatTimestamp(order.GetUpdatedAt())}
 }
 
 func applyHostedPaymentState(view *sharedviews.OrderView, status, failureReason, paymentURL string) {

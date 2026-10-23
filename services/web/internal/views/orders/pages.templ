@@ -52,12 +52,18 @@ templ OrderListSection(orders []sharedviews.OrderView) {
 
 templ OrderDetailSection(order sharedviews.OrderView) {
 	@card.Card(card.CardArgs{Attributes: templpkg.Attributes{"id": "order-" + order.ID}}) {
-		@page.Header("Order "+order.ID, "Buyer "+order.BuyerUserID)
+		@page.Header("Order "+order.ID, "")
 		@card.CardContent(card.CardContentArgs{Class: "grid gap-6"}) {
 			<p><strong>Status:</strong> @badge.Badge(order.Status)
 </p>
 			if order.PaymentStatus != "" {
 				<p><strong>Payment status:</strong> @badge.Badge(order.PaymentStatus)</p>
+				if order.PaymentFailureReason != "" {
+					<p class="text-sm text-muted-foreground">{ order.PaymentFailureReason }</p>
+				}
+			}
+			<p class="text-4xl font-semibold tracking-tight sm:text-5xl">{ sharedviews.FormatCents(order.TotalCents) }</p>
+			if order.PaymentStatus != "" {
 				if order.Status == "ORDER_STATUS_PENDING" {
 					<p role="status" class="text-sm text-muted-foreground">Payment is being reconciled and stock settlement is pending. Your order is not final yet.</p>
 				}
@@ -66,12 +72,7 @@ templ OrderDetailSection(order sharedviews.OrderView) {
 						<a href={ order.PaymentURL }>Retry payment</a>
 					}
 				}
-				if order.PaymentFailureReason != "" {
-					<p class="text-sm text-muted-foreground">{ order.PaymentFailureReason }</p>
-				}
 			}
-			<p class="text-4xl font-semibold tracking-tight sm:text-5xl">{ sharedviews.FormatCents(order.TotalCents) }</p>
-			<p><small>Buyer { order.BuyerUserID }</small></p>
 			if len(order.Items) > 0 {
 				<div class="overflow-x-auto rounded-lg border bg-card/40">
 					<table class="responsive-table min-w-full border-collapse text-sm">
