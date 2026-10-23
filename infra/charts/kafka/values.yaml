@@ -100,10 +100,7 @@ entities:
       outboxCollection: catalog.catalog_outbox
   checkout:
     topics:
-      - name: checkout.order-create.requested.v1
-        partitions: 1
-        retention: 86400000
-      - name: checkout.stock-reserve.requested.v1
+      - name: checkout.prepare.requested.v1
         partitions: 1
         retention: 86400000
       - name: checkout.stock-cancel.requested.v1

@@ -70,7 +70,7 @@ func TestSubmitIdempotencyAndOwnership(t *testing.T) {
 	owned, err := server.GetCheckout(buyerContext, &checkoutv1.GetCheckoutRequest{
 		CheckoutId: first.GetCheckoutId(), BuyerUserId: request.GetBuyerUserId(),
 	})
-	if err != nil || owned.GetState() != checkoutv1.CheckoutState_CHECKOUT_STATE_CREATING_ORDER || owned.GetOrderId() == "" {
+	if err != nil || owned.GetState() != checkoutv1.CheckoutState_CHECKOUT_STATE_PREPARING || owned.GetOrderId() == "" {
 		t.Fatalf("owner should see pending order: %v, %v", owned, err)
 	}
 }

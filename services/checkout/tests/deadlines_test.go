@@ -38,8 +38,15 @@ func TestDeadlineRetryAfterWorkerRestart(t *testing.T) {
 	if claims != 1 {
 		t.Fatalf("expected one worker to claim deadline, got %d", claims)
 	}
-	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_CREATING_ORDER, 2)
-	rows, err := db.QueryContext(t.Context(), "SELECT event_type, payload FROM checkout_outbox WHERE aggregate_id = $1", checkoutID)
+	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK, 2)
+	if _, err := db.ExecContext(t.Context(), "UPDATE checkouts SET deadline_at = NOW() - INTERVAL '1 minute' WHERE id = $1", checkoutID); err != nil {
+		t.Fatal(err)
+	}
+	if claimed, err := newTestService(db).ProcessDue(t.Context()); err != nil || !claimed {
+		t.Fatalf("retry cancellation: claimed=%t, err=%v", claimed, err)
+	}
+	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK, 3)
+	rows, err := db.QueryContext(t.Context(), "SELECT event_type, payload FROM checkout_outbox WHERE aggregate_id = $1 AND event_type = $2", checkoutID, messaging.EventTypeCheckoutCancelStock)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,7 +59,7 @@ func TestDeadlineRetryAfterWorkerRestart(t *testing.T) {
 		if err := rows.Scan(&topic, &payload); err != nil {
 			t.Fatal(err)
 		}
-		if topic != messaging.EventTypeCheckoutCreateOrder {
+		if topic != messaging.EventTypeCheckoutCancelStock {
 			t.Fatalf("retry topic: %s", topic)
 		}
 		message := new(checkoutv1.CheckoutMessage)
@@ -72,24 +79,27 @@ func TestDeadlineRetryAfterWorkerRestart(t *testing.T) {
 		t.Fatal(err)
 	}
 	if len(seen) != 2 {
-		t.Fatalf("expected two deliveries, got %d", len(seen))
+		t.Fatalf("expected two cancellation deliveries, got %d", len(seen))
 	}
 }
 
-func TestReservationDeadlineFencesLateHold(t *testing.T) {
+func TestPreparationDeadlineFencesLateHold(t *testing.T) {
 	db := newCheckoutDB(t)
 	checkoutService, checkoutID, orderID := submitForTransition(t, db)
-	sendResult(t, checkoutService, checkoutID, orderID, messaging.EventTypeCheckoutOrderCreated, "create-order", 1, &checkoutv1.OrderCreated{})
+	sendResult(t, checkoutService, checkoutID, orderID, messaging.EventTypeCheckoutOrderCreated, "prepare", 1, &checkoutv1.OrderCreated{})
 	if _, err := db.ExecContext(t.Context(), "UPDATE checkouts SET deadline_at = NOW() - INTERVAL '1 minute' WHERE id = $1", checkoutID); err != nil {
 		t.Fatal(err)
 	}
 	claimed, err := newTestService(db).ProcessDue(t.Context())
 	if err != nil || !claimed {
-		t.Fatalf("reservation timeout: claimed=%t, err=%v", claimed, err)
+		t.Fatalf("preparation timeout: claimed=%t, err=%v", claimed, err)
 	}
-	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK, 3)
-	sendResult(t, checkoutService, checkoutID, orderID, messaging.EventTypeCheckoutStockReserved, "reserve-stock", 2, &checkoutv1.StockReserved{})
-	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK, 3)
-	sendResult(t, checkoutService, checkoutID, orderID, messaging.EventTypeCheckoutStockReleased, "cancel-stock", 3, &checkoutv1.StockReleased{})
-	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_FINALIZING_FAILED, 4)
+	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK, 2)
+	sendResult(t, checkoutService, checkoutID, orderID, messaging.EventTypeCheckoutStockReserved, "prepare", 1, &checkoutv1.StockReserved{})
+	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK, 2)
+	if gateway := countGatewayOperations(t, db, checkoutID); gateway != 0 {
+		t.Fatalf("late success opened payment creation: %d", gateway)
+	}
+	sendResult(t, checkoutService, checkoutID, orderID, messaging.EventTypeCheckoutStockReleased, "cancel-stock", 2, &checkoutv1.StockReleased{})
+	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_FINALIZING_FAILED, 3)
 }

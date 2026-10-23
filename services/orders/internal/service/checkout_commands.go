@@ -16,6 +16,12 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+const (
+	checkoutOrderCreated      = "CREATED"
+	checkoutOrderRejected     = "REJECTED"
+	checkoutOrderFailedAbsent = "FAILED_ABSENT"
+)
+
 func (service *Service) HandleCheckoutCommand(ctx context.Context, record messaging.KafkaMessage) error {
 	command := new(checkoutv1.CheckoutMessage)
 	if err := proto.Unmarshal(record.Value, command); err != nil {
@@ -33,12 +39,16 @@ func (service *Service) HandleCheckoutCommand(ctx context.Context, record messag
 	if err != nil || orderID == uuid.Nil {
 		return errors.New("invalid order id")
 	}
+	sharedtrace.AnnotateCheckout(ctx, checkoutID.String(), orderID.String())
 	tx, err := service.db.BeginTx(ctx, nil)
 	if err != nil {
 		return err
 	}
 	defer func() { _ = tx.Rollback() }()
 	queries := database.New(tx)
+	if err := queries.LockCheckoutIdentity(ctx, checkoutID.String()); err != nil {
+		return err
+	}
 	if _, err := queries.InsertOrdersInboxMessage(ctx, messageContext.GetMessageId()); errors.Is(err, sql.ErrNoRows) {
 		return tx.Commit()
 	} else if err != nil {
@@ -48,30 +58,28 @@ func (service *Service) HandleCheckoutCommand(ctx context.Context, record messag
 	var resultPayload any
 	var resultTopic string
 	switch record.Topic {
-	case messaging.EventTypeCheckoutCreateOrder:
-		if command.GetCreateOrder() == nil {
-			return errors.New("order create payload missing")
+	case messaging.EventTypeCheckoutPrepare:
+		if command.GetPrepareCheckout() == nil {
+			return errors.New("checkout preparation payload missing")
 		}
-		if err := createCheckoutOrder(ctx, queries, checkoutID, orderID, command.GetCreateOrder()); err != nil {
+		rejection, err := prepareCheckoutOrder(ctx, queries, checkoutID, orderID, command.GetPrepareCheckout())
+		if err != nil {
 			return err
 		}
-		resultPayload = &checkoutv1.CheckoutMessage_OrderCreated{OrderCreated: &checkoutv1.OrderCreated{}}
-		resultTopic = messaging.EventTypeCheckoutOrderCreated
+		if rejection != "" {
+			resultPayload = &checkoutv1.CheckoutMessage_OrderRejected{OrderRejected: &checkoutv1.OrderRejected{Reason: rejection}}
+			resultTopic = messaging.EventTypeCheckoutOrderRejected
+		} else {
+			resultPayload = &checkoutv1.CheckoutMessage_OrderCreated{OrderCreated: &checkoutv1.OrderCreated{}}
+			resultTopic = messaging.EventTypeCheckoutOrderCreated
+		}
 	case messaging.EventTypeCheckoutFinalizeOrder:
 		finalize := command.GetFinalizeOrder()
 		if finalize == nil || (finalize.GetStatus() != checkoutv1.FinalOrderStatus_FINAL_ORDER_STATUS_PAID && finalize.GetStatus() != checkoutv1.FinalOrderStatus_FINAL_ORDER_STATUS_FAILED) {
 			return errors.New("invalid checkout finalization")
 		}
-		owner, err := queries.GetCheckoutOrderCommand(ctx, checkoutID)
-		if err != nil || owner.OrderID != orderID {
-			return fmt.Errorf("finalize order checkout binding: %w", err)
-		}
-		status := OrderStatusPaid
-		if finalize.GetStatus() == checkoutv1.FinalOrderStatus_FINAL_ORDER_STATUS_FAILED {
-			status = OrderStatusFailed
-		}
-		if _, err := queries.FinalizeCheckoutOrder(ctx, database.FinalizeCheckoutOrderParams{ID: orderID, Status: status}); err != nil {
-			return fmt.Errorf("finalize order terminal conflict: %w", err)
+		if err := finalizeCheckoutOrder(ctx, queries, checkoutID, orderID, finalize.GetStatus()); err != nil {
+			return err
 		}
 		resultPayload = &checkoutv1.CheckoutMessage_OrderFinalized{OrderFinalized: &checkoutv1.OrderFinalized{Status: finalize.GetStatus()}}
 		resultTopic = messaging.EventTypeCheckoutOrderFinalized
@@ -86,6 +94,8 @@ func (service *Service) HandleCheckoutCommand(ctx context.Context, record messag
 	}}
 	switch value := resultPayload.(type) {
 	case *checkoutv1.CheckoutMessage_OrderCreated:
+		result.Payload = value
+	case *checkoutv1.CheckoutMessage_OrderRejected:
 		result.Payload = value
 	case *checkoutv1.CheckoutMessage_OrderFinalized:
 		result.Payload = value
@@ -103,51 +113,108 @@ func (service *Service) HandleCheckoutCommand(ctx context.Context, record messag
 	return tx.Commit()
 }
 
-func createCheckoutOrder(ctx context.Context, queries *database.Queries, checkoutID, orderID uuid.UUID, request *checkoutv1.CreateOrder) error {
-	buyerID, buyerError := uuid.Parse(request.GetBuyerUserId())
-	merchantID, merchantError := uuid.Parse(request.GetMerchantId())
-	if buyerError != nil || merchantError != nil {
-		return errors.New("invalid checkout order identities")
-	}
-	items := make([]OrderItemInput, 0, len(request.GetItems()))
-	for _, item := range request.GetItems() {
-		if item == nil {
-			return errors.New("nil checkout item")
-		}
-		productID, err := uuid.Parse(item.GetProductId())
-		if err != nil {
-			return err
-		}
-		items = append(items, OrderItemInput{ProductID: productID, Quantity: item.GetQuantity(), UnitPriceCents: item.GetUnitPriceCents()})
-	}
-	if err := validateCreateOrderInput(buyerID, merchantID, checkoutID, items, request.GetTotalCents()); err != nil {
-		return err
-	}
+func prepareCheckoutOrder(ctx context.Context, queries *database.Queries, checkoutID, orderID uuid.UUID, request *checkoutv1.PrepareCheckout) (string, error) {
 	encoded, err := (proto.MarshalOptions{Deterministic: true}).Marshal(request)
 	if err != nil {
-		return err
+		return "", err
 	}
 	hash := sha256.Sum256(encoded)
 	existing, err := queries.GetCheckoutOrderCommand(ctx, checkoutID)
 	if err == nil {
-		if existing.OrderID != orderID || !bytes.Equal(existing.RequestHash, hash[:]) {
-			return ErrIdempotencyConflict
+		if existing.OrderID != orderID {
+			return "", ErrIdempotencyConflict
 		}
-		return nil
+		if existing.Status == checkoutOrderFailedAbsent {
+			return "checkout already failed before order creation", nil
+		}
+		if !bytes.Equal(existing.RequestHash, hash[:]) {
+			return "", ErrIdempotencyConflict
+		}
+		if existing.Status == checkoutOrderRejected {
+			return existing.Reason.String, nil
+		}
+		return "", nil
 	}
 	if !errors.Is(err, sql.ErrNoRows) {
-		return err
+		return "", err
+	}
+
+	buyerID, merchantID, items, err := parsePreparedOrder(checkoutID, request)
+	if err != nil {
+		if insertErr := queries.InsertCheckoutOrderCommand(ctx, database.InsertCheckoutOrderCommandParams{
+			CheckoutID: checkoutID, OrderID: orderID, RequestHash: hash[:],
+			Status: checkoutOrderRejected, Reason: sql.NullString{String: err.Error(), Valid: true},
+		}); insertErr != nil {
+			return "", insertErr
+		}
+		return err.Error(), nil
 	}
 	if _, err := queries.CreateOrder(ctx, database.CreateOrderParams{
 		ID: orderID, BuyerUserID: buyerID, MerchantID: merchantID,
 		Status: OrderStatusPending, TotalCents: request.GetTotalCents(), IdempotencyKey: checkoutID,
 	}); err != nil {
-		return err
+		return "", err
 	}
 	if _, err := createOrderItems(ctx, queries, orderID, items); err != nil {
+		return "", err
+	}
+	return "", queries.InsertCheckoutOrderCommand(ctx, database.InsertCheckoutOrderCommandParams{
+		CheckoutID: checkoutID, OrderID: orderID, RequestHash: hash[:], Status: checkoutOrderCreated,
+	})
+}
+
+func parsePreparedOrder(checkoutID uuid.UUID, request *checkoutv1.PrepareCheckout) (uuid.UUID, uuid.UUID, []OrderItemInput, error) {
+	buyerID, buyerError := uuid.Parse(request.GetBuyerUserId())
+	merchantID, merchantError := uuid.Parse(request.GetMerchantId())
+	if buyerError != nil || merchantError != nil {
+		return uuid.Nil, uuid.Nil, nil, errors.New("invalid checkout order identities")
+	}
+	items := make([]OrderItemInput, 0, len(request.GetItems()))
+	for _, item := range request.GetItems() {
+		if item == nil {
+			return uuid.Nil, uuid.Nil, nil, errors.New("nil checkout item")
+		}
+		productID, err := uuid.Parse(item.GetProductId())
+		if err != nil {
+			return uuid.Nil, uuid.Nil, nil, ErrInvalidProductID
+		}
+		items = append(items, OrderItemInput{ProductID: productID, Quantity: item.GetQuantity(), UnitPriceCents: item.GetUnitPriceCents()})
+	}
+	if err := validateCreateOrderInput(buyerID, merchantID, checkoutID, items, request.GetTotalCents()); err != nil {
+		return uuid.Nil, uuid.Nil, nil, err
+	}
+	return buyerID, merchantID, items, nil
+}
+
+func finalizeCheckoutOrder(ctx context.Context, queries *database.Queries, checkoutID, orderID uuid.UUID, finalStatus checkoutv1.FinalOrderStatus) error {
+	failed := finalStatus == checkoutv1.FinalOrderStatus_FINAL_ORDER_STATUS_FAILED
+	owner, err := queries.GetCheckoutOrderCommand(ctx, checkoutID)
+	if errors.Is(err, sql.ErrNoRows) {
+		if !failed {
+			return errors.New("paid finalization requires an existing checkout order")
+		}
+		return queries.InsertCheckoutOrderCommand(ctx, database.InsertCheckoutOrderCommandParams{
+			CheckoutID: checkoutID, OrderID: orderID, Status: checkoutOrderFailedAbsent,
+		})
+	}
+	if err != nil {
 		return err
 	}
-	return queries.InsertCheckoutOrderCommand(ctx, database.InsertCheckoutOrderCommandParams{
-		CheckoutID: checkoutID, OrderID: orderID, RequestHash: hash[:],
-	})
+	if owner.OrderID != orderID {
+		return errors.New("finalize order checkout binding conflict")
+	}
+	if owner.Status != checkoutOrderCreated {
+		if !failed {
+			return fmt.Errorf("paid finalization conflicts with %s checkout order", owner.Status)
+		}
+		return nil
+	}
+	status := OrderStatusPaid
+	if failed {
+		status = OrderStatusFailed
+	}
+	if _, err := queries.FinalizeCheckoutOrder(ctx, database.FinalizeCheckoutOrderParams{ID: orderID, Status: status}); err != nil {
+		return fmt.Errorf("finalize order terminal conflict: %w", err)
+	}
+	return nil
 }

@@ -6,12 +6,12 @@ option go_package = "github.com/phuchoang2603/refurbished-marketplace/shared/pro
 
 message CheckoutMessage {
   MessageContext context = 1;
-  reserved 10 to 17;
+  reserved 2, 5, 10 to 17;
+  reserved "create_order", "reserve_stock";
   oneof payload {
-    CreateOrder create_order = 2;
+    PrepareCheckout prepare_checkout = 22;
     OrderCreated order_created = 3;
     OrderRejected order_rejected = 4;
-    ReserveStock reserve_stock = 5;
     StockReserved stock_reserved = 6;
     StockRejected stock_rejected = 7;
     CancelStock cancel_stock = 8;
@@ -51,7 +51,7 @@ message CheckoutAddress {
   string country = 7;
 }
 
-message CreateOrder {
+message PrepareCheckout {
   string buyer_user_id = 1;
   string merchant_id = 2;
   int64 total_cents = 3;
@@ -63,12 +63,6 @@ message OrderCreated {}
 
 message OrderRejected {
   string reason = 1;
-}
-
-message ReserveStock {
-  string merchant_id = 1;
-  int64 total_cents = 2;
-  repeated CheckoutLine items = 3;
 }
 
 message StockReserved {}

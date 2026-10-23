@@ -1,5 +1,6 @@
 {
   pkgs,
+  lib,
   config,
   ...
 }:
@@ -63,6 +64,8 @@ in
   };
 
   tasks = {
+    "devenv:treefmt:run".before = lib.mkForce [ ];
+
     "codegen:proto" = {
       exec = ''
         cd "${config.git.root}"
@@ -83,7 +86,6 @@ in
             "$file"
         done
       '';
-      before = [ "devenv:enterShell" ];
 
       execIfModified = [
         "services/**/proto/**/*.proto"
@@ -99,7 +101,6 @@ in
           (cd "$dir" && sqlc generate)
         done
       '';
-      before = [ "devenv:enterShell" ];
 
       execIfModified = [
         "services/**/sqlc.yaml"
@@ -113,7 +114,6 @@ in
         echo "Syncing go.work..."
         go work sync
       '';
-      before = [ "devenv:enterShell" ];
 
       execIfModified = [
         "services/**/go.mod"
@@ -128,7 +128,6 @@ in
         cd "${config.git.root}/services/web"
         templ generate
       '';
-      before = [ "devenv:enterShell" ];
 
       execIfModified = [
         "services/web/**/*.templ"
@@ -140,7 +139,6 @@ in
         cd "${config.git.root}/services/web"
         tailwindcss -c tailwind.config.js -i tailwind.css -o static/app.css
       '';
-      before = [ "devenv:enterShell" ];
 
       execIfModified = [
         "services/web/tailwind.css"

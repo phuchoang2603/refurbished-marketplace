@@ -29,7 +29,10 @@ func (q *Queries) GetCheckoutReservation(ctx context.Context, orderID uuid.UUID)
 }
 
 const getOrderReservations = `-- name: GetOrderReservations :many
-SELECT order_id, product_id, quantity, status, created_at, updated_at FROM inventory_reservations WHERE order_id = $1 ORDER BY product_id FOR UPDATE
+SELECT order_id, product_id, quantity, status, created_at, updated_at
+FROM inventory_reservations
+WHERE order_id = $1
+ORDER BY product_id FOR UPDATE
 `
 
 func (q *Queries) GetOrderReservations(ctx context.Context, orderID uuid.UUID) ([]InventoryReservation, error) {
@@ -63,7 +66,9 @@ func (q *Queries) GetOrderReservations(ctx context.Context, orderID uuid.UUID) (
 }
 
 const insertCheckoutReservation = `-- name: InsertCheckoutReservation :exec
-INSERT INTO inventory_checkout_operations (order_id, checkout_id, reserve_hash, status)
+INSERT INTO inventory_checkout_operations (
+    order_id, checkout_id, reserve_hash, status
+)
 VALUES ($1, $2, $3, $4)
 `
 

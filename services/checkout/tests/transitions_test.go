@@ -35,8 +35,8 @@ func submitWithService(t *testing.T, db *sql.DB, svc *service.Service) (string, 
 
 func reserveForPayment(t *testing.T, svc *service.Service, checkoutID, orderID string) {
 	t.Helper()
-	sendResult(t, svc, checkoutID, orderID, messaging.EventTypeCheckoutOrderCreated, "create-order", 1, &checkoutv1.OrderCreated{})
-	sendResult(t, svc, checkoutID, orderID, messaging.EventTypeCheckoutStockReserved, "reserve-stock", 2, &checkoutv1.StockReserved{})
+	sendResult(t, svc, checkoutID, orderID, messaging.EventTypeCheckoutOrderCreated, "prepare", 1, &checkoutv1.OrderCreated{})
+	sendResult(t, svc, checkoutID, orderID, messaging.EventTypeCheckoutStockReserved, "prepare", 1, &checkoutv1.StockReserved{})
 }
 
 func readyPayment(t *testing.T, db *sql.DB) (*service.Service, string, string) {
@@ -65,6 +65,8 @@ func buildResult(t *testing.T, checkoutID, orderID, topic, operation string, ver
 	switch value := payload.(type) {
 	case *checkoutv1.OrderCreated:
 		message.Payload = &checkoutv1.CheckoutMessage_OrderCreated{OrderCreated: value}
+	case *checkoutv1.OrderRejected:
+		message.Payload = &checkoutv1.CheckoutMessage_OrderRejected{OrderRejected: value}
 	case *checkoutv1.StockReserved:
 		message.Payload = &checkoutv1.CheckoutMessage_StockReserved{StockReserved: value}
 	case *checkoutv1.StockRejected:
@@ -104,45 +106,42 @@ func TestResultReplayAndSuccessfulStockGate(t *testing.T) {
 	db := newCheckoutDB(t)
 	svc := gatewayService(t, db, func(w http.ResponseWriter, r *http.Request) { writePayment(t, w) })
 	checkoutID, orderID := submitWithService(t, db, svc)
-	future := buildResult(t, checkoutID, orderID, messaging.EventTypeCheckoutStockReserved, "reserve-stock", 2, &checkoutv1.StockReserved{})
-	if err := svc.HandleResult(t.Context(), future); err == nil {
-		t.Fatal("future result must be retried")
-	}
-	created := sendResult(t, svc, checkoutID, orderID, messaging.EventTypeCheckoutOrderCreated, "create-order", 1, &checkoutv1.OrderCreated{})
-	if err := svc.HandleResult(t.Context(), created); err != nil {
+	stock := buildResult(t, checkoutID, orderID, messaging.EventTypeCheckoutStockReserved, "prepare", 1, &checkoutv1.StockReserved{})
+	if err := svc.HandleResult(t.Context(), stock); err != nil {
 		t.Fatal(err)
 	}
-	if err := svc.HandleResult(t.Context(), future); err != nil {
+	if err := svc.HandleResult(t.Context(), stock); err != nil {
 		t.Fatal(err)
 	}
-	sendResult(t, svc, checkoutID, orderID, messaging.EventTypeCheckoutStockReserved, "reserve-stock", 2, &checkoutv1.StockReserved{})
-	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_CREATING_PAYMENT, 2)
+	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_PREPARING, 1)
+	sendResult(t, svc, checkoutID, orderID, messaging.EventTypeCheckoutOrderCreated, "prepare", 1, &checkoutv1.OrderCreated{})
+	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_CREATING_PAYMENT, 1)
 	if processed, err := svc.ProcessGatewayOperation(t.Context()); err != nil || !processed {
 		t.Fatalf("operation: %v %v", processed, err)
 	}
-	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_READY_TO_PAY, 2)
+	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_READY_TO_PAY, 1)
 	sendWebhook(t, svc, "decline", "attempt.declined", orderID)
-	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_READY_TO_PAY, 2)
+	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_READY_TO_PAY, 1)
 	request := webhookRequest(t, "success", "payment.succeeded", orderID)
 	sendWebhook(t, svc, "success", "payment.succeeded", orderID)
 	response, err := svc.HandleGatewayWebhook(t.Context(), request)
 	if err != nil || response.GetResult() != checkoutv1.GatewayWebhookResult_GATEWAY_WEBHOOK_RESULT_DUPLICATE {
 		t.Fatalf("duplicate: %v %v", response, err)
 	}
-	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_COMMITTING_STOCK, 3)
-	sendResult(t, svc, checkoutID, orderID, messaging.EventTypeCheckoutStockCommitted, "commit-stock", 5, &checkoutv1.StockCommitted{})
-	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_FINALIZING_PAID, 4)
-	sendResult(t, svc, checkoutID, orderID, messaging.EventTypeCheckoutOrderFinalized, "finalize-paid", 6, &checkoutv1.OrderFinalized{Status: checkoutv1.FinalOrderStatus_FINAL_ORDER_STATUS_PAID})
-	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_COMPLETED, 4)
+	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_COMMITTING_STOCK, 2)
+	sendResult(t, svc, checkoutID, orderID, messaging.EventTypeCheckoutStockCommitted, "commit-stock", 4, &checkoutv1.StockCommitted{})
+	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_FINALIZING_PAID, 3)
+	sendResult(t, svc, checkoutID, orderID, messaging.EventTypeCheckoutOrderFinalized, "finalize-paid", 5, &checkoutv1.OrderFinalized{Status: checkoutv1.FinalOrderStatus_FINAL_ORDER_STATUS_PAID})
+	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_COMPLETED, 3)
 }
 
 func TestExpiredPaymentWaitsForStockRelease(t *testing.T) {
 	db := newCheckoutDB(t)
 	svc, checkoutID, orderID := readyPayment(t, db)
 	sendWebhook(t, svc, "expired", "payment.expired", orderID)
-	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK, 3)
-	sendResult(t, svc, checkoutID, orderID, messaging.EventTypeCheckoutStockReleased, "cancel-stock", 5, &checkoutv1.StockReleased{})
-	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_FINALIZING_FAILED, 4)
-	sendResult(t, svc, checkoutID, orderID, messaging.EventTypeCheckoutOrderFinalized, "finalize-failed", 6, &checkoutv1.OrderFinalized{Status: checkoutv1.FinalOrderStatus_FINAL_ORDER_STATUS_FAILED})
-	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_FAILED, 4)
+	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK, 2)
+	sendResult(t, svc, checkoutID, orderID, messaging.EventTypeCheckoutStockReleased, "cancel-stock", 4, &checkoutv1.StockReleased{})
+	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_FINALIZING_FAILED, 3)
+	sendResult(t, svc, checkoutID, orderID, messaging.EventTypeCheckoutOrderFinalized, "finalize-failed", 5, &checkoutv1.OrderFinalized{Status: checkoutv1.FinalOrderStatus_FINAL_ORDER_STATUS_FAILED})
+	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_FAILED, 3)
 }

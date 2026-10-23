@@ -41,7 +41,8 @@ func (q *Queries) ClaimGatewayOperation(ctx context.Context) (CheckoutGatewayOpe
 }
 
 const finishGatewayOperation = `-- name: FinishGatewayOperation :exec
-UPDATE checkout_gateway_operations SET status = $2 WHERE checkout_id = $1 AND status = 'pending'
+UPDATE checkout_gateway_operations SET status = $2
+WHERE checkout_id = $1 AND status = 'pending'
 `
 
 type FinishGatewayOperationParams struct {
@@ -72,7 +73,7 @@ func (q *Queries) InsertGatewayOperation(ctx context.Context, arg InsertGatewayO
 }
 
 const lockCheckoutByGatewayPayment = `-- name: LockCheckoutByGatewayPayment :one
-SELECT id, buyer_user_id, merchant_id, intent_key, request_hash, snapshot, state, version, order_id, gateway_payment_id, hosted_checkout_url, failure_reason, deadline_at, created_at, updated_at, gateway_snapshot, gateway_expires_at, gateway_last_event_at, gateway_status_checked_at, payment_status FROM checkouts WHERE gateway_payment_id = $1 FOR UPDATE
+SELECT id, buyer_user_id, merchant_id, intent_key, request_hash, snapshot, state, version, order_id, gateway_payment_id, hosted_checkout_url, failure_reason, deadline_at, created_at, updated_at, gateway_snapshot, gateway_expires_at, gateway_last_event_at, gateway_status_checked_at, payment_status, prep_operation_id, prep_version, prep_deadline_at, prep_closure, prep_closed_at, orders_outcome, orders_reason, inventory_outcome, inventory_reason FROM checkouts WHERE gateway_payment_id = $1 FOR UPDATE
 `
 
 func (q *Queries) LockCheckoutByGatewayPayment(ctx context.Context, gatewayPaymentID sql.NullString) (Checkout, error) {
@@ -99,6 +100,15 @@ func (q *Queries) LockCheckoutByGatewayPayment(ctx context.Context, gatewayPayme
 		&i.GatewayLastEventAt,
 		&i.GatewayStatusCheckedAt,
 		&i.PaymentStatus,
+		&i.PrepOperationID,
+		&i.PrepVersion,
+		&i.PrepDeadlineAt,
+		&i.PrepClosure,
+		&i.PrepClosedAt,
+		&i.OrdersOutcome,
+		&i.OrdersReason,
+		&i.InventoryOutcome,
+		&i.InventoryReason,
 	)
 	return i, err
 }

@@ -134,7 +134,7 @@ func TestCheckoutSubmitsSnapshotAndRedirectsToProgress(t *testing.T) {
 		if request.GetShippingAddress().GetCountry() != "US" {
 			t.Fatalf("missing buyer and shipping context: %v", request)
 		}
-		return &checkoutv1.SubmitCheckoutResponse{CheckoutId: "checkout-1", State: checkoutv1.CheckoutState_CHECKOUT_STATE_CREATING_ORDER}, nil
+		return &checkoutv1.SubmitCheckoutResponse{CheckoutId: "checkout-1", State: checkoutv1.CheckoutState_CHECKOUT_STATE_PREPARING}, nil
 	}}
 	req := httptest.NewRequest(http.MethodPost, "/cart/checkout", strings.NewReader(checkoutForm(url.Values{"merchant_id": {"merchant-1"}, "checkout_intent_key": {"intent-1"}})))
 	req.Host = "localhost:8080"

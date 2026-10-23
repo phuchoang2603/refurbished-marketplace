@@ -124,6 +124,7 @@ SELECT
     inventory.updated_at
 FROM inventory
 WHERE product_id = ANY($1::uuid [])
+ORDER BY inventory.product_id
 FOR UPDATE
 `
 

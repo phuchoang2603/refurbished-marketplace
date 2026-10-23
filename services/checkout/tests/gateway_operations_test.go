@@ -82,7 +82,7 @@ func TestGatewayRecoveryReplaysFrozenRequest(t *testing.T) {
 	if snapshot.OrderReference != orderID || !snapshot.Seller.Created.Equal(accountCreatedAt) || snapshot.Items[0].Category != "laptop" || snapshot.Items[0].Condition != "good" || snapshot.Items[0].UnitPrice != 1000 || snapshot.Buyer["email"] != nil {
 		t.Fatalf("gateway snapshot mismatch")
 	}
-	assertCheckoutState(t, db, result.GetCheckoutId(), checkoutv1.CheckoutState_CHECKOUT_STATE_READY_TO_PAY, 2)
+	assertCheckoutState(t, db, result.GetCheckoutId(), checkoutv1.CheckoutState_CHECKOUT_STATE_READY_TO_PAY, 1)
 	view, err := svc.GetCheckout(t.Context(), uuid.MustParse(result.GetCheckoutId()))
 	if err != nil || view.HostedCheckoutURL == "" {
 		t.Fatalf("ready hosted URL %v %v", view, err)
@@ -113,7 +113,7 @@ func TestGatewayDefectAndPreparationDeadlineCompensate(t *testing.T) {
 				t.Fatalf("operation %v %v", processed, err)
 			}
 			if failure == "unavailable" {
-				assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_CREATING_PAYMENT, 2)
+				assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_CREATING_PAYMENT, 1)
 				if _, err := db.ExecContext(t.Context(), "UPDATE checkouts SET deadline_at=NOW()-INTERVAL '1 second' WHERE id=$1", checkoutID); err != nil {
 					t.Fatal(err)
 				}
@@ -121,7 +121,7 @@ func TestGatewayDefectAndPreparationDeadlineCompensate(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK, 3)
+			assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK, 2)
 			view, err := svc.GetCheckout(t.Context(), uuid.MustParse(checkoutID))
 			if err != nil || view.HostedCheckoutURL != "" {
 				t.Fatalf("failed prep exposes destination: %v %v", view, err)

@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"sort"
 
 	"github.com/google/uuid"
 	"github.com/phuchoang2603/refurbished-marketplace/services/inventory/internal/database"
@@ -31,6 +32,7 @@ func (service *Service) HandleCheckoutCommand(ctx context.Context, record messag
 	if checkoutError != nil || orderError != nil || checkoutID == uuid.Nil || orderID == uuid.Nil {
 		return errors.New("inventory command missing checkout or order")
 	}
+	sharedtrace.AnnotateCheckout(ctx, checkoutID.String(), orderID.String())
 
 	tx, err := service.db.BeginTx(ctx, nil)
 	if err != nil {
@@ -50,11 +52,11 @@ func (service *Service) HandleCheckoutCommand(ctx context.Context, record messag
 	var resultTopic string
 	var resultPayload any
 	switch record.Topic {
-	case messaging.EventTypeCheckoutReserveStock:
-		if command.GetReserveStock() == nil {
-			return errors.New("missing reserve stock")
+	case messaging.EventTypeCheckoutPrepare:
+		if command.GetPrepareCheckout() == nil {
+			return errors.New("missing checkout preparation")
 		}
-		resultTopic, resultPayload, err = reserveCheckoutStock(ctx, queries, checkoutID, orderID, command.GetReserveStock())
+		resultTopic, resultPayload, err = reserveCheckoutStock(ctx, queries, checkoutID, orderID, command.GetPrepareCheckout())
 	case messaging.EventTypeCheckoutCancelStock:
 		if command.GetCancelStock() == nil {
 			return errors.New("missing cancel stock")
@@ -100,7 +102,7 @@ func (service *Service) HandleCheckoutCommand(ctx context.Context, record messag
 	return tx.Commit()
 }
 
-func reserveCheckoutStock(ctx context.Context, queries *database.Queries, checkoutID, orderID uuid.UUID, command *checkoutv1.ReserveStock) (string, any, error) {
+func reserveCheckoutStock(ctx context.Context, queries *database.Queries, checkoutID, orderID uuid.UUID, command *checkoutv1.PrepareCheckout) (string, any, error) {
 	merchantID, err := uuid.Parse(command.GetMerchantId())
 	if err != nil || merchantID == uuid.Nil || command.GetTotalCents() <= 0 || len(command.GetItems()) == 0 {
 		return "", nil, errors.New("invalid reservation facts")
@@ -147,6 +149,7 @@ func reserveCheckoutStock(ctx context.Context, queries *database.Queries, checko
 	for productID, quantity := range quantities {
 		items = append(items, ReservationItemInput{ProductID: productID, Quantity: quantity})
 	}
+	sort.Slice(items, func(i, j int) bool { return bytes.Compare(items[i].ProductID[:], items[j].ProductID[:]) < 0 })
 	reserveError := reserveOrderItems(ctx, queries, orderID, items)
 	status := ReservationStatusReserved
 	resultTopic := messaging.EventTypeCheckoutStockReserved

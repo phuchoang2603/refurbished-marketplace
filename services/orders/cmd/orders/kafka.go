@@ -14,7 +14,7 @@ func runOrderResultConsumer(ctx context.Context, svc *service.Service, bootstrap
 		BootstrapServers: bootstrap,
 		GroupID:          groupID,
 		Topics: []string{
-			messaging.EventTypeCheckoutCreateOrder,
+			messaging.EventTypeCheckoutPrepare,
 			messaging.EventTypeCheckoutFinalizeOrder,
 		},
 		TracerName: "orders",

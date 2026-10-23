@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/google/uuid"
@@ -16,8 +17,8 @@ func stockRecord(t *testing.T, checkoutID, orderID, topic, operation string, com
 		OperationId: uuid.NewSHA1(uuid.MustParse(checkoutID), []byte(operation)).String(), WorkflowVersion: 2,
 	}}
 	switch payload := command.(type) {
-	case *checkoutv1.ReserveStock:
-		message.Payload = &checkoutv1.CheckoutMessage_ReserveStock{ReserveStock: payload}
+	case *checkoutv1.PrepareCheckout:
+		message.Payload = &checkoutv1.CheckoutMessage_PrepareCheckout{PrepareCheckout: payload}
 	case *checkoutv1.CancelStock:
 		message.Payload = &checkoutv1.CheckoutMessage_CancelStock{CancelStock: payload}
 	case *checkoutv1.CommitStock:
@@ -41,14 +42,14 @@ func TestCheckoutReserveAllOrNothingAndReplay(t *testing.T) {
 		}
 	}
 	checkoutID, orderID := uuid.NewString(), uuid.NewString()
-	command := &checkoutv1.ReserveStock{
+	command := &checkoutv1.PrepareCheckout{
 		MerchantId: uuid.NewString(), TotalCents: 2000,
 		Items: []*checkoutv1.CheckoutLine{
 			{ProductId: first.String(), Name: "first", UnitPriceCents: 1000, Quantity: 1},
 			{ProductId: second.String(), Name: "second", UnitPriceCents: 500, Quantity: 2},
 		},
 	}
-	message := stockRecord(t, checkoutID, orderID, messaging.EventTypeCheckoutReserveStock, "reserve-stock", command)
+	message := stockRecord(t, checkoutID, orderID, messaging.EventTypeCheckoutPrepare, "prepare", command)
 	if err := inventoryService.HandleCheckoutCommand(t.Context(), message); err != nil {
 		t.Fatal(err)
 	}
@@ -62,24 +63,24 @@ func TestCheckoutReserveAllOrNothingAndReplay(t *testing.T) {
 		t.Fatal(err)
 	}
 	freshID, freshOrder := uuid.NewString(), uuid.NewString()
-	available := &checkoutv1.ReserveStock{
+	available := &checkoutv1.PrepareCheckout{
 		MerchantId: uuid.NewString(), TotalCents: 1000,
 		Items: []*checkoutv1.CheckoutLine{{ProductId: first.String(), Name: "first", UnitPriceCents: 1000, Quantity: 1}},
 	}
-	firstAttempt := stockRecord(t, freshID, freshOrder, messaging.EventTypeCheckoutReserveStock, "reserve-stock", available)
+	firstAttempt := stockRecord(t, freshID, freshOrder, messaging.EventTypeCheckoutPrepare, "prepare", available)
 	if err := inventoryService.HandleCheckoutCommand(t.Context(), firstAttempt); err != nil {
 		t.Fatal(err)
 	}
-	if err := inventoryService.HandleCheckoutCommand(t.Context(), stockRecord(t, freshID, freshOrder, messaging.EventTypeCheckoutReserveStock, "reserve-stock", available)); err != nil {
+	if err := inventoryService.HandleCheckoutCommand(t.Context(), stockRecord(t, freshID, freshOrder, messaging.EventTypeCheckoutPrepare, "prepare", available)); err != nil {
 		t.Fatal(err)
 	}
 	stock, err := inventoryService.GetInventoryByProductID(t.Context(), first)
 	if err != nil || stock.AvailableQty != 0 || stock.ReservedQty != 1 {
 		t.Fatalf("retry double-reserved: %v %v", stock, err)
 	}
-	changed := proto.Clone(available).(*checkoutv1.ReserveStock)
+	changed := proto.Clone(available).(*checkoutv1.PrepareCheckout)
 	changed.Items[0].Name = "different"
-	if err := inventoryService.HandleCheckoutCommand(t.Context(), stockRecord(t, freshID, freshOrder, messaging.EventTypeCheckoutReserveStock, "reserve-stock", changed)); err == nil {
+	if err := inventoryService.HandleCheckoutCommand(t.Context(), stockRecord(t, freshID, freshOrder, messaging.EventTypeCheckoutPrepare, "prepare", changed)); err == nil {
 		t.Fatal("mismatched reservation facts must conflict")
 	}
 }
@@ -95,7 +96,7 @@ func TestCheckoutCancelBeforeReserveFencesLateHold(t *testing.T) {
 	if err := inventoryService.HandleCheckoutCommand(t.Context(), cancel); err != nil {
 		t.Fatal(err)
 	}
-	reserve := stockRecord(t, checkoutID, orderID, messaging.EventTypeCheckoutReserveStock, "reserve-stock", &checkoutv1.ReserveStock{
+	reserve := stockRecord(t, checkoutID, orderID, messaging.EventTypeCheckoutPrepare, "prepare", &checkoutv1.PrepareCheckout{
 		MerchantId: uuid.NewString(), TotalCents: 1000,
 		Items: []*checkoutv1.CheckoutLine{{ProductId: productID.String(), Name: "item", Quantity: 1, UnitPriceCents: 1000}},
 	})
@@ -116,7 +117,7 @@ func TestCheckoutCommitAndReleaseAreIdempotent(t *testing.T) {
 	}
 	for _, commit := range []bool{true, false} {
 		checkoutID, orderID := uuid.NewString(), uuid.NewString()
-		reserve := stockRecord(t, checkoutID, orderID, messaging.EventTypeCheckoutReserveStock, "reserve-stock", &checkoutv1.ReserveStock{
+		reserve := stockRecord(t, checkoutID, orderID, messaging.EventTypeCheckoutPrepare, "prepare", &checkoutv1.PrepareCheckout{
 			MerchantId: uuid.NewString(), TotalCents: 1000,
 			Items: []*checkoutv1.CheckoutLine{{ProductId: productID.String(), Name: "item", Quantity: 1, UnitPriceCents: 1000}},
 		})
@@ -139,6 +140,41 @@ func TestCheckoutCommitAndReleaseAreIdempotent(t *testing.T) {
 		}
 		if stock.AvailableQty != 1 {
 			t.Fatalf("settlement adjusted available stock twice: %v", stock)
+		}
+	}
+}
+
+func TestConcurrentPreparationNeverOversellsContestedProducts(t *testing.T) {
+	inventoryService := newInventoryService(t)
+	first, second := uuid.New(), uuid.New()
+	for _, id := range []uuid.UUID{first, second} {
+		if _, err := inventoryService.EnsureStock(t.Context(), id, 10); err != nil {
+			t.Fatal(err)
+		}
+	}
+	var wait sync.WaitGroup
+	for index := range 20 {
+		lines := []*checkoutv1.CheckoutLine{
+			{ProductId: first.String(), Name: "first", UnitPriceCents: 1000, Quantity: 1},
+			{ProductId: second.String(), Name: "second", UnitPriceCents: 1000, Quantity: 1},
+		}
+		if index%2 == 1 {
+			lines[0], lines[1] = lines[1], lines[0]
+		}
+		record := stockRecord(t, uuid.NewString(), uuid.NewString(), messaging.EventTypeCheckoutPrepare, "prepare", &checkoutv1.PrepareCheckout{
+			MerchantId: uuid.NewString(), TotalCents: 2000, Items: lines,
+		})
+		wait.Go(func() {
+			if err := inventoryService.HandleCheckoutCommand(t.Context(), record); err != nil {
+				t.Errorf("prepare: %v", err)
+			}
+		})
+	}
+	wait.Wait()
+	for _, id := range []uuid.UUID{first, second} {
+		stock, err := inventoryService.GetInventoryByProductID(t.Context(), id)
+		if err != nil || stock.AvailableQty != 0 || stock.ReservedQty != 10 {
+			t.Fatalf("product %s must hold exactly ten units: %v %v", id, stock, err)
 		}
 	}
 }

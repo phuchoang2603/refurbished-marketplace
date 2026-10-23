@@ -48,20 +48,20 @@ func TestPaymentDeadlineReadsOnceAndAcceptsLateWebhook(t *testing.T) {
 				t.Fatalf("status reads=%d", reads.Load())
 			}
 			if outcome == "SUCCEEDED" {
-				assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_COMMITTING_STOCK, 3)
+				assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_COMMITTING_STOCK, 2)
 				return
 			}
 			if outcome == "EXPIRED" {
-				assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK, 3)
+				assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK, 2)
 				return
 			}
-			assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_NEEDS_REVIEW, 2)
+			assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_NEEDS_REVIEW, 1)
 			var exceptions int
 			if err := db.QueryRowContext(t.Context(), "SELECT count(*) FROM checkout_exceptions WHERE resolved_at IS NULL").Scan(&exceptions); err != nil || exceptions != 1 {
 				t.Fatalf("exception %d %v", exceptions, err)
 			}
 			sendWebhook(t, svc, "late-success", "payment.succeeded", orderID)
-			assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_COMMITTING_STOCK, 3)
+			assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_COMMITTING_STOCK, 2)
 			if err := db.QueryRowContext(t.Context(), "SELECT count(*) FROM checkout_exceptions WHERE resolved_at IS NULL").Scan(&exceptions); err != nil || exceptions != 0 {
 				t.Fatalf("resolved exception %d %v", exceptions, err)
 			}
@@ -79,7 +79,7 @@ func TestLateSuccessAfterExpiryRecordsFinancialException(t *testing.T) {
 		t.Fatalf("replay: %v %v", response, err)
 	}
 	sendWebhook(t, svc, "repeated-expiry", "payment.expired", orderID)
-	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_NEEDS_REVIEW, 3)
+	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_NEEDS_REVIEW, 2)
 	var exceptions int
 	if err := db.QueryRowContext(t.Context(), "SELECT count(*) FROM checkout_exceptions WHERE kind='contradictory_payment'").Scan(&exceptions); err != nil || exceptions != 1 {
 		t.Fatalf("financial exception %d %v", exceptions, err)

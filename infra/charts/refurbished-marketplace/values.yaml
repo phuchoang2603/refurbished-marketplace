@@ -227,6 +227,8 @@ services:
     protocol: grpc
     env:
       KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap.kafka.svc:9092
+      KAFKA_GROUP_ID: inventory-service
+      KAFKA_PRODUCT_CREATED_GROUP_ID: inventory-product-created
     migration:
       enabled: true
       image: inventory-migrator
@@ -248,6 +250,7 @@ services:
     protocol: grpc
     env:
       KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap.kafka.svc:9092
+      KAFKA_GROUP_ID: orders-service
     migration:
       enabled: true
       image: orders-migrator
@@ -273,6 +276,7 @@ services:
     env:
       REDIS_ADDR: checkout-redis:6379
       KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap.kafka.svc:9092
+      KAFKA_GROUP_ID: checkout-service
     migration:
       enabled: true
       image: checkout-migrator

@@ -14,8 +14,7 @@ kafka:
 entities:
   checkout:
     topics:
-      - { name: checkout.order-create.requested.v1, partitions: 6, retention: 604800000 }
-      - { name: checkout.stock-reserve.requested.v1, partitions: 6, retention: 604800000 }
+      - { name: checkout.prepare.requested.v1, partitions: 6, retention: 604800000 }
       - { name: checkout.stock-cancel.requested.v1, partitions: 6, retention: 604800000 }
       - { name: checkout.stock-commit.requested.v1, partitions: 6, retention: 604800000 }
       - { name: checkout.order-finalize.requested.v1, partitions: 6, retention: 604800000 }

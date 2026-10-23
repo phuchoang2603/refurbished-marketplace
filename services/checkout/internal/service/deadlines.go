@@ -37,9 +37,8 @@ func (service *Service) ProcessDue(ctx context.Context) (bool, error) {
 	nextDeadline := time.Now().Add(deadlineRetryInterval)
 
 	switch state {
-	case checkoutv1.CheckoutState_CHECKOUT_STATE_RESERVING_STOCK:
-		err = deadlineCommand(ctx, queries, row, checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK,
-			messaging.EventTypeCheckoutCancelStock, "cancel-stock", &checkoutv1.CancelStock{Reason: "reservation deadline exceeded"}, nextDeadline)
+	case checkoutv1.CheckoutState_CHECKOUT_STATE_PREPARING:
+		err = closePreparation(ctx, queries, row, closureExpired, "preparation deadline exceeded", "")
 	case checkoutv1.CheckoutState_CHECKOUT_STATE_CREATING_PAYMENT:
 		err = queries.FinishGatewayOperation(ctx, database.FinishGatewayOperationParams{CheckoutID: row.ID, Status: "failed"})
 		if err == nil {
@@ -47,12 +46,11 @@ func (service *Service) ProcessDue(ctx context.Context) (bool, error) {
 		}
 	case checkoutv1.CheckoutState_CHECKOUT_STATE_READY_TO_PAY:
 		return service.reviewPaymentDeadline(ctx, tx, queries, row)
-	case checkoutv1.CheckoutState_CHECKOUT_STATE_CREATING_ORDER,
-		checkoutv1.CheckoutState_CHECKOUT_STATE_COMMITTING_STOCK,
+	case checkoutv1.CheckoutState_CHECKOUT_STATE_COMMITTING_STOCK,
 		checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK,
 		checkoutv1.CheckoutState_CHECKOUT_STATE_FINALIZING_PAID,
 		checkoutv1.CheckoutState_CHECKOUT_STATE_FINALIZING_FAILED:
-		err = retryLastCommand(ctx, queries, row)
+		err = retryOutstandingCommand(ctx, queries, row)
 		if err == nil {
 			_, err = queries.DelayCheckoutDeadline(ctx, database.DelayCheckoutDeadlineParams{
 				ID: row.ID, DeadlineAt: sql.NullTime{Time: nextDeadline, Valid: true}, Version: row.Version,
@@ -81,8 +79,19 @@ func deadlineCommand(ctx context.Context, queries *database.Queries, row databas
 	return enqueueCheckoutCommand(ctx, queries, row, topic, operation, "", payload)
 }
 
-func retryLastCommand(ctx context.Context, queries *database.Queries, row database.Checkout) error {
-	last, err := queries.GetLatestOutbox(ctx, row.ID)
+var outstandingOperations = map[checkoutv1.CheckoutState]string{
+	checkoutv1.CheckoutState_CHECKOUT_STATE_COMMITTING_STOCK:  "commit-stock",
+	checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK:   "cancel-stock",
+	checkoutv1.CheckoutState_CHECKOUT_STATE_FINALIZING_PAID:   "finalize-paid",
+	checkoutv1.CheckoutState_CHECKOUT_STATE_FINALIZING_FAILED: "finalize-failed",
+}
+
+func retryOutstandingCommand(ctx context.Context, queries *database.Queries, row database.Checkout) error {
+	operation, ok := outstandingOperations[checkoutv1.CheckoutState(checkoutv1.CheckoutState_value[row.State])]
+	if !ok {
+		return errors.New("checkout state has no outstanding command")
+	}
+	last, err := queries.GetOutbox(ctx, uuid.NewSHA1(row.ID, []byte(operation)))
 	if err != nil {
 		return err
 	}
@@ -91,7 +100,7 @@ func retryLastCommand(ctx context.Context, queries *database.Queries, row databa
 		return err
 	}
 	if command.GetContext().GetWorkflowVersion() != uint64(row.Version) {
-		return errors.New("latest command does not match due checkout version")
+		return errors.New("outstanding command does not match due checkout version")
 	}
 	command.GetContext().MessageId = uuid.NewString()
 	encoded, err := proto.Marshal(command)
