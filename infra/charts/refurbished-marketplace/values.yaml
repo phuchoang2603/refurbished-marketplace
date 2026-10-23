@@ -1,7 +1,7 @@
 global:
   imagePullPolicy: IfNotPresent
   imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
-  imageTag: main
+  imageTag: latest
 
 ingress:
   enabled: true

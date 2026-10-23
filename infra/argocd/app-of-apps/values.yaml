@@ -18,7 +18,7 @@ syncRetry:
 
 global:
   imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
-  imageTag: main
+  imageTag: latest
   imagePullPolicy: Always
 
 # The root is the only owner of these namespaces and their Istio ambient enrollment;

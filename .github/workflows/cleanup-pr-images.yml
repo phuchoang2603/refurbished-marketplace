@@ -28,7 +28,8 @@ jobs:
           images = [
               "web", "users", "users-migrator", "products", "search",
               "inventory", "inventory-migrator",
-              "orders", "orders-migrator", "cart", "connect-debezium",
+              "orders", "orders-migrator", "checkout", "checkout-migrator",
+              "cart", "connect-debezium",
           ]
 
           def gh(*args):
@@ -60,14 +61,7 @@ jobs:
                   page += 1
               return items
 
-          shas = {
-              c["sha"]
-              for c in paginate(f"/repos/{owner}/{repo}/pulls/{pr}/commits")
-              if c.get("sha")
-          }
-          if not shas:
-              print("no PR commits; nothing to delete")
-              raise SystemExit(0)
+          prefix = f"pr-{pr}-"
 
           for image in images:
               pkg = urllib.parse.quote(f"{repo}/{image}", safe="")
@@ -79,9 +73,7 @@ jobs:
                       .get("tags")
                       or []
                   )
-                  if "main" in tags:
-                      continue
-                  if not (set(tags) & shas):
+                  if not tags or not all(t.startswith(prefix) for t in tags):
                       continue
                   vid = version["id"]
                   print(f"deleting {repo}/{image} version {vid} tags={tags}")

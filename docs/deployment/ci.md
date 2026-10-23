@@ -18,7 +18,7 @@ Treefmt's existing Oxfmt integration formats plain YAML locally. Helm templates 
 
 ## Container images (GHCR)
 
-Pushes to `main` that touch image-related paths trigger `.github/workflows/release-images.yml` (`:<git-sha>` and `:main`). Pull requests and dispatch off `main` push `:<git-sha>` only (PR head SHA, never `:main`). Closed PRs run `.github/workflows/cleanup-pr-images.yml` to delete GHCR versions tagged only with that PR’s commit SHAs (never `:main`). Dev Argo tracks `main` and sets `global.imageTag` to `$ARGOCD_APP_REVISION`; prod uses `:main`.
+Each event builds every service image once. Pull requests (same-repo only; fork PRs build without publishing) push `:pr-<number>-<full-merge-sha>`, a new push cancels the previous build, and closing the PR cancels any active build. Pushes to `main` that touch image-related paths push `:main-<full-sha>` and `:latest`, then the `pin` job commits `global.imageTag: main-<full-sha>` to the production values of the `refurbished-marketplace` and `kafka` charts (`[skip ci]`). `.github/workflows/cleanup-pr-images.yml` runs when a PR closes and deletes only versions tagged exclusively with `pr-<number>-*`; `main-*` and `latest` are never selected. Dev charts default to `:latest`.
 
 See [gitops.md](gitops.md).
 
