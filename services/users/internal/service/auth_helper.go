@@ -48,7 +48,7 @@ func (s *Service) parseToken(raw, expectedType string) (jwt.RegisteredClaims, er
 	}, nil
 }
 
-func (s *Service) issueTokenPair(ctx context.Context, userID uuid.UUID, email string) (Tokens, error) {
+func (s *Service) issueTokenPair(ctx context.Context, userID uuid.UUID, email string, familyID uuid.UUID) (Tokens, error) {
 	now := time.Now().UTC()
 	accessExpiresAt := now.Add(s.cfg.JWTAccessTTL)
 	refreshExpiresAt := now.Add(s.cfg.JWTRefreshTTL)
@@ -59,6 +59,9 @@ func (s *Service) issueTokenPair(ctx context.Context, userID uuid.UUID, email st
 	}
 
 	refreshID := uuid.New()
+	if familyID == uuid.Nil {
+		familyID = refreshID
+	}
 	refreshToken, err := s.signToken("refresh", refreshID.String(), userID, email, refreshExpiresAt)
 	if err != nil {
 		return Tokens{}, err
@@ -68,6 +71,7 @@ func (s *Service) issueTokenPair(ctx context.Context, userID uuid.UUID, email st
 		ID:        refreshID,
 		TokenHash: hashToken(refreshToken),
 		UserID:    userID,
+		FamilyID:  familyID,
 		ExpiresAt: refreshExpiresAt,
 	})
 	if err != nil {

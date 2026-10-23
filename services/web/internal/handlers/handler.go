@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"net/http"
+
 	authhandlers "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/auth"
 	carthandlers "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/cart"
 	orderhandlers "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/handlers/orders"
@@ -53,7 +55,14 @@ func New(
 }
 
 func (h *Handler) Register(router chi.Router) {
+	cop := http.NewCrossOriginProtection()
+	cop.SetDenyHandler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		shared.WritePopup(w, r, http.StatusForbidden, "Forbidden", "cross-origin request rejected")
+	}))
+
 	router.Group(func(r chi.Router) {
+		r.Use(cop.Handler)
+		r.Use(h.refreshAccess)
 		r.Use(h.viewAuth)
 		h.auth.RegisterPages(r)
 		h.auth.RegisterActions(r)

@@ -13,8 +13,8 @@ import (
 )
 
 const createRefreshToken = `-- name: CreateRefreshToken :one
-INSERT INTO refresh_tokens (id, token_hash, user_id, expires_at)
-VALUES ($1, $2, $3, $4)
+INSERT INTO refresh_tokens (id, token_hash, user_id, family_id, expires_at)
+VALUES ($1, $2, $3, $4, $5)
 RETURNING
     refresh_tokens.id,
     refresh_tokens.token_hash,
@@ -22,13 +22,15 @@ RETURNING
     refresh_tokens.expires_at,
     refresh_tokens.revoked_at,
     refresh_tokens.created_at,
-    refresh_tokens.updated_at
+    refresh_tokens.updated_at,
+    refresh_tokens.family_id
 `
 
 type CreateRefreshTokenParams struct {
 	ID        uuid.UUID
 	TokenHash string
 	UserID    uuid.UUID
+	FamilyID  uuid.UUID
 	ExpiresAt time.Time
 }
 
@@ -37,6 +39,7 @@ func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshToken
 		arg.ID,
 		arg.TokenHash,
 		arg.UserID,
+		arg.FamilyID,
 		arg.ExpiresAt,
 	)
 	var i RefreshToken
@@ -48,6 +51,7 @@ func (q *Queries) CreateRefreshToken(ctx context.Context, arg CreateRefreshToken
 		&i.RevokedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.FamilyID,
 	)
 	return i, err
 }
@@ -60,7 +64,8 @@ SELECT
     refresh_tokens.expires_at,
     refresh_tokens.revoked_at,
     refresh_tokens.created_at,
-    refresh_tokens.updated_at
+    refresh_tokens.updated_at,
+    refresh_tokens.family_id
 FROM refresh_tokens
 WHERE id = $1
 `
@@ -76,6 +81,7 @@ func (q *Queries) GetRefreshTokenByID(ctx context.Context, id uuid.UUID) (Refres
 		&i.RevokedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.FamilyID,
 	)
 	return i, err
 }
@@ -91,7 +97,8 @@ RETURNING
     refresh_tokens.expires_at,
     refresh_tokens.revoked_at,
     refresh_tokens.created_at,
-    refresh_tokens.updated_at
+    refresh_tokens.updated_at,
+    refresh_tokens.family_id
 `
 
 func (q *Queries) RevokeRefreshToken(ctx context.Context, id uuid.UUID) (RefreshToken, error) {
@@ -105,6 +112,18 @@ func (q *Queries) RevokeRefreshToken(ctx context.Context, id uuid.UUID) (Refresh
 		&i.RevokedAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.FamilyID,
 	)
 	return i, err
+}
+
+const revokeRefreshTokenFamily = `-- name: RevokeRefreshTokenFamily :exec
+UPDATE refresh_tokens
+SET revoked_at = NOW(), updated_at = NOW()
+WHERE family_id = $1 AND revoked_at IS NULL
+`
+
+func (q *Queries) RevokeRefreshTokenFamily(ctx context.Context, familyID uuid.UUID) error {
+	_, err := q.db.ExecContext(ctx, revokeRefreshTokenFamily, familyID)
+	return err
 }

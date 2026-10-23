@@ -5,8 +5,9 @@ import "context"
 type contextKey string
 
 const (
-	userIDKey    contextKey = "authUserID"
-	userEmailKey contextKey = "authUserEmail"
+	userIDKey      contextKey = "authUserID"
+	userEmailKey   contextKey = "authUserEmail"
+	accessTokenKey contextKey = "authAccessToken"
 )
 
 func UserIDFromContext(ctx context.Context) (string, bool) {
@@ -25,4 +26,13 @@ func ContextWithUserID(ctx context.Context, userID string) context.Context {
 
 func ContextWithEmail(ctx context.Context, email string) context.Context {
 	return context.WithValue(ctx, userEmailKey, email)
+}
+
+func ContextWithAccessToken(ctx context.Context, token string) context.Context {
+	return context.WithValue(ctx, accessTokenKey, token)
+}
+
+func accessTokenFromContext(ctx context.Context) string {
+	v, _ := ctx.Value(accessTokenKey).(string)
+	return v
 }

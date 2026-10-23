@@ -10,6 +10,8 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const refreshReuseGrace = 10 * time.Second
+
 type Tokens struct {
 	AccessToken      string
 	RefreshToken     string
@@ -36,7 +38,7 @@ func (s *Service) Login(ctx context.Context, email, password string) (Tokens, er
 		return Tokens{}, ErrInvalidCredentials
 	}
 
-	return s.issueTokenPair(ctx, u.ID, u.Email)
+	return s.issueTokenPair(ctx, u.ID, u.Email, uuid.Nil)
 }
 
 func (s *Service) Refresh(ctx context.Context, refreshToken string) (Tokens, error) {
@@ -56,6 +58,11 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (Tokens, err
 	}
 
 	if session.RevokedAt.Valid {
+		if time.Since(session.RevokedAt.Time) > refreshReuseGrace {
+			if err := s.queries.RevokeRefreshTokenFamily(ctx, session.FamilyID); err != nil {
+				return Tokens{}, err
+			}
+		}
 		return Tokens{}, ErrTokenRevoked
 	}
 	if time.Now().UTC().After(session.ExpiresAt) {
@@ -77,7 +84,7 @@ func (s *Service) Refresh(ctx context.Context, refreshToken string) (Tokens, err
 		return Tokens{}, mapNotFound(err, ErrUserNotFound)
 	}
 
-	return s.issueTokenPair(ctx, u.ID, u.Email)
+	return s.issueTokenPair(ctx, u.ID, u.Email, session.FamilyID)
 }
 
 func (s *Service) Logout(ctx context.Context, refreshToken string) error {

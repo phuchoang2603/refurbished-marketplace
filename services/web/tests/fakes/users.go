@@ -8,6 +8,7 @@ import (
 
 type UsersService struct {
 	LoginFn      func(context.Context, string, string) (*usersv1.TokenResponse, error)
+	RefreshFn    func(context.Context, string) (*usersv1.TokenResponse, error)
 	LogoutFn     func(context.Context, string) (*usersv1.LogoutResponse, error)
 	CreateUserFn func(context.Context, string, string) (*usersv1.User, error)
 }
@@ -31,4 +32,11 @@ func (f *UsersService) CreateUser(ctx context.Context, email, password string) (
 		return f.CreateUserFn(ctx, email, password)
 	}
 	return &usersv1.User{}, nil
+}
+
+func (f *UsersService) Refresh(ctx context.Context, refreshToken string) (*usersv1.TokenResponse, error) {
+	if f.RefreshFn != nil {
+		return f.RefreshFn(ctx, refreshToken)
+	}
+	return nil, nil
 }

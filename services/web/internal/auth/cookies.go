@@ -7,16 +7,18 @@ import (
 )
 
 const (
-	AccessCookieName  = "web_access_token"
-	RefreshCookieName = "web_refresh_token"
+	AccessCookieName  = "__Host-web_access_token"
+	RefreshCookieName = "__Secure-web_refresh_token"
 )
 
 func SetTokenCookies(w http.ResponseWriter, r *http.Request, accessToken, refreshToken string, expiresIn, refreshExpiresIn int64) {
+	w.Header().Set("Cache-Control", "no-store")
 	setAuthCookie(w, r, AccessCookieName, accessToken, int(expiresIn))
 	setAuthCookie(w, r, RefreshCookieName, refreshToken, int(refreshExpiresIn))
 }
 
 func ClearTokenCookies(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Cache-Control", "no-store")
 	setAuthCookie(w, r, AccessCookieName, "", -1)
 	setAuthCookie(w, r, RefreshCookieName, "", -1)
 }
@@ -26,6 +28,9 @@ func RefreshTokenFromRequest(r *http.Request) string {
 }
 
 func AccessTokenFromRequest(r *http.Request) string {
+	if token := accessTokenFromContext(r.Context()); token != "" {
+		return token
+	}
 	return cookieValue(r, AccessCookieName)
 }
 
@@ -44,7 +49,7 @@ func setAuthCookie(w http.ResponseWriter, r *http.Request, name, value string, m
 		HttpOnly: true,
 		SameSite: http.SameSiteLaxMode,
 		MaxAge:   maxAge,
-		Secure:   r != nil && r.TLS != nil,
+		Secure:   true,
 	}
 	if maxAge > 0 {
 		cookie.Expires = time.Now().Add(time.Duration(maxAge) * time.Second)
