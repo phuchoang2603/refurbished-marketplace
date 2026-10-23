@@ -7,19 +7,27 @@ Marketplace resources do not use the platform `ClusterSecretStore/doppler`. That
 ## Doppler project
 
 1. Create a Doppler project named `refurbished-marketplace`.
-2. Use Doppler config `dev` on talos-dev and `prd` on prod. The service token Secret on that cluster selects the config; Argo does not set it.
+2. Use Doppler config `prd` on the prod cluster, which serves as the development server. The service token Secret on that cluster selects the config; Argo does not set it.
 
 ## Application secrets
 
-| Doppler key              | K8s Secret                                | K8s key                            |
-| ------------------------ | ----------------------------------------- | ---------------------------------- |
-| `USERS_APP_PASSWORD`     | `users-app`                               | `password`                         |
-| `PRODUCTS_APP_PASSWORD`  | `mongodb-catalog-app` (ns `ecommerce`)    | `password`, `username` (`catalog`) |
-| `MEILI_MASTER_KEY`       | `meilisearch-master-key` (ns `ecommerce`) | `MEILI_MASTER_KEY`                 |
-| `INVENTORY_APP_PASSWORD` | `inventory-app`                           | `password`                         |
-| `ORDERS_APP_PASSWORD`    | `orders-app`                              | `password`                         |
-| `PAYMENT_APP_PASSWORD`   | `payment-app`                             | `password`                         |
-| `JWT_SECRET`             | `users-auth`                              | `JWT_SECRET`                       |
+| Doppler key                      | K8s Secret                                | K8s key                            |
+| -------------------------------- | ----------------------------------------- | ---------------------------------- |
+| `USERS_APP_PASSWORD`             | `users-app`                               | `password`                         |
+| `PRODUCTS_APP_PASSWORD`          | `mongodb-catalog-app` (ns `ecommerce`)    | `password`, `username` (`catalog`) |
+| `MEILI_MASTER_KEY`               | `meilisearch-master-key` (ns `ecommerce`) | `MEILI_MASTER_KEY`                 |
+| `INVENTORY_APP_PASSWORD`         | `inventory-app`                           | `password`                         |
+| `ORDERS_APP_PASSWORD`            | `orders-app`                              | `password`                         |
+| `CHECKOUT_APP_PASSWORD`          | `checkout-app`                            | `password`                         |
+| `PAYMENT_GATEWAY_API_KEY`        | `checkout-payment-gateway` (prod only)    | `PAYMENT_GATEWAY_API_KEY`          |
+| `PAYMENT_GATEWAY_WEBHOOK_SECRET` | `checkout-payment-gateway` (prod only)    | `PAYMENT_GATEWAY_WEBHOOK_SECRET`   |
+| `JWT_SECRET`                     | `users-auth`                              | `JWT_SECRET`                       |
+
+Only Checkout references `checkout-payment-gateway`. Chart defaults render neither that Secret reference nor its ExternalSecret. The gateway API key is sent as `Authorization: Bearer`; Edge derives the integration ID from its hash, so Checkout has no separate integration-ID environment variable. The webhook signing secret must match the gateway notifier's integration configuration.
+
+Gateway prerequisite (managed in the gateway repository): `GATEWAY_INTEGRATIONS_JSON` supplies the same integration UUID to Edge and notifier, the SHA-256 API key hash, `synthetic: false`, and `webhook: {url, secret, events}`. Use `http://web.ecommerce.svc.cluster.local:8080/webhooks/payment-gateway` and subscribe to `attempt.declined`, `payment.succeeded`, and `payment.expired`. The raw API key and webhook secret are the two marketplace Doppler keys above. Provision these credentials before deploying Checkout; this repository does not create the gateway integration or its credentials.
+
+Kafka Connect reads only catalog, inventory, orders and checkout credentials through its generated Roles.
 
 `mongodb-catalog-app` is mounted on products and read by the Kafka Connect products-outbox Mongo connector (Role in `ecommerce`). The SCRAM user is `catalog`, authenticated against database `catalog` (same DB as listings/outbox), with `readWrite` there. There is no products Postgres secret after catalog cutover.
 
@@ -29,23 +37,22 @@ Marketplace resources do not use the platform `ClusterSecretStore/doppler`. That
 
 ## Bootstrap service token
 
-The marketplace `SecretStore/doppler` reads `ecommerce/doppler-token` key `dopplerToken`. Copy the tracked `.example` manifest for the target environment and replace only `REPLACE_ME` in the untracked copy.
+The marketplace `SecretStore/doppler` reads `ecommerce/doppler-token` key `dopplerToken`. Copy the tracked `.example` manifest for prod and replace only `REPLACE_ME` in the untracked copy.
 
 Apply it with the environment kubeconfig from the `talos-proxmox` Doppler project (the same kubeconfig used for the Argo CD project and root). Create `ecommerce` first; the root's `CreateNamespace` would otherwise create it only after the token is needed.
 
 ```bash
-export CLUSTER_ENV=dev  # use prod for production
 umask 077
 doppler secrets get KUBECONFIG --plain \
-  --project talos-proxmox --config "$CLUSTER_ENV" \
-  > "$HOME/.kube/talos-${CLUSTER_ENV}.yaml"
-export KUBECONFIG="$HOME/.kube/talos-${CLUSTER_ENV}.yaml"
+  --project talos-proxmox --config prod \
+  > "$HOME/.kube/talos-prod.yaml"
+export KUBECONFIG="$HOME/.kube/talos-prod.yaml"
 
 kubectl create namespace ecommerce --dry-run=client -o yaml | kubectl apply -f -
-kubectl apply -f infra/k8s/doppler-token.dev.secret.yaml   # prod: doppler-token.prd.secret.yaml
+kubectl apply -f infra/k8s/doppler-token.prd.secret.yaml
 ```
 
-Do not commit tokens. Do not set Doppler `dev`/`prd` in Helm or Argo values.
+Do not commit tokens. Do not set the Doppler config in Helm or Argo values.
 
 ```bash
 kubectl get secretstore doppler -n ecommerce
@@ -54,4 +61,4 @@ kubectl get secret mongodb-catalog-app -n ecommerce
 kubectl get secret meilisearch-master-key -n ecommerce
 ```
 
-The `secret-store` child Application (`infra/charts/secret-store`) is the only renderer of `SecretStore/doppler`; it syncs in wave 1, before MongoDB, Meilisearch, marketplace, and Kafka. If `<env>-secret-store` is Degraded or the store does not report `Ready=True`, check the `ecommerce/doppler-token` Secret and its Doppler config.
+The `secret-store` child Application (`infra/charts/secret-store`) is the only renderer of `SecretStore/doppler`; it syncs in wave 1, before MongoDB, Meilisearch, marketplace, and Kafka. If `prod-secret-store` is Degraded or the store does not report `Ready=True`, check the `ecommerce/doppler-token` Secret and its Doppler config.

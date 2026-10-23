@@ -25,6 +25,7 @@ spec:
     metadata:
       labels:
         app: {{ $name }}
+        app.kubernetes.io/name: {{ $name }}
       annotations:
         # Read by the platform agent's k8sattributes for stdout log records.
         resource.opentelemetry.io/service.name: {{ $name }}
@@ -155,6 +156,15 @@ spec:
                 secretKeyRef:
                   name: {{ $svc.auth.secretName }}
                   key: {{ $svc.auth.secretKey }}
+{{- end }}
+{{- if and (eq $name "checkout") $svc.paymentGateway }}
+{{- range $key := list "PAYMENT_GATEWAY_API_KEY" "PAYMENT_GATEWAY_WEBHOOK_SECRET" }}
+            - name: {{ $key }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ $svc.paymentGateway.secretName }}
+                  key: {{ $key }}
+{{- end }}
 {{- end }}
 {{- with $.Values.defaults.otel.endpoint }}
             - name: OTEL_EXPORTER_OTLP_ENDPOINT

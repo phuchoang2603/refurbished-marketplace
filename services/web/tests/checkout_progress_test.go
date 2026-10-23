@@ -27,7 +27,7 @@ func TestCheckoutProgressWaitsForSessionAndRestrictsBuyer(t *testing.T) {
 			}
 			return &checkoutv1.CheckoutStatus{
 				CheckoutId: "checkout-1", BuyerUserId: "user-1", OrderId: "order-1", State: state,
-				PaymentSessionId: "session-1", ReturnUrl: "http://localhost:8080/orders/order-1",
+				GatewayPaymentId: "payment-1", HostedCheckoutUrl: "https://pay.example/checkout/session-1?token=secret",
 			}, nil
 		},
 	}
@@ -50,12 +50,12 @@ func TestCheckoutProgressWaitsForSessionAndRestrictsBuyer(t *testing.T) {
 	ready = true
 	payment := httptest.NewRecorder()
 	router.ServeHTTP(payment, newRequest("user-1", "/checkouts/checkout-1"))
-	if payment.Code != http.StatusSeeOther || !strings.Contains(payment.Header().Get("Location"), "/pay?") {
+	if payment.Code != http.StatusSeeOther || !strings.Contains(payment.Header().Get("Location"), "https://pay.example/checkout/session-1?token=secret") {
 		t.Fatalf("ready session did not redirect to gateway: %d %s", payment.Code, payment.Header().Get("Location"))
 	}
 	poll := httptest.NewRecorder()
 	router.ServeHTTP(poll, newRequest("user-1", "/checkouts/checkout-1/progress"))
-	if poll.Code != http.StatusOK || !strings.Contains(poll.Header().Get("Content-Type"), "text/event-stream") || !strings.Contains(poll.Body.String(), "/pay?") {
+	if poll.Code != http.StatusOK || !strings.Contains(poll.Header().Get("Content-Type"), "text/event-stream") || !strings.Contains(poll.Body.String(), "https://pay.example/checkout/session-1?token=secret") {
 		t.Fatalf("poll did not redirect only after readiness: %d %s", poll.Code, poll.Body.String())
 	}
 }

@@ -7,7 +7,6 @@ on:
       - infra/docker/**
       - services/**
       - shared/**
-      - tools/**
       - go.work
       - go.work.sum
       - "**/go.mod"
@@ -17,7 +16,6 @@ on:
       - infra/docker/**
       - services/**
       - shared/**
-      - tools/**
       - go.work
       - go.work.sum
       - "**/go.mod"
@@ -92,21 +90,6 @@ jobs:
               BUILD_PKG=./services/cart/cmd/cart
               BUILD_BIN=cart
               EXPOSE_PORT=9094
-          - image: payment
-            dockerfile: infra/docker/go-service.Dockerfile
-            build_args: |
-              BUILD_PKG=./services/payment/cmd/payment
-              BUILD_BIN=payment
-              EXPOSE_PORT=9096
-          - image: payment-migrator
-            dockerfile: infra/docker/goose-migrator.Dockerfile
-            build_args: MIGRATIONS_DIR=services/payment/db/migrations
-          - image: payment-gateway-simulator
-            dockerfile: infra/docker/go-service.Dockerfile
-            build_args: |
-              BUILD_PKG=./tools/payment-gateway-simulator
-              BUILD_BIN=payment-gateway-simulator
-              EXPOSE_PORT=8097
           - image: connect-debezium
             dockerfile: infra/docker/connect-debezium.Dockerfile
             build_args: ""
@@ -152,3 +135,51 @@ jobs:
           provenance: false
           push: true
           tags: ${{ steps.tags.outputs.tags }}
+
+  pin:
+    needs: release
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref || github.ref_name }}
+
+      - name: Pin chart image tags after a successful build
+        env:
+          SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          branch="$(git rev-parse --abbrev-ref HEAD)"
+          head_sha="$(git ls-remote origin "refs/heads/${branch}" | cut -f1)"
+          if [ "${head_sha}" != "${SHA}" ]; then
+            echo "branch ${branch} moved to ${head_sha}; skipping stale pin for ${SHA}"
+            exit 0
+          fi
+          changed=0
+          for file in \
+            infra/charts/refurbished-marketplace/values-prod.yaml \
+            infra/charts/kafka/values-prod.yaml; do
+            tmp="${file}.tmp"
+            awk -v sha="${SHA}" '
+              /^global:/ { in_global = 1 }
+              in_global && /^[[:space:]]*imageTag:/ { sub(/imageTag:.*/, "imageTag: " sha); in_global = 0 }
+              { print }
+            ' "${file}" > "${tmp}"
+            if cmp -s "${file}" "${tmp}"; then
+              rm "${tmp}"
+            else
+              mv "${tmp}" "${file}"
+              changed=1
+            fi
+          done
+          if [ "${changed}" -eq 0 ]; then
+            echo "image tags already pinned to ${SHA}"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -am "chore(deploy): pin images to ${SHA:0:7} [skip ci]"
+          git push origin "HEAD:${branch}"

@@ -20,7 +20,7 @@ func TestCreateProductQuantityAndInventoryIndependence(t *testing.T) {
 	for _, qty := range []string{"", "-1", "0", "4"} {
 		t.Run("quantity="+qty, func(t *testing.T) {
 			called := false
-			products := &fakes.ProductsService{CreateFn: func(_ context.Context, _, _ string, _ int64, _ string, initial int32) (*productsv1.Product, error) {
+			products := &fakes.ProductsService{CreateFn: func(_ context.Context, _, _, _, _ string, _ int64, _ string, initial int32) (*productsv1.Product, error) {
 				called = true
 				if qty == "0" && initial != 0 {
 					t.Fatalf("initial = %d", initial)

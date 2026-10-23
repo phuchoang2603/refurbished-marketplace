@@ -15,23 +15,28 @@ import (
 
 const advanceCheckout = `-- name: AdvanceCheckout :execrows
 UPDATE checkouts
-SET state = $2, version = version + 1, order_id = COALESCE($4::uuid, order_id),
-    payment_session_id = COALESCE($5::text, payment_session_id),
-    payment_return_url = COALESCE($6::text, payment_return_url),
+SET
+    state = $2,
+    version = version + 1,
+    order_id = COALESCE($4::uuid, order_id),
+    gateway_payment_id
+    = COALESCE($5::text, gateway_payment_id),
+    hosted_checkout_url
+    = COALESCE($6::text, hosted_checkout_url),
     failure_reason = COALESCE($7::text, failure_reason),
     deadline_at = $8::timestamptz, updated_at = NOW()
 WHERE id = $1 AND version = $3
 `
 
 type AdvanceCheckoutParams struct {
-	ID               uuid.UUID
-	State            string
-	Version          int64
-	OrderID          uuid.NullUUID
-	PaymentSessionID sql.NullString
-	PaymentReturnUrl sql.NullString
-	FailureReason    sql.NullString
-	DeadlineAt       sql.NullTime
+	ID                uuid.UUID
+	State             string
+	Version           int64
+	OrderID           uuid.NullUUID
+	GatewayPaymentID  sql.NullString
+	HostedCheckoutUrl sql.NullString
+	FailureReason     sql.NullString
+	DeadlineAt        sql.NullTime
 }
 
 func (q *Queries) AdvanceCheckout(ctx context.Context, arg AdvanceCheckoutParams) (int64, error) {
@@ -40,8 +45,8 @@ func (q *Queries) AdvanceCheckout(ctx context.Context, arg AdvanceCheckoutParams
 		arg.State,
 		arg.Version,
 		arg.OrderID,
-		arg.PaymentSessionID,
-		arg.PaymentReturnUrl,
+		arg.GatewayPaymentID,
+		arg.HostedCheckoutUrl,
 		arg.FailureReason,
 		arg.DeadlineAt,
 	)
@@ -52,7 +57,7 @@ func (q *Queries) AdvanceCheckout(ctx context.Context, arg AdvanceCheckoutParams
 }
 
 const claimDueCheckouts = `-- name: ClaimDueCheckouts :many
-SELECT id, buyer_user_id, merchant_id, intent_key, request_hash, snapshot, state, version, order_id, payment_session_id, payment_return_url, failure_reason, deadline_at, created_at, updated_at FROM checkouts
+SELECT id, buyer_user_id, merchant_id, intent_key, request_hash, snapshot, state, version, order_id, gateway_payment_id, hosted_checkout_url, failure_reason, deadline_at, created_at, updated_at, gateway_snapshot, gateway_expires_at, gateway_last_event_at, gateway_status_checked_at, payment_status FROM checkouts
 WHERE deadline_at <= NOW()
 ORDER BY deadline_at, id
 LIMIT $1 FOR UPDATE SKIP LOCKED
@@ -77,12 +82,17 @@ func (q *Queries) ClaimDueCheckouts(ctx context.Context, limit int32) ([]Checkou
 			&i.State,
 			&i.Version,
 			&i.OrderID,
-			&i.PaymentSessionID,
-			&i.PaymentReturnUrl,
+			&i.GatewayPaymentID,
+			&i.HostedCheckoutUrl,
 			&i.FailureReason,
 			&i.DeadlineAt,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.GatewaySnapshot,
+			&i.GatewayExpiresAt,
+			&i.GatewayLastEventAt,
+			&i.GatewayStatusCheckedAt,
+			&i.PaymentStatus,
 		); err != nil {
 			return nil, err
 		}
@@ -117,7 +127,7 @@ func (q *Queries) DelayCheckoutDeadline(ctx context.Context, arg DelayCheckoutDe
 }
 
 const getCheckout = `-- name: GetCheckout :one
-SELECT id, buyer_user_id, merchant_id, intent_key, request_hash, snapshot, state, version, order_id, payment_session_id, payment_return_url, failure_reason, deadline_at, created_at, updated_at FROM checkouts WHERE id = $1
+SELECT id, buyer_user_id, merchant_id, intent_key, request_hash, snapshot, state, version, order_id, gateway_payment_id, hosted_checkout_url, failure_reason, deadline_at, created_at, updated_at, gateway_snapshot, gateway_expires_at, gateway_last_event_at, gateway_status_checked_at, payment_status FROM checkouts WHERE id = $1
 `
 
 func (q *Queries) GetCheckout(ctx context.Context, id uuid.UUID) (Checkout, error) {
@@ -133,18 +143,23 @@ func (q *Queries) GetCheckout(ctx context.Context, id uuid.UUID) (Checkout, erro
 		&i.State,
 		&i.Version,
 		&i.OrderID,
-		&i.PaymentSessionID,
-		&i.PaymentReturnUrl,
+		&i.GatewayPaymentID,
+		&i.HostedCheckoutUrl,
 		&i.FailureReason,
 		&i.DeadlineAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.GatewaySnapshot,
+		&i.GatewayExpiresAt,
+		&i.GatewayLastEventAt,
+		&i.GatewayStatusCheckedAt,
+		&i.PaymentStatus,
 	)
 	return i, err
 }
 
 const getCheckoutByIntent = `-- name: GetCheckoutByIntent :one
-SELECT id, buyer_user_id, merchant_id, intent_key, request_hash, snapshot, state, version, order_id, payment_session_id, payment_return_url, failure_reason, deadline_at, created_at, updated_at FROM checkouts WHERE buyer_user_id = $1 AND intent_key = $2
+SELECT id, buyer_user_id, merchant_id, intent_key, request_hash, snapshot, state, version, order_id, gateway_payment_id, hosted_checkout_url, failure_reason, deadline_at, created_at, updated_at, gateway_snapshot, gateway_expires_at, gateway_last_event_at, gateway_status_checked_at, payment_status FROM checkouts WHERE buyer_user_id = $1 AND intent_key = $2
 `
 
 type GetCheckoutByIntentParams struct {
@@ -165,33 +180,82 @@ func (q *Queries) GetCheckoutByIntent(ctx context.Context, arg GetCheckoutByInte
 		&i.State,
 		&i.Version,
 		&i.OrderID,
-		&i.PaymentSessionID,
-		&i.PaymentReturnUrl,
+		&i.GatewayPaymentID,
+		&i.HostedCheckoutUrl,
 		&i.FailureReason,
 		&i.DeadlineAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.GatewaySnapshot,
+		&i.GatewayExpiresAt,
+		&i.GatewayLastEventAt,
+		&i.GatewayStatusCheckedAt,
+		&i.PaymentStatus,
+	)
+	return i, err
+}
+
+const getCheckoutByOrder = `-- name: GetCheckoutByOrder :one
+SELECT id, buyer_user_id, merchant_id, intent_key, request_hash, snapshot, state, version, order_id, gateway_payment_id, hosted_checkout_url, failure_reason, deadline_at, created_at, updated_at, gateway_snapshot, gateway_expires_at, gateway_last_event_at, gateway_status_checked_at, payment_status FROM checkouts WHERE order_id = $1
+`
+
+func (q *Queries) GetCheckoutByOrder(ctx context.Context, orderID uuid.NullUUID) (Checkout, error) {
+	row := q.db.QueryRowContext(ctx, getCheckoutByOrder, orderID)
+	var i Checkout
+	err := row.Scan(
+		&i.ID,
+		&i.BuyerUserID,
+		&i.MerchantID,
+		&i.IntentKey,
+		&i.RequestHash,
+		&i.Snapshot,
+		&i.State,
+		&i.Version,
+		&i.OrderID,
+		&i.GatewayPaymentID,
+		&i.HostedCheckoutUrl,
+		&i.FailureReason,
+		&i.DeadlineAt,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.GatewaySnapshot,
+		&i.GatewayExpiresAt,
+		&i.GatewayLastEventAt,
+		&i.GatewayStatusCheckedAt,
+		&i.PaymentStatus,
 	)
 	return i, err
 }
 
 const insertCheckout = `-- name: InsertCheckout :one
-INSERT INTO checkouts (id, buyer_user_id, merchant_id, intent_key, request_hash, snapshot, state, order_id, deadline_at)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+INSERT INTO checkouts (
+    id,
+    buyer_user_id,
+    merchant_id,
+    intent_key,
+    request_hash,
+    snapshot,
+    gateway_snapshot,
+    state,
+    order_id,
+    deadline_at
+)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 ON CONFLICT (buyer_user_id, intent_key) DO NOTHING
-RETURNING id, buyer_user_id, merchant_id, intent_key, request_hash, snapshot, state, version, order_id, payment_session_id, payment_return_url, failure_reason, deadline_at, created_at, updated_at
+RETURNING id, buyer_user_id, merchant_id, intent_key, request_hash, snapshot, state, version, order_id, gateway_payment_id, hosted_checkout_url, failure_reason, deadline_at, created_at, updated_at, gateway_snapshot, gateway_expires_at, gateway_last_event_at, gateway_status_checked_at, payment_status
 `
 
 type InsertCheckoutParams struct {
-	ID          uuid.UUID
-	BuyerUserID uuid.UUID
-	MerchantID  uuid.UUID
-	IntentKey   string
-	RequestHash []byte
-	Snapshot    json.RawMessage
-	State       string
-	OrderID     uuid.NullUUID
-	DeadlineAt  sql.NullTime
+	ID              uuid.UUID
+	BuyerUserID     uuid.UUID
+	MerchantID      uuid.UUID
+	IntentKey       string
+	RequestHash     []byte
+	Snapshot        json.RawMessage
+	GatewaySnapshot json.RawMessage
+	State           string
+	OrderID         uuid.NullUUID
+	DeadlineAt      sql.NullTime
 }
 
 func (q *Queries) InsertCheckout(ctx context.Context, arg InsertCheckoutParams) (Checkout, error) {
@@ -202,6 +266,7 @@ func (q *Queries) InsertCheckout(ctx context.Context, arg InsertCheckoutParams) 
 		arg.IntentKey,
 		arg.RequestHash,
 		arg.Snapshot,
+		arg.GatewaySnapshot,
 		arg.State,
 		arg.OrderID,
 		arg.DeadlineAt,
@@ -217,18 +282,23 @@ func (q *Queries) InsertCheckout(ctx context.Context, arg InsertCheckoutParams) 
 		&i.State,
 		&i.Version,
 		&i.OrderID,
-		&i.PaymentSessionID,
-		&i.PaymentReturnUrl,
+		&i.GatewayPaymentID,
+		&i.HostedCheckoutUrl,
 		&i.FailureReason,
 		&i.DeadlineAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.GatewaySnapshot,
+		&i.GatewayExpiresAt,
+		&i.GatewayLastEventAt,
+		&i.GatewayStatusCheckedAt,
+		&i.PaymentStatus,
 	)
 	return i, err
 }
 
 const lockCheckout = `-- name: LockCheckout :one
-SELECT id, buyer_user_id, merchant_id, intent_key, request_hash, snapshot, state, version, order_id, payment_session_id, payment_return_url, failure_reason, deadline_at, created_at, updated_at FROM checkouts WHERE id = $1 FOR UPDATE
+SELECT id, buyer_user_id, merchant_id, intent_key, request_hash, snapshot, state, version, order_id, gateway_payment_id, hosted_checkout_url, failure_reason, deadline_at, created_at, updated_at, gateway_snapshot, gateway_expires_at, gateway_last_event_at, gateway_status_checked_at, payment_status FROM checkouts WHERE id = $1 FOR UPDATE
 `
 
 func (q *Queries) LockCheckout(ctx context.Context, id uuid.UUID) (Checkout, error) {
@@ -244,12 +314,17 @@ func (q *Queries) LockCheckout(ctx context.Context, id uuid.UUID) (Checkout, err
 		&i.State,
 		&i.Version,
 		&i.OrderID,
-		&i.PaymentSessionID,
-		&i.PaymentReturnUrl,
+		&i.GatewayPaymentID,
+		&i.HostedCheckoutUrl,
 		&i.FailureReason,
 		&i.DeadlineAt,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.GatewaySnapshot,
+		&i.GatewayExpiresAt,
+		&i.GatewayLastEventAt,
+		&i.GatewayStatusCheckedAt,
+		&i.PaymentStatus,
 	)
 	return i, err
 }

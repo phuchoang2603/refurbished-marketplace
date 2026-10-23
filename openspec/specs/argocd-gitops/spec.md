@@ -2,23 +2,23 @@
 
 ## Purpose
 
-Define marketplace GitOps delivery through Argo CD roots on each environment's own Argo CD, consuming shared platform operators and observability from `talos-proxmox` while deploying application resources to the local `dev` or `prod` cluster.
+Define marketplace GitOps delivery through the prod root on the cluster's Argo CD, consuming shared platform operators and observability from `talos-proxmox` while deploying application resources to the local `prod` cluster used as the development server.
 
 ## Requirements
 
 ### Requirement: Istio ingress enablement on dest clusters
 
-The marketplace Application SHALL render Istio Gateway API resources when chart ingress is enabled. Chart defaults SHALL enable ingress for `shop-dev` / `pay-dev`; production SHALL use `shop` / `pay` via `values-prod.yaml`.
+The marketplace Application SHALL render Istio Gateway API resources when chart ingress is enabled. Chart defaults SHALL enable ingress for `shop-dev`; production SHALL use `shop` via `values-prod.yaml`.
 
-#### Scenario: Dev chart defaults enable ingress
+#### Scenario: Chart defaults enable ingress
 
-- **WHEN** dev marketplace values use chart defaults in a Helm render
-- **THEN** the output includes the Istio Gateway and marketplace HTTPRoutes without requiring a dev deployment
+- **WHEN** marketplace values use chart defaults in a Helm render
+- **THEN** the output includes the Istio Gateway and marketplace HTTPRoutes without requiring a cluster deployment
 
 #### Scenario: Production overlay enables prod hosts
 
 - **WHEN** prod-root applies `values-prod.yaml`
-- **THEN** production marketplace workloads expose an Istio ingress Gateway for `shop` / `pay`
+- **THEN** production marketplace workloads expose an Istio ingress Gateway for `shop`
 
 ### Requirement: Namespace enrollment has one GitOps owner
 
@@ -29,9 +29,9 @@ The marketplace root SHALL declaratively create and enroll `ecommerce` and `kafk
 - **WHEN** the production root starts against a fresh platform
 - **THEN** both application namespaces have the ambient enrollment label before strict workload traffic depends on it
 
-### Requirement: Per-environment Argo CD deploys marketplace locally
+### Requirement: Argo CD deploys marketplace locally
 
-Each environment's own Argo CD (namespace `argo-cd`, installed by the talos-proxmox platform root) SHALL host that environment's marketplace root Application and enable the marketplace chart. Children SHALL destine the local cluster through `https://kubernetes.default.svc`. The repository SHALL NOT depend on a management cluster or on Argo CD cluster registrations. Child Applications SHALL inherit `targetRevision` from the root so branch tracking moves git and (with matching GHCR tags) images together. Committed dev and prod roots SHALL default to `main`; dev SHALL retain SHA-based images and prod SHALL retain the rolling `main` image tag.
+The prod cluster's Argo CD (namespace `argo-cd`, installed by the talos-proxmox platform root) SHALL host the `prod-root` Application and enable the marketplace chart. Children SHALL destine the local cluster through `https://kubernetes.default.svc`. The repository SHALL NOT depend on a management cluster or on Argo CD cluster registrations. Child Applications SHALL inherit `targetRevision` from the root so branch tracking moves git and (with matching GHCR tags) images together. The committed prod root SHALL track `main` for both its source and child Applications, with immutable SHA image tags pinned in the production overlays.
 
 #### Scenario: Marketplace is an Argo Application
 
@@ -45,7 +45,7 @@ Each environment's own Argo CD (namespace `argo-cd`, installed by the talos-prox
 
 #### Scenario: Root runs in the target environment
 
-- **WHEN** an operator installs `dev-root` or `prod-root`
+- **WHEN** an operator installs `prod-root`
 - **THEN** the root Application is created in `argo-cd` on that same environment's cluster, and no other cluster's Argo CD is involved
 
 ### Requirement: Marketplace release owns databases
@@ -71,28 +71,14 @@ The `refurbished-marketplace` and `kafka` Helm charts SHALL support `global.imag
 - **WHEN** the marketplace chart renders with default values
 - **THEN** request/limit and database storage defaults are the Talos sizes
 
-### Requirement: Environment-specific Helm values
+### Requirement: Production Helm values
 
-The repository SHALL provide a chart-adjacent `values-prod.yaml` overlay (referenced from prod-root via `valueFiles`) for production marketplace hostnames. Dev uses chart `values.yaml`.
+The repository SHALL provide a chart-adjacent `values-prod.yaml` overlay (referenced from prod-root via `valueFiles`) for production marketplace hostnames. Chart `values.yaml` defaults SHALL remain available for standalone rendering.
 
-#### Scenario: Dev pins the git SHA
-
-- **WHEN** the talos-dev marketplace Application syncs
-- **THEN** Helm values set `global.imageRegistry` to the project GHCR path and `global.imageTag` to `$ARGOCD_APP_REVISION`
-
-#### Scenario: Production pulls rolling main tag
+#### Scenario: Production pulls pinned images
 
 - **WHEN** the production marketplace Application syncs
-- **THEN** Helm values set `global.imageTag` to `main`
-
-### Requirement: Payment gateway simulator in marketplace chart
-
-The repository SHALL deploy `payment-gateway-simulator` from the `refurbished-marketplace` Helm chart.
-
-#### Scenario: Simulator enabled
-
-- **WHEN** the marketplace chart syncs
-- **THEN** a `payment-gateway-simulator` Deployment and Service exist in `ecommerce`
+- **THEN** Helm values set `global.imageTag` to the immutable SHA pinned in `values-prod.yaml`
 
 ### Requirement: Loose sync ordering
 
@@ -110,17 +96,17 @@ Child Applications SHALL retain local ordering hints for data stores, marketplac
 
 ### Requirement: GitOps documentation
 
-The repository SHALL document the Argo CD layout (one Argo CD per environment, each hosting its own marketplace root and destining its local cluster), `values-prod.yaml` overlays, image tags (`$ARGOCD_APP_REVISION` vs `:main`), and fresh-install prerequisites (talos-proxmox platform bring-up for that environment, the environment kubeconfig fetched from the `talos-proxmox` Doppler project, the ecommerce Doppler token, and Cloudflare origin configuration). It SHALL identify the talos-proxmox platform root and `apps/components` as platform references and SHALL NOT reference a management cluster, `platform-dev` / `platform-prod` roots, or `apps/argocd/roots/`. It SHALL NOT prescribe legacy ownership transfer or data migration.
+The repository SHALL document the Argo CD layout (the prod cluster's Argo CD hosting `prod-root` and destining its local cluster), `values-prod.yaml` overlays, immutable image tags pinned in the production overlays, and fresh-install prerequisites (talos-proxmox platform bring-up for prod, the prod kubeconfig fetched from the `talos-proxmox` Doppler project, the ecommerce Doppler token, and Cloudflare origin configuration). It SHALL identify the talos-proxmox platform root and `apps/components` as platform references and SHALL NOT reference a management cluster, `platform-dev` / `platform-prod` roots, or `apps/argocd/roots/`. It SHALL NOT prescribe legacy ownership transfer or data migration.
 
 #### Scenario: Contributor finds deploy guide
 
 - **WHEN** a contributor prepares a Talos deploy
-- **THEN** documentation explains app-of-apps paths, value overlays, and SHA vs `:main` tags
+- **THEN** documentation explains app-of-apps paths, value overlays, and pinned SHA tags
 
-#### Scenario: Contributor uses one kubeconfig per environment
+#### Scenario: Contributor uses the prod kubeconfig
 
-- **WHEN** a contributor follows the deploy guide for dev or prod
-- **THEN** they fetch that environment's `KUBECONFIG` from Doppler and use it for the token Secret, the AppProject, and the root, with no separate management kubeconfig
+- **WHEN** a contributor follows the deploy guide for prod
+- **THEN** they fetch the prod `KUBECONFIG` from Doppler and use it for the token Secret, the AppProject, and the root, with no separate management kubeconfig
 
 ### Requirement: Kafka messaging namespace separation
 
@@ -141,22 +127,13 @@ The Kafka Application SHALL deploy Strimzi Kafka, Connect, and UI resources to a
 - **WHEN** Kafka Connect synchronizes MongoDB changes
 - **THEN** its cross-namespace database connection works under strict ambient mTLS
 
-### Requirement: Hosted payment URL uses edge route
-
-Chart defaults SHALL set `HOSTED_PAYMENT_BASE_URL` to the Cloudflare-facing `pay-dev` HTTPS URL. Production overlay SHALL use `pay`.
-
-#### Scenario: Simulator URL is public edge
-
-- **WHEN** ingress with simulator routing is enabled
-- **THEN** the web Deployment environment uses the public `https://` simulator hostname, not `http://payment-gateway-simulator:8097` cluster DNS alone and not `http://localhost:8097`
-
 ### Requirement: Cloudflare Tunnel is platform-owned
 
 The marketplace repository SHALL NOT include an Argo CD child Application or Helm chart for `cloudflared`. The platform repository SHALL deploy the connector in the `cloudflare-tunnel` namespace, with its token delivered by the platform's External Secrets `ClusterSecretStore`.
 
 #### Scenario: Marketplace root omits cloudflared
 
-- **WHEN** `dev-root` or `prod-root` syncs from this repository
+- **WHEN** `prod-root` syncs from this repository
 - **THEN** no Cloudflare Tunnel child Application is created
 
 #### Scenario: Platform root provides cloudflared
@@ -243,7 +220,7 @@ Marketplace deployment SHALL retain CNPG Cluster, MongoDBCommunity, Kafka, Kafka
 
 #### Scenario: Consumer resources survive cleanup
 
-- **WHEN** dev and prod application charts are rendered
+- **WHEN** default and production application charts are rendered
 - **THEN** enabled workload custom resources and supporting RBAC remain, no Cilium policy is rendered, and no shared operator installation or platform stack is rendered
 
 #### Scenario: Empty databases
@@ -251,9 +228,9 @@ Marketplace deployment SHALL retain CNPG Cluster, MongoDBCommunity, Kafka, Kafka
 - **WHEN** marketplace workloads start against new empty databases
 - **THEN** schema initialization still runs before dependent service operation
 
-### Requirement: Local app-of-apps per environment
+### Requirement: Local app-of-apps
 
-The repository SHALL provide a shared Argo CD app-of-apps Helm chart under `infra/argocd/app-of-apps/` plus thin `dev-root` and `prod-root` Applications that enable marketplace and set `global.imageRegistry` / `global.imageTag`. The chart and roots SHALL NOT expose a destination cluster name. Child Applications SHALL inherit `targetRevision` from the root via `$ARGOCD_APP_SOURCE_TARGET_REVISION`. Child Applications SHALL retry failed syncs without a retry limit, using backoff, and SHALL skip dry-run for resources whose CRDs are not yet installed.
+The repository SHALL provide a shared Argo CD app-of-apps Helm chart under `infra/argocd/app-of-apps/` plus a thin `prod-root` Application that enables marketplace and sets `global.imageRegistry` / `global.imageTag`. The chart and roots SHALL NOT expose a destination cluster name. Child Applications SHALL inherit `targetRevision` from the root via `$ARGOCD_APP_SOURCE_TARGET_REVISION`. Child Applications SHALL retry failed syncs without a retry limit, using backoff, and SHALL skip dry-run for resources whose CRDs are not yet installed.
 
 #### Scenario: Talos root application
 
@@ -272,7 +249,7 @@ The repository SHALL provide a shared Argo CD app-of-apps Helm chart under `infr
 
 #### Scenario: Children destine the local cluster
 
-- **WHEN** the app-of-apps chart renders child Applications for dev or prod
+- **WHEN** the app-of-apps chart renders child Applications for prod
 - **THEN** every child destination server is `https://kubernetes.default.svc` and no child references a destination cluster name
 
 #### Scenario: Children wait out missing platform CRDs
@@ -302,3 +279,17 @@ Kafka broker and Kafka Connect CPU requests SHALL be sized to their observed ste
 
 - **WHEN** the kafka chart renders with default values
 - **THEN** broker and Connect containers request at least 250m CPU
+
+### Requirement: Checkout payment gateway configuration per environment
+
+The production overlay SHALL configure Checkout with the in-cluster payment gateway Edge address in the `payment-gateway` namespace, the marketplace's gateway integration ID, the gateway API key and webhook signing secret from the Checkout gateway Secret, and the buyer return URL on the `shop` host. Chart defaults SHALL leave the gateway disabled, rendering no gateway address or Secret reference. The chart SHALL NOT render a Payment service or payment database.
+
+#### Scenario: Production render
+
+- **WHEN** the production marketplace Application renders
+- **THEN** the Checkout Deployment has the gateway address and Secret reference, and no `payment` Deployment, Service or CNPG Cluster exists
+
+#### Scenario: Default render
+
+- **WHEN** the marketplace chart renders with default values
+- **THEN** Checkout has no gateway address or Secret configuration

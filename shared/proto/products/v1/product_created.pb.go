@@ -34,6 +34,8 @@ type ProductCreated struct {
 	PriceCents     int64                  `protobuf:"varint,8,opt,name=price_cents,json=priceCents,proto3" json:"price_cents,omitempty"`
 	MerchantId     string                 `protobuf:"bytes,9,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
 	InitialQty     *int32                 `protobuf:"varint,10,opt,name=initial_qty,json=initialQty,proto3,oneof" json:"initial_qty,omitempty"`
+	Category       string                 `protobuf:"bytes,11,opt,name=category,proto3" json:"category,omitempty"`
+	Condition      string                 `protobuf:"bytes,12,opt,name=condition,proto3" json:"condition,omitempty"`
 	unknownFields  protoimpl.UnknownFields
 	sizeCache      protoimpl.SizeCache
 }
@@ -138,11 +140,25 @@ func (x *ProductCreated) GetInitialQty() int32 {
 	return 0
 }
 
+func (x *ProductCreated) GetCategory() string {
+	if x != nil {
+		return x.Category
+	}
+	return ""
+}
+
+func (x *ProductCreated) GetCondition() string {
+	if x != nil {
+		return x.Condition
+	}
+	return ""
+}
+
 var File_shared_proto_products_v1_product_created_proto protoreflect.FileDescriptor
 
 const file_shared_proto_products_v1_product_created_proto_rawDesc = "" +
 	"\n" +
-	".shared/proto/products/v1/product_created.proto\x12\vproducts.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x85\x03\n" +
+	".shared/proto/products/v1/product_created.proto\x12\vproducts.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xbf\x03\n" +
 	"\x0eProductCreated\x12\x19\n" +
 	"\bevent_id\x18\x01 \x01(\tR\aeventId\x12%\n" +
 	"\x0eschema_version\x18\x02 \x01(\rR\rschemaVersion\x12;\n" +
@@ -159,7 +175,9 @@ const file_shared_proto_products_v1_product_created_proto_rawDesc = "" +
 	"merchantId\x12$\n" +
 	"\vinitial_qty\x18\n" +
 	" \x01(\x05H\x00R\n" +
-	"initialQty\x88\x01\x01B\x0e\n" +
+	"initialQty\x88\x01\x01\x12\x1a\n" +
+	"\bcategory\x18\v \x01(\tR\bcategory\x12\x1c\n" +
+	"\tcondition\x18\f \x01(\tR\tconditionB\x0e\n" +
 	"\f_initial_qtyBVZTgithub.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1;productsv1b\x06proto3"
 
 var (

@@ -13,7 +13,11 @@ import (
 )
 
 const getLatestOutbox = `-- name: GetLatestOutbox :one
-SELECT id, aggregate_id, event_type, payload, tracingspancontext, created_at FROM checkout_outbox WHERE aggregate_id = $1 ORDER BY created_at DESC, id DESC LIMIT 1
+SELECT id, aggregate_id, event_type, payload, tracingspancontext, created_at
+FROM checkout_outbox
+WHERE aggregate_id = $1
+ORDER BY created_at DESC, id DESC
+LIMIT 1
 `
 
 func (q *Queries) GetLatestOutbox(ctx context.Context, aggregateID uuid.UUID) (CheckoutOutbox, error) {
@@ -75,7 +79,9 @@ func (q *Queries) InsertInbox(ctx context.Context, arg InsertInboxParams) (int64
 }
 
 const insertOutbox = `-- name: InsertOutbox :exec
-INSERT INTO checkout_outbox (id, aggregate_id, event_type, payload, tracingspancontext)
+INSERT INTO checkout_outbox (
+    id, aggregate_id, event_type, payload, tracingspancontext
+)
 VALUES ($1, $2, $3, $4, $5)
 `
 

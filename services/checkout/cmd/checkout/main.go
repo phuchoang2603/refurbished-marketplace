@@ -7,6 +7,7 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/phuchoang2603/refurbished-marketplace/services/checkout/internal/accounts"
 	"github.com/phuchoang2603/refurbished-marketplace/services/checkout/internal/grpcserver"
 	"github.com/phuchoang2603/refurbished-marketplace/services/checkout/internal/service"
 	authconfig "github.com/phuchoang2603/refurbished-marketplace/shared/auth/config"
@@ -57,7 +58,13 @@ func main() {
 		}
 	}()
 
-	checkoutService := service.New(db)
+	redisClient, err := runtime.OpenRedis(ctx, config.RedisAddr)
+	if err != nil {
+		sharedlog.Fatal("open account projection", "err", err)
+	}
+	defer func() { _ = redisClient.Close() }()
+	accountProjection := accounts.New(redisClient)
+	checkoutService := service.New(db, config, accountProjection)
 	metricRegistration, err := checkoutService.RegisterMetrics()
 	if err != nil {
 		sharedlog.Fatal("checkout metrics", "err", err)
@@ -68,12 +75,18 @@ func main() {
 		}
 	}()
 	var workers sync.WaitGroup
+	runtime.StartKafkaConsumer(ctx, &workers, accountProjection.Run)
 	runtime.StartKafkaConsumer(ctx, &workers, func(ctx context.Context, brokers []string) error {
 		return runCheckoutResultConsumer(ctx, checkoutService.KafkaResultHandler(), brokers, config.KafkaGroupID)
 	})
 	workers.Go(func() {
 		if err := checkoutService.RunDeadlines(ctx); err != nil && ctx.Err() == nil {
 			sharedlog.Error("checkout deadline worker stopped", "err", err)
+		}
+	})
+	workers.Go(func() {
+		if err := checkoutService.RunGatewayOperations(ctx); err != nil && ctx.Err() == nil {
+			sharedlog.Error("gateway worker stopped", "err", err)
 		}
 	})
 	if err := runtime.ServeGRPC(ctx, runtime.GRPCServerConfig{

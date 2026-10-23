@@ -46,6 +46,10 @@ spec:
 {{- end }}
 {{- end }}
 {{- if .Values.marketplace.enabled }}
+{{- $injectMarketplaceImages := true }}
+{{- if hasKey .Values.marketplace "injectGlobalImages" }}
+{{- $injectMarketplaceImages = .Values.marketplace.injectGlobalImages }}
+{{- end }}
 ---
 apiVersion: argoproj.io/v1alpha1
 kind: Application
@@ -69,7 +73,7 @@ spec:
         - {{ . | quote }}
 {{- end }}
 {{- end }}
-{{- if .Values.global.imageRegistry }}
+{{- if and $injectMarketplaceImages .Values.global.imageRegistry }}
       values: |
         global:
           imageRegistry: {{ .Values.global.imageRegistry }}

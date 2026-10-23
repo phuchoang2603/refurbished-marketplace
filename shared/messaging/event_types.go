@@ -2,6 +2,7 @@
 package messaging
 
 const (
+	EventTypeAccountCreated             = "users.account-created.v1"
 	EventTypeProductCreated             = "products.created"
 	EventTypeOrderCreated               = "orders.created"
 	EventTypeInventoryReserved          = "inventory.reserved"
@@ -14,14 +15,6 @@ const (
 	EventTypeCheckoutStockRejected      = "checkout.stock-rejected.v1"
 	EventTypeCheckoutCancelStock        = "checkout.stock-cancel.requested.v1"
 	EventTypeCheckoutStockReleased      = "checkout.stock-released.v1"
-	EventTypeCheckoutCreateSession      = "checkout.payment-session-create.requested.v1"
-	EventTypeCheckoutSessionReady       = "checkout.payment-session-ready.v1"
-	EventTypeCheckoutSessionRejected    = "checkout.payment-session-rejected.v1"
-	EventTypeCheckoutCancelSession      = "checkout.payment-session-cancel.requested.v1"
-	EventTypeCheckoutPaymentCancelled   = "checkout.payment-cancelled.v1"
-	EventTypeCheckoutPaymentSucceeded   = "checkout.payment-succeeded.v1"
-	EventTypeCheckoutPaymentFailed      = "checkout.payment-failed.v1"
-	EventTypeCheckoutPaymentUncertain   = "checkout.payment-uncertain.v1"
 	EventTypeCheckoutCommitStock        = "checkout.stock-commit.requested.v1"
 	EventTypeCheckoutStockCommitted     = "checkout.stock-committed.v1"
 	EventTypeCheckoutFinalizeOrder      = "checkout.order-finalize.requested.v1"

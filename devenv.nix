@@ -14,7 +14,7 @@ in
     TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE = "/var/run/docker.sock";
     DOCKER_HOST = "unix://${colimaSocket}";
     DOPPLER_PROJECT = "refurbished-marketplace";
-    DOPPLER_CONFIG = "dev";
+    DOPPLER_CONFIG = "prd";
   };
 
   packages = with pkgs; [

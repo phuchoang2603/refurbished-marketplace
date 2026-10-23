@@ -4,7 +4,7 @@ Products persists listings and a ProductCreated outbox document in MongoDB. Debe
 
 ## Ownership
 
-- Products owns listing identity, name, description, price, and merchant in Mongo `catalog.listings`. Requested initial quantity is creation intent carried in the event, not live catalog stock. Products does not query Meilisearch or consume Kafka.
+- Products owns listing identity, name, description, price, merchant, category and condition in Mongo `catalog.listings`. Requested initial quantity is creation intent carried in the event, not live catalog stock. Products does not query Meilisearch or consume Kafka.
 - Inventory Postgres owns available/reserved quantity, reservations, seed intent, inbox, and outbox. Web calls stock reads and ReserveStock; products never calls inventory.
 - Search owns the storefront catalog projection: Kafka consume, Meilisearch upsert, and gRPC `SearchProducts`. It does not persist listings or stock and does not rebuild from Mongo.
 - Cart Redis owns displayed product snapshots and requested cart quantities.
@@ -12,11 +12,11 @@ Products persists listings and a ProductCreated outbox document in MongoDB. Debe
 
 ## Creation and durable publication
 
-Web sends catalog fields and explicit non-negative initial quantity to CreateProduct. Missing quantity is invalid; explicit zero is valid. Products commits the listing and a `catalog_outbox` document atomically in a replica-set transaction. Debezium Mongo watches that collection and publishes ProductCreated to `products.created`, keyed by product id. Never save the listing and then rely on a separate best-effort Kafka publish from the products process.
+Web sends catalog fields and explicit non-negative initial quantity to CreateProduct. Category must be `phone`, `laptop`, `tablet`, `accessory`, `headphones`, `smartwatch`, `game_console` or `camera`; condition must be `excellent`, `good` or `fair`. Both persist in listings, reads and ProductCreated. Missing quantity is invalid; explicit zero is valid. Products commits the listing and a `catalog_outbox` document atomically in a replica-set transaction. Debezium Mongo watches that collection and publishes ProductCreated to `products.created`, keyed by product id. Never save the listing and then rely on a separate best-effort Kafka publish from the products process.
 
 The event contains a stable event id, schema version, occurrence time, product id, initial product version, catalog fields, and explicit initial quantity. Outbox retries retain the same event identity.
 
-Inventory consumes the event in `inventory-product-created`, separate from reservation/payment consumption, validates it, and commits inbox identity and initial stock in one transaction before acknowledging it. Search consumes the same event in `search-product-created` and upserts catalog fields (`id`, name, description, price, merchant, created_at). It does not index `initial_qty`. CreateProduct does not wait for the index upsert. There is no Mongo rebuild/backfill path; a wiped cluster fills the index from new ProductCreated events.
+Inventory consumes the event in `inventory-product-created`, separate from reservation/payment consumption, validates it, and commits inbox identity and initial stock in one transaction before acknowledging it. Search consumes the same event in `search-product-created` and upserts catalog fields (`id`, name, description, price, merchant, created_at). It does not index `initial_qty`. CreateProduct does not wait for the index upsert. There is no search-projection rebuild/backfill path; a wiped cluster fills the index from new ProductCreated events.
 
 ```mermaid
 flowchart LR
@@ -73,7 +73,7 @@ Public `/` and `/products` call search `SearchProducts`. An empty `q` browses; a
 
 Product detail stays on products `GetProductByID` plus inventory `GetStock`. A missing stock row means initialization is pending, a transport failure means availability is unavailable, and an existing row with zero available quantity means out of stock. Do not collapse these into zero. Disable purchase controls while availability is pending or unavailable.
 
-Add-to-cart copies the displayed name/price snapshot. Cart quantity changes reuse that snapshot and cart reads do not hydrate products or stock. Checkout re-batches products for authoritative prices and synchronously reserves inventory before creating hosted payment. A checkout that reaches inventory before initialization fails safely and does not open payment.
+Add-to-cart copies the displayed name/price snapshot. Cart quantity changes reuse that snapshot and cart reads do not hydrate products or stock. Web re-batches products for authoritative prices and grading, then submits Checkout’s durable intent. Checkout reserves inventory before creating the gateway payment. A checkout that reaches inventory before initialization fails safely and does not open payment.
 
 ```mermaid
 sequenceDiagram

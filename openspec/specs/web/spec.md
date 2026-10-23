@@ -66,7 +66,7 @@ The web service MUST delegate login and logout session logic to the users servic
 
 ### Requirement: Web supports authenticated seller product creation
 
-The web service MUST expose protected browser routes that let an authenticated user create a product with explicit initial stock through HTML form submission.
+The web service MUST expose protected browser routes that let an authenticated user create a product with explicit initial stock, a category and a condition grade through HTML form submission.
 
 #### Scenario: Authenticated seller opens the create-product page
 
@@ -80,8 +80,8 @@ The web service MUST expose protected browser routes that let an authenticated u
 
 #### Scenario: Authenticated seller submits a product form
 
-- **WHEN** an authenticated browser submits valid product details and an initial quantity
-- **THEN** the web service SHALL call products with catalog details and explicit initial quantity, and after the listing and creation event commit SHALL report listing creation with availability processing; it SHALL NOT call EnsureStock or compensating-delete the listing
+- **WHEN** an authenticated browser submits valid product details, category, condition and an initial quantity
+- **THEN** the web service SHALL call products with catalog details, category, condition and explicit initial quantity, and after the listing and creation event commit SHALL report listing creation with availability processing; it SHALL NOT call EnsureStock or compensating-delete the listing
 
 #### Scenario: Seller creation dependencies are unavailable
 
@@ -133,35 +133,21 @@ The web service MUST use the authenticated user's ID as the `merchant_id` value 
 
 ### Requirement: Web handles hosted payment return paths safely
 
-The web service MUST provide browser routes that let a buyer return from the hosted payment gateway into a usable marketplace flow without replaying checkout or opening a new payment session for that order.
+The web service MUST provide browser routes that let a buyer return from the gateway's hosted checkout page into a usable marketplace flow without replaying checkout or creating a new gateway payment for that order.
 
 #### Scenario: Buyer returns after hosted payment completion
 
-- **WHEN** the hosted payment gateway redirects the browser back after a successful, failed, or expired payment attempt
-- **THEN** the web service SHALL redirect or render the buyer into a usable marketplace page for that order without issuing another checkout mutation or hosted-session create
+- **WHEN** the hosted checkout page redirects the browser to the return URL after a successful payment
+- **THEN** the web service SHALL render the order page from Checkout's status without issuing another checkout mutation or gateway payment create
 
 #### Scenario: Buyer returns after canceling hosted payment
 
-- **WHEN** the hosted payment gateway redirects the browser back after the buyer cancels payment
-- **THEN** the web service SHALL return the buyer to a usable order-related page without creating a second order or payment session
-
-### Requirement: Web accepts hosted payment outcome callbacks idempotently
-
-Web MUST preserve the non-browser gateway callback route, forward verified outcomes to Payment without requiring browser authentication, and MUST NOT independently finalize Checkout, Orders, or Inventory. Repeated callbacks MUST be safe.
-
-#### Scenario: Gateway posts a payment outcome callback
-
-- **WHEN** a gateway callback reports an outcome for a hosted session
-- **THEN** web SHALL forward it to Payment for durable outcome processing and SHALL NOT directly advance the checkout or mark an order paid
-
-#### Scenario: Gateway retries a payment outcome callback
-
-- **WHEN** the gateway repeats the same terminal callback
-- **THEN** web SHALL acknowledge a safely processed duplicate without creating a new checkout, payment result, or order
+- **WHEN** the buyer leaves the hosted checkout page without paying and navigates back to the marketplace
+- **THEN** the web service SHALL redirect or render the buyer into a usable marketplace page for that order without issuing another checkout mutation or gateway payment create
 
 ### Requirement: Web exports traces and injects gRPC context
 
-The web service SHALL export OpenTelemetry spans to the platform agent and inject W3C trace context on outgoing gRPC calls used for browser and hosted-payment callback flows so downstream services continue the same TraceId. HTTP server span names SHALL use route patterns rather than the middleware operation string or service name alone.
+The web service SHALL export OpenTelemetry spans to the platform agent and inject W3C trace context on outgoing gRPC calls used for browser and gateway webhook flows so downstream services continue the same TraceId. HTTP server span names SHALL use route patterns rather than the middleware operation string or service name alone.
 
 #### Scenario: Outgoing gRPC calls carry traceparent
 
@@ -170,8 +156,8 @@ The web service SHALL export OpenTelemetry spans to the platform agent and injec
 
 #### Scenario: Hosted payment callback is traced
 
-- **WHEN** web handles `POST /callbacks/hosted-payment`
-- **THEN** the request produces a server span named with method and route pattern continuing into downstream payment gRPC work on the same TraceId when instrumentation is enabled
+- **WHEN** web handles `POST /webhooks/payment-gateway`
+- **THEN** the request produces a server span named with method and route pattern continuing into the downstream Checkout gRPC call on the same TraceId when instrumentation is enabled
 
 #### Scenario: Span names avoid raw path cardinality
 
@@ -222,12 +208,12 @@ The web service MUST build cart HTML from cart item snapshot fields without issu
 
 ### Requirement: Web re-validates cart products in one batch at checkout
 
-Web MUST re-read selected merchant-group products through a single products batch call before submitting Checkout's intent and MUST use authoritative prices rather than cart snapshot prices.
+Web MUST re-read selected merchant-group products through a single products batch call before submitting Checkout's intent and MUST use authoritative prices, categories and conditions rather than cart snapshot values.
 
 #### Scenario: Buyer checks out one merchant group
 
 - **WHEN** a buyer submits checkout for a merchant group with one or more lines within the products batch size limit
-- **THEN** web SHALL batch-read those products once, SHALL fail closed on missing products or wrong merchant ids, and SHALL submit an authoritative price/quantity snapshot without removing cart lines
+- **THEN** web SHALL batch-read those products once, SHALL fail closed on missing products or wrong merchant ids, and SHALL submit an authoritative price, quantity, category and condition snapshot without removing cart lines
 
 #### Scenario: Product missing at checkout re-validation
 
@@ -259,22 +245,27 @@ Web MUST NOT require cart removal before checkout readiness. Once Checkout confi
 
 #### Scenario: Checkout POST succeeds through place-order and session create
 
-- **WHEN** Checkout reports a ready hosted session for a reserved order
-- **THEN** web SHALL redirect to hosted payment even if that merchant's cart lines remain
+- **WHEN** Checkout reports a ready gateway payment for a reserved order
+- **THEN** web SHALL redirect to the hosted checkout URL even if that merchant's cart lines remain
 
 #### Scenario: Hosted payment callback reports success
 
 - **WHEN** the buyer visits the confirmed order page and a cart identity is present
 - **THEN** web SHALL remove the paid product ids with a multi-remove without affecting other merchants' cart items
 
-### Requirement: Web removes cart lines after a terminal hosted payment
+### Requirement: Web removes paid cart lines and retains expired items
 
-The web service MUST remove the order's product IDs from the buyer cart after a terminal hosted payment (SUCCEEDED, FAILED, or EXPIRED) when a cart identity is available, so a one-shot failed attempt does not leave those lines for a duplicate checkout of the same reservation.
+The web service MUST remove the order's product IDs from the buyer cart after the gateway payment reaches SUCCEEDED when a cart identity is available. On EXPIRED it MUST retain the cart items and rotate the merchant's checkout intent only if the current cart intent matches the expired checkout's original intent key. A declined attempt on an open payment MUST NOT remove cart lines.
 
 #### Scenario: Buyer returns after a failed hosted payment
 
-- **WHEN** the buyer opens the order page after hosted payment FAILED or EXPIRED and a `cart_id` cookie is present
-- **THEN** the web service SHALL multi-remove that order's product IDs from the cart
+- **WHEN** the buyer opens the order page after the gateway payment EXPIRED and a `cart_id` cookie is present
+- **THEN** the web service SHALL retain the cart items and rotate the matching merchant checkout intent so a new submission creates a fresh checkout
+
+#### Scenario: Buyer revisits an expired order after starting another checkout
+
+- **WHEN** the cart intent no longer matches the expired checkout's original intent key
+- **THEN** the web service SHALL leave the current intent and cart items unchanged
 
 ### Requirement: Web distinguishes pending stock from unavailable stock
 
@@ -333,3 +324,36 @@ The web service MUST render the public catalog and the authenticated seller prod
 
 - **WHEN** an authenticated browser requests the seller product list
 - **THEN** the web service SHALL call search SearchProducts with that user's merchant filter and SHALL NOT call products ListProducts
+
+### Requirement: Web forwards gateway webhooks unchanged
+
+Web MUST expose `POST /webhooks/payment-gateway` on its in-cluster Service without browser authentication and forward the unmodified request body and `Gateway-Signature` header to Checkout. It MUST return 2xx only after Checkout accepted or acknowledged the event, 4xx when Checkout rejects the signature, and 5xx when Checkout is unavailable so the gateway retries. Web MUST NOT parse the event to change Checkout, Orders, Inventory or the cart, and MUST bound request body size. The route MUST NOT be exposed through the public Gateway.
+
+#### Scenario: Valid webhook
+
+- **WHEN** the gateway posts a correctly signed event
+- **THEN** web forwards it to Checkout and returns 2xx after Checkout records or acknowledges it
+
+#### Scenario: Checkout unavailable
+
+- **WHEN** Checkout cannot be reached while a webhook is forwarded
+- **THEN** web returns 5xx and does not change any cart or order state
+
+### Requirement: Web lets a buyer retry an open payment from the order page
+
+The web service MUST render a link to Checkout's hosted checkout URL on the buyer's order page when the order status is `ORDER_STATUS_PENDING` and the gateway payment status is `OPEN`. It MUST render order and payment facts without fetching or displaying the buyer identity.
+
+#### Scenario: Open payment on a pending order
+
+- **WHEN** the buyer opens an order page whose order is `ORDER_STATUS_PENDING` and payment status is `OPEN` with a hosted checkout URL
+- **THEN** the web service SHALL render a retry payment link pointing at that URL
+
+#### Scenario: Payment is not open
+
+- **WHEN** the buyer opens an order page whose payment status is not `OPEN` or that has no hosted checkout URL
+- **THEN** the web service SHALL NOT render a retry payment link
+
+#### Scenario: Order page omits buyer identity
+
+- **WHEN** the web service renders an order page
+- **THEN** it SHALL NOT display the buyer identifier or call users to hydrate buyer details

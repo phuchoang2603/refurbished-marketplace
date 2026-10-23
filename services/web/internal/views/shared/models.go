@@ -116,10 +116,10 @@ type OrderItemView struct {
 
 type OrderView struct {
 	ID                   string
-	BuyerUserID          string
 	Status               string
 	PaymentStatus        string
 	PaymentFailureReason string
+	PaymentURL           string
 	TotalCents           int64
 	Items                []OrderItemView
 	CreatedAt            string

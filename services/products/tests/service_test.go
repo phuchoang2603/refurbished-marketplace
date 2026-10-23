@@ -28,7 +28,7 @@ func TestCreateAndReadProducts(t *testing.T) {
 
 	t.Run("create product", func(t *testing.T) {
 		merchantID := uuid.New()
-		created, err := svc.CreateProduct(ctx, "iPhone 13", "Refurbished - Grade A", 49900, merchantID, proto.Int32(5))
+		created, err := svc.CreateProduct(ctx, "iPhone 13", "Refurbished - Grade A", "phone", "good", 49900, merchantID, proto.Int32(5))
 		if err != nil {
 			t.Fatalf("create product: %v", err)
 		}
@@ -39,7 +39,7 @@ func TestCreateAndReadProducts(t *testing.T) {
 
 	t.Run("get product by id", func(t *testing.T) {
 		merchantID := uuid.New()
-		created, err := svc.CreateProduct(ctx, "iPhone 13", "Refurbished - Grade A", 49900, merchantID, proto.Int32(5))
+		created, err := svc.CreateProduct(ctx, "iPhone 13", "Refurbished - Grade A", "phone", "good", 49900, merchantID, proto.Int32(5))
 		if err != nil {
 			t.Fatalf("create product: %v", err)
 		}
@@ -73,7 +73,7 @@ func TestProductValidation(t *testing.T) {
 		svc := newProductsService(t)
 		ctx := t.Context()
 
-		_, err := svc.CreateProduct(ctx, "", "x", 100, uuid.New(), proto.Int32(5))
+		_, err := svc.CreateProduct(ctx, "", "x", "phone", "good", 100, uuid.New(), proto.Int32(5))
 		if !errors.Is(err, service.ErrInvalidProductName) {
 			t.Fatalf("expected ErrInvalidProductName, got %v", err)
 		}
@@ -83,7 +83,7 @@ func TestProductValidation(t *testing.T) {
 		svc := newProductsService(t)
 		ctx := t.Context()
 
-		_, err := svc.CreateProduct(ctx, "Laptop", "x", 100, uuid.Nil, proto.Int32(5))
+		_, err := svc.CreateProduct(ctx, "Laptop", "x", "phone", "good", 100, uuid.Nil, proto.Int32(5))
 		if !errors.Is(err, service.ErrInvalidMerchantID) {
 			t.Fatalf("expected ErrInvalidMerchantID, got %v", err)
 		}
@@ -93,7 +93,7 @@ func TestProductValidation(t *testing.T) {
 		svc := newProductsService(t)
 		ctx := t.Context()
 
-		_, err := svc.CreateProduct(ctx, "Laptop", "x", 0, uuid.New(), proto.Int32(5))
+		_, err := svc.CreateProduct(ctx, "Laptop", "x", "phone", "good", 0, uuid.New(), proto.Int32(5))
 		if !errors.Is(err, service.ErrInvalidPrice) {
 			t.Fatalf("expected ErrInvalidPrice, got %v", err)
 		}

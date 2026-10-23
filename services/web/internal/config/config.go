@@ -9,49 +9,34 @@ import (
 )
 
 const (
-	defaultHTTPAddr       = ":8080"
-	defaultGatewayBaseURL = "http://localhost:8097"
+	defaultHTTPAddr = ":8080"
 )
 
 type Config struct {
-	HTTPAddr        string
-	UsersAddr       string
-	ProductsAddr    string
-	InventoryAddr   string
-	SearchAddr      string
-	OrdersAddr      string
-	CartAddr        string
-	PaymentAddr     string
-	CheckoutAddr    string
-	JWTSecret       string
-	GatewayBaseURL  string
-	PublicBaseURL   string
-	CallbackBaseURL string
+	HTTPAddr      string
+	UsersAddr     string
+	ProductsAddr  string
+	InventoryAddr string
+	SearchAddr    string
+	OrdersAddr    string
+	CartAddr      string
+	CheckoutAddr  string
+	JWTSecret     string
+	PublicBaseURL string
 }
 
 func LoadConfig() Config {
-	gatewayBaseURL := strings.TrimRight(os.Getenv("HOSTED_PAYMENT_BASE_URL"), "/")
-	if gatewayBaseURL == "" {
-		gatewayBaseURL = strings.TrimRight(os.Getenv("HOSTED_PAYMENT_SIMULATOR_BASE_URL"), "/")
-	}
-	if gatewayBaseURL == "" {
-		gatewayBaseURL = defaultGatewayBaseURL
-	}
-
 	return Config{
-		HTTPAddr:        runtime.EnvOr("HTTP_ADDR", defaultHTTPAddr),
-		UsersAddr:       strings.TrimSpace(os.Getenv("USERS_SVC_ADDR")),
-		ProductsAddr:    strings.TrimSpace(os.Getenv("PRODUCTS_SVC_ADDR")),
-		InventoryAddr:   strings.TrimSpace(os.Getenv("INVENTORY_SVC_ADDR")),
-		SearchAddr:      strings.TrimSpace(os.Getenv("SEARCH_SVC_ADDR")),
-		OrdersAddr:      strings.TrimSpace(os.Getenv("ORDERS_SVC_ADDR")),
-		CartAddr:        strings.TrimSpace(os.Getenv("CART_SVC_ADDR")),
-		PaymentAddr:     strings.TrimSpace(os.Getenv("PAYMENT_SVC_ADDR")),
-		CheckoutAddr:    strings.TrimSpace(os.Getenv("CHECKOUT_SVC_ADDR")),
-		JWTSecret:       strings.TrimSpace(os.Getenv("JWT_SECRET")),
-		GatewayBaseURL:  gatewayBaseURL,
-		PublicBaseURL:   strings.TrimRight(strings.TrimSpace(os.Getenv("PUBLIC_BASE_URL")), "/"),
-		CallbackBaseURL: strings.TrimRight(strings.TrimSpace(os.Getenv("HOSTED_PAYMENT_CALLBACK_BASE_URL")), "/"),
+		HTTPAddr:      runtime.EnvOr("HTTP_ADDR", defaultHTTPAddr),
+		UsersAddr:     strings.TrimSpace(os.Getenv("USERS_SVC_ADDR")),
+		ProductsAddr:  strings.TrimSpace(os.Getenv("PRODUCTS_SVC_ADDR")),
+		InventoryAddr: strings.TrimSpace(os.Getenv("INVENTORY_SVC_ADDR")),
+		SearchAddr:    strings.TrimSpace(os.Getenv("SEARCH_SVC_ADDR")),
+		OrdersAddr:    strings.TrimSpace(os.Getenv("ORDERS_SVC_ADDR")),
+		CartAddr:      strings.TrimSpace(os.Getenv("CART_SVC_ADDR")),
+		CheckoutAddr:  strings.TrimSpace(os.Getenv("CHECKOUT_SVC_ADDR")),
+		JWTSecret:     strings.TrimSpace(os.Getenv("JWT_SECRET")),
+		PublicBaseURL: strings.TrimRight(strings.TrimSpace(os.Getenv("PUBLIC_BASE_URL")), "/"),
 	}
 }
 
@@ -76,9 +61,6 @@ func ValidateConfig(cfg Config) error {
 	}
 	if strings.TrimSpace(cfg.CartAddr) == "" {
 		return errors.New("CART_SVC_ADDR is required")
-	}
-	if strings.TrimSpace(cfg.PaymentAddr) == "" {
-		return errors.New("PAYMENT_SVC_ADDR is required")
 	}
 	if strings.TrimSpace(cfg.CheckoutAddr) == "" {
 		return errors.New("CHECKOUT_SVC_ADDR is required")

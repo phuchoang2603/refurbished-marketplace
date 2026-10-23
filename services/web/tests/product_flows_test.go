@@ -19,7 +19,10 @@ import (
 
 func TestCreateProductRedirectsToProductDetail(t *testing.T) {
 	productsSvc := &fakes.ProductsService{
-		CreateFn: func(ctx context.Context, name, description string, priceCents int64, merchantID string, initialStock int32) (*productsv1.Product, error) {
+		CreateFn: func(ctx context.Context, name, description, category, condition string, priceCents int64, merchantID string, initialStock int32) (*productsv1.Product, error) {
+			if category != "phone" || condition != "excellent" {
+				t.Fatalf("grading = %s/%s", category, condition)
+			}
 			if name != "Refurbished Phone" {
 				t.Fatalf("name = %q, want Refurbished Phone", name)
 			}
@@ -43,6 +46,7 @@ func TestCreateProductRedirectsToProductDetail(t *testing.T) {
 		"description":   {"Battery replaced and tested."},
 		"price":         {"259.99"},
 		"initial_stock": {"4"},
+		"category":      {"phone"}, "condition": {"excellent"},
 	}
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/seller/products", strings.NewReader(form.Encode()))
@@ -61,7 +65,7 @@ func TestCreateProductRedirectsToProductDetail(t *testing.T) {
 
 func TestCreateProductReturnsUnavailableWhenProductsServiceFails(t *testing.T) {
 	productsSvc := &fakes.ProductsService{
-		CreateFn: func(ctx context.Context, name, description string, priceCents int64, merchantID string, initialStock int32) (*productsv1.Product, error) {
+		CreateFn: func(ctx context.Context, name, description, category, condition string, priceCents int64, merchantID string, initialStock int32) (*productsv1.Product, error) {
 			return nil, status.Error(codes.Unavailable, "products service unavailable")
 		},
 	}
@@ -70,6 +74,7 @@ func TestCreateProductReturnsUnavailableWhenProductsServiceFails(t *testing.T) {
 		"description":   {"Battery replaced and tested."},
 		"price":         {"259.99"},
 		"initial_stock": {"4"},
+		"category":      {"phone"}, "condition": {"excellent"},
 	}
 	rec := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/seller/products", strings.NewReader(form.Encode()))
@@ -226,5 +231,25 @@ func TestProductDetailHidesCartFormForOwner(t *testing.T) {
 	}
 	if !strings.Contains(body, "This is your product.") {
 		t.Fatalf("body missing owner notice in %q", body)
+	}
+}
+
+func TestSellerFormOffersFixedGradingChoices(t *testing.T) {
+	r := httptest.NewRequest(http.MethodGet, "/seller/products/new", nil)
+	r.AddCookie(&http.Cookie{Name: auth.AccessCookieName, Value: signedAccessToken(t, "user-1")})
+	w := httptest.NewRecorder()
+	newTestRouter(t, routerDeps{}).ServeHTTP(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status=%d", w.Code)
+	}
+	for _, value := range []string{"phone", "laptop", "tablet", "accessory", "headphones", "smartwatch", "game_console", "camera", "excellent", "good", "fair"} {
+		if !strings.Contains(w.Body.String(), `value="`+value+`"`) {
+			t.Fatalf("missing grading choice %s", value)
+		}
+	}
+	for _, name := range []string{"category", "condition"} {
+		if !strings.Contains(w.Body.String(), `name="`+name+`" required`) {
+			t.Fatalf("missing required %s select", name)
+		}
 	}
 }

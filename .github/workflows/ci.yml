@@ -24,7 +24,6 @@ env:
     ./services/orders/...
     ./services/checkout/...
     ./services/cart/...
-    ./services/payment/...
     ./services/web/...
     ./shared/auth/...
     ./shared/err/dberr/...
@@ -40,7 +39,6 @@ env:
     ./shared/testutil/meilisearch/...
     ./shared/testutil/mongo/...
     ./shared/testutil/redis/...
-    ./tools/payment-gateway-simulator/...
 
 jobs:
   lint:
@@ -73,7 +71,6 @@ jobs:
       inventory: ${{ steps.filter.outputs.inventory }}
       orders: ${{ steps.filter.outputs.orders }}
       checkout: ${{ steps.filter.outputs.checkout }}
-      payment: ${{ steps.filter.outputs.payment }}
       cart: ${{ steps.filter.outputs.cart }}
       web: ${{ steps.filter.outputs.web }}
     steps:
@@ -85,6 +82,7 @@ jobs:
             users:
               - 'services/users/**'
               - 'shared/proto/**'
+              - 'shared/messaging/**'
               - 'shared/auth/**'
               - 'shared/err/dberr/**'
               - 'shared/err/grpcerr/**'
@@ -152,18 +150,7 @@ jobs:
               - 'shared/observe/trace/**'
               - 'shared/observe/metric/**'
               - 'shared/testutil/postgres/**'
-              - 'go.work*'
-              - '.github/workflows/ci.yml'
-            payment:
-              - 'services/payment/**'
-              - 'shared/proto/**'
-              - 'shared/messaging/**'
-              - 'shared/err/dberr/**'
-              - 'shared/err/grpcerr/**'
-              - 'shared/runtime/**'
-              - 'shared/observe/log/**'
-              - 'shared/observe/trace/**'
-              - 'shared/testutil/postgres/**'
+              - 'shared/testutil/redis/**'
               - 'shared/testutil/kafka/**'
               - 'go.work*'
               - '.github/workflows/ci.yml'
@@ -199,7 +186,6 @@ jobs:
           - inventory
           - orders
           - checkout
-          - payment
           - cart
           - web
     steps:
@@ -236,7 +222,6 @@ jobs:
           - inventory
           - orders
           - checkout
-          - payment
           - cart
           - web
     steps:
@@ -257,7 +242,8 @@ jobs:
         if: github.event_name == 'schedule' || needs.changes.outputs[matrix.service] == 'true'
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck -C "services/${{ matrix.service }}" -format sarif ./... > govulncheck.sarif
+          govulncheck -C "services/${{ matrix.service }}" -format sarif ./... > govulncheck.raw.sarif
+          jq '(.runs[].results[]? | select(has("stacks")) | .stacks) |= unique' govulncheck.raw.sarif > govulncheck.sarif
 
       - name: Upload SARIF file
         if: github.event_name == 'schedule' || needs.changes.outputs[matrix.service] == 'true'

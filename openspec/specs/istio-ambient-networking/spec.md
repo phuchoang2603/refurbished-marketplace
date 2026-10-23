@@ -36,17 +36,17 @@ The marketplace GitOps root SHALL ensure both namespace labels are present befor
 
 ### Requirement: Marketplace uses Istio Gateway API ingress
 
-When ingress is enabled, the marketplace SHALL render a programmed `istio` Gateway and HTTPRoutes for web and the hosted-payment simulator. Cloudflare Tunnel SHALL remain the public HTTPS front door; its in-cluster HTTP origin SHALL resolve the Istio-managed Gateway Service without a LAN VIP or an application TLS certificate. Dev hosts SHALL be `shop-dev` / `pay-dev` and production hosts SHALL be `shop` / `pay` through the existing overlay.
+When ingress is enabled, the marketplace SHALL render a programmed `istio` Gateway and an HTTPRoute for web. Cloudflare Tunnel SHALL remain the public HTTPS front door; its in-cluster HTTP origin SHALL resolve the Istio-managed Gateway Service without a LAN VIP or an application TLS certificate. The chart default host SHALL be `shop-dev` and the production host SHALL be `shop` through the existing overlay; the marketplace SHALL NOT route `pay` or `pay-dev`, which belong to the payment gateway.
 
 #### Scenario: Web and simulator host routing
 
-- **WHEN** a browser uses either configured hostname
-- **THEN** the Istio Gateway routes that request to the corresponding Service, and unknown hosts have no marketplace route
+- **WHEN** a browser uses the configured shop hostname or a former simulator `pay` hostname
+- **THEN** the Istio Gateway routes the shop request to the web Service, and the `pay` host and unknown hosts have no marketplace route
 
 #### Scenario: Cloudflare origin is reconciled
 
 - **WHEN** the tunnel binding and Gateway converge
-- **THEN** both hostnames resolve to the in-cluster Istio Gateway origin and forwarded HTTPS host/scheme semantics are preserved
+- **THEN** the shop hostname resolves to the in-cluster Istio Gateway origin and forwarded HTTPS host/scheme semantics are preserved
 
 ### Requirement: Protocol metadata remains accurate
 

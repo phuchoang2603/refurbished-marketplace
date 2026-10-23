@@ -90,3 +90,15 @@ func clearCheckoutIntent(w http.ResponseWriter, r *http.Request, cartID, merchan
 	delete(store.Keys, merchantID)
 	writeCheckoutIntentStore(w, store)
 }
+
+func RotateExpiredCheckoutIntent(w http.ResponseWriter, r *http.Request, merchantID, expiredIntentKey string) {
+	cartID := cartIDFromRequest(r)
+	if cartID == "" || merchantID == "" || expiredIntentKey == "" {
+		return
+	}
+	store := readCheckoutIntentStore(r)
+	if store.CartID != cartID || store.Keys[merchantID] != expiredIntentKey {
+		return
+	}
+	rotateCheckoutIntent(w, r, cartID, merchantID)
+}

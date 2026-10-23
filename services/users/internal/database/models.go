@@ -28,3 +28,12 @@ type User struct {
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
 }
+
+type UsersOutbox struct {
+	ID                 uuid.UUID
+	AggregateID        uuid.UUID
+	EventType          string
+	Payload            []byte
+	Tracingspancontext sql.NullString
+	CreatedAt          time.Time
+}

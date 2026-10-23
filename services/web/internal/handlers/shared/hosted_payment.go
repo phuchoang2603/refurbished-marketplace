@@ -3,19 +3,11 @@ package shared
 import (
 	"encoding/json"
 	"net/http"
-	"net/url"
 	"strings"
 )
 
 type HostedPaymentConfig struct {
-	GatewayBaseURL string
-	// PublicBaseURL optionally overrides request-derived absolute web URLs
-	// (return/callback). Use https://shop.example when TLS terminates
-	// at the edge and the origin only sees plain HTTP.
 	PublicBaseURL string
-	// CallbackBaseURL optionally overrides only the simulator→web callback
-	// base (for example http://web:8080) so server-side POSTs stay in-cluster.
-	CallbackBaseURL string
 }
 
 func RequestBaseURL(r *http.Request) string {
@@ -88,46 +80,4 @@ func OrderPageURLWithConfig(cfg HostedPaymentConfig, r *http.Request, orderID st
 		return ""
 	}
 	return base + "/orders/" + strings.TrimSpace(orderID)
-}
-
-func absolutizeWebURL(cfg HostedPaymentConfig, r *http.Request, raw string) string {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return ""
-	}
-	if strings.HasPrefix(raw, "http://") || strings.HasPrefix(raw, "https://") {
-		return raw
-	}
-	base := webBaseURL(cfg, r)
-	if base == "" {
-		return raw
-	}
-	if !strings.HasPrefix(raw, "/") {
-		raw = "/" + raw
-	}
-	return base + raw
-}
-
-type HostedPaymentSession struct {
-	OrderID          string
-	PaymentSessionID string
-	ReturnURL        string
-}
-
-func BuildHostedPaymentURL(cfg HostedPaymentConfig, r *http.Request, session HostedPaymentSession) string {
-	if cfg.GatewayBaseURL == "" || session.PaymentSessionID == "" {
-		return ""
-	}
-	v := url.Values{}
-	v.Set("order_id", session.OrderID)
-	v.Set("payment_session_id", session.PaymentSessionID)
-	v.Set("return_url", absolutizeWebURL(cfg, r, session.ReturnURL))
-	callbackBase := strings.TrimRight(strings.TrimSpace(cfg.CallbackBaseURL), "/")
-	if callbackBase == "" {
-		callbackBase = webBaseURL(cfg, r)
-	}
-	if callbackBase != "" {
-		v.Set("callback_url", callbackBase+"/callbacks/hosted-payment")
-	}
-	return strings.TrimRight(cfg.GatewayBaseURL, "/") + "/pay?" + v.Encode()
 }

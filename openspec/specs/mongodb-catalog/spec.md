@@ -8,7 +8,7 @@ Provide a GitOps-managed MongoDB Community replica set in the marketplace namesp
 
 ### Requirement: MCK Community replica set in ecommerce
 
-The system SHALL deploy a MongoDB Community replica set (not a standalone mongod) into the `ecommerce` namespace using MongoDB Controllers for Kubernetes Community custom resources. talos-dev SHALL use a single replica-set member unless an overlay raises the member count.
+The system SHALL deploy a MongoDB Community replica set (not a standalone mongod) into the `ecommerce` namespace using MongoDB Controllers for Kubernetes Community custom resources. Chart defaults SHALL use a single replica-set member unless an overlay raises the member count.
 
 #### Scenario: Replica set is Running
 

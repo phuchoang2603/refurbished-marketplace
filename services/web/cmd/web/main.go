@@ -52,7 +52,6 @@ func main() {
 		SearchAddr:    cfg.SearchAddr,
 		OrdersAddr:    cfg.OrdersAddr,
 		CartAddr:      cfg.CartAddr,
-		PaymentAddr:   cfg.PaymentAddr,
 		CheckoutAddr:  cfg.CheckoutAddr,
 	})
 	if err != nil {
@@ -67,12 +66,9 @@ func main() {
 		deps.Search,
 		deps.Orders,
 		deps.Cart,
-		deps.Payment,
 		deps.Checkout,
 		sharedhandlers.HostedPaymentConfig{
-			GatewayBaseURL:  cfg.GatewayBaseURL,
-			PublicBaseURL:   cfg.PublicBaseURL,
-			CallbackBaseURL: cfg.CallbackBaseURL,
+			PublicBaseURL: cfg.PublicBaseURL,
 		},
 		authconfig.DefaultConfig(cfg.JWTSecret),
 	)

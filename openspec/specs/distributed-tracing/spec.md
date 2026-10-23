@@ -8,11 +8,11 @@ Define end-to-end checkout tracing: one W3C TraceId across HTTP, gRPC, outbox/De
 
 ### Requirement: Sync path propagates one TraceId over HTTP and gRPC
 
-Marketplace browser and gRPC hops on the checkout and hosted-payment callback paths SHALL continue a single W3C TraceId across process boundaries.
+Marketplace browser and gRPC hops on the checkout and gateway webhook paths SHALL continue a single W3C TraceId across process boundaries.
 
 #### Scenario: Web continues or starts a trace and injects gRPC metadata
 
-- **WHEN** `web` handles a browser or callback request and calls an internal gRPC service
+- **WHEN** `web` handles a browser or webhook request and calls an internal gRPC service
 - **THEN** it exports a server span and injects W3C trace context into the outgoing gRPC call metadata
 
 #### Scenario: gRPC servers record server spans
@@ -22,7 +22,7 @@ Marketplace browser and gRPC hops on the checkout and hosted-payment callback pa
 
 ### Requirement: Outbox rows carry serialized span context
 
-Orders, payment, and inventory outbox writes SHALL persist the active span context in a dedicated column in the same database transaction as the outbox event so Debezium can restore the trace after CDC.
+Orders, inventory, and checkout outbox writes SHALL persist the active span context in a dedicated column in the same database transaction as the outbox event so Debezium can restore the trace after CDC.
 
 #### Scenario: Outbox insert stores tracing context
 
@@ -32,7 +32,7 @@ Orders, payment, and inventory outbox writes SHALL persist the active span conte
 #### Scenario: Schema exists for all three outboxes
 
 - **WHEN** marketplace migrations for this change are applied
-- **THEN** `orders_outbox`, `payment_outbox`, and `inventory_outbox` each have a tracing span context column
+- **THEN** `orders_outbox`, `inventory_outbox`, and `checkout_outbox` each have a tracing span context column
 
 ### Requirement: Debezium EventRouter emits Kafka traceparent
 
@@ -59,22 +59,22 @@ Kafka consumers for marketplace domain events SHALL extract W3C context from mes
 
 #### Scenario: Payment outbox consumer path continues context
 
-- **WHEN** a consumer processes a payment outbox–routed event that carries `traceparent`
+- **WHEN** Inventory consumes a stock commit or release command that Checkout wrote to its outbox while handling a gateway webhook
 - **THEN** it creates a child span under the same TraceId
 
 ### Requirement: End-to-end checkout TraceId is verifiable
 
-A Talos-dev checkout and hosted-payment callback SHALL produce a single connected TraceId spanning web, domain services, outbox/Debezium, and consumers as documented. Kafka Connect SHALL export its spans to the same platform agent. Mesh proxy spans are not required for verification.
+A checkout and gateway webhook SHALL produce a single connected TraceId spanning web, domain services, outbox/Debezium, and consumers as documented. Kafka Connect SHALL export its spans to the same platform agent. Mesh proxy spans are not required for verification.
 
 #### Scenario: Checkout waterfall is connected
 
-- **WHEN** an operator places an order through Talos-dev checkout
+- **WHEN** an operator places an order through checkout in an environment with the gateway enabled
 - **THEN** HyperDX shows one TraceId covering web → CreateOrder → outbox → Debezium → inventory handling, including DB child spans where those services query Postgres
 
 #### Scenario: Hosted payment callback is connected
 
-- **WHEN** an operator completes a hosted-payment success or failure callback on Talos-dev
-- **THEN** HyperDX shows one TraceId covering the callback → payment gRPC → payment outbox path as applicable
+- **WHEN** the gateway delivers a `payment.succeeded` webhook
+- **THEN** HyperDX shows one TraceId covering web's webhook route → Checkout webhook handling → checkout outbox → Debezium → Inventory commit
 
 #### Scenario: Mesh proxy services are absent from the waterfall
 

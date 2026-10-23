@@ -1,56 +1,87 @@
 package tests
 
 import (
+	"encoding/json"
+	"net/http"
+	"sync/atomic"
 	"testing"
-	"time"
 
-	"github.com/phuchoang2603/refurbished-marketplace/shared/messaging"
 	checkoutv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1"
 )
 
-func TestPaymentDeadlineReconcilesRatherThanReleasing(t *testing.T) {
-	db := newCheckoutDB(t)
-	checkoutService, checkoutID, orderID := submitForTransition(t, db)
-	sendResult(t, checkoutService, checkoutID, orderID, messaging.EventTypeCheckoutOrderCreated, "create-order", 1, &checkoutv1.OrderCreated{})
-	sendResult(t, checkoutService, checkoutID, orderID, messaging.EventTypeCheckoutStockReserved, "reserve-stock", 2, &checkoutv1.StockReserved{})
-	sendResult(t, checkoutService, checkoutID, orderID, messaging.EventTypeCheckoutSessionReady, "create-session", 3, &checkoutv1.PaymentSessionReady{
-		PaymentSessionId: "session-1", ReturnUrl: "https://example.com/pay", ExpiresAtUnixMs: time.Now().Add(time.Hour).UnixMilli(),
-	})
-	if _, err := db.ExecContext(t.Context(), "UPDATE checkouts SET deadline_at = NOW() - INTERVAL '1 minute' WHERE id = $1", checkoutID); err != nil {
-		t.Fatal(err)
+func TestPaymentDeadlineReadsOnceAndAcceptsLateWebhook(t *testing.T) {
+	for _, outcome := range []string{"OPEN", "ERROR", "SUCCEEDED", "EXPIRED"} {
+		t.Run(outcome, func(t *testing.T) {
+			db := newCheckoutDB(t)
+			var reads atomic.Int32
+			var orderID string
+			svc := gatewayService(t, db, func(w http.ResponseWriter, r *http.Request) {
+				if r.Method == http.MethodPost {
+					writePayment(t, w)
+					return
+				}
+				reads.Add(1)
+				if outcome == "ERROR" {
+					w.WriteHeader(http.StatusServiceUnavailable)
+					return
+				}
+				if err := json.NewEncoder(w).Encode(map[string]any{"payment_id": "payment-1", "order_reference": orderID, "status": outcome}); err != nil {
+					t.Error(err)
+				}
+			})
+			checkoutID, createdOrderID := submitWithService(t, db, svc)
+			orderID = createdOrderID
+			reserveForPayment(t, svc, checkoutID, orderID)
+			if _, err := svc.ProcessGatewayOperation(t.Context()); err != nil {
+				t.Fatal(err)
+			}
+			if _, err := db.ExecContext(t.Context(), "UPDATE checkouts SET deadline_at=NOW()-INTERVAL '1 second' WHERE id=$1", checkoutID); err != nil {
+				t.Fatal(err)
+			}
+			if claimed, err := svc.ProcessDue(t.Context()); err != nil || !claimed {
+				t.Fatalf("deadline %v %v", claimed, err)
+			}
+			if claimed, err := svc.ProcessDue(t.Context()); err != nil || claimed {
+				t.Fatalf("must not repeat status read %v %v", claimed, err)
+			}
+			if reads.Load() != 1 {
+				t.Fatalf("status reads=%d", reads.Load())
+			}
+			if outcome == "SUCCEEDED" {
+				assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_COMMITTING_STOCK, 3)
+				return
+			}
+			if outcome == "EXPIRED" {
+				assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK, 3)
+				return
+			}
+			assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_NEEDS_REVIEW, 2)
+			var exceptions int
+			if err := db.QueryRowContext(t.Context(), "SELECT count(*) FROM checkout_exceptions WHERE resolved_at IS NULL").Scan(&exceptions); err != nil || exceptions != 1 {
+				t.Fatalf("exception %d %v", exceptions, err)
+			}
+			sendWebhook(t, svc, "late-success", "payment.succeeded", orderID)
+			assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_COMMITTING_STOCK, 3)
+			if err := db.QueryRowContext(t.Context(), "SELECT count(*) FROM checkout_exceptions WHERE resolved_at IS NULL").Scan(&exceptions); err != nil || exceptions != 0 {
+				t.Fatalf("resolved exception %d %v", exceptions, err)
+			}
+		})
 	}
-	if claimed, err := checkoutService.ProcessDue(t.Context()); err != nil || !claimed {
-		t.Fatalf("payment deadline: claimed=%v err=%v", claimed, err)
-	}
-	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_RECONCILING, 4)
-	sendResult(t, checkoutService, checkoutID, orderID, messaging.EventTypeCheckoutPaymentUncertain, "cancel-session", 5, &checkoutv1.PaymentUncertain{PaymentSessionId: "session-1"})
-	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_NEEDS_REVIEW, 4)
-	var exceptions int
-	if err := db.QueryRowContext(t.Context(), "SELECT count(*) FROM checkout_exceptions WHERE checkout_id = $1", checkoutID).Scan(&exceptions); err != nil || exceptions != 1 {
-		t.Fatalf("uncertain outcome must be recorded: count=%d err=%v", exceptions, err)
-	}
-	sendResult(t, checkoutService, checkoutID, orderID, messaging.EventTypeCheckoutPaymentSucceeded, "create-session", 3, &checkoutv1.PaymentSucceeded{PaymentSessionId: "session-1"})
-	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_COMMITTING_STOCK, 5)
 }
 
-func TestLatePaidAfterFailedRecordsFinancialException(t *testing.T) {
+func TestLateSuccessAfterExpiryRecordsFinancialException(t *testing.T) {
 	db := newCheckoutDB(t)
-	checkoutService, checkoutID, orderID := submitForTransition(t, db)
-	sendResult(t, checkoutService, checkoutID, orderID, messaging.EventTypeCheckoutOrderCreated, "create-order", 1, &checkoutv1.OrderCreated{})
-	sendResult(t, checkoutService, checkoutID, orderID, messaging.EventTypeCheckoutStockReserved, "reserve-stock", 2, &checkoutv1.StockReserved{})
-	sendResult(t, checkoutService, checkoutID, orderID, messaging.EventTypeCheckoutSessionReady, "create-session", 3, &checkoutv1.PaymentSessionReady{
-		PaymentSessionId: "session-1", ReturnUrl: "https://example.com/pay", ExpiresAtUnixMs: time.Now().Add(time.Hour).UnixMilli(),
-	})
-	sendResult(t, checkoutService, checkoutID, orderID, messaging.EventTypeCheckoutPaymentFailed, "create-session", 3, &checkoutv1.PaymentFailed{PaymentSessionId: "session-1"})
-	sendResult(t, checkoutService, checkoutID, orderID, messaging.EventTypeCheckoutStockReleased, "cancel-stock", 5, &checkoutv1.StockReleased{})
-	sendResult(t, checkoutService, checkoutID, orderID, messaging.EventTypeCheckoutOrderFinalized, "finalize-failed", 6, &checkoutv1.OrderFinalized{Status: checkoutv1.FinalOrderStatus_FINAL_ORDER_STATUS_FAILED})
-	late := sendResult(t, checkoutService, checkoutID, orderID, messaging.EventTypeCheckoutPaymentSucceeded, "create-session", 3, &checkoutv1.PaymentSucceeded{PaymentSessionId: "session-1"})
-	if err := checkoutService.HandleResult(t.Context(), late); err != nil {
-		t.Fatal(err)
+	svc, checkoutID, orderID := readyPayment(t, db)
+	sendWebhook(t, svc, "expired", "payment.expired", orderID)
+	sendWebhook(t, svc, "late-success", "payment.succeeded", orderID)
+	response, err := svc.HandleGatewayWebhook(t.Context(), webhookRequest(t, "late-success", "payment.succeeded", orderID))
+	if err != nil || response.GetResult() != checkoutv1.GatewayWebhookResult_GATEWAY_WEBHOOK_RESULT_DUPLICATE {
+		t.Fatalf("replay: %v %v", response, err)
 	}
-	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_FAILED, 5)
+	sendWebhook(t, svc, "repeated-expiry", "payment.expired", orderID)
+	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_NEEDS_REVIEW, 3)
 	var exceptions int
-	if err := db.QueryRowContext(t.Context(), "SELECT count(*) FROM checkout_exceptions WHERE checkout_id = $1 AND kind = 'contradictory_payment'", checkoutID).Scan(&exceptions); err != nil || exceptions != 1 {
-		t.Fatalf("late charge must require manual reconciliation: count=%d err=%v", exceptions, err)
+	if err := db.QueryRowContext(t.Context(), "SELECT count(*) FROM checkout_exceptions WHERE kind='contradictory_payment'").Scan(&exceptions); err != nil || exceptions != 1 {
+		t.Fatalf("financial exception %d %v", exceptions, err)
 	}
 }

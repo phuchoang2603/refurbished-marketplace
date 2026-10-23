@@ -4,7 +4,6 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/phuchoang2603/refurbished-marketplace/services/checkout/internal/service"
 	"github.com/phuchoang2603/refurbished-marketplace/shared/messaging"
 	checkoutv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1"
 	"google.golang.org/protobuf/proto"
@@ -20,7 +19,7 @@ func TestDeadlineRetryAfterWorkerRestart(t *testing.T) {
 	processed := make(chan bool, 2)
 	for range 2 {
 		workers.Go(func() {
-			restarted := service.New(db)
+			restarted := newTestService(db)
 			claimed, err := restarted.ProcessDue(t.Context())
 			if err != nil {
 				t.Errorf("process due: %v", err)
@@ -84,7 +83,7 @@ func TestReservationDeadlineFencesLateHold(t *testing.T) {
 	if _, err := db.ExecContext(t.Context(), "UPDATE checkouts SET deadline_at = NOW() - INTERVAL '1 minute' WHERE id = $1", checkoutID); err != nil {
 		t.Fatal(err)
 	}
-	claimed, err := service.New(db).ProcessDue(t.Context())
+	claimed, err := newTestService(db).ProcessDue(t.Context())
 	if err != nil || !claimed {
 		t.Fatalf("reservation timeout: claimed=%t, err=%v", claimed, err)
 	}

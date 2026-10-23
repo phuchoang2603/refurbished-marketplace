@@ -41,7 +41,7 @@ Mesh-wide default HTTP/gRPC retries SHALL be disabled, and bounded retries SHALL
 
 ### Requirement: Mutating browser requests are not blindly replayed
 
-Ingress SHALL NOT automatically retry browser checkout POSTs, cart increments, hosted-payment submissions, or payment callback POSTs. Mesh retry policies SHALL NOT retry payment or cart mutations solely because their Service is reachable through the waypoint. Duplicate provider callbacks SHALL remain safe at Payment without repeating browser cart side effects.
+Ingress SHALL NOT automatically retry browser checkout POSTs, cart increments, or gateway webhook POSTs. Mesh retry policies SHALL NOT retry checkout payment or cart mutations solely because their Service is reachable through the waypoint. Duplicate gateway webhooks SHALL remain safe at Checkout without repeating browser cart side effects.
 
 #### Scenario: Checkout POST response is lost
 
@@ -50,12 +50,12 @@ Ingress SHALL NOT automatically retry browser checkout POSTs, cart increments, h
 
 #### Scenario: Gateway callback is redelivered
 
-- **WHEN** the payment provider sends the same terminal callback again
-- **THEN** Payment preserves one definitive outcome and Web does not prematurely drain or duplicate cart changes
+- **WHEN** the payment gateway delivers the same event ID again
+- **THEN** Checkout preserves one definitive outcome and Web does not prematurely drain or duplicate cart changes
 
 ### Requirement: Route timeouts and retry budgets are visible
 
-Shop and pay HTTPRoutes SHALL bound total and per-backend request time. The configured mesh resilience policies SHALL cap retry pressure and expose timeout, retry, rejection, and outlier signals to the existing platform telemetry pipeline without replacing application OTLP spans or metrics.
+Shop HTTPRoutes SHALL bound total and per-backend request time. The configured mesh resilience policies SHALL cap retry pressure and expose timeout, retry, rejection, and outlier signals to the existing platform telemetry pipeline without replacing application OTLP spans or metrics.
 
 #### Scenario: Backend stalls
 

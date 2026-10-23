@@ -62,4 +62,30 @@ spec:
       remoteRef:
         key: {{ $secretKey }}
 {{- end }}
+{{- with .Values.services.checkout }}
+{{- if and .enabled .paymentGateway }}
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: {{ .paymentGateway.secretName }}
+  namespace: {{ $.Release.Namespace }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  refreshInterval: {{ default "1h" $.Values.externalSecrets.refreshInterval }}
+  secretStoreRef:
+    kind: {{ $.Values.externalSecrets.secretStoreRef.kind }}
+    name: {{ $.Values.externalSecrets.secretStoreRef.name }}
+  target:
+    name: {{ .paymentGateway.secretName }}
+    creationPolicy: Owner
+  data:
+{{- range $key := list "PAYMENT_GATEWAY_API_KEY" "PAYMENT_GATEWAY_WEBHOOK_SECRET" }}
+    - secretKey: {{ $key }}
+      remoteRef:
+        key: {{ $key }}
+{{- end }}
+{{- end }}
+{{- end }}
 {{- end }}

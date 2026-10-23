@@ -441,7 +441,7 @@ func CartSection(cart sharedviews.CartView) templ.Component {
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
-							templ_7745c5c3_Err = input.Input(input.InputArgs{Name: "shipping_name", Autocomplete: "name", Placeholder: "Full name"}).Render(ctx, templ_7745c5c3_Buffer)
+							templ_7745c5c3_Err = input.Input(input.InputArgs{Name: "shipping_name", Required: true, Autocomplete: "name", Placeholder: "Full name"}).Render(ctx, templ_7745c5c3_Buffer)
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}

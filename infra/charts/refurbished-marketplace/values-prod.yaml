@@ -1,11 +1,20 @@
+global:
+  imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
+  imageTag: 67e33cf6c22c42f7c29b1f635ec797b9ad8e6bb3
+  imagePullPolicy: Always
+
 # Prod overlay (Argo `prod-root` valueFiles). Doppler env is the cluster
 # `ecommerce/doppler-token` Secret, not this file.
 ingress:
   webHostname: shop.phuchoang.sbs
-  simulatorHostname: pay.phuchoang.sbs
 
 services:
   web:
     env:
-      HOSTED_PAYMENT_BASE_URL: https://pay.phuchoang.sbs
       PUBLIC_BASE_URL: https://shop.phuchoang.sbs
+  checkout:
+    env:
+      PAYMENT_GATEWAY_URL: http://edge.payment-gateway.svc.cluster.local:8080
+      CHECKOUT_RETURN_BASE_URL: https://shop.phuchoang.sbs
+    paymentGateway:
+      secretName: checkout-payment-gateway

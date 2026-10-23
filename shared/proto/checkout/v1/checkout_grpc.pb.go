@@ -19,8 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	CheckoutService_SubmitCheckout_FullMethodName = "/checkout.v1.CheckoutService/SubmitCheckout"
-	CheckoutService_GetCheckout_FullMethodName    = "/checkout.v1.CheckoutService/GetCheckout"
+	CheckoutService_SubmitCheckout_FullMethodName       = "/checkout.v1.CheckoutService/SubmitCheckout"
+	CheckoutService_GetCheckout_FullMethodName          = "/checkout.v1.CheckoutService/GetCheckout"
+	CheckoutService_HandleGatewayWebhook_FullMethodName = "/checkout.v1.CheckoutService/HandleGatewayWebhook"
 )
 
 // CheckoutServiceClient is the client API for CheckoutService service.
@@ -29,6 +30,7 @@ const (
 type CheckoutServiceClient interface {
 	SubmitCheckout(ctx context.Context, in *SubmitCheckoutRequest, opts ...grpc.CallOption) (*SubmitCheckoutResponse, error)
 	GetCheckout(ctx context.Context, in *GetCheckoutRequest, opts ...grpc.CallOption) (*CheckoutStatus, error)
+	HandleGatewayWebhook(ctx context.Context, in *HandleGatewayWebhookRequest, opts ...grpc.CallOption) (*HandleGatewayWebhookResponse, error)
 }
 
 type checkoutServiceClient struct {
@@ -59,12 +61,23 @@ func (c *checkoutServiceClient) GetCheckout(ctx context.Context, in *GetCheckout
 	return out, nil
 }
 
+func (c *checkoutServiceClient) HandleGatewayWebhook(ctx context.Context, in *HandleGatewayWebhookRequest, opts ...grpc.CallOption) (*HandleGatewayWebhookResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(HandleGatewayWebhookResponse)
+	err := c.cc.Invoke(ctx, CheckoutService_HandleGatewayWebhook_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // CheckoutServiceServer is the server API for CheckoutService service.
 // All implementations must embed UnimplementedCheckoutServiceServer
 // for forward compatibility.
 type CheckoutServiceServer interface {
 	SubmitCheckout(context.Context, *SubmitCheckoutRequest) (*SubmitCheckoutResponse, error)
 	GetCheckout(context.Context, *GetCheckoutRequest) (*CheckoutStatus, error)
+	HandleGatewayWebhook(context.Context, *HandleGatewayWebhookRequest) (*HandleGatewayWebhookResponse, error)
 	mustEmbedUnimplementedCheckoutServiceServer()
 }
 
@@ -80,6 +93,9 @@ func (UnimplementedCheckoutServiceServer) SubmitCheckout(context.Context, *Submi
 }
 func (UnimplementedCheckoutServiceServer) GetCheckout(context.Context, *GetCheckoutRequest) (*CheckoutStatus, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetCheckout not implemented")
+}
+func (UnimplementedCheckoutServiceServer) HandleGatewayWebhook(context.Context, *HandleGatewayWebhookRequest) (*HandleGatewayWebhookResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method HandleGatewayWebhook not implemented")
 }
 func (UnimplementedCheckoutServiceServer) mustEmbedUnimplementedCheckoutServiceServer() {}
 func (UnimplementedCheckoutServiceServer) testEmbeddedByValue()                         {}
@@ -138,6 +154,24 @@ func _CheckoutService_GetCheckout_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _CheckoutService_HandleGatewayWebhook_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HandleGatewayWebhookRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CheckoutServiceServer).HandleGatewayWebhook(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CheckoutService_HandleGatewayWebhook_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CheckoutServiceServer).HandleGatewayWebhook(ctx, req.(*HandleGatewayWebhookRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // CheckoutService_ServiceDesc is the grpc.ServiceDesc for CheckoutService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -152,6 +186,10 @@ var CheckoutService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetCheckout",
 			Handler:    _CheckoutService_GetCheckout_Handler,
+		},
+		{
+			MethodName: "HandleGatewayWebhook",
+			Handler:    _CheckoutService_HandleGatewayWebhook_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

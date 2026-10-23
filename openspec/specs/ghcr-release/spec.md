@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Define how container images under `infra/docker/` are built and published to GitHub Container Registry so Talos-dev and prod can pin coordinated image tags.
+Define how container images under `infra/docker/` are built and published to GitHub Container Registry so the Talos prod development server can pin coordinated image tags.
 
 ## Requirements
 

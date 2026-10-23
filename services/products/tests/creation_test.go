@@ -25,7 +25,7 @@ func TestCreateProductDurableEvent(t *testing.T) {
 	store := newProductsStore(t)
 	svc := service.New(store)
 	server := grpcserver.New(svc)
-	req := &productsv1.CreateProductRequest{Name: "Phone", Description: "Refurbished", MerchantId: uuid.NewString(), PriceCents: 1000, InitialStock: proto.Int32(0)}
+	req := &productsv1.CreateProductRequest{Category: "phone", Condition: "good", Name: "Phone", Description: "Refurbished", MerchantId: uuid.NewString(), PriceCents: 1000, InitialStock: proto.Int32(0)}
 	created, err := server.CreateProduct(t.Context(), req)
 	if err != nil {
 		t.Fatal(err)
@@ -63,7 +63,7 @@ func TestCreateProductDurableEvent(t *testing.T) {
 func TestCreateProductRollbackAndQuantityPresence(t *testing.T) {
 	store := newProductsStore(t)
 	server := grpcserver.New(service.New(store))
-	req := &productsv1.CreateProductRequest{Name: "Phone", MerchantId: uuid.NewString(), PriceCents: 1000}
+	req := &productsv1.CreateProductRequest{Category: "phone", Condition: "good", Name: "Phone", MerchantId: uuid.NewString(), PriceCents: 1000}
 	for _, qty := range []*int32{nil, proto.Int32(-1)} {
 		req.InitialStock = qty
 		if _, err := server.CreateProduct(t.Context(), req); status.Code(err) != codes.InvalidArgument {

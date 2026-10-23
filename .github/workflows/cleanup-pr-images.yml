@@ -28,8 +28,7 @@ jobs:
           images = [
               "web", "users", "users-migrator", "products", "search",
               "inventory", "inventory-migrator",
-              "orders", "orders-migrator", "cart", "payment", "payment-migrator",
-              "payment-gateway-simulator", "connect-debezium",
+              "orders", "orders-migrator", "cart", "connect-debezium",
           ]
 
           def gh(*args):

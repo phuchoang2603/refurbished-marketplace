@@ -64,12 +64,12 @@ Kafka consumer handle and error paths in `shared/messaging` SHALL emit structure
 
 ### Requirement: Sensitive material is not logged in full
 
-Structured logging helpers and access-log middleware SHALL NOT emit full payment card data, passwords, or raw payment gateway payloads in log attributes.
+Structured logging helpers and access-log middleware SHALL NOT emit full payment card data, passwords, gateway API keys, webhook signing secrets, checkout tokens, or raw payment gateway payloads in log attributes.
 
 #### Scenario: Payment callback path spot-check
 
-- **WHEN** hosted-payment callback or payment processing paths log errors
-- **THEN** logs do not contain full card numbers, CVV, or complete raw gateway request/response bodies
+- **WHEN** gateway webhook handling or gateway client paths log errors
+- **THEN** logs do not contain full card numbers, CVV, secrets, checkout tokens, or complete raw gateway request/response bodies
 
 ### Requirement: Logging documentation
 
@@ -82,7 +82,7 @@ The repository SHALL document structured logging field conventions, the JSON key
 
 ### Requirement: Checkout hot paths emit domain fields
 
-Orders, products (inventory), and payment services SHALL emit structured slog lines on checkout hot paths that include domain identifiers such as `order_id` (and related `merchant_id` / `buyer_user_id` / outcome fields when applicable), using context so `trace_id` is present when a span is active.
+Orders, products (inventory), and checkout services SHALL emit structured slog lines on checkout hot paths that include domain identifiers such as `order_id` (and related `merchant_id` / `buyer_user_id` / outcome fields when applicable), using context so `trace_id` is present when a span is active.
 
 #### Scenario: Order create logs order_id
 
@@ -96,8 +96,8 @@ Orders, products (inventory), and payment services SHALL emit structured slog li
 
 #### Scenario: Payment terminal outcome is logged
 
-- **WHEN** payment applies a gateway webhook terminal success or failure
-- **THEN** a structured log includes `order_id` and the payment status / event type without card or raw gateway payloads
+- **WHEN** checkout applies a verified gateway webhook or status read
+- **THEN** a structured log includes `order_id`, the gateway payment ID, and the payment status / event type without card or raw gateway payloads
 
 ### Requirement: Log lines follow the platform log contract
 

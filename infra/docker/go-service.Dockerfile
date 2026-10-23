@@ -14,9 +14,7 @@
 #   search                    ./services/search/cmd/search                   search                    9098
 #   orders                    ./services/orders/cmd/orders                   orders                    9093
 #   cart                      ./services/cart/cmd/cart                       cart                      9094
-#   payment                   ./services/payment/cmd/payment                 payment                   9096
 #   checkout                  ./services/checkout/cmd/checkout               checkout                  9099
-#   payment-gateway-simulator ./tools/payment-gateway-simulator              payment-gateway-simulator 8097
 
 FROM golang:1.26.5-alpine AS builder
 
@@ -28,7 +26,6 @@ WORKDIR /src
 COPY go.work go.work.sum ./
 COPY shared ./shared
 COPY services ./services
-COPY tools ./tools
 
 RUN go mod download
 
