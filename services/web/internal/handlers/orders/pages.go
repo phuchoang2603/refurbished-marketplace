@@ -36,9 +36,10 @@ func OrderToView(order *ordersv1.Order) sharedviews.OrderView {
 	return sharedviews.OrderView{ID: order.GetId(), BuyerUserID: order.GetBuyerUserId(), Status: order.GetStatus().String(), TotalCents: order.GetTotalCents(), Items: items, CreatedAt: shared.FormatTimestamp(order.GetCreatedAt()), UpdatedAt: shared.FormatTimestamp(order.GetUpdatedAt())}
 }
 
-func applyHostedPaymentState(view *sharedviews.OrderView, status, failureReason string) {
+func applyHostedPaymentState(view *sharedviews.OrderView, status, failureReason, paymentURL string) {
 	view.PaymentStatus = status
 	view.PaymentFailureReason = failureReason
+	view.PaymentURL = paymentURL
 }
 
 func (h *Handler) handleGetOrderByID(w http.ResponseWriter, r *http.Request) {
@@ -69,7 +70,7 @@ func (h *Handler) handleGetOrderByID(w http.ResponseWriter, r *http.Request) {
 	if h.deps.Checkout != nil {
 		checkout, err := h.deps.Checkout.GetCheckout(webAuth.OutgoingAccessContext(r), &checkoutv1.GetCheckoutRequest{OrderId: id, BuyerUserId: buyerUserID})
 		if err == nil && checkout != nil && checkout.GetOrderId() == id {
-			applyHostedPaymentState(&view, checkout.GetPaymentStatus(), checkout.GetFailureReason())
+			applyHostedPaymentState(&view, checkout.GetPaymentStatus(), checkout.GetFailureReason(), checkout.GetHostedCheckoutUrl())
 		} else if err != nil && !shared.IsUnavailableError(err) && !shared.IsNotFoundError(err) {
 			shared.WriteGRPCError(w, r, err)
 			return

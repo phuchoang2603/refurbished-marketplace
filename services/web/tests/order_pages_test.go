@@ -48,3 +48,42 @@ func TestOrderPageUsesCheckoutTerminalStatus(t *testing.T) {
 		})
 	}
 }
+
+func TestOrderPageOffersRetryPaymentForOpenPendingOrder(t *testing.T) {
+	const paymentURL = "https://pay.example/checkout/open-1"
+	for _, tc := range []struct {
+		name          string
+		status        ordersv1.OrderStatus
+		paymentStatus string
+		paymentURL    string
+		wantButton    bool
+	}{
+		{name: "open pending order", status: ordersv1.OrderStatus_ORDER_STATUS_PENDING, paymentStatus: "OPEN", paymentURL: paymentURL, wantButton: true},
+		{name: "open settled order", status: ordersv1.OrderStatus_ORDER_STATUS_PAID, paymentStatus: "OPEN", paymentURL: paymentURL, wantButton: false},
+		{name: "open payment without hosted url", status: ordersv1.OrderStatus_ORDER_STATUS_PENDING, paymentStatus: "OPEN", wantButton: false},
+		{name: "expired payment", status: ordersv1.OrderStatus_ORDER_STATUS_PENDING, paymentStatus: "EXPIRED", paymentURL: paymentURL, wantButton: false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			orders := &fakes.OrdersService{GetFn: func(_ context.Context, id string) (*ordersv1.Order, error) {
+				return &ordersv1.Order{Id: id, BuyerUserId: "user-1", MerchantId: "merchant-1", Status: tc.status, Items: []*ordersv1.OrderItem{{ProductId: "prod-1"}}}, nil
+			}}
+			checkout := &fakes.CheckoutService{GetFn: func(_ context.Context, r *checkoutv1.GetCheckoutRequest) (*checkoutv1.CheckoutStatus, error) {
+				return &checkoutv1.CheckoutStatus{OrderId: r.GetOrderId(), PaymentStatus: tc.paymentStatus, HostedCheckoutUrl: tc.paymentURL}, nil
+			}}
+			r := httptest.NewRequest(http.MethodGet, "/orders/order-1", nil)
+			r.AddCookie(&http.Cookie{Name: auth.AccessCookieName, Value: signedAccessToken(t, "user-1")})
+			w := httptest.NewRecorder()
+			newTestRouter(t, routerDeps{orders: orders, checkout: checkout}).ServeHTTP(w, r)
+			if w.Code != http.StatusOK {
+				t.Fatalf("status=%d body=%s", w.Code, w.Body.String())
+			}
+			body := w.Body.String()
+			if strings.Contains(body, "Retry payment") != tc.wantButton {
+				t.Fatalf("retry button present=%t, want %t", strings.Contains(body, "Retry payment"), tc.wantButton)
+			}
+			if tc.wantButton && !strings.Contains(body, `href="`+paymentURL+`"`) {
+				t.Fatalf("missing hosted checkout link in %s", body)
+			}
+		})
+	}
+}

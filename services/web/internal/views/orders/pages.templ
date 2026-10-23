@@ -2,6 +2,7 @@ package orders
 
 import templpkg "github.com/a-h/templ"
 import badge "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/components/badge"
+import button "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/components/button"
 import card "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/components/card"
 import page "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/components/page"
 import sharedviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/shared"
@@ -57,8 +58,13 @@ templ OrderDetailSection(order sharedviews.OrderView) {
 </p>
 			if order.PaymentStatus != "" {
 				<p><strong>Payment status:</strong> @badge.Badge(order.PaymentStatus)</p>
-				if order.Status == "PENDING" {
+				if order.Status == "ORDER_STATUS_PENDING" {
 					<p role="status" class="text-sm text-muted-foreground">Payment is being reconciled and stock settlement is pending. Your order is not final yet.</p>
+				}
+				if order.Status == "ORDER_STATUS_PENDING" && order.PaymentStatus == "OPEN" && order.PaymentURL != "" {
+					@button.Button(button.ButtonArgs{AsChild: true, Class: "w-fit"}) {
+						<a href={ order.PaymentURL }>Retry payment</a>
+					}
 				}
 				if order.PaymentFailureReason != "" {
 					<p class="text-sm text-muted-foreground">{ order.PaymentFailureReason }</p>
