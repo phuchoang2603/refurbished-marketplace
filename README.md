@@ -4,6 +4,8 @@ Learning project for distributed Go services around a refurbished-goods marketpl
 
 ## Architecture
 
+![Marketplace architecture: web edge, domain services, durable checkout, catalog projections, and external payment gateway.](./docs/diagrams/architecture.svg)
+
 | Service              | Responsibility                | Notes                                              |
 | -------------------- | ----------------------------- | -------------------------------------------------- |
 | `services/web`       | Browser edge and SSR          | `templ`, Datastar fragments, internal gRPC clients |

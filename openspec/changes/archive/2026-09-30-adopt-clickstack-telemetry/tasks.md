@@ -30,7 +30,7 @@
 
 - [x] 6.1 Rewrite `docs/deployment/observability.md` for HyperDX: the telemetry contract table (OTLP to `otel-agent`, stdout JSON, `service.name` annotation), the internal HyperDX address, per-signal arrival checks, HyperDX searches by service, trace ID, and `order_id`, trace-to-log steps, RED chart queries on `http.server.request.duration` and the RPC duration metric, and the promoted log keys; verify `rg -in "victoria|grafana|vmagent|logsql|traceql|9100" docs/deployment/observability.md` returns nothing
 - [x] 6.2 Update `docs/deployment/gitops.md` (component table, platform ownership line, CRD check), `docs/deployment/cilium.md` (observe-path paragraph and Grafana Gateway/tunnel rows), `docs/architecture.md` (Observe row), and `docs/development/code-generation.md` (the `shared/observe/metric` row); verify `rg -in "victoria|vmpodscrape|grafana|monitoring|:9100" docs --glob '*.md'` returns nothing
-- [x] 6.3 Update `docs/diagrams/architecture.excalidraw` and the matching text in `architecture.svg` so the observe path shows `otel-agent` → prod ClickStack; verify neither file mentions Victoria
+- [x] 6.3 Update `docs/diagrams/architecture.svg` so the observe path shows `otel-agent` → prod ClickStack; verify it does not mention Victoria
 
 ## 7. Rollout verification (prod)
 

@@ -1,0 +1,732 @@
+{
+  "width": 2200,
+  "height": 1600,
+  "eyebrow": "REFURBISHED MARKETPLACE · RUNTIME + DATA FLOWS",
+  "title": "System architecture: deployable units and the data they exchange",
+  "description": "Web is the public HTTP edge. Internal gRPC serves identity, listings, search, carts, stock reads, orders and checkout. Debezium streams MongoDB and PostgreSQL outboxes to Kafka. Independent catalog consumers populate Meilisearch and seed inventory. Checkout coordinates Orders and Inventory through versioned Kafka commands and results, calls the external gateway, and verifies signed outcomes forwarded by Web.",
+  "zones": [
+    { "box": [15, 125, 190, 180], "label": "OUTSIDE", "fill": "#f7f8fa", "dashed": true },
+    {
+      "box": [235, 110, 1570, 1285],
+      "label": "TALOS · prod / namespace ecommerce · Istio ambient STRICT mTLS",
+      "fill": "#edf0f5",
+      "dashed": false
+    },
+    {
+      "box": [270, 765, 1480, 155],
+      "label": "NAMESPACE kafka · Strimzi TLS + ambient mTLS",
+      "fill": "#e5eaf2",
+      "dashed": false
+    },
+    {
+      "box": [1860, 125, 310, 665],
+      "label": "PAYMENT-GATEWAY · external system",
+      "fill": "#e9e9f5",
+      "dashed": false
+    }
+  ],
+  "nodes": [
+    {
+      "id": "browser",
+      "box": [35, 170, 150, 95],
+      "title": "Browser",
+      "tag": "actor",
+      "lines": ["shopper / seller"],
+      "icon": "browser",
+      "support": false
+    },
+    {
+      "id": "cloudflare",
+      "box": [290, 170, 230, 95],
+      "title": "Cloudflare Tunnel",
+      "tag": "ingress",
+      "lines": ["public shop hostname"],
+      "icon": "cloud",
+      "support": false
+    },
+    {
+      "id": "istio",
+      "box": [590, 170, 230, 95],
+      "title": "Istio Gateway",
+      "tag": "ingress",
+      "lines": ["Gateway API", "shop → Web"],
+      "icon": "gateway",
+      "support": false
+    },
+    {
+      "id": "web",
+      "box": [980, 170, 260, 95],
+      "title": "Web",
+      "tag": "Go / HTTP :8080",
+      "lines": ["templ + Datastar", "cookies, snapshots, progress"],
+      "icon": "service",
+      "support": false
+    },
+    {
+      "id": "gateway",
+      "box": [1885, 170, 260, 130],
+      "title": "Payment gateway",
+      "tag": "external API",
+      "lines": ["Edge API + hosted checkout", "payment outcomes / notifier"],
+      "icon": "gateway",
+      "support": false
+    },
+    {
+      "id": "users",
+      "box": [290, 425, 230, 100],
+      "title": "Users",
+      "tag": "Go / gRPC :9091",
+      "lines": ["identity + JWT", "refresh sessions"],
+      "icon": "service",
+      "support": false
+    },
+    {
+      "id": "products",
+      "box": [590, 425, 230, 100],
+      "title": "Products",
+      "tag": "Go / gRPC :9092",
+      "lines": ["listing identity + pricing", "category / condition"],
+      "icon": "service",
+      "support": false
+    },
+    {
+      "id": "search",
+      "box": [890, 425, 230, 100],
+      "title": "Search",
+      "tag": "Go / gRPC :9098",
+      "lines": ["browse + text query", "catalog projection consumer"],
+      "icon": "service",
+      "support": false
+    },
+    {
+      "id": "cart",
+      "box": [1190, 425, 230, 100],
+      "title": "Cart",
+      "tag": "Go / gRPC :9094",
+      "lines": ["merchant-scoped groups", "display snapshots"],
+      "icon": "service",
+      "support": false
+    },
+    {
+      "id": "checkout",
+      "box": [1490, 425, 230, 100],
+      "title": "Checkout",
+      "tag": "Go / gRPC :9099",
+      "lines": ["durable saga + recovery", "gateway operations"],
+      "icon": "service",
+      "support": false
+    },
+    {
+      "id": "users-db",
+      "box": [290, 610, 230, 100],
+      "title": "PostgreSQL",
+      "tag": "users",
+      "lines": ["accounts / sessions", "account outbox"],
+      "icon": "database",
+      "support": false
+    },
+    {
+      "id": "catalog-db",
+      "box": [590, 610, 230, 100],
+      "title": "MongoDB",
+      "tag": "products",
+      "lines": ["catalog.listings", "catalog.catalog_outbox"],
+      "icon": "database",
+      "support": false
+    },
+    {
+      "id": "meili",
+      "box": [890, 610, 230, 100],
+      "title": "Meilisearch",
+      "tag": "search",
+      "lines": ["catalog read model", "not source of truth"],
+      "icon": "database",
+      "support": false
+    },
+    {
+      "id": "cart-db",
+      "box": [1190, 610, 230, 100],
+      "title": "Redis / Valkey",
+      "tag": "cart",
+      "lines": ["ephemeral cart state"],
+      "icon": "database",
+      "support": false
+    },
+    {
+      "id": "checkout-db",
+      "box": [1490, 610, 230, 100],
+      "title": "PostgreSQL",
+      "tag": "checkout",
+      "lines": ["saga / gateway operations", "inbox + outbox"],
+      "icon": "database",
+      "support": false
+    },
+    {
+      "id": "debezium",
+      "box": [290, 810, 230, 90],
+      "title": "Debezium",
+      "tag": "Kafka Connect",
+      "lines": ["Mongo + Postgres CDC"],
+      "icon": "service",
+      "support": false
+    },
+    {
+      "id": "kafka",
+      "box": [590, 810, 1130, 90],
+      "title": "Kafka",
+      "tag": "Strimzi",
+      "lines": ["products.created · users.account-created.v1", "checkout.*.v1 commands / results"],
+      "icon": "broker",
+      "support": false
+    },
+    {
+      "id": "inventory",
+      "box": [890, 995, 230, 100],
+      "title": "Inventory",
+      "tag": "Go / gRPC :9097",
+      "lines": ["seed / reserve stock", "commit or release holds"],
+      "icon": "service",
+      "support": false
+    },
+    {
+      "id": "orders",
+      "box": [1190, 995, 230, 100],
+      "title": "Orders",
+      "tag": "Go / gRPC :9093",
+      "lines": ["merchant-scoped lifecycle", "pending → paid / failed"],
+      "icon": "service",
+      "support": false
+    },
+    {
+      "id": "account-projection",
+      "box": [1490, 995, 230, 100],
+      "title": "Redis",
+      "tag": "checkout",
+      "lines": ["account creation times", "consumer runs in Checkout"],
+      "icon": "database",
+      "support": true
+    },
+    {
+      "id": "inventory-db",
+      "box": [890, 1165, 230, 90],
+      "title": "PostgreSQL",
+      "tag": "inventory",
+      "lines": ["stock / reservations", "inbox + outbox"],
+      "icon": "database",
+      "support": false
+    },
+    {
+      "id": "orders-db",
+      "box": [1190, 1165, 230, 90],
+      "title": "PostgreSQL",
+      "tag": "orders",
+      "lines": ["orders / line items", "inbox + outbox"],
+      "icon": "database",
+      "support": false
+    },
+    {
+      "id": "gitops",
+      "box": [290, 1300, 430, 85],
+      "title": "Argo CD / Helm",
+      "tag": "GitOps",
+      "lines": ["platform root + marketplace prod-root"],
+      "icon": "service",
+      "support": true
+    },
+    {
+      "id": "secrets",
+      "box": [770, 1300, 430, 85],
+      "title": "External Secrets",
+      "tag": "secrets",
+      "lines": ["Doppler → service credentials"],
+      "icon": "service",
+      "support": true
+    },
+    {
+      "id": "observe",
+      "box": [1250, 1300, 470, 85],
+      "title": "otel-agent → ClickHouse / HyperDX",
+      "tag": "observability",
+      "lines": ["OTLP traces / metrics + JSON stdout logs"],
+      "icon": "service",
+      "support": true
+    }
+  ],
+  "edges": [
+    {
+      "id": "H1",
+      "flow": "web",
+      "points": [
+        [185, 215],
+        [290, 215]
+      ],
+      "badge": [235, 215],
+      "label": [237, 192, "HTTPS"]
+    },
+    {
+      "id": "H2",
+      "flow": "web",
+      "points": [
+        [520, 215],
+        [590, 215]
+      ],
+      "badge": [555, 215],
+      "label": [555, 192, "shop"]
+    },
+    {
+      "id": "H3",
+      "flow": "web",
+      "points": [
+        [820, 215],
+        [980, 215]
+      ],
+      "badge": [900, 215],
+      "label": [900, 192, "HTTP"]
+    },
+    {
+      "id": "web-bus",
+      "flow": "web",
+      "points": [
+        [1110, 265],
+        [1110, 340],
+        [405, 340]
+      ],
+      "bus": true
+    },
+    {
+      "id": "web-bus-right",
+      "flow": "web",
+      "points": [
+        [1110, 340],
+        [1780, 340],
+        [1780, 955],
+        [1005, 955]
+      ],
+      "bus": true
+    },
+    {
+      "id": "H4",
+      "flow": "web",
+      "points": [
+        [405, 340],
+        [405, 425]
+      ],
+      "anchor": "start",
+      "badge": [405, 380],
+      "label": [425, 383, "auth / sessions"]
+    },
+    {
+      "id": "H5",
+      "flow": "web",
+      "points": [
+        [705, 340],
+        [705, 425]
+      ],
+      "anchor": "start",
+      "badge": [705, 380],
+      "label": [725, 383, "listings / prices"]
+    },
+    {
+      "id": "H6",
+      "flow": "web",
+      "points": [
+        [1005, 340],
+        [1005, 425]
+      ],
+      "anchor": "start",
+      "badge": [1005, 380],
+      "label": [1025, 383, "browse / search"]
+    },
+    {
+      "id": "H7",
+      "flow": "web",
+      "points": [
+        [1305, 340],
+        [1305, 425]
+      ],
+      "anchor": "start",
+      "badge": [1305, 380],
+      "label": [1325, 383, "cart snapshots"]
+    },
+    {
+      "id": "H8",
+      "flow": "web",
+      "points": [
+        [1605, 340],
+        [1605, 425]
+      ],
+      "anchor": "start",
+      "badge": [1605, 380],
+      "label": [1625, 383, "submit / progress"]
+    },
+    {
+      "id": "H9",
+      "flow": "web",
+      "points": [
+        [1005, 955],
+        [1005, 995]
+      ],
+      "anchor": "end",
+      "badge": [1005, 975],
+      "label": [980, 979, "stock reads"]
+    },
+    {
+      "id": "H10",
+      "flow": "web",
+      "points": [
+        [1305, 955],
+        [1305, 995]
+      ],
+      "anchor": "start",
+      "badge": [1305, 975],
+      "label": [1330, 979, "order reads"]
+    },
+    {
+      "id": "D1",
+      "flow": "state",
+      "points": [
+        [405, 525],
+        [405, 610]
+      ],
+      "anchor": "start",
+      "badge": [405, 565],
+      "label": [426, 569, "owned state"]
+    },
+    {
+      "id": "D2",
+      "flow": "state",
+      "points": [
+        [705, 525],
+        [705, 610]
+      ],
+      "anchor": "start",
+      "badge": [705, 565],
+      "label": [726, 569, "owned state"]
+    },
+    {
+      "id": "D3",
+      "flow": "state",
+      "points": [
+        [1005, 525],
+        [1005, 610]
+      ],
+      "anchor": "start",
+      "badge": [1005, 565],
+      "label": [1026, 569, "state / reads"]
+    },
+    {
+      "id": "D4",
+      "flow": "state",
+      "points": [
+        [1305, 525],
+        [1305, 610]
+      ],
+      "anchor": "start",
+      "badge": [1305, 565],
+      "label": [1326, 569, "owned state"]
+    },
+    {
+      "id": "D5",
+      "flow": "state",
+      "points": [
+        [1605, 525],
+        [1605, 610]
+      ],
+      "anchor": "start",
+      "badge": [1605, 565],
+      "label": [1626, 569, "owned state"]
+    },
+    {
+      "id": "D6",
+      "flow": "state",
+      "points": [
+        [1005, 1095],
+        [1005, 1165]
+      ],
+      "anchor": "start",
+      "badge": [1005, 1130],
+      "label": [1030, 1134, "stock"]
+    },
+    {
+      "id": "D7",
+      "flow": "state",
+      "points": [
+        [1305, 1095],
+        [1305, 1165]
+      ],
+      "anchor": "start",
+      "badge": [1305, 1130],
+      "label": [1330, 1134, "orders"]
+    },
+    {
+      "id": "C1",
+      "flow": "catalog",
+      "points": [
+        [705, 710],
+        [705, 750],
+        [405, 750],
+        [405, 810]
+      ],
+      "badge": [570, 750],
+      "label": [650, 778, "catalog + account outboxes"]
+    },
+    {
+      "id": "account-outbox",
+      "flow": "catalog",
+      "points": [
+        [405, 710],
+        [405, 750]
+      ],
+      "bus": true
+    },
+    {
+      "id": "C2",
+      "flow": "catalog",
+      "points": [
+        [520, 855],
+        [590, 855]
+      ],
+      "badge": [555, 855],
+      "label": [555, 830, "CDC"]
+    },
+    {
+      "id": "C3",
+      "flow": "catalog",
+      "points": [
+        [1150, 810],
+        [1150, 475],
+        [1120, 475]
+      ],
+      "anchor": "end",
+      "badge": [1150, 565],
+      "label": [1130, 555, "catalog events"]
+    },
+    {
+      "id": "C4",
+      "flow": "catalog",
+      "points": [
+        [975, 900],
+        [975, 935],
+        [930, 935],
+        [930, 995]
+      ],
+      "anchor": "end",
+      "badge": [930, 935],
+      "label": [900, 938, "stock seed"]
+    },
+    {
+      "id": "C5",
+      "flow": "catalog",
+      "points": [
+        [1605, 900],
+        [1605, 995]
+      ],
+      "anchor": "start",
+      "badge": [1605, 942],
+      "label": [1630, 946, "account facts"]
+    },
+    {
+      "id": "S2",
+      "flow": "saga",
+      "points": [
+        [1465, 810],
+        [1465, 490],
+        [1490, 490]
+      ],
+      "anchor": "end",
+      "badge": [1465, 755],
+      "label": [1450, 759, "results"]
+    },
+    {
+      "id": "S3",
+      "flow": "saga",
+      "points": [
+        [1045, 900],
+        [1045, 995]
+      ],
+      "anchor": "start",
+      "badge": [1045, 925],
+      "label": [1080, 928, "stock commands"]
+    },
+    {
+      "id": "S4",
+      "flow": "saga",
+      "points": [
+        [1265, 900],
+        [1265, 995]
+      ],
+      "anchor": "start",
+      "badge": [1265, 925],
+      "label": [1290, 928, "order commands"]
+    },
+    {
+      "id": "S5",
+      "flow": "saga",
+      "points": [
+        [1305, 1255],
+        [1305, 1280],
+        [260, 1280],
+        [260, 855],
+        [290, 855]
+      ],
+      "badge": [730, 1280],
+      "label": [730, 1270, "Orders + Inventory result outboxes"]
+    },
+    {
+      "id": "inventory-results",
+      "flow": "saga",
+      "points": [
+        [1005, 1255],
+        [1005, 1280]
+      ],
+      "bus": true
+    },
+    {
+      "id": "S1",
+      "flow": "saga",
+      "points": [
+        [1605, 710],
+        [1605, 730],
+        [440, 730],
+        [440, 810]
+      ],
+      "fontSize": 12,
+      "label": [1320, 718, "Checkout command outbox"],
+      "badge": [1320, 730]
+    },
+    {
+      "id": "P1",
+      "flow": "payment",
+      "points": [
+        [1720, 460],
+        [1830, 460],
+        [1830, 235],
+        [1885, 235]
+      ],
+      "anchor": "end",
+      "badge": [1830, 390],
+      "label": [1815, 415, "payment API"]
+    },
+    {
+      "id": "P2",
+      "flow": "payment",
+      "points": [
+        [2015, 300],
+        [2015, 310],
+        [1170, 310],
+        [1170, 265]
+      ],
+      "badge": [1540, 310],
+      "label": [1540, 296, "signed outcomes → Web → Checkout"]
+    },
+    {
+      "id": "P3",
+      "flow": "payment",
+      "points": [
+        [110, 170],
+        [110, 90],
+        [2015, 90],
+        [2015, 170]
+      ],
+      "badge": [1550, 90],
+      "label": [1550, 78, "buyer redirect → hosted card entry"]
+    },
+    {
+      "id": "P4",
+      "flow": "payment",
+      "points": [
+        [1240, 245],
+        [1450, 245],
+        [1450, 400],
+        [1550, 400],
+        [1550, 425]
+      ],
+      "anchor": "end",
+      "badge": [1450, 285],
+      "label": [1430, 273, "forward raw webhook"]
+    },
+    {
+      "id": "legend",
+      "flow": "web",
+      "points": [
+        [30, 1475],
+        [70, 1475]
+      ]
+    },
+    {
+      "id": "legend",
+      "flow": "catalog",
+      "points": [
+        [750, 1475],
+        [790, 1475]
+      ]
+    },
+    {
+      "id": "legend",
+      "flow": "saga",
+      "points": [
+        [1470, 1475],
+        [1510, 1475]
+      ]
+    },
+    {
+      "id": "legend",
+      "flow": "payment",
+      "points": [
+        [30, 1525],
+        [70, 1525]
+      ]
+    },
+    {
+      "id": "legend",
+      "flow": "state",
+      "points": [
+        [750, 1525],
+        [790, 1525]
+      ]
+    }
+  ],
+  "notes": [
+    { "x": 1885, "y": 355, "text": "CHECKOUT PAYMENT ORDER", "size": 12, "mono": true },
+    { "x": 1885, "y": 385, "text": "1  Create pending order", "size": 13 },
+    { "x": 1885, "y": 414, "text": "2  Reserve inventory", "size": 13 },
+    { "x": 1885, "y": 443, "text": "3  Create gateway payment", "size": 13 },
+    { "x": 1885, "y": 472, "text": "4  Buyer completes payment", "size": 13 },
+    { "x": 1885, "y": 501, "text": "5  Verify + deduplicate webhook", "size": 13 },
+    { "x": 1885, "y": 530, "text": "6  Commit / release inventory", "size": 13 },
+    { "x": 1885, "y": 559, "text": "7  Finalize order", "size": 13 },
+    { "x": 1885, "y": 617, "text": "Redirect only after stock reserve", "size": 13 },
+    { "x": 1885, "y": 639, "text": "and gateway payment persistence.", "size": 13 },
+    { "x": 1885, "y": 685, "text": "No marketplace payment service.", "size": 13 },
+    { "x": 1885, "y": 707, "text": "Gateway owns hosted card entry.", "size": 13 },
+    { "x": 30, "y": 1440, "text": "FLOWS", "size": 13, "mono": true },
+    { "x": 85, "y": 1480, "text": "H · Web requests", "size": 16, "color": "#26364f" },
+    { "x": 85, "y": 1502, "text": "HTTP ingress + internal gRPC", "size": 13 },
+    { "x": 805, "y": 1480, "text": "C · Catalog + accounts", "size": 16, "color": "#26364f" },
+    { "x": 805, "y": 1502, "text": "CDC, projections and stock initialization", "size": 13 },
+    { "x": 1525, "y": 1480, "text": "S · Durable checkout", "size": 16, "color": "#26364f" },
+    { "x": 1525, "y": 1502, "text": "Kafka commands / results + local inboxes", "size": 13 },
+    { "x": 85, "y": 1530, "text": "P · Gateway payments", "size": 16, "color": "#26364f" },
+    { "x": 85, "y": 1552, "text": "API, hosted checkout and signed outcomes", "size": 13 },
+    { "x": 805, "y": 1530, "text": "D · Service persistence", "size": 16, "color": "#26364f" },
+    { "x": 805, "y": 1552, "text": "Owned database / cache access", "size": 13 },
+    {
+      "x": 1470,
+      "y": 1530,
+      "text": "Cilium CNI · ztunnel mTLS · domain gRPC waypoint",
+      "size": 14
+    },
+    {
+      "x": 1470,
+      "y": 1552,
+      "text": "Dashed boxes: shared support or embedded consumer role.",
+      "size": 12
+    },
+    {
+      "x": 1470,
+      "y": 1573,
+      "text": "H labels show calls; C / S / P labels name exchanged data.",
+      "size": 12
+    }
+  ]
+}
