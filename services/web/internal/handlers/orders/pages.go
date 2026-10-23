@@ -78,13 +78,14 @@ func (h *Handler) handleGetOrderByID(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	if view.PaymentStatus == "SUCCEEDED" {
+	switch view.PaymentStatus {
+	case "SUCCEEDED":
 		ids := make([]string, 0, len(order.GetItems()))
 		for _, item := range order.GetItems() {
 			ids = append(ids, item.GetProductId())
 		}
 		carthandlers.DrainPaidProductIDs(w, r, h.deps.Cart, ids, order.GetMerchantId())
-	} else if view.PaymentStatus == "EXPIRED" {
+	case "EXPIRED":
 		carthandlers.RotateExpiredCheckoutIntent(w, r, order.GetMerchantId(), checkoutIntentKey)
 	}
 
