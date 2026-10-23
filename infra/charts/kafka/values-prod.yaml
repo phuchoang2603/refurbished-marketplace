@@ -1,6 +1,6 @@
 global:
   imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
-  imageTag: e1ed17fba9d662b9865c205856efc0b00918fc2e
+  imageTag: main-beec3a06310c0e8523e7c17bf50237cbdcd1d722
   imagePullPolicy: Always
 
 # Prod Kafka: single broker (RF 1) to save RAM, 7-day retention, more partitions.
