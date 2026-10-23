@@ -4,7 +4,9 @@ Learning project for distributed Go services around a refurbished-goods marketpl
 
 ## Architecture
 
-![Marketplace architecture: web edge, domain services, durable checkout, catalog projections, and external payment gateway.](./docs/diagrams/architecture.svg)
+[![Marketplace architecture: web edge, domain services, durable checkout, catalog projections, and external payment gateway.](./docs/diagrams/architecture.svg)](./docs/diagrams/architecture.svg?raw=1)
+
+[Open diagram](./docs/diagrams/architecture.svg?raw=1) · [Editable layout](./docs/diagrams/architecture.json)
 
 | Service              | Responsibility                | Notes                                              |
 | -------------------- | ----------------------------- | -------------------------------------------------- |
