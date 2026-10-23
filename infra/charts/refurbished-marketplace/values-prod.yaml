@@ -1,6 +1,6 @@
 global:
   imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
-  imageTag: 7990d2fa57d9997ba215dfc6944a04be87a656a2
+  imageTag: 50c53f50e617b1a5619299741200ca4252db36a3
   imagePullPolicy: Always
 
 # Prod overlay (Argo `prod-root` valueFiles). Doppler env is the cluster
