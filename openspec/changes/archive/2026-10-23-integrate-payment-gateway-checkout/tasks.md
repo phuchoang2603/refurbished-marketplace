@@ -27,6 +27,7 @@
 - [x] 4.3 Add `POST /webhooks/payment-gateway` (64 KiB limit, raw body and `Gateway-Signature` forwarded to Checkout, 204/400/503 mapping), not attached to the public HTTPRoute; remove `/callbacks/hosted-payment` and web's Payment client
 - [x] 4.4 Redirect to Checkout's hosted checkout URL; drop `PAYMENT_SVC_ADDR`, `HOSTED_PAYMENT_BASE_URL` and `HOSTED_PAYMENT_CALLBACK_BASE_URL`
 - [x] 4.5 Order page and cart removal use SUCCEEDED / EXPIRED; render the checkout-unavailable message on `UNAVAILABLE`
+- [x] 4.6 Order page offers a retry payment link while the order is pending and the payment is open; it renders order facts without buyer identity or a users call
 
 ## 5. Removal
 
@@ -41,4 +42,5 @@
 - [x] 6.2 Add a network policy admitting the gateway's notifier pods in `payment-gateway` to web's webhook port
 - [x] 6.3 Remove payment Postgres keys from the Debezium connector secrets and document the new Doppler keys
 - [x] 6.4 Update architecture, checkout flow, tracing, secrets and GitOps docs that describe the Payment service or simulator
+- [x] 6.6 Pin prod image tags from CI: the release workflow writes the built SHA into both prod overlays after a successful build
 - [ ] 6.5 Run the Rollout in prod: configure the integration, deploy, hand over the `pay` hostname, smoke test approve / decline-then-approve / expiry and confirm each webhook was accepted once

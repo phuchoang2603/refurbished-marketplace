@@ -61,6 +61,14 @@ The payment deadline becomes the gateway expiry plus a configurable grace (initi
 
 Migration `002` renames `payment_session_id` to `gateway_payment_id` and `payment_return_url` to `hosted_checkout_url`, adds `gateway_snapshot`, `gateway_expires_at` and `gateway_last_event_at`, and creates `checkout_gateway_operations`. Buyer-visible status reads expose the hosted URL only in READY_TO_PAY.
 
+### Order page retry link
+
+The order page reads Checkout status and renders the hosted URL as a retry link only while the order is `ORDER_STATUS_PENDING` and the payment is `OPEN`. Checkout's status already returns every fact the page shows, so the page displays no buyer identity and makes no users call.
+
+### Prod image tags from CI
+
+The image release workflow writes the built SHA into `global.imageTag` in both prod overlays after the image matrix succeeds, and Argo CD auto-syncs the charts. Manual pinning goes away, and the workflow skips the write when the branch head no longer matches the built SHA.
+
 ### Configuration and environments
 
 Set only in the prod overlay: `PAYMENT_GATEWAY_URL` (`http://edge.payment-gateway.svc.cluster.local:8080`), `PAYMENT_GATEWAY_API_KEY` and `PAYMENT_GATEWAY_WEBHOOK_SECRET` from the `checkout-payment-gateway` ExternalSecret, and `CHECKOUT_RETURN_BASE_URL`. With no URL configured, `SubmitCheckout` returns `UNAVAILABLE` and web shows that checkout is unavailable; no order or reservation is created. Transport security for both directions comes from the Istio ambient mesh: `ecommerce` is enrolled and listed in Edge's `callerNamespaces`, so Checkout-to-Edge calls and notifier-to-web webhooks get STRICT mTLS with no application TLS or certificates. Application secrets remain for what the mesh cannot do: the API key identifies the merchant integration (mesh identity identifies only the namespace) and the HMAC signature authenticates the event payload. Per-path (L7) mesh policy would need an ambient waypoint and is a possible later increment.

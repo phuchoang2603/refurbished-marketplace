@@ -8,7 +8,7 @@ Own the durable, merchant-scoped checkout workflow from buyer submission through
 
 ### Requirement: Checkout accepts a durable merchant-scoped intent
 
-Checkout MUST persist a buyer-authenticated, merchant-scoped, validated order and payment snapshot with a buyer-scoped idempotency key before reporting acceptance. Acceptance MUST NOT imply that stock is reserved or the buyer can pay.
+Checkout MUST persist a buyer-authenticated, merchant-scoped, validated order and payment snapshot with a buyer-scoped idempotency key before reporting acceptance. The snapshot MUST include each line's category and condition and the seller and buyer account creation times read from users. Acceptance MUST NOT imply that stock is reserved or the buyer can pay.
 
 #### Scenario: Valid submit
 
@@ -22,7 +22,7 @@ Checkout MUST persist a buyer-authenticated, merchant-scoped, validated order an
 
 ### Requirement: Checkout advances only on durable, correlated results
 
-Checkout MUST command Orders to create an order, then Inventory to reserve all lines, then Payment to create a hosted session. It MUST expose a payment destination only after confirming stock is reserved and the session is ready; no downstream service SHALL infer workflow state from the mere passage of time.
+Checkout MUST command Orders to create an order, then Inventory to reserve all lines, then create a payment at the external payment gateway. It MUST expose the gateway's hosted checkout URL only after confirming stock is reserved and the gateway payment is recorded; no downstream service SHALL infer workflow state from the mere passage of time.
 
 #### Scenario: Reservation completes after buyer disconnects
 
@@ -32,25 +32,25 @@ Checkout MUST command Orders to create an order, then Inventory to reserve all l
 #### Scenario: Stock is unavailable
 
 - **WHEN** Inventory reports that full-order stock reservation failed
-- **THEN** Checkout SHALL NOT request a hosted payment session and SHALL move the order to a failed state after confirming no stock remains held
+- **THEN** Checkout SHALL NOT create a gateway payment and SHALL move the order to a failed state after confirming no stock remains held
 
 #### Scenario: Payment session cannot be created
 
-- **WHEN** a reserved order cannot obtain a hosted payment session
+- **WHEN** a reserved order cannot obtain a gateway payment before its preparation deadline
 - **THEN** Checkout SHALL request stock release and SHALL NOT finalize the order as failed until Inventory confirms release
 
 ### Requirement: Checkout settles stock before final order status
 
-Checkout MUST command Inventory to commit reserved stock after confirmed payment success, or release it after definite failure/cancellation, and MUST await the corresponding settlement result before finalizing Orders. The workflow MUST NOT issue a second payment attempt for the same order.
+Checkout MUST command Inventory to commit reserved stock after verified gateway payment success, or release it after the gateway payment expired, and MUST await the corresponding settlement result before finalizing Orders. A declined attempt MUST NOT settle stock while the gateway payment is still open. The workflow MUST NOT create a second gateway payment for the same order.
 
 #### Scenario: Successful payment
 
-- **WHEN** Payment reports a definitive success for the ready session
+- **WHEN** a verified `payment.succeeded` webhook or deadline status read reports success for the order's gateway payment
 - **THEN** Checkout SHALL request stock commit and SHALL finalize the order as paid only after Inventory confirms commitment
 
 #### Scenario: Definitive failed payment
 
-- **WHEN** Payment reports a definitive failure or confirmed cancellation
+- **WHEN** a verified `payment.expired` webhook or deadline status read reports the gateway payment expired
 - **THEN** Checkout SHALL request stock release and SHALL finalize the order as failed only after Inventory confirms release
 
 ### Requirement: Checkout survives replay and lost acknowledgements
@@ -69,7 +69,7 @@ Checkout MUST persist each processed result with its state change and outgoing c
 
 ### Requirement: Checkout uses durable deadlines and reconciles uncertain outcomes
 
-Checkout MUST preserve order, reservation, and payment deadlines across restarts. When a command times out with an unknown outcome, Checkout MUST reconcile or issue a fencing cancellation before finalizing, and MUST surface unresolved financial outcomes for investigation rather than assuming failure.
+Checkout MUST preserve order, reservation, and payment deadlines across restarts. When a command times out with an unknown outcome, Checkout MUST reconcile or issue a fencing cancellation before finalizing. For the payment step it MUST wait for the gateway's terminal webhook and read the gateway payment status at the deadline rather than cancelling, and MUST surface unresolved financial outcomes for investigation rather than assuming failure.
 
 #### Scenario: Reservation response is lost
 
@@ -78,12 +78,12 @@ Checkout MUST preserve order, reservation, and payment deadlines across restarts
 
 #### Scenario: Hosted payment expires while outcome is uncertain
 
-- **WHEN** the payment deadline passes but a gateway capture may still have succeeded
-- **THEN** Checkout SHALL keep the workflow non-terminal pending reconciliation or manual review and SHALL NOT blindly release stock or mark the order failed
+- **WHEN** the payment deadline passes and the gateway reports the payment neither succeeded nor expired
+- **THEN** Checkout SHALL keep the workflow non-terminal, flag it for review and keep accepting gateway webhooks, without releasing stock or marking the order failed
 
 #### Scenario: Success arrives after a terminal failure
 
-- **WHEN** Payment reports a verified success after Checkout recorded a failed/expired attempt
+- **WHEN** a gateway success arrives after Checkout recorded the payment as expired
 - **THEN** Checkout SHALL flag a financial exception for reconciliation and SHALL NOT silently convert a failed or unreserved order to paid
 
 ### Requirement: Checkout restricts buyer-visible progress

@@ -42,7 +42,7 @@ The repository SHALL render `ExternalSecret` resources from the `refurbished-mar
 #### Scenario: Debezium connector secrets
 
 - **WHEN** ExternalSecrets have synced successfully
-- **THEN** orders, payment, and inventory Postgres credentials and catalog Mongo credentials exist under the names referenced by Strimzi connectors; no obsolete products Postgres credential is required
+- **THEN** orders and inventory Postgres credentials and catalog Mongo credentials exist under the names referenced by Strimzi connectors; no obsolete products or payment Postgres credential is required
 
 ### Requirement: No committed plaintext cluster secrets
 
@@ -181,3 +181,12 @@ Secrets documentation SHALL list the Doppler remote key and Kubernetes Secret na
 
 - **WHEN** `ecommerce/doppler-token` is missing or invalid
 - **THEN** the `secret-store` Application reports the unhealthy store, and consumer charts do not render or own the store themselves
+
+### Requirement: Payment gateway credentials from Doppler
+
+When the payment gateway integration is enabled, the chart SHALL render an ExternalSecret that syncs `PAYMENT_GATEWAY_API_KEY` and `PAYMENT_GATEWAY_WEBHOOK_SECRET` from Doppler into a Secret referenced only by Checkout. Environments without the integration SHALL render no such ExternalSecret.
+
+#### Scenario: Prod gateway secret
+
+- **WHEN** ExternalSecrets have synced in production
+- **THEN** a `checkout-payment-gateway` Secret exists in `ecommerce` with both keys and only the Checkout Deployment mounts it

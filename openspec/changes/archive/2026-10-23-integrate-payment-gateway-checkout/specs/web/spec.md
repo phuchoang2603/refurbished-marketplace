@@ -14,6 +14,25 @@ Web MUST expose `POST /webhooks/payment-gateway` on its in-cluster Service witho
 - **WHEN** Checkout cannot be reached while a webhook is forwarded
 - **THEN** web returns 5xx and does not change any cart or order state
 
+### Requirement: Web lets a buyer retry an open payment from the order page
+
+The web service MUST render a link to Checkout's hosted checkout URL on the buyer's order page when the order status is `ORDER_STATUS_PENDING` and the gateway payment status is `OPEN`. It MUST render order and payment facts without fetching or displaying the buyer identity.
+
+#### Scenario: Open payment on a pending order
+
+- **WHEN** the buyer opens an order page whose order is `ORDER_STATUS_PENDING` and payment status is `OPEN` with a hosted checkout URL
+- **THEN** the web service SHALL render a retry payment link pointing at that URL
+
+#### Scenario: Payment is not open
+
+- **WHEN** the buyer opens an order page whose payment status is not `OPEN` or that has no hosted checkout URL
+- **THEN** the web service SHALL NOT render a retry payment link
+
+#### Scenario: Order page omits buyer identity
+
+- **WHEN** the web service renders an order page
+- **THEN** it SHALL NOT display the buyer identifier or call users to hydrate buyer details
+
 ## MODIFIED Requirements
 
 ### Requirement: Web supports authenticated seller product creation

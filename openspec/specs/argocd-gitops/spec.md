@@ -85,15 +85,6 @@ The repository SHALL provide a chart-adjacent `values-prod.yaml` overlay (refere
 - **WHEN** the production marketplace Application syncs
 - **THEN** Helm values set `global.imageTag` to `main`
 
-### Requirement: Payment gateway simulator in marketplace chart
-
-The repository SHALL deploy `payment-gateway-simulator` from the `refurbished-marketplace` Helm chart.
-
-#### Scenario: Simulator enabled
-
-- **WHEN** the marketplace chart syncs
-- **THEN** a `payment-gateway-simulator` Deployment and Service exist in `ecommerce`
-
 ### Requirement: Loose sync ordering
 
 Child Applications SHALL retain local ordering hints for data stores, marketplace, and Kafka. Waves SHALL NOT be described as ordering the platform root against the marketplace root. Deployment guidance SHALL NOT require a manual platform-readiness check before the marketplace root is applied; convergence against platform operators, CRDs, storage, and telemetry SHALL rely on child sync retries. The `ecommerce/doppler-token` Secret SHALL remain a manual prerequisite for application secrets.
@@ -140,15 +131,6 @@ The Kafka Application SHALL deploy Strimzi Kafka, Connect, and UI resources to a
 
 - **WHEN** Kafka Connect synchronizes MongoDB changes
 - **THEN** its cross-namespace database connection works under strict ambient mTLS
-
-### Requirement: Hosted payment URL uses edge route
-
-Chart defaults SHALL set `HOSTED_PAYMENT_BASE_URL` to the Cloudflare-facing `pay-dev` HTTPS URL. Production overlay SHALL use `pay`.
-
-#### Scenario: Simulator URL is public edge
-
-- **WHEN** ingress with simulator routing is enabled
-- **THEN** the web Deployment environment uses the public `https://` simulator hostname, not `http://payment-gateway-simulator:8097` cluster DNS alone and not `http://localhost:8097`
 
 ### Requirement: Cloudflare Tunnel is platform-owned
 
@@ -302,3 +284,17 @@ Kafka broker and Kafka Connect CPU requests SHALL be sized to their observed ste
 
 - **WHEN** the kafka chart renders with default values
 - **THEN** broker and Connect containers request at least 250m CPU
+
+### Requirement: Checkout payment gateway configuration per environment
+
+The production overlay SHALL configure Checkout with the in-cluster payment gateway Edge address in the `payment-gateway` namespace, the marketplace's gateway integration ID, the gateway API key and webhook signing secret from the Checkout gateway Secret, and the buyer return URL on the `shop` host. Chart defaults and the dev overlay SHALL leave the gateway disabled, rendering no gateway address or Secret reference. The chart SHALL NOT render a Payment service or payment database.
+
+#### Scenario: Production render
+
+- **WHEN** the production marketplace Application renders
+- **THEN** the Checkout Deployment has the gateway address and Secret reference, and no `payment` Deployment, Service or CNPG Cluster exists
+
+#### Scenario: Dev render
+
+- **WHEN** the dev marketplace Application renders
+- **THEN** Checkout has no gateway address or Secret configuration
