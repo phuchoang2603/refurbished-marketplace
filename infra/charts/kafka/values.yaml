@@ -1,6 +1,6 @@
 global:
   imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
-  imageTag: main
+  imageTag: latest
 
 # Namespace that hosts marketplace CNPG databases and app secrets
 # (orders-app, checkout-app, inventory-app, mongodb-catalog-app). Kafka itself deploys to Release.Namespace.
