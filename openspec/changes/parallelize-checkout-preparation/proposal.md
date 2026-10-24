@@ -6,9 +6,9 @@ Checkout currently waits for Orders before requesting Inventory even though the 
 
 - Publish one durable `checkout.prepare.requested.v1` command per accepted checkout, consumed by Orders and Inventory in distinct service groups.
 - Keep Checkout as the durable saga orchestrator: record both preparation outcomes and create payment only after both succeed.
-- Fence late preparation after rejection or timeout, including failed order finalization before order creation; retain acknowledged stock compensation before failed order finalization.
+- Use a two-minute recovery timeout, allowing a successful join until compensation wins the workflow lock. Fence late preparation after rejection or timeout compensation starts, including failed order finalization before order creation; retain acknowledged stock compensation before failed order finalization.
 - **BREAKING**: replace the separate initial create-order and reserve-stock commands and sequential preparation states. Coordinate a drained cutover rather than supporting mixed protocols.
-- Configure three Orders replicas and three Inventory replicas in the production Helm overlay, with six preparation-topic partitions. Keep base/development defaults at one replica/partition.
+- Configure three Orders replicas and three Inventory replicas in the production Helm overlay, with six preparation-topic partitions and one partition for every other Kafka topic. Keep base/development defaults at one replica/partition.
 - Verify assignments, overlapping processing, replay safety, and compensation using existing traces and Kafka tooling.
 
 Non-goals: choreography, removing Checkout's database, adding checkout mutation RPCs, changing payment integration, item-keyed Kafka partitioning, increasing Kafka broker replication, or introducing a stock projection.

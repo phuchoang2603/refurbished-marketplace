@@ -79,11 +79,11 @@ Checkout MUST persist each processed result with its state change and outgoing c
 
 ### Requirement: Checkout uses durable deadlines and reconciles uncertain outcomes
 
-Checkout MUST preserve shared preparation and payment deadlines across restarts. When a command times out with an unknown outcome, Checkout MUST reconcile or issue a fencing cancellation before finalizing. For the payment step it MUST wait for the gateway's terminal webhook and read the gateway payment status at the deadline rather than cancelling, and MUST surface unresolved financial outcomes for investigation rather than assuming failure.
+Checkout MUST preserve the shared preparation recovery timeout and payment deadlines across restarts. The preparation timeout MUST make an open preparation eligible for recovery rather than impose a strict expiry on successful results. Checkout MUST serialize the successful join and the timeout worker's compensation decision so that whichever commits first determines the next step. Successful preparation results MAY complete the join after the timeout becomes due if preparation remains open. Once rejection or timeout compensation closes preparation, Checkout MUST NOT reopen it or create a payment from later preparation results. When recovery claims a timed-out command with an unknown outcome, Checkout MUST reconcile or issue a fencing cancellation before finalizing. For the payment step it MUST wait for the gateway's terminal webhook and read the gateway payment status at the deadline rather than cancelling, and MUST surface unresolved financial outcomes for investigation rather than assuming failure.
 
 #### Scenario: Reservation response is lost
 
-- **WHEN** the reservation deadline passes without a definitive result
+- **WHEN** the timeout worker claims preparation after its recovery timeout with the reservation outcome still unknown
 - **THEN** Checkout SHALL prevent a late reserve from creating a usable hold, obtain a definitive released/absent result, and only then finalize the order as failed
 
 #### Scenario: Hosted payment expires while outcome is uncertain
@@ -96,12 +96,22 @@ Checkout MUST preserve shared preparation and payment deadlines across restarts.
 - **WHEN** a gateway success arrives after Checkout recorded the payment as expired
 - **THEN** Checkout SHALL flag a financial exception for reconciliation and SHALL NOT silently convert a failed or unreserved order to paid
 
-#### Scenario: Preparation deadline expires with an unknown order outcome
+#### Scenario: Recovery worker claims preparation with an unknown order outcome
 
-- **WHEN** the durable preparation deadline expires before both successful outcomes are recorded
+- **WHEN** the timeout worker locks a due preparation before both successful outcomes are recorded
 - **THEN** Checkout SHALL close preparation, obtain released or absent stock, and obtain a failed order or durable absence-fence acknowledgment before recording terminal failure
 
 #### Scenario: Preparation success races cancellation
 
-- **WHEN** a preparation success arrives after the attempt was closed by rejection or timeout
+- **WHEN** a preparation success arrives after the attempt was closed by rejection or timeout compensation
 - **THEN** Checkout SHALL continue compensation without creating payment, and delayed commands SHALL NOT leave an active stock hold or pending order after terminal failure
+
+#### Scenario: Successful join wins after the recovery timeout
+
+- **WHEN** both successful preparation outcomes are recorded after the timeout becomes due but before the timeout worker closes preparation
+- **THEN** Checkout SHALL complete the join and schedule exactly one effective gateway creation operation without cancelling solely because the timeout passed
+
+#### Scenario: Timeout compensation wins the workflow lock
+
+- **WHEN** the timeout worker closes due preparation before a concurrent successful join commits
+- **THEN** Checkout SHALL continue stock and order compensation and SHALL NOT schedule a gateway creation operation from the later results

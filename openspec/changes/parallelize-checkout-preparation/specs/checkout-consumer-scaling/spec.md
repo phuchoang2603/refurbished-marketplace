@@ -6,7 +6,7 @@ Define production consumer-group and partition topology so shared checkout prepa
 
 ### Requirement: Production preparation consumers use independent scalable groups
 
-The production deployment SHALL configure three Orders replicas and three Inventory replicas. All Orders replicas SHALL share one stable Orders command consumer group; all Inventory reservation replicas SHALL share one stable Inventory command consumer group distinct from Orders. Both groups SHALL subscribe to `checkout.prepare.requested.v1`, which SHALL have six partitions in production and retain checkout identifiers as record keys. Base configuration SHALL retain one replica per service and one preparation partition.
+The production deployment SHALL configure three Orders replicas and three Inventory replicas. All Orders replicas SHALL share one stable Orders command consumer group; all Inventory reservation replicas SHALL share one stable Inventory command consumer group distinct from Orders. Both groups SHALL subscribe to `checkout.prepare.requested.v1`, which SHALL have six partitions in production and retain checkout identifiers as record keys. All other declared Kafka topics SHALL have one partition in both production and base configuration. Base configuration SHALL retain one replica per service and one preparation partition.
 
 #### Scenario: One preparation command is published
 
@@ -16,12 +16,12 @@ The production deployment SHALL configure three Orders replicas and three Invent
 #### Scenario: Production Helm values are rendered
 
 - **WHEN** the production overlays are rendered
-- **THEN** Orders and Inventory SHALL each request three replicas and the shared preparation topic SHALL request six partitions
+- **THEN** Orders and Inventory SHALL each request three replicas, the shared preparation topic SHALL request six partitions, and all other Kafka topics SHALL request one partition
 
 #### Scenario: Base Helm values are rendered
 
 - **WHEN** the base charts are rendered without the production overlays
-- **THEN** Orders and Inventory SHALL each request one replica and the shared preparation topic SHALL request one partition
+- **THEN** Orders and Inventory SHALL each request one replica and every Kafka topic SHALL request one partition
 
 ### Requirement: Parallel processing can be observed without weakening correctness
 
