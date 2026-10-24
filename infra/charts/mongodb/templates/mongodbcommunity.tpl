@@ -45,6 +45,13 @@ spec:
             nodeAffinity:
               {{- toYaml . | nindent 14 }}
           {{- end }}
+          initContainers:
+            - name: mongod-posthook
+              resources:
+                {{- toYaml .Values.agentResources | nindent 16 }}
+            - name: mongodb-agent-readinessprobe
+              resources:
+                {{- toYaml .Values.agentResources | nindent 16 }}
           containers:
             - name: mongod
               resources:
