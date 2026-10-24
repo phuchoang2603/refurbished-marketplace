@@ -12,11 +12,25 @@ import (
 	"github.com/phuchoang2603/refurbished-marketplace/shared/messaging"
 	sharedtrace "github.com/phuchoang2603/refurbished-marketplace/shared/observe/trace"
 	checkoutv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1"
-	"google.golang.org/protobuf/encoding/protojson"
 	"google.golang.org/protobuf/proto"
 )
 
-const preparationDeadline = 2 * time.Minute
+const (
+	preparationDeadline = 2 * time.Minute
+	preparationVersion  = 1
+
+	outcomePending   = "PENDING"
+	outcomeSucceeded = "SUCCEEDED"
+	outcomeRejected  = "REJECTED"
+
+	closurePrepared = "PREPARED"
+	closureRejected = "REJECTED"
+	closureExpired  = "EXPIRED"
+)
+
+func preparationOperationID(checkoutID uuid.UUID) uuid.UUID {
+	return uuid.NewSHA1(checkoutID, []byte("prepare"))
+}
 
 type transition struct {
 	state          checkoutv1.CheckoutState
@@ -61,6 +75,15 @@ func (service *Service) HandleResult(ctx context.Context, kafkaMessage messaging
 		return err
 	}
 	if inserted == 0 {
+		return tx.Commit()
+	}
+
+	switch kafkaMessage.Topic {
+	case messaging.EventTypeCheckoutOrderCreated, messaging.EventTypeCheckoutOrderRejected,
+		messaging.EventTypeCheckoutStockReserved, messaging.EventTypeCheckoutStockRejected:
+		if err := handlePreparationResult(ctx, queries, row, kafkaMessage.Topic, message); err != nil {
+			return err
+		}
 		return tx.Commit()
 	}
 
@@ -111,10 +134,6 @@ func nextTransition(row database.Checkout, topic string, result *checkoutv1.Chec
 	expectedStep := ""
 	expectedVersion := row.Version
 	switch current {
-	case checkoutv1.CheckoutState_CHECKOUT_STATE_CREATING_ORDER:
-		expectedStep = "create-order"
-	case checkoutv1.CheckoutState_CHECKOUT_STATE_RESERVING_STOCK:
-		expectedStep = "reserve-stock"
 	case checkoutv1.CheckoutState_CHECKOUT_STATE_COMMITTING_STOCK:
 		expectedStep = "commit-stock"
 	case checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK:
@@ -131,47 +150,7 @@ func nextTransition(row database.Checkout, topic string, result *checkoutv1.Chec
 		return nil, nil
 	}
 
-	snapshot := new(checkoutv1.SubmitCheckoutRequest)
-	if err := protojson.Unmarshal(row.Snapshot, snapshot); err != nil {
-		return nil, err
-	}
 	switch current {
-	case checkoutv1.CheckoutState_CHECKOUT_STATE_CREATING_ORDER:
-		switch topic {
-		case messaging.EventTypeCheckoutOrderCreated:
-			if result.GetOrderCreated() == nil {
-				break
-			}
-			return &transition{
-				state:        checkoutv1.CheckoutState_CHECKOUT_STATE_RESERVING_STOCK,
-				commandTopic: messaging.EventTypeCheckoutReserveStock, commandPayload: &checkoutv1.ReserveStock{
-					MerchantId: row.MerchantID.String(), TotalCents: snapshot.GetTotalCents(), Items: snapshot.GetItems(),
-				}, operation: "reserve-stock", deadline: preparationDeadline,
-			}, nil
-		case messaging.EventTypeCheckoutOrderRejected:
-			if result.GetOrderRejected() == nil {
-				break
-			}
-			return &transition{state: checkoutv1.CheckoutState_CHECKOUT_STATE_FAILED, reason: result.GetOrderRejected().GetReason()}, nil
-		}
-	case checkoutv1.CheckoutState_CHECKOUT_STATE_RESERVING_STOCK:
-		switch topic {
-		case messaging.EventTypeCheckoutStockReserved:
-			if result.GetStockReserved() == nil {
-				break
-			}
-			return &transition{state: checkoutv1.CheckoutState_CHECKOUT_STATE_CREATING_PAYMENT, deadline: preparationDeadline}, nil
-		case messaging.EventTypeCheckoutStockRejected:
-			if result.GetStockRejected() == nil {
-				break
-			}
-			return &transition{
-				state:          checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK,
-				commandTopic:   messaging.EventTypeCheckoutCancelStock,
-				commandPayload: &checkoutv1.CancelStock{Reason: "reservation rejected"},
-				operation:      "cancel-stock", deadline: preparationDeadline, reason: result.GetStockRejected().GetReason(),
-			}, nil
-		}
 	case checkoutv1.CheckoutState_CHECKOUT_STATE_COMMITTING_STOCK:
 		if topic == messaging.EventTypeCheckoutStockCommitted && result.GetStockCommitted() != nil {
 			return &transition{
@@ -200,4 +179,118 @@ func nextTransition(row database.Checkout, topic string, result *checkoutv1.Chec
 		}
 	}
 	return nil, nil
+}
+
+func preparationResult(topic string, result *checkoutv1.CheckoutMessage) (participant, outcome, reason string, ok bool) {
+	switch topic {
+	case messaging.EventTypeCheckoutOrderCreated:
+		return "orders", outcomeSucceeded, "", result.GetOrderCreated() != nil
+	case messaging.EventTypeCheckoutOrderRejected:
+		return "orders", outcomeRejected, result.GetOrderRejected().GetReason(), result.GetOrderRejected() != nil
+	case messaging.EventTypeCheckoutStockReserved:
+		return "inventory", outcomeSucceeded, "", result.GetStockReserved() != nil
+	case messaging.EventTypeCheckoutStockRejected:
+		return "inventory", outcomeRejected, result.GetStockRejected().GetReason(), result.GetStockRejected() != nil
+	}
+	return "", "", "", false
+}
+
+func handlePreparationResult(ctx context.Context, queries *database.Queries, row database.Checkout, topic string, result *checkoutv1.CheckoutMessage) error {
+	messageContext := result.GetContext()
+	participant, outcome, reason, ok := preparationResult(topic, result)
+	if !ok {
+		return recordPreparationException(ctx, queries, row, messageContext.GetMessageId(), "preparation_result_mismatch", "result payload does not match its topic")
+	}
+	if !row.PrepOperationID.Valid || messageContext.GetOperationId() != row.PrepOperationID.UUID.String() ||
+		!row.PrepVersion.Valid || messageContext.GetWorkflowVersion() != uint64(row.PrepVersion.Int64) {
+		return recordPreparationException(ctx, queries, row, messageContext.GetMessageId(), "preparation_correlation_conflict", "result does not match the preparation operation")
+	}
+
+	recorded := row.OrdersOutcome
+	if participant == "inventory" {
+		recorded = row.InventoryOutcome
+	}
+	switch {
+	case recorded == outcome:
+		return nil
+	case recorded != outcomePending:
+		return recordPreparationException(ctx, queries, row, messageContext.GetMessageId(), "preparation_outcome_conflict",
+			fmt.Sprintf("%s reported %s after %s", participant, outcome, recorded))
+	}
+	if err := queries.SetPreparationOutcome(ctx, database.SetPreparationOutcomeParams{
+		ID: row.ID, Participant: participant, Outcome: outcome,
+		Reason: sql.NullString{String: reason, Valid: reason != ""},
+	}); err != nil {
+		return err
+	}
+	if participant == "orders" {
+		row.OrdersOutcome = outcome
+	} else {
+		row.InventoryOutcome = outcome
+	}
+
+	state := checkoutv1.CheckoutState(checkoutv1.CheckoutState_value[row.State])
+	if state != checkoutv1.CheckoutState_CHECKOUT_STATE_PREPARING || row.PrepClosedAt.Valid {
+		return nil
+	}
+	if outcome == outcomeRejected {
+		return closePreparation(ctx, queries, row, closureRejected, preparationFailureReason(participant, reason), messageContext.GetMessageId())
+	}
+	if row.OrdersOutcome != outcomeSucceeded || row.InventoryOutcome != outcomeSucceeded {
+		return nil
+	}
+	if len(row.GatewaySnapshot) == 0 {
+		return errors.New("missing frozen gateway snapshot")
+	}
+	if _, err := queries.ClosePreparation(ctx, database.ClosePreparationParams{ID: row.ID, PrepClosure: sql.NullString{String: closurePrepared, Valid: true}}); err != nil {
+		return err
+	}
+	updated, err := queries.AdvanceCheckout(ctx, database.AdvanceCheckoutParams{
+		ID: row.ID, Version: row.Version, State: checkoutv1.CheckoutState_CHECKOUT_STATE_CREATING_PAYMENT.String(),
+		DeadlineAt: sql.NullTime{Time: time.Now().Add(preparationDeadline), Valid: true},
+	})
+	if err != nil {
+		return err
+	}
+	if updated != 1 {
+		return errors.New("checkout transition lost optimistic concurrency race")
+	}
+	return queries.InsertGatewayOperation(ctx, database.InsertGatewayOperationParams{
+		CheckoutID: row.ID, Request: row.GatewaySnapshot, Tracingspancontext: sql.NullString{String: sharedtrace.SerializeContext(ctx), Valid: true},
+	})
+}
+
+func preparationFailureReason(participant, reason string) string {
+	if reason == "" {
+		return participant + " preparation rejected"
+	}
+	return reason
+}
+
+func closePreparation(ctx context.Context, queries *database.Queries, row database.Checkout, closure, reason, causationID string) error {
+	closed, err := queries.ClosePreparation(ctx, database.ClosePreparationParams{ID: row.ID, PrepClosure: sql.NullString{String: closure, Valid: true}})
+	if err != nil {
+		return err
+	}
+	if closed != 1 {
+		return nil
+	}
+	updated, err := queries.AdvanceCheckout(ctx, database.AdvanceCheckoutParams{
+		ID: row.ID, Version: row.Version, State: checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK.String(),
+		FailureReason: sql.NullString{String: reason, Valid: reason != ""},
+		DeadlineAt:    sql.NullTime{Time: time.Now().Add(preparationDeadline), Valid: true},
+	})
+	if err != nil {
+		return err
+	}
+	if updated != 1 {
+		return errors.New("checkout transition lost optimistic concurrency race")
+	}
+	return enqueueCheckoutCommand(ctx, queries, row, messaging.EventTypeCheckoutCancelStock, "cancel-stock", causationID, &checkoutv1.CancelStock{Reason: reason})
+}
+
+func recordPreparationException(ctx context.Context, queries *database.Queries, row database.Checkout, messageID, kind, details string) error {
+	return queries.InsertException(ctx, database.InsertExceptionParams{
+		ID: uuid.New(), CheckoutID: row.ID, MessageID: sql.NullString{String: messageID, Valid: messageID != ""}, Kind: kind, Details: details,
+	})
 }

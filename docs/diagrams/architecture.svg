@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 2200 1600" preserveAspectRatio="xMidYMid meet" role="img" aria-labelledby="title description">
 <title id="title">System architecture: deployable units and the data they exchange</title>
-<desc id="description">Web is the public HTTP edge. Internal gRPC serves identity, listings, search, carts, stock reads, orders and checkout. Debezium streams MongoDB and PostgreSQL outboxes to Kafka. Independent catalog consumers populate Meilisearch and seed inventory. Checkout coordinates Orders and Inventory through versioned Kafka commands and results, calls the external gateway, and verifies signed outcomes forwarded by Web.</desc>
+<desc id="description">Web is the public HTTP edge. Internal gRPC serves identity, listings, search, carts, stock reads, orders and checkout. Debezium streams MongoDB and PostgreSQL outboxes to Kafka. Independent catalog consumers populate Meilisearch and seed inventory. Checkout publishes one preparation command consumed by Orders and Inventory in separate groups (three replicas each in production), then joins their versioned results, calls the external gateway, and verifies signed outcomes forwarded by Web.</desc>
 <defs>
 <marker id="arrow-web" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#2776c7"/></marker>
 <marker id="arrow-catalog" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 Z" fill="#239653"/></marker>
@@ -77,8 +77,8 @@
 <foreignObject id="checkout-db" x="1490" y="610" width="230" height="100"><div xmlns="http://www.w3.org/1999/xhtml" class="unit"><span class="tag">checkout</span><span class="icon">▱</span><h2>PostgreSQL</h2><p>saga / gateway operations<br />inbox + outbox</p></div></foreignObject>
 <foreignObject id="debezium" x="290" y="810" width="230" height="90"><div xmlns="http://www.w3.org/1999/xhtml" class="unit"><span class="tag">Kafka Connect</span><span class="icon">◇</span><h2>Debezium</h2><p>Mongo + Postgres CDC</p></div></foreignObject>
 <foreignObject id="kafka" x="590" y="810" width="1130" height="90"><div xmlns="http://www.w3.org/1999/xhtml" class="unit"><span class="tag">Strimzi</span><span class="icon">⋮</span><h2>Kafka</h2><p>products.created · users.account-created.v1<br />checkout.*.v1 commands / results</p></div></foreignObject>
-<foreignObject id="inventory" x="890" y="995" width="230" height="100"><div xmlns="http://www.w3.org/1999/xhtml" class="unit"><span class="tag">Go / gRPC :9097</span><span class="icon">◇</span><h2>Inventory</h2><p>seed / reserve stock<br />commit or release holds</p></div></foreignObject>
-<foreignObject id="orders" x="1190" y="995" width="230" height="100"><div xmlns="http://www.w3.org/1999/xhtml" class="unit"><span class="tag">Go / gRPC :9093</span><span class="icon">◇</span><h2>Orders</h2><p>merchant-scoped lifecycle<br />pending → paid / failed</p></div></foreignObject>
+<foreignObject id="inventory" x="890" y="995" width="230" height="100"><div xmlns="http://www.w3.org/1999/xhtml" class="unit"><span class="tag">Go / gRPC :9097</span><span class="icon">◇</span><h2>Inventory</h2><p>reserve from prepare cmd<br />x3 prod · own group</p></div></foreignObject>
+<foreignObject id="orders" x="1190" y="995" width="230" height="100"><div xmlns="http://www.w3.org/1999/xhtml" class="unit"><span class="tag">Go / gRPC :9093</span><span class="icon">◇</span><h2>Orders</h2><p>create from prepare cmd<br />x3 prod · own group</p></div></foreignObject>
 <foreignObject id="account-projection" x="1490" y="995" width="230" height="100"><div xmlns="http://www.w3.org/1999/xhtml" class="unit support"><span class="tag">checkout</span><span class="icon">▱</span><h2>Redis</h2><p>account creation times<br />consumer runs in Checkout</p></div></foreignObject>
 <foreignObject id="inventory-db" x="890" y="1165" width="230" height="90"><div xmlns="http://www.w3.org/1999/xhtml" class="unit"><span class="tag">inventory</span><span class="icon">▱</span><h2>PostgreSQL</h2><p>stock / reservations<br />inbox + outbox</p></div></foreignObject>
 <foreignObject id="orders-db" x="1190" y="1165" width="230" height="90"><div xmlns="http://www.w3.org/1999/xhtml" class="unit"><span class="tag">orders</span><span class="icon">▱</span><h2>PostgreSQL</h2><p>orders / line items<br />inbox + outbox</p></div></foreignObject>
@@ -179,9 +179,9 @@
 <text x="1450" y="289" font-family="ui-monospace,Consolas,monospace" font-size="10" fill="#23324b" text-anchor="middle">P4</text>
 <text x="1430" y="273" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#46556e" text-anchor="end">forward raw webhook</text>
 <text x="1885" y="355" font-family="ui-monospace,Consolas,monospace" font-size="12" fill="#52627c" text-anchor="start">CHECKOUT PAYMENT ORDER</text>
-<text x="1885" y="385" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#52627c" text-anchor="start">1  Create pending order</text>
-<text x="1885" y="414" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#52627c" text-anchor="start">2  Reserve inventory</text>
-<text x="1885" y="443" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#52627c" text-anchor="start">3  Create gateway payment</text>
+<text x="1885" y="385" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#52627c" text-anchor="start">1  Publish one prepare command</text>
+<text x="1885" y="414" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#52627c" text-anchor="start">2  Orders + Inventory in parallel</text>
+<text x="1885" y="443" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#52627c" text-anchor="start">3  Create payment after both succeed</text>
 <text x="1885" y="472" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#52627c" text-anchor="start">4  Buyer completes payment</text>
 <text x="1885" y="501" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#52627c" text-anchor="start">5  Verify + deduplicate webhook</text>
 <text x="1885" y="530" font-family="Arial,Helvetica,sans-serif" font-size="13" fill="#52627c" text-anchor="start">6  Commit / release inventory</text>

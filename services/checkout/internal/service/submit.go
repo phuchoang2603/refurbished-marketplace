@@ -24,8 +24,6 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-const orderDeadline = 2 * time.Minute
-
 func (service *Service) SubmitCheckout(ctx context.Context, request *checkoutv1.SubmitCheckoutRequest) (*checkoutv1.SubmitCheckoutResponse, error) {
 	if service.config.PaymentGatewayURL == "" {
 		return nil, status.Error(codes.Unavailable, "checkout is unavailable")
@@ -61,13 +59,13 @@ func (service *Service) SubmitCheckout(ctx context.Context, request *checkoutv1.
 	if err != nil {
 		return nil, err
 	}
-	operationID := uuid.NewSHA1(checkoutID, []byte("create-order"))
+	operationID := preparationOperationID(checkoutID)
 	command := &checkoutv1.CheckoutMessage{
 		Context: &checkoutv1.MessageContext{
 			MessageId: operationID.String(), CheckoutId: checkoutID.String(),
-			OperationId: operationID.String(), OrderId: orderID.String(), WorkflowVersion: 1,
+			OperationId: operationID.String(), OrderId: orderID.String(), WorkflowVersion: preparationVersion,
 		},
-		Payload: &checkoutv1.CheckoutMessage_CreateOrder{CreateOrder: &checkoutv1.CreateOrder{
+		Payload: &checkoutv1.CheckoutMessage_PrepareCheckout{PrepareCheckout: &checkoutv1.PrepareCheckout{
 			BuyerUserId: buyerID.String(), MerchantId: merchantID.String(),
 			TotalCents: request.GetTotalCents(), Currency: request.GetCurrency(), Items: request.GetItems(),
 		}},
@@ -77,6 +75,7 @@ func (service *Service) SubmitCheckout(ctx context.Context, request *checkoutv1.
 		return nil, err
 	}
 
+	preparationDeadlineAt := time.Now().Add(preparationDeadline)
 	tx, err := service.db.BeginTx(ctx, nil)
 	if err != nil {
 		return nil, err
@@ -86,9 +85,12 @@ func (service *Service) SubmitCheckout(ctx context.Context, request *checkoutv1.
 	row, err := queries.InsertCheckout(ctx, database.InsertCheckoutParams{
 		ID: checkoutID, BuyerUserID: buyerID, MerchantID: merchantID,
 		IntentKey: request.GetIntentKey(), RequestHash: hash[:], Snapshot: snapshot, GatewaySnapshot: gatewaySnapshot,
-		State:      checkoutv1.CheckoutState_CHECKOUT_STATE_CREATING_ORDER.String(),
-		OrderID:    uuid.NullUUID{UUID: orderID, Valid: true},
-		DeadlineAt: sql.NullTime{Time: time.Now().Add(orderDeadline), Valid: true},
+		State:           checkoutv1.CheckoutState_CHECKOUT_STATE_PREPARING.String(),
+		OrderID:         uuid.NullUUID{UUID: orderID, Valid: true},
+		DeadlineAt:      sql.NullTime{Time: preparationDeadlineAt, Valid: true},
+		PrepOperationID: uuid.NullUUID{UUID: operationID, Valid: true},
+		PrepVersion:     sql.NullInt64{Int64: preparationVersion, Valid: true},
+		PrepDeadlineAt:  sql.NullTime{Time: preparationDeadlineAt, Valid: true},
 	})
 	if errors.Is(err, sql.ErrNoRows) {
 		row, err = queries.GetCheckoutByIntent(ctx, database.GetCheckoutByIntentParams{
@@ -104,7 +106,7 @@ func (service *Service) SubmitCheckout(ctx context.Context, request *checkoutv1.
 		return nil, err
 	} else {
 		if err := queries.InsertOutbox(ctx, database.InsertOutboxParams{
-			ID: operationID, AggregateID: row.ID, EventType: messaging.EventTypeCheckoutCreateOrder,
+			ID: operationID, AggregateID: row.ID, EventType: messaging.EventTypeCheckoutPrepare,
 			Payload: payload, Tracingspancontext: sql.NullString{String: sharedtrace.SerializeContext(ctx), Valid: true},
 		}); err != nil {
 			return nil, err

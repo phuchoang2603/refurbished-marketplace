@@ -1,6 +1,6 @@
 # Code generation
 
-Tasks run automatically on `devenv shell` entry when their inputs change (`execIfModified`), or can be run manually via `devenv tasks run <task>`:
+Run tasks explicitly via `devenv tasks run <task>`. Tasks use `execIfModified` to skip unchanged inputs and do not run on shell entry:
 
 | Task / Command                      | Purpose                                                     |
 | ----------------------------------- | ----------------------------------------------------------- |
@@ -16,7 +16,7 @@ Edit SQL migrations under `services/<service>/db/migrations/` and queries under 
 
 ## Formatting
 
-Formatting is handled by devenv/git hooks via `treefmt` (`gofumpt`, `sqruff`, etc.). Local formatting drift is not checked in CI.
+Formatting is handled by the commit hook via `treefmt` (`gofumpt`, `sqruff`, etc.) and does not run on shell entry. Run `treefmt` explicitly when needed. Local formatting drift is not checked in CI.
 
 ## Go workspace
 

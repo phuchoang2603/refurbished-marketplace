@@ -12,16 +12,12 @@ import (
 	"github.com/google/uuid"
 )
 
-const getLatestOutbox = `-- name: GetLatestOutbox :one
-SELECT id, aggregate_id, event_type, payload, tracingspancontext, created_at
-FROM checkout_outbox
-WHERE aggregate_id = $1
-ORDER BY created_at DESC, id DESC
-LIMIT 1
+const getOutbox = `-- name: GetOutbox :one
+SELECT id, aggregate_id, event_type, payload, tracingspancontext, created_at FROM checkout_outbox WHERE id = $1
 `
 
-func (q *Queries) GetLatestOutbox(ctx context.Context, aggregateID uuid.UUID) (CheckoutOutbox, error) {
-	row := q.db.QueryRowContext(ctx, getLatestOutbox, aggregateID)
+func (q *Queries) GetOutbox(ctx context.Context, id uuid.UUID) (CheckoutOutbox, error) {
+	row := q.db.QueryRowContext(ctx, getOutbox, id)
 	var i CheckoutOutbox
 	err := row.Scan(
 		&i.ID,

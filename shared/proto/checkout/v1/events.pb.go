@@ -75,10 +75,9 @@ type CheckoutMessage struct {
 	Context *MessageContext        `protobuf:"bytes,1,opt,name=context,proto3" json:"context,omitempty"`
 	// Types that are valid to be assigned to Payload:
 	//
-	//	*CheckoutMessage_CreateOrder
+	//	*CheckoutMessage_PrepareCheckout
 	//	*CheckoutMessage_OrderCreated
 	//	*CheckoutMessage_OrderRejected
-	//	*CheckoutMessage_ReserveStock
 	//	*CheckoutMessage_StockReserved
 	//	*CheckoutMessage_StockRejected
 	//	*CheckoutMessage_CancelStock
@@ -136,10 +135,10 @@ func (x *CheckoutMessage) GetPayload() isCheckoutMessage_Payload {
 	return nil
 }
 
-func (x *CheckoutMessage) GetCreateOrder() *CreateOrder {
+func (x *CheckoutMessage) GetPrepareCheckout() *PrepareCheckout {
 	if x != nil {
-		if x, ok := x.Payload.(*CheckoutMessage_CreateOrder); ok {
-			return x.CreateOrder
+		if x, ok := x.Payload.(*CheckoutMessage_PrepareCheckout); ok {
+			return x.PrepareCheckout
 		}
 	}
 	return nil
@@ -158,15 +157,6 @@ func (x *CheckoutMessage) GetOrderRejected() *OrderRejected {
 	if x != nil {
 		if x, ok := x.Payload.(*CheckoutMessage_OrderRejected); ok {
 			return x.OrderRejected
-		}
-	}
-	return nil
-}
-
-func (x *CheckoutMessage) GetReserveStock() *ReserveStock {
-	if x != nil {
-		if x, ok := x.Payload.(*CheckoutMessage_ReserveStock); ok {
-			return x.ReserveStock
 		}
 	}
 	return nil
@@ -248,8 +238,8 @@ type isCheckoutMessage_Payload interface {
 	isCheckoutMessage_Payload()
 }
 
-type CheckoutMessage_CreateOrder struct {
-	CreateOrder *CreateOrder `protobuf:"bytes,2,opt,name=create_order,json=createOrder,proto3,oneof"`
+type CheckoutMessage_PrepareCheckout struct {
+	PrepareCheckout *PrepareCheckout `protobuf:"bytes,22,opt,name=prepare_checkout,json=prepareCheckout,proto3,oneof"`
 }
 
 type CheckoutMessage_OrderCreated struct {
@@ -258,10 +248,6 @@ type CheckoutMessage_OrderCreated struct {
 
 type CheckoutMessage_OrderRejected struct {
 	OrderRejected *OrderRejected `protobuf:"bytes,4,opt,name=order_rejected,json=orderRejected,proto3,oneof"`
-}
-
-type CheckoutMessage_ReserveStock struct {
-	ReserveStock *ReserveStock `protobuf:"bytes,5,opt,name=reserve_stock,json=reserveStock,proto3,oneof"`
 }
 
 type CheckoutMessage_StockReserved struct {
@@ -296,13 +282,11 @@ type CheckoutMessage_OrderFinalized struct {
 	OrderFinalized *OrderFinalized `protobuf:"bytes,21,opt,name=order_finalized,json=orderFinalized,proto3,oneof"`
 }
 
-func (*CheckoutMessage_CreateOrder) isCheckoutMessage_Payload() {}
+func (*CheckoutMessage_PrepareCheckout) isCheckoutMessage_Payload() {}
 
 func (*CheckoutMessage_OrderCreated) isCheckoutMessage_Payload() {}
 
 func (*CheckoutMessage_OrderRejected) isCheckoutMessage_Payload() {}
-
-func (*CheckoutMessage_ReserveStock) isCheckoutMessage_Payload() {}
 
 func (*CheckoutMessage_StockReserved) isCheckoutMessage_Payload() {}
 
@@ -580,7 +564,7 @@ func (x *CheckoutAddress) GetCountry() string {
 	return ""
 }
 
-type CreateOrder struct {
+type PrepareCheckout struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	BuyerUserId   string                 `protobuf:"bytes,1,opt,name=buyer_user_id,json=buyerUserId,proto3" json:"buyer_user_id,omitempty"`
 	MerchantId    string                 `protobuf:"bytes,2,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
@@ -591,20 +575,20 @@ type CreateOrder struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *CreateOrder) Reset() {
-	*x = CreateOrder{}
+func (x *PrepareCheckout) Reset() {
+	*x = PrepareCheckout{}
 	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *CreateOrder) String() string {
+func (x *PrepareCheckout) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*CreateOrder) ProtoMessage() {}
+func (*PrepareCheckout) ProtoMessage() {}
 
-func (x *CreateOrder) ProtoReflect() protoreflect.Message {
+func (x *PrepareCheckout) ProtoReflect() protoreflect.Message {
 	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -616,40 +600,40 @@ func (x *CreateOrder) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use CreateOrder.ProtoReflect.Descriptor instead.
-func (*CreateOrder) Descriptor() ([]byte, []int) {
+// Deprecated: Use PrepareCheckout.ProtoReflect.Descriptor instead.
+func (*PrepareCheckout) Descriptor() ([]byte, []int) {
 	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *CreateOrder) GetBuyerUserId() string {
+func (x *PrepareCheckout) GetBuyerUserId() string {
 	if x != nil {
 		return x.BuyerUserId
 	}
 	return ""
 }
 
-func (x *CreateOrder) GetMerchantId() string {
+func (x *PrepareCheckout) GetMerchantId() string {
 	if x != nil {
 		return x.MerchantId
 	}
 	return ""
 }
 
-func (x *CreateOrder) GetTotalCents() int64 {
+func (x *PrepareCheckout) GetTotalCents() int64 {
 	if x != nil {
 		return x.TotalCents
 	}
 	return 0
 }
 
-func (x *CreateOrder) GetCurrency() string {
+func (x *PrepareCheckout) GetCurrency() string {
 	if x != nil {
 		return x.Currency
 	}
 	return ""
 }
 
-func (x *CreateOrder) GetItems() []*CheckoutLine {
+func (x *PrepareCheckout) GetItems() []*CheckoutLine {
 	if x != nil {
 		return x.Items
 	}
@@ -736,66 +720,6 @@ func (x *OrderRejected) GetReason() string {
 	return ""
 }
 
-type ReserveStock struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	MerchantId    string                 `protobuf:"bytes,1,opt,name=merchant_id,json=merchantId,proto3" json:"merchant_id,omitempty"`
-	TotalCents    int64                  `protobuf:"varint,2,opt,name=total_cents,json=totalCents,proto3" json:"total_cents,omitempty"`
-	Items         []*CheckoutLine        `protobuf:"bytes,3,rep,name=items,proto3" json:"items,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ReserveStock) Reset() {
-	*x = ReserveStock{}
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[7]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ReserveStock) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ReserveStock) ProtoMessage() {}
-
-func (x *ReserveStock) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[7]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ReserveStock.ProtoReflect.Descriptor instead.
-func (*ReserveStock) Descriptor() ([]byte, []int) {
-	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{7}
-}
-
-func (x *ReserveStock) GetMerchantId() string {
-	if x != nil {
-		return x.MerchantId
-	}
-	return ""
-}
-
-func (x *ReserveStock) GetTotalCents() int64 {
-	if x != nil {
-		return x.TotalCents
-	}
-	return 0
-}
-
-func (x *ReserveStock) GetItems() []*CheckoutLine {
-	if x != nil {
-		return x.Items
-	}
-	return nil
-}
-
 type StockReserved struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	unknownFields protoimpl.UnknownFields
@@ -804,7 +728,7 @@ type StockReserved struct {
 
 func (x *StockReserved) Reset() {
 	*x = StockReserved{}
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[8]
+	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -816,7 +740,7 @@ func (x *StockReserved) String() string {
 func (*StockReserved) ProtoMessage() {}
 
 func (x *StockReserved) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[8]
+	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -829,7 +753,7 @@ func (x *StockReserved) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StockReserved.ProtoReflect.Descriptor instead.
 func (*StockReserved) Descriptor() ([]byte, []int) {
-	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{8}
+	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{7}
 }
 
 type StockRejected struct {
@@ -841,7 +765,7 @@ type StockRejected struct {
 
 func (x *StockRejected) Reset() {
 	*x = StockRejected{}
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[9]
+	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -853,7 +777,7 @@ func (x *StockRejected) String() string {
 func (*StockRejected) ProtoMessage() {}
 
 func (x *StockRejected) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[9]
+	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -866,7 +790,7 @@ func (x *StockRejected) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StockRejected.ProtoReflect.Descriptor instead.
 func (*StockRejected) Descriptor() ([]byte, []int) {
-	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{9}
+	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *StockRejected) GetReason() string {
@@ -885,7 +809,7 @@ type CancelStock struct {
 
 func (x *CancelStock) Reset() {
 	*x = CancelStock{}
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[10]
+	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -897,7 +821,7 @@ func (x *CancelStock) String() string {
 func (*CancelStock) ProtoMessage() {}
 
 func (x *CancelStock) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[10]
+	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -910,7 +834,7 @@ func (x *CancelStock) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CancelStock.ProtoReflect.Descriptor instead.
 func (*CancelStock) Descriptor() ([]byte, []int) {
-	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{10}
+	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *CancelStock) GetReason() string {
@@ -928,7 +852,7 @@ type StockReleased struct {
 
 func (x *StockReleased) Reset() {
 	*x = StockReleased{}
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[11]
+	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -940,7 +864,7 @@ func (x *StockReleased) String() string {
 func (*StockReleased) ProtoMessage() {}
 
 func (x *StockReleased) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[11]
+	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -953,7 +877,7 @@ func (x *StockReleased) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StockReleased.ProtoReflect.Descriptor instead.
 func (*StockReleased) Descriptor() ([]byte, []int) {
-	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{11}
+	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{10}
 }
 
 type CommitStock struct {
@@ -964,7 +888,7 @@ type CommitStock struct {
 
 func (x *CommitStock) Reset() {
 	*x = CommitStock{}
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[12]
+	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -976,7 +900,7 @@ func (x *CommitStock) String() string {
 func (*CommitStock) ProtoMessage() {}
 
 func (x *CommitStock) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[12]
+	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -989,7 +913,7 @@ func (x *CommitStock) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CommitStock.ProtoReflect.Descriptor instead.
 func (*CommitStock) Descriptor() ([]byte, []int) {
-	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{12}
+	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{11}
 }
 
 type StockCommitted struct {
@@ -1000,7 +924,7 @@ type StockCommitted struct {
 
 func (x *StockCommitted) Reset() {
 	*x = StockCommitted{}
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[13]
+	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1012,7 +936,7 @@ func (x *StockCommitted) String() string {
 func (*StockCommitted) ProtoMessage() {}
 
 func (x *StockCommitted) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[13]
+	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1025,7 +949,7 @@ func (x *StockCommitted) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StockCommitted.ProtoReflect.Descriptor instead.
 func (*StockCommitted) Descriptor() ([]byte, []int) {
-	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{13}
+	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{12}
 }
 
 type FinalizeOrder struct {
@@ -1037,7 +961,7 @@ type FinalizeOrder struct {
 
 func (x *FinalizeOrder) Reset() {
 	*x = FinalizeOrder{}
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[14]
+	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1049,7 +973,7 @@ func (x *FinalizeOrder) String() string {
 func (*FinalizeOrder) ProtoMessage() {}
 
 func (x *FinalizeOrder) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[14]
+	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1062,7 +986,7 @@ func (x *FinalizeOrder) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use FinalizeOrder.ProtoReflect.Descriptor instead.
 func (*FinalizeOrder) Descriptor() ([]byte, []int) {
-	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{14}
+	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *FinalizeOrder) GetStatus() FinalOrderStatus {
@@ -1081,7 +1005,7 @@ type OrderFinalized struct {
 
 func (x *OrderFinalized) Reset() {
 	*x = OrderFinalized{}
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[15]
+	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1093,7 +1017,7 @@ func (x *OrderFinalized) String() string {
 func (*OrderFinalized) ProtoMessage() {}
 
 func (x *OrderFinalized) ProtoReflect() protoreflect.Message {
-	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[15]
+	mi := &file_shared_proto_checkout_v1_events_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1106,7 +1030,7 @@ func (x *OrderFinalized) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use OrderFinalized.ProtoReflect.Descriptor instead.
 func (*OrderFinalized) Descriptor() ([]byte, []int) {
-	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{15}
+	return file_shared_proto_checkout_v1_events_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *OrderFinalized) GetStatus() FinalOrderStatus {
@@ -1120,13 +1044,12 @@ var File_shared_proto_checkout_v1_events_proto protoreflect.FileDescriptor
 
 const file_shared_proto_checkout_v1_events_proto_rawDesc = "" +
 	"\n" +
-	"%shared/proto/checkout/v1/events.proto\x12\vcheckout.v1\"\x83\a\n" +
+	"%shared/proto/checkout/v1/events.proto\x12\vcheckout.v1\"\xf6\x06\n" +
 	"\x0fCheckoutMessage\x125\n" +
-	"\acontext\x18\x01 \x01(\v2\x1b.checkout.v1.MessageContextR\acontext\x12=\n" +
-	"\fcreate_order\x18\x02 \x01(\v2\x18.checkout.v1.CreateOrderH\x00R\vcreateOrder\x12@\n" +
+	"\acontext\x18\x01 \x01(\v2\x1b.checkout.v1.MessageContextR\acontext\x12I\n" +
+	"\x10prepare_checkout\x18\x16 \x01(\v2\x1c.checkout.v1.PrepareCheckoutH\x00R\x0fprepareCheckout\x12@\n" +
 	"\rorder_created\x18\x03 \x01(\v2\x19.checkout.v1.OrderCreatedH\x00R\forderCreated\x12C\n" +
-	"\x0eorder_rejected\x18\x04 \x01(\v2\x1a.checkout.v1.OrderRejectedH\x00R\rorderRejected\x12@\n" +
-	"\rreserve_stock\x18\x05 \x01(\v2\x19.checkout.v1.ReserveStockH\x00R\freserveStock\x12C\n" +
+	"\x0eorder_rejected\x18\x04 \x01(\v2\x1a.checkout.v1.OrderRejectedH\x00R\rorderRejected\x12C\n" +
 	"\x0estock_reserved\x18\x06 \x01(\v2\x1a.checkout.v1.StockReservedH\x00R\rstockReserved\x12C\n" +
 	"\x0estock_rejected\x18\a \x01(\v2\x1a.checkout.v1.StockRejectedH\x00R\rstockRejected\x12=\n" +
 	"\fcancel_stock\x18\b \x01(\v2\x18.checkout.v1.CancelStockH\x00R\vcancelStock\x12C\n" +
@@ -1135,8 +1058,8 @@ const file_shared_proto_checkout_v1_events_proto_rawDesc = "" +
 	"\x0fstock_committed\x18\x13 \x01(\v2\x1b.checkout.v1.StockCommittedH\x00R\x0estockCommitted\x12C\n" +
 	"\x0efinalize_order\x18\x14 \x01(\v2\x1a.checkout.v1.FinalizeOrderH\x00R\rfinalizeOrder\x12F\n" +
 	"\x0forder_finalized\x18\x15 \x01(\v2\x1b.checkout.v1.OrderFinalizedH\x00R\x0eorderFinalizedB\t\n" +
-	"\apayloadJ\x04\b\n" +
-	"\x10\x12\"\xdc\x01\n" +
+	"\apayloadJ\x04\b\x02\x10\x03J\x04\b\x05\x10\x06J\x04\b\n" +
+	"\x10\x12R\fcreate_orderR\rreserve_stock\"\xdc\x01\n" +
 	"\x0eMessageContext\x12\x1d\n" +
 	"\n" +
 	"message_id\x18\x01 \x01(\tR\tmessageId\x12\x1f\n" +
@@ -1162,8 +1085,8 @@ const file_shared_proto_checkout_v1_events_proto_rawDesc = "" +
 	"\x06region\x18\x05 \x01(\tR\x06region\x12\x1f\n" +
 	"\vpostal_code\x18\x06 \x01(\tR\n" +
 	"postalCode\x12\x18\n" +
-	"\acountry\x18\a \x01(\tR\acountry\"\xc0\x01\n" +
-	"\vCreateOrder\x12\"\n" +
+	"\acountry\x18\a \x01(\tR\acountry\"\xc4\x01\n" +
+	"\x0fPrepareCheckout\x12\"\n" +
 	"\rbuyer_user_id\x18\x01 \x01(\tR\vbuyerUserId\x12\x1f\n" +
 	"\vmerchant_id\x18\x02 \x01(\tR\n" +
 	"merchantId\x12\x1f\n" +
@@ -1173,13 +1096,7 @@ const file_shared_proto_checkout_v1_events_proto_rawDesc = "" +
 	"\x05items\x18\x05 \x03(\v2\x19.checkout.v1.CheckoutLineR\x05items\"\x0e\n" +
 	"\fOrderCreated\"'\n" +
 	"\rOrderRejected\x12\x16\n" +
-	"\x06reason\x18\x01 \x01(\tR\x06reason\"\x81\x01\n" +
-	"\fReserveStock\x12\x1f\n" +
-	"\vmerchant_id\x18\x01 \x01(\tR\n" +
-	"merchantId\x12\x1f\n" +
-	"\vtotal_cents\x18\x02 \x01(\x03R\n" +
-	"totalCents\x12/\n" +
-	"\x05items\x18\x03 \x03(\v2\x19.checkout.v1.CheckoutLineR\x05items\"\x0f\n" +
+	"\x06reason\x18\x01 \x01(\tR\x06reason\"\x0f\n" +
 	"\rStockReserved\"'\n" +
 	"\rStockRejected\x12\x16\n" +
 	"\x06reason\x18\x01 \x01(\tR\x06reason\"%\n" +
@@ -1210,49 +1127,46 @@ func file_shared_proto_checkout_v1_events_proto_rawDescGZIP() []byte {
 }
 
 var file_shared_proto_checkout_v1_events_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_shared_proto_checkout_v1_events_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
+var file_shared_proto_checkout_v1_events_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_shared_proto_checkout_v1_events_proto_goTypes = []any{
 	(FinalOrderStatus)(0),   // 0: checkout.v1.FinalOrderStatus
 	(*CheckoutMessage)(nil), // 1: checkout.v1.CheckoutMessage
 	(*MessageContext)(nil),  // 2: checkout.v1.MessageContext
 	(*CheckoutLine)(nil),    // 3: checkout.v1.CheckoutLine
 	(*CheckoutAddress)(nil), // 4: checkout.v1.CheckoutAddress
-	(*CreateOrder)(nil),     // 5: checkout.v1.CreateOrder
+	(*PrepareCheckout)(nil), // 5: checkout.v1.PrepareCheckout
 	(*OrderCreated)(nil),    // 6: checkout.v1.OrderCreated
 	(*OrderRejected)(nil),   // 7: checkout.v1.OrderRejected
-	(*ReserveStock)(nil),    // 8: checkout.v1.ReserveStock
-	(*StockReserved)(nil),   // 9: checkout.v1.StockReserved
-	(*StockRejected)(nil),   // 10: checkout.v1.StockRejected
-	(*CancelStock)(nil),     // 11: checkout.v1.CancelStock
-	(*StockReleased)(nil),   // 12: checkout.v1.StockReleased
-	(*CommitStock)(nil),     // 13: checkout.v1.CommitStock
-	(*StockCommitted)(nil),  // 14: checkout.v1.StockCommitted
-	(*FinalizeOrder)(nil),   // 15: checkout.v1.FinalizeOrder
-	(*OrderFinalized)(nil),  // 16: checkout.v1.OrderFinalized
+	(*StockReserved)(nil),   // 8: checkout.v1.StockReserved
+	(*StockRejected)(nil),   // 9: checkout.v1.StockRejected
+	(*CancelStock)(nil),     // 10: checkout.v1.CancelStock
+	(*StockReleased)(nil),   // 11: checkout.v1.StockReleased
+	(*CommitStock)(nil),     // 12: checkout.v1.CommitStock
+	(*StockCommitted)(nil),  // 13: checkout.v1.StockCommitted
+	(*FinalizeOrder)(nil),   // 14: checkout.v1.FinalizeOrder
+	(*OrderFinalized)(nil),  // 15: checkout.v1.OrderFinalized
 }
 var file_shared_proto_checkout_v1_events_proto_depIdxs = []int32{
 	2,  // 0: checkout.v1.CheckoutMessage.context:type_name -> checkout.v1.MessageContext
-	5,  // 1: checkout.v1.CheckoutMessage.create_order:type_name -> checkout.v1.CreateOrder
+	5,  // 1: checkout.v1.CheckoutMessage.prepare_checkout:type_name -> checkout.v1.PrepareCheckout
 	6,  // 2: checkout.v1.CheckoutMessage.order_created:type_name -> checkout.v1.OrderCreated
 	7,  // 3: checkout.v1.CheckoutMessage.order_rejected:type_name -> checkout.v1.OrderRejected
-	8,  // 4: checkout.v1.CheckoutMessage.reserve_stock:type_name -> checkout.v1.ReserveStock
-	9,  // 5: checkout.v1.CheckoutMessage.stock_reserved:type_name -> checkout.v1.StockReserved
-	10, // 6: checkout.v1.CheckoutMessage.stock_rejected:type_name -> checkout.v1.StockRejected
-	11, // 7: checkout.v1.CheckoutMessage.cancel_stock:type_name -> checkout.v1.CancelStock
-	12, // 8: checkout.v1.CheckoutMessage.stock_released:type_name -> checkout.v1.StockReleased
-	13, // 9: checkout.v1.CheckoutMessage.commit_stock:type_name -> checkout.v1.CommitStock
-	14, // 10: checkout.v1.CheckoutMessage.stock_committed:type_name -> checkout.v1.StockCommitted
-	15, // 11: checkout.v1.CheckoutMessage.finalize_order:type_name -> checkout.v1.FinalizeOrder
-	16, // 12: checkout.v1.CheckoutMessage.order_finalized:type_name -> checkout.v1.OrderFinalized
-	3,  // 13: checkout.v1.CreateOrder.items:type_name -> checkout.v1.CheckoutLine
-	3,  // 14: checkout.v1.ReserveStock.items:type_name -> checkout.v1.CheckoutLine
-	0,  // 15: checkout.v1.FinalizeOrder.status:type_name -> checkout.v1.FinalOrderStatus
-	0,  // 16: checkout.v1.OrderFinalized.status:type_name -> checkout.v1.FinalOrderStatus
-	17, // [17:17] is the sub-list for method output_type
-	17, // [17:17] is the sub-list for method input_type
-	17, // [17:17] is the sub-list for extension type_name
-	17, // [17:17] is the sub-list for extension extendee
-	0,  // [0:17] is the sub-list for field type_name
+	8,  // 4: checkout.v1.CheckoutMessage.stock_reserved:type_name -> checkout.v1.StockReserved
+	9,  // 5: checkout.v1.CheckoutMessage.stock_rejected:type_name -> checkout.v1.StockRejected
+	10, // 6: checkout.v1.CheckoutMessage.cancel_stock:type_name -> checkout.v1.CancelStock
+	11, // 7: checkout.v1.CheckoutMessage.stock_released:type_name -> checkout.v1.StockReleased
+	12, // 8: checkout.v1.CheckoutMessage.commit_stock:type_name -> checkout.v1.CommitStock
+	13, // 9: checkout.v1.CheckoutMessage.stock_committed:type_name -> checkout.v1.StockCommitted
+	14, // 10: checkout.v1.CheckoutMessage.finalize_order:type_name -> checkout.v1.FinalizeOrder
+	15, // 11: checkout.v1.CheckoutMessage.order_finalized:type_name -> checkout.v1.OrderFinalized
+	3,  // 12: checkout.v1.PrepareCheckout.items:type_name -> checkout.v1.CheckoutLine
+	0,  // 13: checkout.v1.FinalizeOrder.status:type_name -> checkout.v1.FinalOrderStatus
+	0,  // 14: checkout.v1.OrderFinalized.status:type_name -> checkout.v1.FinalOrderStatus
+	15, // [15:15] is the sub-list for method output_type
+	15, // [15:15] is the sub-list for method input_type
+	15, // [15:15] is the sub-list for extension type_name
+	15, // [15:15] is the sub-list for extension extendee
+	0,  // [0:15] is the sub-list for field type_name
 }
 
 func init() { file_shared_proto_checkout_v1_events_proto_init() }
@@ -1261,10 +1175,9 @@ func file_shared_proto_checkout_v1_events_proto_init() {
 		return
 	}
 	file_shared_proto_checkout_v1_events_proto_msgTypes[0].OneofWrappers = []any{
-		(*CheckoutMessage_CreateOrder)(nil),
+		(*CheckoutMessage_PrepareCheckout)(nil),
 		(*CheckoutMessage_OrderCreated)(nil),
 		(*CheckoutMessage_OrderRejected)(nil),
-		(*CheckoutMessage_ReserveStock)(nil),
 		(*CheckoutMessage_StockReserved)(nil),
 		(*CheckoutMessage_StockRejected)(nil),
 		(*CheckoutMessage_CancelStock)(nil),
@@ -1280,7 +1193,7 @@ func file_shared_proto_checkout_v1_events_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_shared_proto_checkout_v1_events_proto_rawDesc), len(file_shared_proto_checkout_v1_events_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   16,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

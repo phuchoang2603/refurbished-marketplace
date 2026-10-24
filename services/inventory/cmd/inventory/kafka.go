@@ -14,7 +14,7 @@ func runReservationConsumer(ctx context.Context, svc *service.Service, bootstrap
 		BootstrapServers: bootstrap,
 		GroupID:          groupID,
 		Topics: []string{
-			messaging.EventTypeCheckoutReserveStock,
+			messaging.EventTypeCheckoutPrepare,
 			messaging.EventTypeCheckoutCancelStock,
 			messaging.EventTypeCheckoutCommitStock,
 		},

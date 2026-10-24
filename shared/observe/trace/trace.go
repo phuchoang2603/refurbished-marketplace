@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -103,6 +104,14 @@ func Init(ctx context.Context, cfg Config) (func(context.Context) error, error) 
 // Tracer returns a named tracer from the global provider.
 func Tracer(name string) trace.Tracer {
 	return otel.Tracer(name)
+}
+
+// AnnotateCheckout tags the active span with the checkout and order being processed.
+func AnnotateCheckout(ctx context.Context, checkoutID, orderID string) {
+	trace.SpanFromContext(ctx).SetAttributes(
+		attribute.String("checkout_id", checkoutID),
+		attribute.String("order_id", orderID),
+	)
 }
 
 // SerializeContext encodes the active span context as Java Properties text

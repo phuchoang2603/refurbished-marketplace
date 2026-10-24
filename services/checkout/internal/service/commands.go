@@ -34,8 +34,6 @@ func enqueueCheckoutCommand(ctx context.Context, queries *database.Queries, row 
 
 func setCommandPayload(message *checkoutv1.CheckoutMessage, payload any) error {
 	switch value := payload.(type) {
-	case *checkoutv1.ReserveStock:
-		message.Payload = &checkoutv1.CheckoutMessage_ReserveStock{ReserveStock: value}
 	case *checkoutv1.CancelStock:
 		message.Payload = &checkoutv1.CheckoutMessage_CancelStock{CancelStock: value}
 	case *checkoutv1.CommitStock:

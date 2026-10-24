@@ -31,7 +31,7 @@ The `prod` cluster is the development server. Children follow the root’s git r
 devenv shell
 ```
 
-Go, protobuf, `kubectl`, `helm`, Doppler, OpenSpec. On enter, devenv runs tasks to regenerate proto/sqlc/templ/Tailwind and sync modules when inputs change (`codegen:proto`, `codegen:sqlc`, `codegen:templ`, `codegen:tailwind`, `go:tidy`). Run any task directly with `devenv tasks run <task>`. Commit the generated files; CI builds the `web` image from them.
+Go, protobuf, `kubectl`, `helm`, Doppler, OpenSpec. Shell entry loads tooling and installs the commit hook; code generation, module sync, and formatting run explicitly. Run `devenv tasks run <task>` for `codegen:proto`, `codegen:sqlc`, `codegen:templ`, `codegen:tailwind`, or `go:tidy`. Formatting runs through the commit hook or manually with `treefmt`. Commit the generated files; CI builds the `web` image from them.
 
 ## Browser
 

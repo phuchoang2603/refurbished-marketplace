@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"database/sql"
 	"errors"
 	"testing"
 
@@ -12,6 +13,12 @@ import (
 
 func newOrdersService(t *testing.T) *service.Service {
 	t.Helper()
+	svc, _ := newOrdersServiceWithDB(t)
+	return svc
+}
+
+func newOrdersServiceWithDB(t *testing.T) (*service.Service, *sql.DB) {
+	t.Helper()
 	db := testpostgres.SetupPostgresWithMigrations(
 		t,
 		testpostgres.Config{
@@ -22,7 +29,7 @@ func newOrdersService(t *testing.T) *service.Service {
 		"../db/migrations",
 	)
 
-	return service.New(db)
+	return service.New(db), db
 }
 
 func TestCreateGetListOrder(t *testing.T) {

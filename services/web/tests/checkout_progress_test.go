@@ -21,7 +21,7 @@ func TestCheckoutProgressWaitsForSessionAndRestrictsBuyer(t *testing.T) {
 			if request.GetBuyerUserId() != "user-1" || request.GetCheckoutId() != "checkout-1" {
 				return nil, status.Error(codes.NotFound, "checkout not found")
 			}
-			state := checkoutv1.CheckoutState_CHECKOUT_STATE_RESERVING_STOCK
+			state := checkoutv1.CheckoutState_CHECKOUT_STATE_PREPARING
 			if ready {
 				state = checkoutv1.CheckoutState_CHECKOUT_STATE_READY_TO_PAY
 			}

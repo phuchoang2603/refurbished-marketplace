@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/google/uuid"
 )
@@ -39,7 +40,7 @@ func (q *Queries) FinalizeCheckoutOrder(ctx context.Context, arg FinalizeCheckou
 }
 
 const getCheckoutOrderCommand = `-- name: GetCheckoutOrderCommand :one
-SELECT checkout_id, order_id, request_hash, created_at FROM orders_checkout_commands WHERE checkout_id = $1
+SELECT checkout_id, order_id, request_hash, created_at, status, reason FROM orders_checkout_commands WHERE checkout_id = $1
 `
 
 func (q *Queries) GetCheckoutOrderCommand(ctx context.Context, checkoutID uuid.UUID) (OrdersCheckoutCommand, error) {
@@ -50,23 +51,35 @@ func (q *Queries) GetCheckoutOrderCommand(ctx context.Context, checkoutID uuid.U
 		&i.OrderID,
 		&i.RequestHash,
 		&i.CreatedAt,
+		&i.Status,
+		&i.Reason,
 	)
 	return i, err
 }
 
 const insertCheckoutOrderCommand = `-- name: InsertCheckoutOrderCommand :exec
-INSERT INTO orders_checkout_commands (checkout_id, order_id, request_hash)
-VALUES ($1, $2, $3)
+INSERT INTO orders_checkout_commands (
+    checkout_id, order_id, request_hash, status, reason
+)
+VALUES ($1, $2, $3, $4, $5)
 `
 
 type InsertCheckoutOrderCommandParams struct {
 	CheckoutID  uuid.UUID
 	OrderID     uuid.UUID
 	RequestHash []byte
+	Status      string
+	Reason      sql.NullString
 }
 
 func (q *Queries) InsertCheckoutOrderCommand(ctx context.Context, arg InsertCheckoutOrderCommandParams) error {
-	_, err := q.db.ExecContext(ctx, insertCheckoutOrderCommand, arg.CheckoutID, arg.OrderID, arg.RequestHash)
+	_, err := q.db.ExecContext(ctx, insertCheckoutOrderCommand,
+		arg.CheckoutID,
+		arg.OrderID,
+		arg.RequestHash,
+		arg.Status,
+		arg.Reason,
+	)
 	return err
 }
 
@@ -79,4 +92,13 @@ func (q *Queries) IsCheckoutOrder(ctx context.Context, orderID uuid.UUID) (bool,
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
+}
+
+const lockCheckoutIdentity = `-- name: LockCheckoutIdentity :exec
+SELECT PG_ADVISORY_XACT_LOCK(HASHTEXTEXTENDED($1::text, 0))
+`
+
+func (q *Queries) LockCheckoutIdentity(ctx context.Context, dollar_1 string) error {
+	_, err := q.db.ExecContext(ctx, lockCheckoutIdentity, dollar_1)
+	return err
 }

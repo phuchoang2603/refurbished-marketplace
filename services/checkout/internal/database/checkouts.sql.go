@@ -57,7 +57,7 @@ func (q *Queries) AdvanceCheckout(ctx context.Context, arg AdvanceCheckoutParams
 }
 
 const claimDueCheckouts = `-- name: ClaimDueCheckouts :many
-SELECT id, buyer_user_id, merchant_id, intent_key, request_hash, snapshot, state, version, order_id, gateway_payment_id, hosted_checkout_url, failure_reason, deadline_at, created_at, updated_at, gateway_snapshot, gateway_expires_at, gateway_last_event_at, gateway_status_checked_at, payment_status FROM checkouts
+SELECT id, buyer_user_id, merchant_id, intent_key, request_hash, snapshot, state, version, order_id, gateway_payment_id, hosted_checkout_url, failure_reason, deadline_at, created_at, updated_at, gateway_snapshot, gateway_expires_at, gateway_last_event_at, gateway_status_checked_at, payment_status, prep_operation_id, prep_version, prep_deadline_at, prep_closure, prep_closed_at, orders_outcome, orders_reason, inventory_outcome, inventory_reason FROM checkouts
 WHERE deadline_at <= NOW()
 ORDER BY deadline_at, id
 LIMIT $1 FOR UPDATE SKIP LOCKED
@@ -93,6 +93,15 @@ func (q *Queries) ClaimDueCheckouts(ctx context.Context, limit int32) ([]Checkou
 			&i.GatewayLastEventAt,
 			&i.GatewayStatusCheckedAt,
 			&i.PaymentStatus,
+			&i.PrepOperationID,
+			&i.PrepVersion,
+			&i.PrepDeadlineAt,
+			&i.PrepClosure,
+			&i.PrepClosedAt,
+			&i.OrdersOutcome,
+			&i.OrdersReason,
+			&i.InventoryOutcome,
+			&i.InventoryReason,
 		); err != nil {
 			return nil, err
 		}
@@ -105,6 +114,25 @@ func (q *Queries) ClaimDueCheckouts(ctx context.Context, limit int32) ([]Checkou
 		return nil, err
 	}
 	return items, nil
+}
+
+const closePreparation = `-- name: ClosePreparation :execrows
+UPDATE checkouts
+SET prep_closure = $2, prep_closed_at = NOW(), updated_at = NOW()
+WHERE id = $1 AND prep_closed_at IS NULL
+`
+
+type ClosePreparationParams struct {
+	ID          uuid.UUID
+	PrepClosure sql.NullString
+}
+
+func (q *Queries) ClosePreparation(ctx context.Context, arg ClosePreparationParams) (int64, error) {
+	result, err := q.db.ExecContext(ctx, closePreparation, arg.ID, arg.PrepClosure)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected()
 }
 
 const delayCheckoutDeadline = `-- name: DelayCheckoutDeadline :execrows
@@ -127,7 +155,7 @@ func (q *Queries) DelayCheckoutDeadline(ctx context.Context, arg DelayCheckoutDe
 }
 
 const getCheckout = `-- name: GetCheckout :one
-SELECT id, buyer_user_id, merchant_id, intent_key, request_hash, snapshot, state, version, order_id, gateway_payment_id, hosted_checkout_url, failure_reason, deadline_at, created_at, updated_at, gateway_snapshot, gateway_expires_at, gateway_last_event_at, gateway_status_checked_at, payment_status FROM checkouts WHERE id = $1
+SELECT id, buyer_user_id, merchant_id, intent_key, request_hash, snapshot, state, version, order_id, gateway_payment_id, hosted_checkout_url, failure_reason, deadline_at, created_at, updated_at, gateway_snapshot, gateway_expires_at, gateway_last_event_at, gateway_status_checked_at, payment_status, prep_operation_id, prep_version, prep_deadline_at, prep_closure, prep_closed_at, orders_outcome, orders_reason, inventory_outcome, inventory_reason FROM checkouts WHERE id = $1
 `
 
 func (q *Queries) GetCheckout(ctx context.Context, id uuid.UUID) (Checkout, error) {
@@ -154,12 +182,21 @@ func (q *Queries) GetCheckout(ctx context.Context, id uuid.UUID) (Checkout, erro
 		&i.GatewayLastEventAt,
 		&i.GatewayStatusCheckedAt,
 		&i.PaymentStatus,
+		&i.PrepOperationID,
+		&i.PrepVersion,
+		&i.PrepDeadlineAt,
+		&i.PrepClosure,
+		&i.PrepClosedAt,
+		&i.OrdersOutcome,
+		&i.OrdersReason,
+		&i.InventoryOutcome,
+		&i.InventoryReason,
 	)
 	return i, err
 }
 
 const getCheckoutByIntent = `-- name: GetCheckoutByIntent :one
-SELECT id, buyer_user_id, merchant_id, intent_key, request_hash, snapshot, state, version, order_id, gateway_payment_id, hosted_checkout_url, failure_reason, deadline_at, created_at, updated_at, gateway_snapshot, gateway_expires_at, gateway_last_event_at, gateway_status_checked_at, payment_status FROM checkouts WHERE buyer_user_id = $1 AND intent_key = $2
+SELECT id, buyer_user_id, merchant_id, intent_key, request_hash, snapshot, state, version, order_id, gateway_payment_id, hosted_checkout_url, failure_reason, deadline_at, created_at, updated_at, gateway_snapshot, gateway_expires_at, gateway_last_event_at, gateway_status_checked_at, payment_status, prep_operation_id, prep_version, prep_deadline_at, prep_closure, prep_closed_at, orders_outcome, orders_reason, inventory_outcome, inventory_reason FROM checkouts WHERE buyer_user_id = $1 AND intent_key = $2
 `
 
 type GetCheckoutByIntentParams struct {
@@ -191,12 +228,21 @@ func (q *Queries) GetCheckoutByIntent(ctx context.Context, arg GetCheckoutByInte
 		&i.GatewayLastEventAt,
 		&i.GatewayStatusCheckedAt,
 		&i.PaymentStatus,
+		&i.PrepOperationID,
+		&i.PrepVersion,
+		&i.PrepDeadlineAt,
+		&i.PrepClosure,
+		&i.PrepClosedAt,
+		&i.OrdersOutcome,
+		&i.OrdersReason,
+		&i.InventoryOutcome,
+		&i.InventoryReason,
 	)
 	return i, err
 }
 
 const getCheckoutByOrder = `-- name: GetCheckoutByOrder :one
-SELECT id, buyer_user_id, merchant_id, intent_key, request_hash, snapshot, state, version, order_id, gateway_payment_id, hosted_checkout_url, failure_reason, deadline_at, created_at, updated_at, gateway_snapshot, gateway_expires_at, gateway_last_event_at, gateway_status_checked_at, payment_status FROM checkouts WHERE order_id = $1
+SELECT id, buyer_user_id, merchant_id, intent_key, request_hash, snapshot, state, version, order_id, gateway_payment_id, hosted_checkout_url, failure_reason, deadline_at, created_at, updated_at, gateway_snapshot, gateway_expires_at, gateway_last_event_at, gateway_status_checked_at, payment_status, prep_operation_id, prep_version, prep_deadline_at, prep_closure, prep_closed_at, orders_outcome, orders_reason, inventory_outcome, inventory_reason FROM checkouts WHERE order_id = $1
 `
 
 func (q *Queries) GetCheckoutByOrder(ctx context.Context, orderID uuid.NullUUID) (Checkout, error) {
@@ -223,6 +269,15 @@ func (q *Queries) GetCheckoutByOrder(ctx context.Context, orderID uuid.NullUUID)
 		&i.GatewayLastEventAt,
 		&i.GatewayStatusCheckedAt,
 		&i.PaymentStatus,
+		&i.PrepOperationID,
+		&i.PrepVersion,
+		&i.PrepDeadlineAt,
+		&i.PrepClosure,
+		&i.PrepClosedAt,
+		&i.OrdersOutcome,
+		&i.OrdersReason,
+		&i.InventoryOutcome,
+		&i.InventoryReason,
 	)
 	return i, err
 }
@@ -238,11 +293,14 @@ INSERT INTO checkouts (
     gateway_snapshot,
     state,
     order_id,
-    deadline_at
+    deadline_at,
+    prep_operation_id,
+    prep_version,
+    prep_deadline_at
 )
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 ON CONFLICT (buyer_user_id, intent_key) DO NOTHING
-RETURNING id, buyer_user_id, merchant_id, intent_key, request_hash, snapshot, state, version, order_id, gateway_payment_id, hosted_checkout_url, failure_reason, deadline_at, created_at, updated_at, gateway_snapshot, gateway_expires_at, gateway_last_event_at, gateway_status_checked_at, payment_status
+RETURNING id, buyer_user_id, merchant_id, intent_key, request_hash, snapshot, state, version, order_id, gateway_payment_id, hosted_checkout_url, failure_reason, deadline_at, created_at, updated_at, gateway_snapshot, gateway_expires_at, gateway_last_event_at, gateway_status_checked_at, payment_status, prep_operation_id, prep_version, prep_deadline_at, prep_closure, prep_closed_at, orders_outcome, orders_reason, inventory_outcome, inventory_reason
 `
 
 type InsertCheckoutParams struct {
@@ -256,6 +314,9 @@ type InsertCheckoutParams struct {
 	State           string
 	OrderID         uuid.NullUUID
 	DeadlineAt      sql.NullTime
+	PrepOperationID uuid.NullUUID
+	PrepVersion     sql.NullInt64
+	PrepDeadlineAt  sql.NullTime
 }
 
 func (q *Queries) InsertCheckout(ctx context.Context, arg InsertCheckoutParams) (Checkout, error) {
@@ -270,6 +331,9 @@ func (q *Queries) InsertCheckout(ctx context.Context, arg InsertCheckoutParams) 
 		arg.State,
 		arg.OrderID,
 		arg.DeadlineAt,
+		arg.PrepOperationID,
+		arg.PrepVersion,
+		arg.PrepDeadlineAt,
 	)
 	var i Checkout
 	err := row.Scan(
@@ -293,12 +357,21 @@ func (q *Queries) InsertCheckout(ctx context.Context, arg InsertCheckoutParams) 
 		&i.GatewayLastEventAt,
 		&i.GatewayStatusCheckedAt,
 		&i.PaymentStatus,
+		&i.PrepOperationID,
+		&i.PrepVersion,
+		&i.PrepDeadlineAt,
+		&i.PrepClosure,
+		&i.PrepClosedAt,
+		&i.OrdersOutcome,
+		&i.OrdersReason,
+		&i.InventoryOutcome,
+		&i.InventoryReason,
 	)
 	return i, err
 }
 
 const lockCheckout = `-- name: LockCheckout :one
-SELECT id, buyer_user_id, merchant_id, intent_key, request_hash, snapshot, state, version, order_id, gateway_payment_id, hosted_checkout_url, failure_reason, deadline_at, created_at, updated_at, gateway_snapshot, gateway_expires_at, gateway_last_event_at, gateway_status_checked_at, payment_status FROM checkouts WHERE id = $1 FOR UPDATE
+SELECT id, buyer_user_id, merchant_id, intent_key, request_hash, snapshot, state, version, order_id, gateway_payment_id, hosted_checkout_url, failure_reason, deadline_at, created_at, updated_at, gateway_snapshot, gateway_expires_at, gateway_last_event_at, gateway_status_checked_at, payment_status, prep_operation_id, prep_version, prep_deadline_at, prep_closure, prep_closed_at, orders_outcome, orders_reason, inventory_outcome, inventory_reason FROM checkouts WHERE id = $1 FOR UPDATE
 `
 
 func (q *Queries) LockCheckout(ctx context.Context, id uuid.UUID) (Checkout, error) {
@@ -325,6 +398,59 @@ func (q *Queries) LockCheckout(ctx context.Context, id uuid.UUID) (Checkout, err
 		&i.GatewayLastEventAt,
 		&i.GatewayStatusCheckedAt,
 		&i.PaymentStatus,
+		&i.PrepOperationID,
+		&i.PrepVersion,
+		&i.PrepDeadlineAt,
+		&i.PrepClosure,
+		&i.PrepClosedAt,
+		&i.OrdersOutcome,
+		&i.OrdersReason,
+		&i.InventoryOutcome,
+		&i.InventoryReason,
 	)
 	return i, err
+}
+
+const setPreparationOutcome = `-- name: SetPreparationOutcome :exec
+UPDATE checkouts
+SET
+    orders_outcome = CASE
+        WHEN $1::text = 'orders'
+            THEN $2::text
+        ELSE orders_outcome
+    END,
+    orders_reason = CASE
+        WHEN $1::text = 'orders'
+            THEN $3::text
+        ELSE orders_reason
+    END,
+    inventory_outcome = CASE
+        WHEN $1::text = 'inventory'
+            THEN $2::text
+        ELSE inventory_outcome
+    END,
+    inventory_reason = CASE
+        WHEN $1::text = 'inventory'
+            THEN $3::text
+        ELSE inventory_reason
+    END,
+    updated_at = NOW()
+WHERE id = $4
+`
+
+type SetPreparationOutcomeParams struct {
+	Participant string
+	Outcome     string
+	Reason      sql.NullString
+	ID          uuid.UUID
+}
+
+func (q *Queries) SetPreparationOutcome(ctx context.Context, arg SetPreparationOutcomeParams) error {
+	_, err := q.db.ExecContext(ctx, setPreparationOutcome,
+		arg.Participant,
+		arg.Outcome,
+		arg.Reason,
+		arg.ID,
+	)
+	return err
 }

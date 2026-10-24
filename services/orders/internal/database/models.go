@@ -37,6 +37,8 @@ type OrdersCheckoutCommand struct {
 	OrderID     uuid.UUID
 	RequestHash []byte
 	CreatedAt   time.Time
+	Status      string
+	Reason      sql.NullString
 }
 
 type OrdersInbox struct {

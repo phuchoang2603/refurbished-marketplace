@@ -59,6 +59,7 @@ func NewKafkaConsumer(cfg KafkaConsumerConfig, h KafkaHandler) (*KafkaConsumer, 
 		kgo.SeedBrokers(cfg.BootstrapServers...),
 		kgo.ConsumerGroup(cfg.GroupID),
 		kgo.ConsumeTopics(cfg.Topics...),
+		kgo.Balancers(kgo.RangeBalancer()),
 		kgo.DisableAutoCommit(),
 	)
 	if err != nil {

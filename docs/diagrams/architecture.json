@@ -3,7 +3,7 @@
   "height": 1600,
   "eyebrow": "REFURBISHED MARKETPLACE · RUNTIME + DATA FLOWS",
   "title": "System architecture: deployable units and the data they exchange",
-  "description": "Web is the public HTTP edge. Internal gRPC serves identity, listings, search, carts, stock reads, orders and checkout. Debezium streams MongoDB and PostgreSQL outboxes to Kafka. Independent catalog consumers populate Meilisearch and seed inventory. Checkout coordinates Orders and Inventory through versioned Kafka commands and results, calls the external gateway, and verifies signed outcomes forwarded by Web.",
+  "description": "Web is the public HTTP edge. Internal gRPC serves identity, listings, search, carts, stock reads, orders and checkout. Debezium streams MongoDB and PostgreSQL outboxes to Kafka. Independent catalog consumers populate Meilisearch and seed inventory. Checkout publishes one preparation command consumed by Orders and Inventory in separate groups (three replicas each in production), then joins their versioned results, calls the external gateway, and verifies signed outcomes forwarded by Web.",
   "zones": [
     { "box": [15, 125, 190, 180], "label": "OUTSIDE", "fill": "#f7f8fa", "dashed": true },
     {
@@ -184,7 +184,7 @@
       "box": [890, 995, 230, 100],
       "title": "Inventory",
       "tag": "Go / gRPC :9097",
-      "lines": ["seed / reserve stock", "commit or release holds"],
+      "lines": ["reserve from prepare cmd", "x3 prod · own group"],
       "icon": "service",
       "support": false
     },
@@ -193,7 +193,7 @@
       "box": [1190, 995, 230, 100],
       "title": "Orders",
       "tag": "Go / gRPC :9093",
-      "lines": ["merchant-scoped lifecycle", "pending → paid / failed"],
+      "lines": ["create from prepare cmd", "x3 prod · own group"],
       "icon": "service",
       "support": false
     },
@@ -688,9 +688,9 @@
   ],
   "notes": [
     { "x": 1885, "y": 355, "text": "CHECKOUT PAYMENT ORDER", "size": 12, "mono": true },
-    { "x": 1885, "y": 385, "text": "1  Create pending order", "size": 13 },
-    { "x": 1885, "y": 414, "text": "2  Reserve inventory", "size": 13 },
-    { "x": 1885, "y": 443, "text": "3  Create gateway payment", "size": 13 },
+    { "x": 1885, "y": 385, "text": "1  Publish one prepare command", "size": 13 },
+    { "x": 1885, "y": 414, "text": "2  Orders + Inventory in parallel", "size": 13 },
+    { "x": 1885, "y": 443, "text": "3  Create payment after both succeed", "size": 13 },
     { "x": 1885, "y": 472, "text": "4  Buyer completes payment", "size": 13 },
     { "x": 1885, "y": 501, "text": "5  Verify + deduplicate webhook", "size": 13 },
     { "x": 1885, "y": 530, "text": "6  Commit / release inventory", "size": 13 },

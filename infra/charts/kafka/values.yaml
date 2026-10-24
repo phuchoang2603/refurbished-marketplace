@@ -21,7 +21,7 @@ kafka:
   # Brokers use ~150-200m steady (550m+ at startup); a nominal request hid that load from the scheduler.
   resources:
     requests:
-      cpu: 250m
+      cpu: 100m
       memory: 768Mi
     limits:
       cpu: "1"
@@ -50,10 +50,10 @@ connect:
     "-Xmx": 512m
   # spec.tracing (Strimzi OTEL java agent) adds ~200Mi of non-heap overhead
   # (agent + metaspace + direct buffers); 512Mi limit caused repeated OOMKills.
-  # CPU request covers plugin scanning at startup (~430m observed) without starving neighbours.
+  # Startup plugin scanning bursts (~430m observed) above this request; the limit has no CPU cap.
   resources:
     requests:
-      cpu: 250m
+      cpu: 100m
       memory: 768Mi
     limits:
       memory: 1Gi
@@ -100,10 +100,7 @@ entities:
       outboxCollection: catalog.catalog_outbox
   checkout:
     topics:
-      - name: checkout.order-create.requested.v1
-        partitions: 1
-        retention: 86400000
-      - name: checkout.stock-reserve.requested.v1
+      - name: checkout.prepare.requested.v1
         partitions: 1
         retention: 86400000
       - name: checkout.stock-cancel.requested.v1

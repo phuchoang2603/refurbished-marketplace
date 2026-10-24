@@ -51,7 +51,7 @@ func TestGatewayWebhookRollsBackInboxWhenOutboxFails(t *testing.T) {
 	if _, err := svc.HandleGatewayWebhook(t.Context(), request); status.Code(err) != codes.Unavailable {
 		t.Fatalf("expected retryable store failure %v", err)
 	}
-	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_READY_TO_PAY, 2)
+	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_READY_TO_PAY, 1)
 	var inbox int
 	if err := db.QueryRowContext(t.Context(), "SELECT count(*) FROM checkout_inbox WHERE message_id='gateway:success'").Scan(&inbox); err != nil || inbox != 0 {
 		t.Fatalf("inbox must roll back %d %v", inbox, err)
@@ -60,7 +60,7 @@ func TestGatewayWebhookRollsBackInboxWhenOutboxFails(t *testing.T) {
 		t.Fatal(err)
 	}
 	sendWebhook(t, svc, "success", "payment.succeeded", orderID)
-	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_COMMITTING_STOCK, 3)
+	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_COMMITTING_STOCK, 2)
 }
 
 func TestUnmatchedWebhookRetriesUntilPaymentRecorded(t *testing.T) {
@@ -76,7 +76,7 @@ func TestUnmatchedWebhookRetriesUntilPaymentRecorded(t *testing.T) {
 	if err := db.QueryRowContext(t.Context(), "SELECT count(*) FROM checkout_inbox WHERE message_id='gateway:early-expiry'").Scan(&inbox); err != nil || inbox != 0 {
 		t.Fatalf("unmatched webhook must not be deduplicated: count=%d error=%v", inbox, err)
 	}
-	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_CREATING_PAYMENT, 2)
+	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_CREATING_PAYMENT, 1)
 	if processed, err := svc.ProcessGatewayOperation(t.Context()); err != nil || !processed {
 		t.Fatalf("record payment: processed=%v error=%v", processed, err)
 	}
@@ -88,5 +88,5 @@ func TestUnmatchedWebhookRetriesUntilPaymentRecorded(t *testing.T) {
 	if err != nil || response.GetResult() != checkoutv1.GatewayWebhookResult_GATEWAY_WEBHOOK_RESULT_DUPLICATE {
 		t.Fatalf("applied event must deduplicate: response=%v error=%v", response, err)
 	}
-	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK, 3)
+	assertCheckoutState(t, db, checkoutID, checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK, 2)
 }

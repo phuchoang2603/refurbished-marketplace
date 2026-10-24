@@ -26,8 +26,6 @@ type CheckoutState int32
 const (
 	CheckoutState_CHECKOUT_STATE_UNSPECIFIED       CheckoutState = 0
 	CheckoutState_CHECKOUT_STATE_ACCEPTED          CheckoutState = 1
-	CheckoutState_CHECKOUT_STATE_CREATING_ORDER    CheckoutState = 2
-	CheckoutState_CHECKOUT_STATE_RESERVING_STOCK   CheckoutState = 3
 	CheckoutState_CHECKOUT_STATE_CREATING_PAYMENT  CheckoutState = 4
 	CheckoutState_CHECKOUT_STATE_READY_TO_PAY      CheckoutState = 5
 	CheckoutState_CHECKOUT_STATE_COMMITTING_STOCK  CheckoutState = 6
@@ -38,6 +36,7 @@ const (
 	CheckoutState_CHECKOUT_STATE_FAILED            CheckoutState = 11
 	CheckoutState_CHECKOUT_STATE_RECONCILING       CheckoutState = 12
 	CheckoutState_CHECKOUT_STATE_NEEDS_REVIEW      CheckoutState = 13
+	CheckoutState_CHECKOUT_STATE_PREPARING         CheckoutState = 14
 )
 
 // Enum value maps for CheckoutState.
@@ -45,8 +44,6 @@ var (
 	CheckoutState_name = map[int32]string{
 		0:  "CHECKOUT_STATE_UNSPECIFIED",
 		1:  "CHECKOUT_STATE_ACCEPTED",
-		2:  "CHECKOUT_STATE_CREATING_ORDER",
-		3:  "CHECKOUT_STATE_RESERVING_STOCK",
 		4:  "CHECKOUT_STATE_CREATING_PAYMENT",
 		5:  "CHECKOUT_STATE_READY_TO_PAY",
 		6:  "CHECKOUT_STATE_COMMITTING_STOCK",
@@ -57,12 +54,11 @@ var (
 		11: "CHECKOUT_STATE_FAILED",
 		12: "CHECKOUT_STATE_RECONCILING",
 		13: "CHECKOUT_STATE_NEEDS_REVIEW",
+		14: "CHECKOUT_STATE_PREPARING",
 	}
 	CheckoutState_value = map[string]int32{
 		"CHECKOUT_STATE_UNSPECIFIED":       0,
 		"CHECKOUT_STATE_ACCEPTED":          1,
-		"CHECKOUT_STATE_CREATING_ORDER":    2,
-		"CHECKOUT_STATE_RESERVING_STOCK":   3,
 		"CHECKOUT_STATE_CREATING_PAYMENT":  4,
 		"CHECKOUT_STATE_READY_TO_PAY":      5,
 		"CHECKOUT_STATE_COMMITTING_STOCK":  6,
@@ -73,6 +69,7 @@ var (
 		"CHECKOUT_STATE_FAILED":            11,
 		"CHECKOUT_STATE_RECONCILING":       12,
 		"CHECKOUT_STATE_NEEDS_REVIEW":      13,
+		"CHECKOUT_STATE_PREPARING":         14,
 	}
 )
 
@@ -614,12 +611,10 @@ const file_shared_proto_checkout_v1_checkout_proto_rawDesc = "" +
 	"\braw_body\x18\x01 \x01(\fR\arawBody\x12)\n" +
 	"\x10signature_header\x18\x02 \x01(\tR\x0fsignatureHeader\"Y\n" +
 	"\x1cHandleGatewayWebhookResponse\x129\n" +
-	"\x06result\x18\x01 \x01(\x0e2!.checkout.v1.GatewayWebhookResultR\x06result*\xe6\x03\n" +
+	"\x06result\x18\x01 \x01(\x0e2!.checkout.v1.GatewayWebhookResultR\x06result*\x88\x04\n" +
 	"\rCheckoutState\x12\x1e\n" +
 	"\x1aCHECKOUT_STATE_UNSPECIFIED\x10\x00\x12\x1b\n" +
-	"\x17CHECKOUT_STATE_ACCEPTED\x10\x01\x12!\n" +
-	"\x1dCHECKOUT_STATE_CREATING_ORDER\x10\x02\x12\"\n" +
-	"\x1eCHECKOUT_STATE_RESERVING_STOCK\x10\x03\x12#\n" +
+	"\x17CHECKOUT_STATE_ACCEPTED\x10\x01\x12#\n" +
 	"\x1fCHECKOUT_STATE_CREATING_PAYMENT\x10\x04\x12\x1f\n" +
 	"\x1bCHECKOUT_STATE_READY_TO_PAY\x10\x05\x12#\n" +
 	"\x1fCHECKOUT_STATE_COMMITTING_STOCK\x10\x06\x12\"\n" +
@@ -630,7 +625,8 @@ const file_shared_proto_checkout_v1_checkout_proto_rawDesc = "" +
 	"\x12\x19\n" +
 	"\x15CHECKOUT_STATE_FAILED\x10\v\x12\x1e\n" +
 	"\x1aCHECKOUT_STATE_RECONCILING\x10\f\x12\x1f\n" +
-	"\x1bCHECKOUT_STATE_NEEDS_REVIEW\x10\r*\xae\x01\n" +
+	"\x1bCHECKOUT_STATE_NEEDS_REVIEW\x10\r\x12\x1c\n" +
+	"\x18CHECKOUT_STATE_PREPARING\x10\x0e\"\x04\b\x02\x10\x02\"\x04\b\x03\x10\x03*\x1dCHECKOUT_STATE_CREATING_ORDER*\x1eCHECKOUT_STATE_RESERVING_STOCK*\xae\x01\n" +
 	"\x14GatewayWebhookResult\x12&\n" +
 	"\"GATEWAY_WEBHOOK_RESULT_UNSPECIFIED\x10\x00\x12#\n" +
 	"\x1fGATEWAY_WEBHOOK_RESULT_ACCEPTED\x10\x01\x12$\n" +

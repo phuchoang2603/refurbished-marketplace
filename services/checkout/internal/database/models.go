@@ -33,6 +33,15 @@ type Checkout struct {
 	GatewayLastEventAt     sql.NullTime
 	GatewayStatusCheckedAt sql.NullTime
 	PaymentStatus          sql.NullString
+	PrepOperationID        uuid.NullUUID
+	PrepVersion            sql.NullInt64
+	PrepDeadlineAt         sql.NullTime
+	PrepClosure            sql.NullString
+	PrepClosedAt           sql.NullTime
+	OrdersOutcome          string
+	OrdersReason           sql.NullString
+	InventoryOutcome       string
+	InventoryReason        sql.NullString
 }
 
 type CheckoutException struct {

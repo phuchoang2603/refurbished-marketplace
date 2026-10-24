@@ -18,3 +18,7 @@ services:
       CHECKOUT_RETURN_BASE_URL: https://shop.phuchoang.sbs
     paymentGateway:
       secretName: checkout-payment-gateway
+  orders:
+    replicas: 3
+  inventory:
+    replicas: 3
