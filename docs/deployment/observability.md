@@ -1,6 +1,6 @@
 # Marketplace observability
 
-The shared telemetry pipeline is installed and administered by `talos-proxmox`: an OpenTelemetry agent ([`apps/components/otel-agent`](https://github.com/phuchoang2603/talos-proxmox/tree/main/apps/components/otel-agent)) in each cluster, and one ClickHouse store with the HyperDX UI on prod ([`apps/components/observability`](https://github.com/phuchoang2603/talos-proxmox/tree/main/apps/components/observability)). This repository owns only the marketplace telemetry producers.
+The shared telemetry pipeline is installed and administered by `talos-proxmox`: prod's OpenTelemetry node agents, cluster collector, gateway and ClickHouse store with the HyperDX UI live in [`apps/components/observability`](https://github.com/phuchoang2603/talos-proxmox/tree/main/apps/components/observability). Dev runs no telemetry components. This repository owns only the marketplace telemetry producers.
 
 ## Application contract
 
@@ -29,10 +29,10 @@ The marketplace charts render no scrape resources, dashboards, or policies for t
 
 ## Platform prerequisites
 
-The `otel-agent` Application must be healthy in the target cluster, and prod's `observability` Application (ClickHouse, gateway, HyperDX) must be healthy for data to be stored:
+Prod's `observability` Application (agents, collectors, ClickHouse, MongoDB and HyperDX) must be healthy for data to be stored. Its critical namespace scope must include `ecommerce`; a healthy exporter alone does not prove the platform retains its data:
 
 ```bash
-kubectl --kubeconfig="$HOME/.kube/talos-prod.yaml" get applications -n argo-cd otel-agent observability
+kubectl --kubeconfig="$HOME/.kube/talos-prod.yaml" get applications -n argo-cd observability
 kubectl --kubeconfig="$HOME/.kube/talos-prod.yaml" get pods,svc -n observability
 ```
 
@@ -40,7 +40,7 @@ Fetch kubeconfigs as described in [gitops.md](gitops.md#environment-configuratio
 
 ## HyperDX access
 
-HyperDX is served on prod's internal LAN address `http://10.69.12.128`; it has no public hostname.
+HyperDX is served at <https://hyperdx.phuchoang.sbs>. The public tunnel and LAN service at `http://10.69.12.128` both use the operator-only Dex access proxy. HyperDX then requires its own account login; see the platform [access guide](https://github.com/phuchoang2603/talos-proxmox/blob/main/docs/operations/cluster-access.md#public-urls-prod).
 
 The default sources are **Logs** (`otel_logs`), **Traces** (`otel_traces`), and **Metrics** (`otel_metrics_gauge`, `otel_metrics_sum`, `otel_metrics_histogram`).
 
@@ -91,7 +91,7 @@ In HyperDX **Chart Explorer**, pick the **Metrics** source and the histogram met
 - error ratio: the same chart filtered to `Attributes['http.response.status_code'] >= '500'` (HTTP) or `Attributes['rpc.response.status_code'] != 'OK'` (gRPC), compared with the unfiltered count;
 - latency: aggregation **p95**, grouped by `ServiceName`.
 
-The **Prod Checkout Saga** HyperDX dashboard shows the latest `checkout.pending.max_age.seconds`, `checkout.compensating.count`, `checkout.financial_exceptions.count`, and `checkout.stuck.count` gauges, filtered to `ServiceName = checkout` and `deployment.environment = prod`. A zero reading confirms the gauge is queryable, not that failure paths were exercised. Dashboards live in HyperDX's own database, not in Git. To verify accepted workflows, read Checkout by buyer-authenticated `GetCheckout` and cross-check persisted `checkouts`/`checkout_exceptions`; never infer completion from a browser redirect.
+Use HyperDX **Chart Explorer** to inspect the existing `checkout.pending.max_age.seconds`, `checkout.compensating.count`, `checkout.financial_exceptions.count`, and `checkout.stuck.count` gauges, filtered to `ServiceName = checkout` and `deployment.environment = prod`. The platform supplies bundled preset dashboards and does not provision a custom **Prod Checkout Saga** dashboard. A zero reading confirms the gauge is queryable, not that failure paths were exercised. Dashboards live in HyperDX's own database, not in Git. To verify accepted workflows, read Checkout by buyer-authenticated `GetCheckout` and cross-check persisted `checkouts`/`checkout_exceptions`; never infer completion from a browser redirect.
 
 ## Distributed tracing
 
