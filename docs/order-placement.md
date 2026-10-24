@@ -62,7 +62,7 @@ Orders and Inventory consume the same preparation command in distinct consumer g
 - **Gateway** hosts card entry and fraud decisions. Checkout alone holds its API key and webhook signing secret. Webhooks are HMAC-SHA256 signed with a ±5 minute timestamp tolerance and deduplicated by `event_id` in Checkout.
 - **Web** submits a validated snapshot once per intent, displays buyer-scoped progress, forwards bounded raw gateway webhooks to Checkout, removes cart lines after observing `SUCCEEDED`, and retains them on `EXPIRED` while rotating only the matching checkout intent. The legacy direct `POST /orders`, `ReserveStock`, `CreateOrder`, `UpdateOrderStatus`, and `CreateHostedPaymentSession` RPCs are removed.
 
-All command and result topics are versioned `checkout.*.v1`. Each producer's Debezium connector publishes its own outbox rows; consumers use inbox deduplication. The Checkout database is the source of truth for recovery, not a Kafka consumer offset or a browser redirect. See `services/checkout/README.md` for states and reconciliation rules.
+All command and result topics are versioned `checkout.*.v1`. Each producer's Debezium connector publishes its own outbox rows; consumers use inbox deduplication. The Checkout database is the source of truth for recovery, not a Kafka consumer offset or a browser redirect.
 
 ## Rollout gate
 
