@@ -16,7 +16,7 @@ nodeAffinity:
   requiredDuringSchedulingIgnoredDuringExecution:
     nodeSelectorTerms:
       - matchExpressions:
-          - key: feature.node.kubernetes.io/cpu-cpuid.AVX
+          - key: kubernetes.io/hostname
             operator: In
             values:
-              - "true"
+              - prod-server2
