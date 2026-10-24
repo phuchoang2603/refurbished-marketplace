@@ -21,6 +21,11 @@ resources:
     cpu: 500m
     memory: 512Mi
 
+agentResources:
+  requests:
+    cpu: 100m
+    memory: 400M
+
 wiredTigerCacheSizeGB: 0.25
 
 # Official MongoDB 5+ x86_64 binaries require AVX. Leave empty on AVX-capable clusters.

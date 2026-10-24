@@ -49,6 +49,9 @@ spec:
             - name: mongod
               resources:
                 {{- toYaml .Values.resources | nindent 16 }}
+            - name: mongodb-agent
+              resources:
+                {{- toYaml .Values.agentResources | nindent 16 }}
       volumeClaimTemplates:
         - metadata:
             name: data-volume
