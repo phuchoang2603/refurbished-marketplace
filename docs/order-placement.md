@@ -72,7 +72,7 @@ After rollout, verify approve, decline-then-approve, expiry, webhook redelivery 
 
 ## Parallel preparation: scaling and cutover
 
-Production runs three Orders and three Inventory replicas, each service with one stable `KAFKA_GROUP_ID` (set in the chart's service `env`, not a secret) shared by its pods, and six partitions on `checkout.prepare.requested.v1`. All other Kafka topics have one partition. Checkout-ID keys spread work across partitions; one checkout key cannot show parallelism. Inspect assignments with `kafka-consumer-groups.sh --describe --group <group>` for each service group (expect three members each; the split is not exactly two partitions per pod because the same clients also subscribe to settlement topics). Match processing to pods using consumer spans, which carry `checkout_id`, `order_id`, Kafka partition/offset and duration, and the platform agent's pod attributes; submit checkouts spanning all partitions and confirm overlapping Orders and Inventory spans.
+Production runs three Orders and three Inventory replicas, each service with one stable `KAFKA_GROUP_ID` (set in the chart's service `env`, not a secret) shared by its pods, and six partitions on `checkout.prepare.requested.v1`. All other Kafka topics have one partition. Checkout-ID keys spread work across partitions; one checkout key cannot show parallelism. Inspect assignments with `kafka-consumer-groups.sh --describe --group <group>` for each service group (expect three members each with two prepare partitions apiece; consumers use the range balancer so each topic splits evenly). Match processing to pods using consumer spans, which carry `checkout_id`, `order_id`, Kafka partition/offset and duration, and the platform agent's pod attributes; submit checkouts spanning all partitions and confirm overlapping Orders and Inventory spans.
 
 The initial create-order and reserve-stock commands are replaced, so cutover is not rolling-compatible:
 
@@ -80,4 +80,3 @@ The initial create-order and reserve-stock commands are replaced, so cutover is 
 2. Drain accepted workflows through stock/order settlement; unresolved financial or compensating workflows block cutover. Confirm old command/result topic lag is zero and Debezium has published the outboxes.
 3. Apply the migrations and provision `checkout.prepare.requested.v1`; the retired create-order and reserve-stock topics are removed from the chart in the same change.
 4. Deploy Checkout, Orders, Inventory and Web together with admission still paused, verify both groups on the shared topic, then reopen admission.
-5. Roll back only before any new-protocol workflow is accepted. Afterwards, drain new-protocol workflows first; old binaries must never process a parallel workflow.

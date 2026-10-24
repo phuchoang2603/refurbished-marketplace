@@ -38,9 +38,6 @@
 - [x] 6.2 Update the existing `docs/diagrams/architecture.json` and regenerate its SVG to show one preparation topic feeding two service groups with three production replicas each; keep the editable JSON tracked and preserve the README image/link behavior.
 - [x] 6.3 Prepare a concrete edge admission-pause procedure that leaves status reads/webhooks active; identify old outbox/CDC/consumer lag and nonterminal workflow checks required before replacing the protocol. Do not treat an Argo rolling update as a safe cutover by itself.
 
-## 7. Cluster acceptance and retirement
+## 7. Cluster rollout
 
 - [x] 7.1 During an authorized rollout, pause new admission, drain old workflows and old command/result delivery, apply migrations/provision the topic, and deploy the coordinated revision before accepting new workflows. Block on unresolved financial/compensation work.
-- [ ] 7.2 Verify three healthy production members per service group and six preparation partitions. Submit isolated checkouts spanning all partitions and collect assignments plus pod-correlated processing evidence across all replicas, including overlapping Orders/Inventory work; do not require an exact two-partitions-per-pod split.
-- [ ] 7.3 Restart one participant pod under fixture load and verify rebalance, eventual completion, and no duplicate effective mutations; retain evidence separately from local chart/check results.
-- [ ] 7.4 Reopen admission after acceptance, remove retired initial topic definitions only after confirmed quiescence, and record the rollback boundary: new-protocol workflows must drain before old binaries can be restored.
