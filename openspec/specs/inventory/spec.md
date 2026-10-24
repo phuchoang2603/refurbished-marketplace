@@ -8,16 +8,16 @@ Own marketplace available and reserved quantity, order-level reservations, and r
 
 ### Requirement: Inventory processes Checkout reservation commands
 
-Inventory MUST consume Checkout's correlated reserve, commit, and release commands idempotently, and report each result from its own committed transaction. An `orders.created` event MUST NOT independently reserve stock for a saga checkout.
+Inventory MUST consume Checkout's shared preparation command in an Inventory group distinct from Orders, plus correlated commit and release commands idempotently, and report each result from its own committed transaction. An `orders.created` event MUST NOT independently reserve stock for a saga checkout.
 
 #### Scenario: Order-created event arrives without Checkout command
 
-- **WHEN** Inventory observes an `orders.created` event for a saga checkout before a reserve command
+- **WHEN** Inventory observes an `orders.created` event for a saga checkout before a shared preparation command
 - **THEN** it SHALL NOT reserve stock or emit `inventory.reserved` from that event alone
 
 #### Scenario: Reservation command is redelivered
 
-- **WHEN** Checkout's reserve command is redelivered for the same order
+- **WHEN** Checkout's shared preparation command is redelivered for the same order
 - **THEN** Inventory SHALL NOT double-hold stock and SHALL report the existing definitive reservation result
 
 #### Scenario: Reservation cannot be completed
@@ -29,6 +29,16 @@ Inventory MUST consume Checkout's correlated reserve, commit, and release comman
 
 - **WHEN** web attempts to reserve stock for checkout using the removed synchronous path
 - **THEN** the service or mesh SHALL reject the mutation and SHALL NOT create a hold
+
+#### Scenario: Order result is delayed
+
+- **WHEN** Inventory receives a shared preparation command before Orders creates the order or publishes its result
+- **THEN** Inventory SHALL reserve from that command's complete merchant-scoped item snapshot without calling Orders or waiting for an order-created event
+
+#### Scenario: Multiple checkouts compete for limited stock
+
+- **WHEN** Inventory replicas process distinct checkouts for the same products concurrently across Kafka partitions
+- **THEN** stock mutation SHALL remain atomic for all lines and total successful reservations SHALL NOT exceed available quantities
 
 ### Requirement: Inventory owns the stock ledger
 
@@ -46,7 +56,7 @@ The inventory service SHALL persist `available_qty` and `reserved_qty` per produ
 
 ### Requirement: Inventory seeds stock from ProductCreated
 
-Inventory SHALL consume ProductCreated on `products.created` in a consumer group independent of the future search projector and of inventory's reservation/payment consumer. It SHALL validate an explicit non-negative initial quantity and atomically persist the event id in its inbox with a stock row whose reserved quantity is zero. EnsureStock SHALL remain an internal operation and SHALL NOT be exposed over gRPC.
+Inventory SHALL consume ProductCreated on `products.created` in a consumer group independent of the search projector and of inventory's checkout command consumer. It SHALL validate an explicit non-negative initial quantity and atomically persist the event id in its inbox with a stock row whose reserved quantity is zero. EnsureStock SHALL remain an internal operation and SHALL NOT be exposed over gRPC.
 
 #### Scenario: First seed succeeds
 
@@ -81,7 +91,7 @@ Inventory SHALL consume ProductCreated on `products.created` in a consumer group
 #### Scenario: Creation consumption is isolated from reservation topics
 
 - **WHEN** ProductCreated processing returns a retryable or validation error
-- **THEN** inventory's `orders.created` and payment-outcome consumer SHALL continue independently and SHALL NOT stall reservation settlement on that error
+- **THEN** inventory's checkout preparation and stock-settlement consumer SHALL continue independently and SHALL NOT stall reservation settlement on that error
 
 ### Requirement: Inventory manages reservations
 
