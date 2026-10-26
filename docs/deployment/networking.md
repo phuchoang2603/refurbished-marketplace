@@ -8,7 +8,7 @@ This repo consumes that dataplane:
 - Each namespace has a `STRICT` `PeerAuthentication` (marketplace chart for `ecommerce`, Kafka chart for `kafka`). Kafka keeps its own broker TLS; ambient mTLS is transport protection, not a Kafka replacement.
 - The marketplace chart renders the browser `Gateway`/`HTTPRoute`s (`gatewayClassName: istio`), a service waypoint, and per-service `DestinationRule`s.
 
-No CiliumNetworkPolicy is rendered. In prod, `NetworkPolicy/web-payment-gateway` limits web ingress to local namespace pods and the gateway notifier (`app.kubernetes.io/name: notifier`, `payment-gateway/release: notifier`) in namespace `payment-gateway`, on TCP 8080 and HBONE 15008, plus ambient probe traffic from `169.254.7.127`. The local namespace rule preserves ingress Gateway/browser and service access; egress is unchanged. Application traces and RED metrics are OTLP exports to the node-local `otel-agent` in `observability`; see [observability.md](observability.md).
+No CiliumNetworkPolicy is rendered. In prod, `NetworkPolicy/web-payment-gateway` limits web ingress to local namespace pods and the gateway notifier (`app.kubernetes.io/name: notifier`, `payment-gateway/release: notifier`) in namespace `payment-gateway`, on TCP 8080 and HBONE 15008, plus ambient probe traffic from `169.254.7.127`. The local namespace rule preserves ingress Gateway/browser and service access; egress is unchanged. Application traces and RED metrics are OTLP/HTTP exports to VMAgent and VTAgent in `observability`; see [observability.md](observability.md).
 
 ## Edge
 

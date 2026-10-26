@@ -39,16 +39,16 @@ Details: [order-placement.md](order-placement.md).
 
 ## Platform
 
-| Layer    | Where                                                                                                                    |
-| -------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Clusters | Talos **prod** is the development server and runs Argo CD in `argo-cd`                                                   |
-| GitOps   | `talos-proxmox` `platform` root installs shared operators; this repo's `prod-root` deploys application consumers locally |
-| Images   | GHCR `ghcr.io/phuchoang2603/refurbished-marketplace/<name>:<sha>` pinned in `values-prod.yaml`                           |
-| Secrets  | Doppler → External Secrets; `ecommerce/doppler-token` applied per environment                                            |
-| Ingress  | Cloudflare Tunnel → Istio Gateway API (`gatewayClassName: istio`)                                                        |
-| Network  | Cilium CNI and Istio ambient (ztunnel, waypoint) installed by `talos-proxmox`                                            |
-| Observe  | Apps export OTLP traces and metrics to `otel-agent` and log JSON to stdout; ClickHouse + HyperDX on prod                 |
+| Layer    | Where                                                                                                                                                  |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Clusters | Talos **prod** is the development server and runs Argo CD in `argo-cd`                                                                                 |
+| GitOps   | `talos-proxmox` `platform` root installs shared operators; this repo's `prod-root` deploys application consumers locally                               |
+| Images   | GHCR `ghcr.io/phuchoang2603/refurbished-marketplace/<name>:<sha>` pinned in `values-prod.yaml`                                                         |
+| Secrets  | Doppler → External Secrets; `ecommerce/doppler-token` applied per environment                                                                          |
+| Ingress  | Cloudflare Tunnel → Istio Gateway API (`gatewayClassName: istio`)                                                                                      |
+| Network  | Cilium CNI and Istio ambient (ztunnel, waypoint) installed by `talos-proxmox`                                                                          |
+| Observe  | Apps export OTLP/HTTP traces to VTAgent and metrics to VMAgent and log JSON to stdout; VictoriaMetrics, VictoriaLogs, VictoriaTraces + Grafana on prod |
 
-The cluster's Argo CD runs `prod-root` alongside the platform root. The platform supplies operators and the telemetry pipeline; the marketplace root creates the ambient-enrolled `ecommerce` and `kafka` namespaces (wave 0), then submits `secret-store` (wave 1), MongoDB and Meilisearch (2), services (3), then Kafka (4). These waves do not wait for child health: children retry while platform dependencies converge. The node-local `otel-agent` forwards telemetry to ClickHouse and HyperDX on prod.
+The cluster's Argo CD runs `prod-root` alongside the platform root. The platform supplies operators and the telemetry pipeline; the marketplace root creates the ambient-enrolled `ecommerce` and `kafka` namespaces (wave 0), then submits `secret-store` (wave 1), MongoDB and Meilisearch (2), services (3), then Kafka (4). These waves do not wait for child health: children retry while platform dependencies converge. VMAgent and VTAgent buffer application telemetry and remote-write to the Victoria stores; VLAgent collects container logs.
 
 See [deployment/gitops.md](deployment/gitops.md), [deployment/networking.md](deployment/networking.md), and [deployment/observability.md](deployment/observability.md).

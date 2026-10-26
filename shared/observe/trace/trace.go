@@ -10,7 +10,7 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
@@ -34,9 +34,9 @@ func LoadConfig(defaultServiceName string) Config {
 	if serviceName == "" {
 		serviceName = strings.TrimSpace(defaultServiceName)
 	}
-	endpoint := strings.TrimSpace(os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT"))
+	endpoint := strings.TrimSpace(os.Getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"))
 	if endpoint == "" {
-		endpoint = strings.TrimSpace(os.Getenv("OTEL_EXPORTER_OTLP_TRACES_ENDPOINT"))
+		endpoint = strings.TrimSpace(os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT"))
 	}
 	ratio := defaultSampleRatio
 	if raw := strings.TrimSpace(os.Getenv("OTEL_TRACES_SAMPLER_ARG")); raw != "" {
@@ -87,7 +87,7 @@ func Init(ctx context.Context, cfg Config) (func(context.Context) error, error) 
 		ratio = 1
 	}
 
-	exp, err := otlptracegrpc.New(ctx)
+	exp, err := otlptracehttp.New(ctx)
 	if err != nil {
 		return nil, err
 	}
