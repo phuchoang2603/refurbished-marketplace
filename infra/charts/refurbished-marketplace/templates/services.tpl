@@ -171,8 +171,6 @@ spec:
               value: {{ .metricsEndpoint | quote }}
             - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
               value: {{ .tracesEndpoint | quote }}
-            - name: OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
-              value: cumulative
             - name: OTEL_RESOURCE_ATTRIBUTES
               value: k8s.cluster.name=prod-talos,deployment.environment=prod
             - name: OTEL_SERVICE_NAME
