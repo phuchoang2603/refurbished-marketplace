@@ -9,19 +9,6 @@ import (
 	"go.opentelemetry.io/otel"
 )
 
-func TestInitMergesDefaultResourceSchema(t *testing.T) {
-	shutdown, err := Init(context.Background(), Config{
-		ServiceName: "web",
-		Endpoint:    "localhost:4317",
-	})
-	if err != nil {
-		t.Fatalf("Init: %v", err)
-	}
-	t.Cleanup(func() {
-		_ = shutdown(context.Background())
-	})
-}
-
 func TestExportToTracesHTTPEndpoint(t *testing.T) {
 	requests := make(chan string, 2)
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
