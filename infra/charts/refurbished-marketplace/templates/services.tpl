@@ -166,9 +166,15 @@ spec:
                   key: {{ $key }}
 {{- end }}
 {{- end }}
-{{- with $.Values.defaults.otel.endpoint }}
-            - name: OTEL_EXPORTER_OTLP_ENDPOINT
-              value: {{ . | quote }}
+{{- with $.Values.defaults.otel }}
+            - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
+              value: {{ .metricsEndpoint | quote }}
+            - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+              value: {{ .tracesEndpoint | quote }}
+            - name: OTEL_EXPORTER_OTLP_METRICS_TEMPORALITY_PREFERENCE
+              value: cumulative
+            - name: OTEL_RESOURCE_ATTRIBUTES
+              value: k8s.cluster.name=prod-talos,deployment.environment=prod
             - name: OTEL_SERVICE_NAME
               value: {{ $name | quote }}
             - name: OTEL_TRACES_SAMPLER_ARG

@@ -61,10 +61,12 @@ spec:
           value: connect-debezium
         - name: OTEL_TRACES_EXPORTER
           value: otlp
-        - name: OTEL_EXPORTER_OTLP_ENDPOINT
-          value: {{ .Values.connect.otelEndpoint | default "http://otel-agent.observability.svc.cluster.local:4317" | quote }}
+        - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+          value: {{ .Values.connect.otelEndpoint | default "http://vtagent-vmks.observability.svc.cluster.local:10429/insert/opentelemetry/v1/traces" | quote }}
         - name: OTEL_EXPORTER_OTLP_PROTOCOL
-          value: grpc
+          value: http/protobuf
+        - name: OTEL_RESOURCE_ATTRIBUTES
+          value: k8s.cluster.name=prod-talos,deployment.environment=prod
         - name: OTEL_TRACES_SAMPLER
           value: parentbased_always_on
         - name: OTEL_PROPAGATORS

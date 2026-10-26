@@ -61,7 +61,7 @@ Production cluster end-to-end verification is deferred. Provision the gateway in
 | `kafka`                   | Kafka/NodePool, topics, Connect/connectors, secret-reader RBAC, UI, PeerAuthentication                                                                   | `kafka`, RBAC in `ecommerce` |
 | `cloudflare-tunnel`       | platform-owned in `talos-proxmox`                                                                                                                        | `cloudflare-operator-system` |
 
-The `platform` root owns the operators, CRDs, the Cloudflare tunnel and its cloudflared, and the telemetry pipeline (`otel-agent`, ClickHouse and HyperDX on prod). Marketplace workloads only export OTLP to `otel-agent`; see [observability.md](observability.md). The marketplace `secret-store` Application owns `SecretStore/doppler` in `ecommerce`; no other chart renders it. Cilium, Istio, Gateway API CRDs, and storage are also owned by `talos-proxmox`. Child Applications do not use `CreateNamespace`; only the root creates and labels the marketplace namespaces.
+The `platform` root owns the operators, CRDs, the Cloudflare tunnel and its cloudflared, and the telemetry pipeline (VMAgent, VTAgent, VLAgent, Victoria stores and Grafana on prod). Marketplace workloads only export OTLP/HTTP to VMAgent and VTAgent; see [observability.md](observability.md). The marketplace `secret-store` Application owns `SecretStore/doppler` in `ecommerce`; no other chart renders it. Cilium, Istio, Gateway API CRDs, and storage are also owned by `talos-proxmox`. Child Applications do not use `CreateNamespace`; only the root creates and labels the marketplace namespaces.
 
 MongoDB is the products catalog source of truth; Meilisearch is its storefront projection. PostgreSQL schema migrations still initialize new empty databases before their services start.
 
@@ -89,7 +89,7 @@ kubectl get storageclass
 kubectl get secretstore doppler -n ecommerce
 kubectl get externalsecrets -n ecommerce
 kubectl get crd | grep -E 'cnpg|strimzi|mongodb|external-secrets'
-kubectl get svc otel-agent -n observability
+kubectl get svc vmagent-vmks vtagent-vmks -n observability
 ```
 
 A child stuck retrying shows its last sync error in the environment's Argo CD UI. A missing or invalid token shows up on `prod-secret-store` first.

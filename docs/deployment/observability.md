@@ -1,46 +1,31 @@
 # Marketplace observability
 
-The shared telemetry pipeline is installed and administered by `talos-proxmox`: prod's OpenTelemetry node agents, cluster collector, gateway and ClickHouse store with the HyperDX UI live in [`apps/components/observability`](https://github.com/phuchoang2603/talos-proxmox/tree/main/apps/components/observability). Dev runs no telemetry components. This repository owns only the marketplace telemetry producers.
+The shared telemetry pipeline is installed and administered by `talos-proxmox`: prod's VictoriaMetrics, VictoriaLogs, VictoriaTraces, VMAgent, VLAgent, VTAgent and Grafana live in [`apps/components/observability`](https://github.com/phuchoang2603/talos-proxmox/tree/main/apps/components/observability). Dev runs no telemetry components. This repository owns only the marketplace telemetry producers.
 
 ## Application contract
 
-| Signal  | Marketplace output                                                        | Platform consumer                              |
-| ------- | ------------------------------------------------------------------------- | ---------------------------------------------- |
-| Traces  | OTLP/gRPC to `http://otel-agent.observability.svc.cluster.local:4317`     | `otel-agent` → prod gateway → `otel_traces`    |
-| Metrics | OTLP/gRPC to the same endpoint every 30 s (`OTEL_METRIC_EXPORT_INTERVAL`) | `otel-agent` → prod gateway → `otel_metrics_*` |
-| Logs    | single-line slog JSON on stdout                                           | `otel-agent` filelog → `otel_logs`             |
+| Signal  | Marketplace output                                                                                                     | Platform consumer         |
+| ------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| Traces  | OTLP/HTTP to `http://vtagent-vmks.observability.svc.cluster.local:10429/insert/opentelemetry/v1/traces`                | VTAgent → VictoriaTraces  |
+| Metrics | Cumulative OTLP/HTTP to `http://vmagent-vmks.observability.svc.cluster.local:8429/opentelemetry/v1/metrics` every 30 s | VMAgent → VictoriaMetrics |
+| Logs    | Single-line slog JSON on stdout                                                                                        | VLAgent → VictoriaLogs    |
 
-The `otel-agent` Service uses `internalTrafficPolicy: Local`, so each pod exports to its own node's agent without credentials. The agent adds Kubernetes metadata and sets `k8s.cluster.name` and `deployment.environment` (`prod`); the chart does not set them.
-
-Every marketplace pod template carries `resource.opentelemetry.io/service.name: <service>`. The agent's `k8sattributes` reads it, so stdout log records get the same `ServiceName` as the service's spans and metrics. KafkaConnect pods carry `connect-debezium`.
-
-The agent parses log bodies that start with `{` and promotes these slog keys:
-
-| slog key   | Stored as      |
-| ---------- | -------------- |
-| `level`    | `SeverityText` |
-| `msg`      | `Body`         |
-| `trace_id` | `TraceId`      |
-| `span_id`  | `SpanId`       |
-
-All other keys (`service`, `order_id`, …) stay in `LogAttributes`. Keep those five keys stable; renaming them breaks trace-to-log navigation.
-
-The marketplace charts render no scrape resources, dashboards, or policies for telemetry, and services open no metrics port. OTLP egress from ambient-enrolled pods to the non-enrolled `otel-agent` leaves through ztunnel as plaintext. Collecting Istio ingress, waypoint, and ztunnel retry, overflow, and outlier-ejection signals is the platform-owned agent's job in `talos-proxmox`; those signals stay separate from application spans and RED metrics.
+Charts set the per-signal `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` and `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`, plus `k8s.cluster.name=prod-talos` and `deployment.environment=prod` resource attributes. Applications do not depend on an OpenTelemetry collector. VMAgent and VTAgent persist bounded remote-write queues on a separate node from the stores and replay after storage outages. VLAgent attaches Kubernetes metadata to container logs.
 
 ## Platform prerequisites
 
-Prod's `observability` Application (agents, collectors, ClickHouse, MongoDB and HyperDX) must be healthy for data to be stored. Its critical namespace scope must include `ecommerce`; a healthy exporter alone does not prove the platform retains its data:
+Prod's `observability` Application (Victoria agents, stores and Grafana) must be healthy for data to be stored. A healthy exporter alone does not prove the platform retains its data:
 
 ```bash
 kubectl --kubeconfig="$HOME/.kube/talos-prod.yaml" get applications -n argo-cd observability
 kubectl --kubeconfig="$HOME/.kube/talos-prod.yaml" get pods,svc -n observability
 ```
 
-Fetch kubeconfigs as described in [gitops.md](gitops.md#environment-configuration). Retention (7 days), storage, ingest authentication, and HyperDX accounts are documented in `talos-proxmox`'s [cluster access](https://github.com/phuchoang2603/talos-proxmox/blob/main/docs/operations/cluster-access.md) guide.
+Fetch kubeconfigs as described in [gitops.md](gitops.md#environment-configuration). Retention (3 days), persistent remote-write queues, storage and Grafana authentication are documented in `talos-proxmox`'s [cluster access](https://github.com/phuchoang2603/talos-proxmox/blob/main/docs/operations/cluster-access.md) guide.
 
-## HyperDX access
+## Grafana access
 
-HyperDX is served at <https://hyperdx.phuchoang.sbs>. The public tunnel and LAN service at `http://10.69.12.128` both use the operator-only Dex access proxy. HyperDX then requires its own account login; see the platform [access guide](https://github.com/phuchoang2603/talos-proxmox/blob/main/docs/operations/cluster-access.md#public-urls-prod).
+Grafana is served at <https://grafana.phuchoang.sbs> and `http://10.69.12.128`. Both require Dex or local admin login; see the platform [access guide](https://github.com/phuchoang2603/talos-proxmox/blob/main/docs/operations/cluster-access.md#public-urls-prod).
 
 The default sources are **Logs** (`otel_logs`), **Traces** (`otel_traces`), and **Metrics** (`otel_metrics_gauge`, `otel_metrics_sum`, `otel_metrics_histogram`).
 
@@ -50,30 +35,14 @@ Confirm the exporter configuration on the pods:
 
 ```bash
 kubectl --kubeconfig="$HOME/.kube/talos-prod.yaml" get deploy -n ecommerce \
-  -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.template.spec.containers[-1:].env[?(@.name=="OTEL_EXPORTER_OTLP_ENDPOINT")].value}{"\n"}{end}'
+  -o jsonpath='{range .items[*]}{.metadata.name}{"\t"}{.spec.template.spec.containers[-1:].env[?(@.name=="OTEL_EXPORTER_OTLP_TRACES_ENDPOINT")].value}{"\n"}{end}'
 ```
 
 Each service logs `tracing enabled` and `metrics export enabled` with the endpoint at startup.
 
-In HyperDX, open **Chart Explorer** or the SQL editor and check that each service sends every signal within the last 15 minutes:
+In Grafana Explore, check that each service sends every signal within the last 15 minutes:
 
-```sql
-SELECT * FROM (
-SELECT 'traces' AS signal, ServiceName, count() FROM otel_traces
-WHERE Timestamp > now() - INTERVAL 15 MINUTE AND ResourceAttributes['k8s.namespace.name'] = 'ecommerce'
-GROUP BY ServiceName
-UNION ALL
-SELECT 'logs', ServiceName, count() FROM otel_logs
-WHERE Timestamp > now() - INTERVAL 15 MINUTE AND ResourceAttributes['k8s.namespace.name'] = 'ecommerce'
-GROUP BY ServiceName
-UNION ALL
-SELECT 'metrics', ServiceName, count() FROM otel_metrics_histogram
-WHERE TimeUnix > now() - INTERVAL 15 MINUTE AND ResourceAttributes['k8s.namespace.name'] = 'ecommerce'
-GROUP BY ServiceName
-) ORDER BY signal, ServiceName
-```
-
-Expect `web`, `users`, `products`, `inventory`, `orders`, `checkout`, `cart`, and `search` for all three signals. A service exports RED metrics only after it handles its first request, so exercise the shop before concluding metrics are missing. If a service is missing, check its startup logs for exporter errors and the `otel-agent` pod on the same node.
+Use Grafana Explore with VictoriaMetrics, VictoriaLogs, and VictoriaTraces to inspect recent service telemetry. Exercise the shop before checking RED metrics.
 
 ## Application RED metrics
 
@@ -85,13 +54,7 @@ HTTP (web) and gRPC RED come from OpenTelemetry instrumentation:
 | `rpc.server.call.duration`     | s    | `rpc.method`, `rpc.response.status_code`                         |
 | `rpc.client.call.duration`     | s    | `rpc.method`, `rpc.response.status_code`                         |
 
-In HyperDX **Chart Explorer**, pick the **Metrics** source and the histogram metric, then:
-
-- request rate: aggregation **Count** (per-second rate), grouped by `ServiceName` or `http.route`;
-- error ratio: the same chart filtered to `Attributes['http.response.status_code'] >= '500'` (HTTP) or `Attributes['rpc.response.status_code'] != 'OK'` (gRPC), compared with the unfiltered count;
-- latency: aggregation **p95**, grouped by `ServiceName`.
-
-Use HyperDX **Chart Explorer** to inspect the existing `checkout.pending.max_age.seconds`, `checkout.compensating.count`, `checkout.financial_exceptions.count`, and `checkout.stuck.count` gauges, filtered to `ServiceName = checkout` and `deployment.environment = prod`. The platform supplies bundled preset dashboards and does not provision a custom **Prod Checkout Saga** dashboard. A zero reading confirms the gauge is queryable, not that failure paths were exercised. Dashboards live in HyperDX's own database, not in Git. To verify accepted workflows, read Checkout by buyer-authenticated `GetCheckout` and cross-check persisted `checkouts`/`checkout_exceptions`; never infer completion from a browser redirect.
+In Grafana Explore, select VictoriaMetrics and use PromQL to query request rates, errors, latency histograms, and the Checkout saga gauges. Metric names are normalized to Prometheus format. A zero gauge confirms it is queryable, not that failure paths were exercised. To verify accepted workflows, read Checkout by buyer-authenticated `GetCheckout` and cross-check persisted `checkouts`/`checkout_exceptions`.
 
 ## Distributed tracing
 
@@ -102,15 +65,15 @@ Browser → web → domain services → database
                                                               │
                     └→ outbox → Debezium/Connect → Kafka → consumers
                                                               │
-                                  node otel-agent ◀────────────┘ → prod ClickHouse → HyperDX
+                                  VTAgent ◀──────────────────┘ → VictoriaTraces → Grafana
 ```
 
-KafkaConnect enables Strimzi OpenTelemetry tracing and exports to the same `otel-agent` endpoint. Rebuild the Connect image only when its plugin contents change.
+KafkaConnect enables Strimzi OpenTelemetry tracing and exports OTLP/HTTP to the same VTAgent traces endpoint. Rebuild the Connect image only when its plugin contents change.
 
-To verify a checkout, search the **Traces** source:
+To verify a checkout, search Grafana Explore with the VictoriaTraces data source:
 
 ```text
-ServiceName:(web OR checkout OR orders OR products OR inventory OR search OR cart OR users OR connect-debezium)
+service.name = checkout
 ```
 
 Open a `POST /checkout` span. Expect route/RPC/messaging span names, database child spans where applicable, and `connect-debezium` across asynchronous hops. Gateway proxy spans are not expected.
@@ -123,18 +86,18 @@ Marketplace services emit JSON slog lines via `shared/observe/log`. Request-path
 
 Common fields include `service`, `trace_id`, `span_id`, HTTP/gRPC method and status, Kafka topic/partition/offset, and domain IDs such as `order_id`.
 
-HyperDX **Logs** search examples:
+VictoriaLogs LogsQL search examples:
 
 ```text
-ServiceName:orders TraceId:<hex-trace-id>
+service:=orders trace_id:=<hex-trace-id>
 ```
 
 ```text
-LogAttributes.order_id:"<order-id>"
+order_id:"<order-id>"
 ```
 
 ```text
-ResourceAttributes.k8s.namespace.name:ecommerce SeverityText:ERROR
+kubernetes.pod_namespace:=ecommerce level:=ERROR
 ```
 
-For a failed checkout, open the trace first; the trace side panel lists log records that share its `TraceId`. From a log record, use its trace link to open the waterfall, then narrow by `order_id` if needed. Align the time range with the trace before concluding that logs are missing.
+For a failed checkout, open the trace first; the trace side panel lists log records that share its `trace_id`. From a log record, use its trace link to open the waterfall, then narrow by `order_id` if needed. Align the time range with the trace before concluding that logs are missing.

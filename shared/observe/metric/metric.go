@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp"
 	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.43.0"
@@ -27,9 +27,9 @@ func LoadConfig(defaultServiceName string) Config {
 	if serviceName == "" {
 		serviceName = strings.TrimSpace(defaultServiceName)
 	}
-	endpoint := strings.TrimSpace(os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT"))
+	endpoint := strings.TrimSpace(os.Getenv("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"))
 	if endpoint == "" {
-		endpoint = strings.TrimSpace(os.Getenv("OTEL_EXPORTER_OTLP_METRICS_ENDPOINT"))
+		endpoint = strings.TrimSpace(os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT"))
 	}
 	return Config{
 		ServiceName: serviceName,
@@ -38,7 +38,7 @@ func LoadConfig(defaultServiceName string) Config {
 }
 
 // Init installs the global MeterProvider used by otelhttp/otelgrpc and pushes
-// its metrics over OTLP/gRPC. Shutdown flushes pending metrics.
+// its metrics over OTLP/HTTP. Shutdown flushes pending metrics.
 func Init(ctx context.Context, cfg Config) (func(context.Context) error, error) {
 	if strings.TrimSpace(cfg.ServiceName) == "" {
 		return func(context.Context) error { return nil }, fmt.Errorf("metric: service name is required")
@@ -57,7 +57,7 @@ func Init(ctx context.Context, cfg Config) (func(context.Context) error, error) 
 
 	opts := []sdkmetric.Option{sdkmetric.WithResource(res)}
 	if strings.TrimSpace(cfg.Endpoint) != "" {
-		exp, err := otlpmetricgrpc.New(ctx)
+		exp, err := otlpmetrichttp.New(ctx)
 		if err != nil {
 			return nil, err
 		}

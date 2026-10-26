@@ -99,8 +99,8 @@ mesh:
 
 defaults:
   otel:
-    # Node-local platform agent (internalTrafficPolicy: Local); http:// marks insecure gRPC.
-    endpoint: http://otel-agent.observability.svc.cluster.local:4317
+    metricsEndpoint: http://vmagent-vmks.observability.svc.cluster.local:8429/opentelemetry/v1/metrics
+    tracesEndpoint: http://vtagent-vmks.observability.svc.cluster.local:10429/insert/opentelemetry/v1/traces
   resources:
     requests:
       cpu: 25m
