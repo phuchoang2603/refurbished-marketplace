@@ -28,7 +28,7 @@ The chart renders `TunnelBinding/ecommerce-ingress` (`ingress.tunnel`) with the 
 
 The operator refuses a hostname that already has a DNS record it does not own. Delete such a record in Cloudflare and the binding converges on its next retry.
 
-TLS terminates at Cloudflare. No marketplace TLS Secret on the Gateway. Do not reuse the platform Argo CD or HyperDX Gateways for shop.
+TLS terminates at Cloudflare. No marketplace TLS Secret on the Gateway. Do not reuse the platform Argo CD or Grafana endpoints for shop.
 
 The gateway notifier calls only `http://web.ecommerce.svc.cluster.local:8080/webhooks/payment-gateway`. An Istio `DENY` AuthorizationPolicy attached to `Gateway/ecommerce-ingress` blocks that path and subpaths for every method before the public shop catch-all can forward them. The internal Service call bypasses this ingress Gateway. Web forwards the unmodified body and signature to Checkout; Checkout verifies the HMAC. The notifier and Edge are ambient-enrolled in prod, so mesh `STRICT` remains enabled.
 

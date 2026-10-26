@@ -14,18 +14,18 @@ Charts set the per-signal `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` and `OTEL_EXPORTE
 
 ## Platform prerequisites
 
-Prod's `observability` Application (agents, collectors, ClickHouse, MongoDB and HyperDX) must be healthy for data to be stored. Its critical namespace scope must include `ecommerce`; a healthy exporter alone does not prove the platform retains its data:
+Prod's `observability` Application (Victoria agents, stores and Grafana) must be healthy for data to be stored. A healthy exporter alone does not prove the platform retains its data:
 
 ```bash
 kubectl --kubeconfig="$HOME/.kube/talos-prod.yaml" get applications -n argo-cd observability
 kubectl --kubeconfig="$HOME/.kube/talos-prod.yaml" get pods,svc -n observability
 ```
 
-Fetch kubeconfigs as described in [gitops.md](gitops.md#environment-configuration). Retention (7 days), storage, ingest authentication, and HyperDX accounts are documented in `talos-proxmox`'s [cluster access](https://github.com/phuchoang2603/talos-proxmox/blob/main/docs/operations/cluster-access.md) guide.
+Fetch kubeconfigs as described in [gitops.md](gitops.md#environment-configuration). Retention (3 days), persistent remote-write queues, storage and Grafana authentication are documented in `talos-proxmox`'s [cluster access](https://github.com/phuchoang2603/talos-proxmox/blob/main/docs/operations/cluster-access.md) guide.
 
-## HyperDX access
+## Grafana access
 
-HyperDX is served at <https://hyperdx.phuchoang.sbs>. The public tunnel and LAN service at `http://10.69.12.128` both use the operator-only Dex access proxy. HyperDX then requires its own account login; see the platform [access guide](https://github.com/phuchoang2603/talos-proxmox/blob/main/docs/operations/cluster-access.md#public-urls-prod).
+Grafana is served at <https://grafana.phuchoang.sbs> and `http://10.69.12.128`. Both require Dex or local admin login; see the platform [access guide](https://github.com/phuchoang2603/talos-proxmox/blob/main/docs/operations/cluster-access.md#public-urls-prod).
 
 The default sources are **Logs** (`otel_logs`), **Traces** (`otel_traces`), and **Metrics** (`otel_metrics_gauge`, `otel_metrics_sum`, `otel_metrics_histogram`).
 
@@ -40,7 +40,7 @@ kubectl --kubeconfig="$HOME/.kube/talos-prod.yaml" get deploy -n ecommerce \
 
 Each service logs `tracing enabled` and `metrics export enabled` with the endpoint at startup.
 
-In HyperDX, open **Chart Explorer** or the SQL editor and check that each service sends every signal within the last 15 minutes:
+In Grafana Explore, check that each service sends every signal within the last 15 minutes:
 
 Use Grafana Explore with VictoriaMetrics, VictoriaLogs, and VictoriaTraces to inspect recent service telemetry. Exercise the shop before checking RED metrics.
 
