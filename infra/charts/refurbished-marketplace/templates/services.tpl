@@ -33,17 +33,16 @@ spec:
 {{- if or $svc.db $svc.mongo $svc.meili }}
       initContainers:
 {{- if $svc.db }}
-        - name: wait-for-db
-          image: postgres:16-alpine
-          command: ["sh", "-c"]
-          args:
-            - >-
-              until pg_isready -h {{ $svc.db.host }} -p {{ $svc.db.port }};
-              do echo "waiting for database {{ $svc.db.host }}"; sleep 2; done
-{{- with $initResources }}
+        - name: migrate
+          image: {{ include "refurbished-marketplace.image" (list $ $svc.image $svc.imageTag) }}
+          imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
+          args: [migrate]
+          env:
+{{ include "refurbished-marketplace.postgresEnv" (dict "service" $svc "user" $owner "secret" $svc.db.secretName) | nindent 12 }}
+            - name: PG_RUNTIME_ROLE
+              value: {{ $svc.db.runtimeRole | quote }}
           resources:
-{{ toYaml . | nindent 12 }}
-{{- end }}
+{{ toYaml ($svc.migrationResources | default $.Values.defaults.migrationResources) | nindent 12 }}
 {{- end }}
 {{- if $svc.mongo }}
         - name: wait-for-mongo
@@ -108,21 +107,7 @@ spec:
 {{- end }}
           env:
 {{- if $svc.db }}
-            - name: PGUSER
-              value: {{ $owner | quote }}
-            - name: PGPASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $svc.db.secretName }}
-                  key: {{ $svc.db.passwordKey }}
-            - name: PGHOST
-              value: {{ $svc.db.host | quote }}
-            - name: PGPORT
-              value: {{ $svc.db.port | quote }}
-            - name: PGDATABASE
-              value: {{ $svc.db.name | quote }}
-            - name: PGSSLMODE
-              value: "disable"
+{{ include "refurbished-marketplace.postgresEnv" (dict "service" $svc "user" $svc.db.runtimeRole "secret" $svc.db.runtimeSecretName) | nindent 12 }}
 {{- end }}
 {{- if $svc.mongo }}
             - name: MONGO_USER

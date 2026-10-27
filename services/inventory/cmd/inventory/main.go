@@ -7,6 +7,7 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/phuchoang2603/refurbished-marketplace/services/inventory/db/migrations"
 	"github.com/phuchoang2603/refurbished-marketplace/services/inventory/internal/grpcserver"
 	"github.com/phuchoang2603/refurbished-marketplace/services/inventory/internal/service"
 	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
@@ -20,6 +21,12 @@ import (
 
 func main() {
 	runtime.InitLogging("inventory")
+	if len(os.Args) == 2 && os.Args[1] == "migrate" {
+		if err := runtime.MigratePostgres(context.Background(), migrations.Files); err != nil {
+			sharedlog.Fatal("migrate postgres", "err", err)
+		}
+		return
+	}
 	cfg := service.LoadConfig()
 	if err := service.ValidateConfig(cfg); err != nil {
 		sharedlog.Fatal("config", "err", err)

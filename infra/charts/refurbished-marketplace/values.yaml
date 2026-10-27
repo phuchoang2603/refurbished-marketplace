@@ -171,15 +171,14 @@ services:
     auth:
       secretName: users-auth
       secretKey: JWT_SECRET
-    migration:
-      enabled: true
-      image: users-migrator
     db:
       host: users-db-rw
       port: 5432
       name: users_db
       owner: users_app
       secretName: users-app
+      runtimeRole: users_runtime
+      runtimeSecretName: users-runtime
       usernameKey: username
       passwordKey: password
       instances: 1
@@ -213,7 +212,7 @@ services:
     port: 9098
     protocol: grpc
     env:
-      KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap.kafka.svc:9092
+      KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap:9092
     meili:
       host: catalog-meilisearch
       port: 7700
@@ -226,18 +225,17 @@ services:
     port: 9097
     protocol: grpc
     env:
-      KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap.kafka.svc:9092
+      KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap:9092
       KAFKA_GROUP_ID: inventory-service
       KAFKA_PRODUCT_CREATED_GROUP_ID: inventory-product-created
-    migration:
-      enabled: true
-      image: inventory-migrator
     db:
       host: inventory-db-rw
       port: 5432
       name: inventory_db
       owner: inventory_app
       secretName: inventory-app
+      runtimeRole: inventory_runtime
+      runtimeSecretName: inventory-runtime
       usernameKey: username
       passwordKey: password
       instances: 1
@@ -249,17 +247,16 @@ services:
     port: 9093
     protocol: grpc
     env:
-      KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap.kafka.svc:9092
+      KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap:9092
       KAFKA_GROUP_ID: orders-service
-    migration:
-      enabled: true
-      image: orders-migrator
     db:
       host: orders-db-rw
       port: 5432
       name: orders_db
       owner: orders_app
       secretName: orders-app
+      runtimeRole: orders_runtime
+      runtimeSecretName: orders-runtime
       usernameKey: username
       passwordKey: password
       instances: 1
@@ -275,17 +272,16 @@ services:
       secretKey: JWT_SECRET
     env:
       REDIS_ADDR: checkout-redis:6379
-      KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap.kafka.svc:9092
+      KAFKA_BOOTSTRAP_SERVERS: ecommerce-kafka-cluster-kafka-bootstrap:9092
       KAFKA_GROUP_ID: checkout-service
-    migration:
-      enabled: true
-      image: checkout-migrator
     db:
       host: checkout-db-rw
       port: 5432
       name: checkout_db
       owner: checkout_app
       secretName: checkout-app
+      runtimeRole: checkout_runtime
+      runtimeSecretName: checkout-runtime
       usernameKey: username
       passwordKey: password
       instances: 1

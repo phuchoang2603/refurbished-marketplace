@@ -1,13 +1,12 @@
 {{- if .Values.externalSecrets.enabled }}
 {{- range $name, $svc := .Values.services }}
 {{- if and $svc.enabled $svc.db }}
-{{- $prefix := include "refurbished-marketplace.dopplerKeyPrefix" $svc.db.secretName }}
-{{- $owner := default (printf "%s_app" $name) $svc.db.owner }}
+{{- range $credential := list (dict "name" $svc.db.secretName "user" (default (printf "%s_app" $name) $svc.db.owner)) (dict "name" $svc.db.runtimeSecretName "user" $svc.db.runtimeRole) }}
 ---
 apiVersion: external-secrets.io/v1
 kind: ExternalSecret
 metadata:
-  name: {{ $svc.db.secretName }}
+  name: {{ $credential.name }}
   namespace: {{ $.Release.Namespace }}
   annotations:
     argocd.argoproj.io/sync-wave: "2"
@@ -17,7 +16,7 @@ spec:
     kind: {{ $.Values.externalSecrets.secretStoreRef.kind }}
     name: {{ $.Values.externalSecrets.secretStoreRef.name }}
   target:
-    name: {{ $svc.db.secretName }}
+    name: {{ $credential.name }}
     creationPolicy: Owner
     template:
       metadata:
@@ -26,12 +25,13 @@ spec:
       type: kubernetes.io/basic-auth
       engineVersion: v2
       data:
-        username: {{ $owner | quote }}
+        username: {{ $credential.user | quote }}
         password: "{{`{{ .password }}`}}"
   data:
     - secretKey: password
       remoteRef:
-        key: {{ $prefix }}_PASSWORD
+        key: {{ include "refurbished-marketplace.dopplerKeyPrefix" $credential.name }}_PASSWORD
+{{- end }}
 {{- end }}
 {{- end }}
 {{- $authSecrets := dict }}

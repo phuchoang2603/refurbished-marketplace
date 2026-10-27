@@ -1,14 +1,4 @@
 ---
-# Ambient enrollment of this namespace is owned by the app-of-apps root.
-apiVersion: security.istio.io/v1
-kind: PeerAuthentication
-metadata:
-  name: default
-  namespace: {{ .Release.Namespace }}
-spec:
-  mtls:
-    mode: STRICT
----
 # The Strimzi cluster operator runs outside the mesh and uses the broker control-plane
 # (9090) and replication (9091) listeners.
 apiVersion: security.istio.io/v1

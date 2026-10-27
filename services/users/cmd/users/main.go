@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/phuchoang2603/refurbished-marketplace/services/users/db/migrations"
 	"github.com/phuchoang2603/refurbished-marketplace/services/users/internal/grpcserver"
 	"github.com/phuchoang2603/refurbished-marketplace/services/users/internal/service"
 	sharedlog "github.com/phuchoang2603/refurbished-marketplace/shared/observe/log"
@@ -19,6 +20,12 @@ import (
 
 func main() {
 	runtime.InitLogging("users")
+	if len(os.Args) == 2 && os.Args[1] == "migrate" {
+		if err := runtime.MigratePostgres(context.Background(), migrations.Files); err != nil {
+			sharedlog.Fatal("migrate postgres", "err", err)
+		}
+		return
+	}
 	addr := runtime.EnvOr("GRPC_ADDR", ":9091")
 
 	db, err := runtime.OpenPostgres()

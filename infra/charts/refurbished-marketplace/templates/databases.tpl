@@ -21,6 +21,10 @@ spec:
         replication: true  # Required for Debezium CDC
         passwordSecret:
           name: {{ $svc.db.secretName }}
+      - name: {{ $svc.db.runtimeRole | quote }}
+        login: true
+        passwordSecret:
+          name: {{ $svc.db.runtimeSecretName }}
   storage:
     size: {{ default "512Mi" $svc.db.storageSize | quote }}
 {{- with $dbResources }}

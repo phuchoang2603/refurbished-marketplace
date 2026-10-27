@@ -48,9 +48,6 @@ jobs:
               BUILD_PKG=./services/users/cmd/users
               BUILD_BIN=users
               EXPOSE_PORT=9091
-          - image: users-migrator
-            dockerfile: infra/docker/goose-migrator.Dockerfile
-            build_args: MIGRATIONS_DIR=services/users/db/migrations
           - image: products
             dockerfile: infra/docker/go-service.Dockerfile
             build_args: |
@@ -69,27 +66,18 @@ jobs:
               BUILD_PKG=./services/inventory/cmd/inventory
               BUILD_BIN=inventory
               EXPOSE_PORT=9097
-          - image: inventory-migrator
-            dockerfile: infra/docker/goose-migrator.Dockerfile
-            build_args: MIGRATIONS_DIR=services/inventory/db/migrations
           - image: orders
             dockerfile: infra/docker/go-service.Dockerfile
             build_args: |
               BUILD_PKG=./services/orders/cmd/orders
               BUILD_BIN=orders
               EXPOSE_PORT=9093
-          - image: orders-migrator
-            dockerfile: infra/docker/goose-migrator.Dockerfile
-            build_args: MIGRATIONS_DIR=services/orders/db/migrations
           - image: checkout
             dockerfile: infra/docker/go-service.Dockerfile
             build_args: |
               BUILD_PKG=./services/checkout/cmd/checkout
               BUILD_BIN=checkout
               EXPOSE_PORT=9099
-          - image: checkout-migrator
-            dockerfile: infra/docker/goose-migrator.Dockerfile
-            build_args: MIGRATIONS_DIR=services/checkout/db/migrations
           - image: cart
             dockerfile: infra/docker/go-service.Dockerfile
             build_args: |

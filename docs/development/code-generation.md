@@ -56,5 +56,4 @@ Generic templates under `infra/docker/`:
 | Dockerfile                                                                  | Purpose                                                              |
 | --------------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | [`go-service.Dockerfile`](../../infra/docker/go-service.Dockerfile)         | Go microservices and tools (`BUILD_PKG`, `BUILD_BIN`, `EXPOSE_PORT`) |
-| [`goose-migrator.Dockerfile`](../../infra/docker/goose-migrator.Dockerfile) | DB migrations (`MIGRATIONS_DIR`)                                     |
 | [`web.Dockerfile`](../../infra/docker/web.Dockerfile)                       | Web BFF (same workspace build plus static assets)                    |

@@ -53,12 +53,12 @@ Production cluster end-to-end verification is deferred. Provision the gateway in
 
 | Application               | Marketplace-owned resources                                                                                                                              | Namespace                    |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| root (`prod-root`)        | `ecommerce` and `kafka` Namespaces with `istio.io/dataplane-mode: ambient`                                                                               | cluster                      |
+| root (`prod-root`)        | `ecommerce` Namespace with `istio.io/dataplane-mode: ambient`                                                                               | cluster                      |
 | `secret-store`            | `SecretStore/doppler`, the single owner shared by every marketplace ExternalSecret                                                                       | `ecommerce`                  |
 | `mongodb`                 | `MongoDBCommunity`, credentials, workload RBAC                                                                                                           | `ecommerce`                  |
 | `meilisearch`             | Meilisearch workload/PVC, credentials                                                                                                                    | `ecommerce`                  |
 | `refurbished-marketplace` | CNPG Clusters, ExternalSecrets, migrations, services, Gateways/HTTPRoutes, TunnelBinding, PeerAuthentication, DestinationRules, gateway webhook policies | `ecommerce`                  |
-| `kafka`                   | Kafka/NodePool, topics, Connect/connectors, secret-reader RBAC, UI, PeerAuthentication                                                                   | `kafka`, RBAC in `ecommerce` |
+| `kafka`                   | Kafka/NodePool, topics, Connect/connectors, secret-reader RBAC, UI, PeerAuthentication                                                                   | `ecommerce` |
 | `cloudflare-tunnel`       | platform-owned in `talos-proxmox`                                                                                                                        | `cloudflare-operator-system` |
 
 The `platform` root owns the operators, CRDs, the Cloudflare tunnel and its cloudflared, and the telemetry pipeline (VMAgent, VTAgent, VLAgent, Victoria stores and Grafana on prod). Marketplace workloads only export OTLP/HTTP to VMAgent and VTAgent; see [observability.md](observability.md). The marketplace `secret-store` Application owns `SecretStore/doppler` in `ecommerce`; no other chart renders it. Cilium, Istio, Gateway API CRDs, and storage are also owned by `talos-proxmox`. Child Applications do not use `CreateNamespace`; only the root creates and labels the marketplace namespaces.
@@ -69,7 +69,11 @@ Cart and Checkout use separate persistent `Redis` resources (`cart-redis` and `c
 
 Fresh installations start with empty cart and checkout Redis instances; no cart-data copy or legacy sidecar cutover is required. The release workflow pins matching image SHAs in the production overlays after publishing images.
 
-PostgreSQL services and migration jobs use the same `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`, and `PGSSLMODE` settings. Helm reads each database password from its service secret; neither service code nor the goose connection string embeds or interpolates the password. Set these PostgreSQL environment variables when connecting locally as well.
+Each PostgreSQL service image supports `migrate`, using SQL embedded in the binary and Goose's Go SDK with a PostgreSQL advisory lock. A `migrate` init container runs before each application container; a failure blocks startup and Kubernetes retries it. There are no migration Jobs or separate migrator images. Existing `goose_db_version` history is preserved.
+
+Migration containers use the database owner Secret (`<service>-app`); application containers use restricted `<service>_runtime` roles and separate `<service>-runtime` Secrets. CNPG manages both roles. After applying schema changes, the migration command grants runtime DML access to application tables and sequences and default privileges for future tables, while withholding access to `goose_db_version` and schema creation. Both containers use `PGHOST`, `PGPORT`, `PGDATABASE`, `PGUSER`, `PGPASSWORD`, and `PGSSLMODE`; passwords are read directly from Secrets without connection-string interpolation. Provision the four `*_RUNTIME_PASSWORD` Doppler keys before deploying, and build and pin the new service images before enabling the init containers.
+
+Kafka, Connect, connectors, topics, and their RBAC all run in `ecommerce`; the root no longer renders a `kafka` Namespace. This namespace change starts a fresh Kafka cluster and discards the old Kafka data when the old namespace is pruned. Pause marketplace consumers and the old connectors before that cutover, remove their PostgreSQL replication slots (`debezium_<service>_slot`) once those connectors stop, then let the new PostgreSQL connectors snapshot again. Reset the Checkout account projection checkpoint in Redis with the new Kafka cluster to avoid using offsets from the old Users topic.
 
 ## Ordering and convergence
 

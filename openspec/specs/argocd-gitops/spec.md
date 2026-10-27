@@ -22,12 +22,12 @@ The marketplace Application SHALL render Istio Gateway API resources when chart 
 
 ### Requirement: Namespace enrollment has one GitOps owner
 
-The marketplace root SHALL declaratively create and enroll `ecommerce` and `kafka` in Istio ambient without competing namespace metadata owners, out-of-band labeling, or automatic enrollment of shared platform namespaces.
+The marketplace root SHALL declaratively create and enroll `ecommerce` in Istio ambient without competing namespace metadata owners, out-of-band labeling, or automatic enrollment of shared platform namespaces.
 
 #### Scenario: Applications sync from empty state
 
 - **WHEN** the production root starts against a fresh platform
-- **THEN** both application namespaces have the ambient enrollment label before strict workload traffic depends on it
+- **THEN** the application namespace has the ambient enrollment label before strict workload traffic depends on it
 
 ### Requirement: Argo CD deploys marketplace locally
 
@@ -108,24 +108,24 @@ The repository SHALL document the Argo CD layout (the prod cluster's Argo CD hos
 - **WHEN** a contributor follows the deploy guide for prod
 - **THEN** they fetch the prod `KUBECONFIG` from Doppler and use it for the token Secret, the AppProject, and the root, with no separate management kubeconfig
 
-### Requirement: Kafka messaging namespace separation
+### Requirement: Kafka messaging namespace
 
-The Kafka Application SHALL deploy Strimzi Kafka, Connect, and UI resources to a dedicated ambient-enrolled `kafka` namespace rather than `ecommerce`. Kafka's broker-level TLS behavior SHALL remain independent of Istio transport encryption, and Kafka Connect SHALL reach MongoDB in the enrolled `ecommerce` namespace.
+The Kafka Application SHALL deploy Strimzi Kafka, Connect, and UI resources to the shared ambient-enrolled `ecommerce` namespace. Kafka's broker-level TLS behavior SHALL remain independent of Istio transport encryption, and Kafka Connect SHALL reach MongoDB in the enrolled `ecommerce` namespace.
 
-#### Scenario: Kafka sync targets kafka namespace
+#### Scenario: Kafka sync targets ecommerce namespace
 
 - **WHEN** the Kafka Application syncs from Git
-- **THEN** Kafka cluster resources are applied in an ambient-enrolled `kafka` namespace rather than `ecommerce`
+- **THEN** Kafka cluster resources are applied in the ambient-enrolled `ecommerce` namespace
 
-#### Scenario: Marketplace reaches Kafka across namespaces
+#### Scenario: Marketplace reaches Kafka in its namespace
 
 - **WHEN** marketplace services publish or consume messages
-- **THEN** they use the Kafka bootstrap address in the `kafka` namespace DNS (for example `*.kafka.svc`)
+- **THEN** they use the Kafka bootstrap address in the shared `ecommerce` namespace DNS (for example `*.ecommerce.svc`)
 
 #### Scenario: Connector reaches catalog database
 
 - **WHEN** Kafka Connect synchronizes MongoDB changes
-- **THEN** its cross-namespace database connection works under strict ambient mTLS
+- **THEN** its same-namespace database connection works under strict ambient mTLS
 
 ### Requirement: Cloudflare Tunnel is platform-owned
 

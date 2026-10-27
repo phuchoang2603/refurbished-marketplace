@@ -25,7 +25,6 @@ global:
 # child Applications target them but never create or relabel them.
 namespaces:
   - ecommerce
-  - kafka
 
 marketplace:
   enabled: true
@@ -51,5 +50,5 @@ apps:
     syncWave: "4"
     path: infra/charts/kafka
     releaseName: ecommerce-kafka-cluster
-    namespace: kafka
+    namespace: ecommerce
     injectGlobalImages: true
