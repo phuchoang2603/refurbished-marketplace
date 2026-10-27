@@ -36,7 +36,7 @@ Production cluster validation of browser access, notifier delivery, and public w
 
 ## Waypoint and resilience
 
-`Gateway/waypoint` (`istio-waypoint`, `istio.io/waypoint-for: service`) handles L7 traffic for the gRPC Services listed in `mesh.resilience.services`; those Services carry `istio.io/use-waypoint: waypoint`. `web`, Kafka, MongoDB, Meilisearch, and CNPG stay on ztunnel only. The ingress Gateway is itself an Envoy that enforces the shop route policies, and its web backend has no waypoint, so no Service sets `istio.io/ingress-use-waypoint`. Add that label only if a waypoint-enrolled Service becomes an ingress backend.
+`Gateway/waypoint` (`istio-waypoint`, `istio.io/waypoint-for: service`) handles L7 traffic for the gRPC Services listed in `mesh.resilience.services`; those Services carry `istio.io/use-waypoint: waypoint`. `web`, Kafka, Meilisearch, and CNPG stay on ztunnel only. The ingress Gateway is itself an Envoy that enforces the shop route policies, and its web backend has no waypoint, so no Service sets `istio.io/ingress-use-waypoint`. Add that label only if a waypoint-enrolled Service becomes an ingress backend.
 
 Each listed Service gets a `DestinationRule` with connection and pending-request caps and a retry budget. Outlier ejection is rendered only for Services with `replicas > 1`, so a sole endpoint is never ejected.
 
@@ -82,7 +82,7 @@ curl -fsS -o /dev/null -w '%{http_code}\n' https://shop.phuchoang.sbs/
 # Complete one checkout in the browser (login → cart → hosted gateway → return (prod only)).
 ```
 
-Under `STRICT`, ztunnel rejects plaintext from non-enrolled pods. `talos-proxmox` therefore enrolls the CNPG and Strimzi operators and the `otel-cluster` scraper in ambient at the pod level, so their calls to enrolled pods use mesh mTLS; the MongoDB operator needs no pod access. Mesh traffic reaches enrolled pods on HBONE port 15008, which Strimzi's generated NetworkPolicies do not allow, so the Kafka chart adds `NetworkPolicy/allow-ambient` for Strimzi pods, which also admits kubelet probes from ambient's link-local source `169.254.7.127`. Fix any other broken management path the same way rather than falling back to `PERMISSIVE`.
+Under `STRICT`, ztunnel rejects plaintext from non-enrolled pods. `talos-proxmox` therefore enrolls the CNPG and Strimzi operators and the `otel-cluster` scraper in ambient at the pod level, so their calls to enrolled pods use mesh mTLS. Mesh traffic reaches enrolled pods on HBONE port 15008, which Strimzi's generated NetworkPolicies do not allow, so the Kafka chart adds `NetworkPolicy/allow-ambient` for Strimzi pods, which also admits kubelet probes from ambient's link-local source `169.254.7.127`. Fix any other broken management path the same way rather than falling back to `PERMISSIVE`.
 
 ## Rollback
 

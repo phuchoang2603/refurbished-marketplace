@@ -6,7 +6,7 @@ import (
 
 	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/catalog"
 	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/service"
-	testmongo "github.com/phuchoang2603/refurbished-marketplace/shared/testutil/mongo"
+	testpostgres "github.com/phuchoang2603/refurbished-marketplace/shared/testutil/postgres"
 
 	"github.com/google/uuid"
 	"google.golang.org/protobuf/proto"
@@ -19,7 +19,11 @@ func newProductsService(t *testing.T) *service.Service {
 
 func newProductsStore(t *testing.T) *catalog.Store {
 	t.Helper()
-	return catalog.New(testmongo.SetupReplicaSet(t))
+	return catalog.New(testpostgres.SetupPostgresWithMigrations(t, testpostgres.Config{
+		Database: "products_db",
+		Username: "products_app",
+		Password: "products_app_test_password",
+	}, "../db/migrations"))
 }
 
 func TestCreateAndReadProducts(t *testing.T) {

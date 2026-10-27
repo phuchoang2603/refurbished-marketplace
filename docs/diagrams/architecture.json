@@ -3,7 +3,7 @@
   "height": 1600,
   "eyebrow": "REFURBISHED MARKETPLACE · RUNTIME + DATA FLOWS",
   "title": "System architecture: deployable units and the data they exchange",
-  "description": "Web is the public HTTP edge. Internal gRPC serves identity, listings, search, carts, stock reads, orders and checkout. Debezium streams MongoDB and PostgreSQL outboxes to Kafka. Independent catalog consumers populate Meilisearch and seed inventory. Checkout publishes one preparation command consumed by Orders and Inventory in separate groups (three replicas each in production), then joins their versioned results, calls the external gateway, and verifies signed outcomes forwarded by Web.",
+  "description": "Web is the public HTTP edge. Internal gRPC serves identity, listings, search, carts, stock reads, orders and checkout. Debezium streams PostgreSQL outboxes to Kafka. Independent catalog consumers populate Meilisearch and seed inventory. Checkout publishes one preparation command consumed by Orders and Inventory in separate groups (three replicas each in production), then joins their versioned results, calls the external gateway, and verifies signed outcomes forwarded by Web.",
   "zones": [
     { "box": [15, 125, 190, 180], "label": "OUTSIDE", "fill": "#f7f8fa", "dashed": true },
     {
@@ -14,7 +14,7 @@
     },
     {
       "box": [270, 765, 1480, 155],
-      "label": "NAMESPACE kafka · Strimzi TLS + ambient mTLS",
+      "label": "KAFKA · namespace ecommerce · Strimzi TLS + ambient mTLS",
       "fill": "#e5eaf2",
       "dashed": false
     },
@@ -128,9 +128,9 @@
     {
       "id": "catalog-db",
       "box": [590, 610, 230, 100],
-      "title": "MongoDB",
+      "title": "PostgreSQL",
       "tag": "products",
-      "lines": ["catalog.listings", "catalog.catalog_outbox"],
+      "lines": ["products", "products_outbox"],
       "icon": "database",
       "support": false
     },
@@ -166,7 +166,7 @@
       "box": [290, 810, 230, 90],
       "title": "Debezium",
       "tag": "Kafka Connect",
-      "lines": ["Mongo + Postgres CDC"],
+      "lines": ["PostgreSQL CDC"],
       "icon": "service",
       "support": false
     },
@@ -245,9 +245,9 @@
     {
       "id": "observe",
       "box": [1250, 1300, 470, 85],
-      "title": "otel-agent → ClickHouse / HyperDX",
+      "title": "VictoriaMetrics / Logs / Traces",
       "tag": "observability",
-      "lines": ["OTLP traces / metrics + JSON stdout logs"],
+      "lines": ["VMAgent / VTAgent / VLAgent", "Grafana · OTLP/HTTP + container logs"],
       "icon": "service",
       "support": true
     }

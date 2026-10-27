@@ -11,21 +11,22 @@ Marketplace resources do not use the platform `ClusterSecretStore/doppler`. That
 
 ## Application secrets
 
-| Doppler key                      | K8s Secret                                | K8s key                            |
-| -------------------------------- | ----------------------------------------- | ---------------------------------- |
-| `USERS_APP_PASSWORD`             | `users-app`                               | `password`                         |
-| `USERS_RUNTIME_PASSWORD` | `users-runtime` | `password` |
-| `PRODUCTS_APP_PASSWORD`          | `mongodb-catalog-app` (ns `ecommerce`)    | `password`, `username` (`catalog`) |
-| `MEILI_MASTER_KEY`               | `meilisearch-master-key` (ns `ecommerce`) | `MEILI_MASTER_KEY`                 |
-| `INVENTORY_APP_PASSWORD`         | `inventory-app`                           | `password`                         |
-| `INVENTORY_RUNTIME_PASSWORD` | `inventory-runtime` | `password` |
-| `ORDERS_APP_PASSWORD`            | `orders-app`                              | `password`                         |
-| `ORDERS_RUNTIME_PASSWORD` | `orders-runtime` | `password` |
-| `CHECKOUT_APP_PASSWORD`          | `checkout-app`                            | `password`                         |
-| `CHECKOUT_RUNTIME_PASSWORD` | `checkout-runtime` | `password` |
-| `PAYMENT_GATEWAY_API_KEY`        | `checkout-payment-gateway` (prod only)    | `PAYMENT_GATEWAY_API_KEY`          |
-| `PAYMENT_GATEWAY_WEBHOOK_SECRET` | `checkout-payment-gateway` (prod only)    | `PAYMENT_GATEWAY_WEBHOOK_SECRET`   |
-| `JWT_SECRET`                     | `users-auth`                              | `JWT_SECRET`                       |
+| Doppler key                      | K8s Secret                                | K8s key                          |
+| -------------------------------- | ----------------------------------------- | -------------------------------- |
+| `USERS_APP_PASSWORD`             | `users-app`                               | `password`                       |
+| `USERS_RUNTIME_PASSWORD`         | `users-runtime`                           | `password`                       |
+| `PRODUCTS_APP_PASSWORD`          | `products-app`                            | `password`                       |
+| `PRODUCTS_RUNTIME_PASSWORD`      | `products-runtime`                        | `password`                       |
+| `MEILI_MASTER_KEY`               | `meilisearch-master-key` (ns `ecommerce`) | `MEILI_MASTER_KEY`               |
+| `INVENTORY_APP_PASSWORD`         | `inventory-app`                           | `password`                       |
+| `INVENTORY_RUNTIME_PASSWORD`     | `inventory-runtime`                       | `password`                       |
+| `ORDERS_APP_PASSWORD`            | `orders-app`                              | `password`                       |
+| `ORDERS_RUNTIME_PASSWORD`        | `orders-runtime`                          | `password`                       |
+| `CHECKOUT_APP_PASSWORD`          | `checkout-app`                            | `password`                       |
+| `CHECKOUT_RUNTIME_PASSWORD`      | `checkout-runtime`                        | `password`                       |
+| `PAYMENT_GATEWAY_API_KEY`        | `checkout-payment-gateway` (prod only)    | `PAYMENT_GATEWAY_API_KEY`        |
+| `PAYMENT_GATEWAY_WEBHOOK_SECRET` | `checkout-payment-gateway` (prod only)    | `PAYMENT_GATEWAY_WEBHOOK_SECRET` |
+| `JWT_SECRET`                     | `users-auth`                              | `JWT_SECRET`                     |
 
 Only Checkout references `checkout-payment-gateway`. Chart defaults render neither that Secret reference nor its ExternalSecret. The gateway API key is sent as `Authorization: Bearer`; Edge derives the integration ID from its hash, so Checkout has no separate integration-ID environment variable. The webhook signing secret must match the gateway notifier's integration configuration.
 
@@ -33,7 +34,7 @@ Gateway prerequisite (managed in the gateway repository): `GATEWAY_INTEGRATIONS_
 
 Kafka Connect reads only catalog, inventory, orders and checkout credentials through its generated Roles.
 
-`mongodb-catalog-app` is mounted on products and read by the Kafka Connect products-outbox Mongo connector (Role in `ecommerce`). The SCRAM user is `catalog`, authenticated against database `catalog` (same DB as listings/outbox), with `readWrite` there. There is no products Postgres secret after catalog cutover.
+`products-app` supplies the `products_app` database-owner credentials to the migration init container and PostgreSQL outbox connector. The existing `PRODUCTS_APP_PASSWORD` Doppler key is reused. The application uses restricted `products_runtime` credentials from `products-runtime`; provision `PRODUCTS_RUNTIME_PASSWORD` before rollout.
 
 `meilisearch-master-key` is mounted on Meilisearch and the search service. The Doppler value must be at least 16 bytes. Plaintext Meilisearch keys are not committed.
 
@@ -61,8 +62,8 @@ Do not commit tokens. Do not set the Doppler config in Helm or Argo values.
 ```bash
 kubectl get secretstore doppler -n ecommerce
 kubectl get externalsecrets,secrets -n ecommerce
-kubectl get secret mongodb-catalog-app -n ecommerce
+kubectl get secret products-app products-runtime -n ecommerce
 kubectl get secret meilisearch-master-key -n ecommerce
 ```
 
-The `secret-store` child Application (`infra/charts/secret-store`) is the only renderer of `SecretStore/doppler`; it syncs in wave 1, before MongoDB, Meilisearch, marketplace, and Kafka. If `prod-secret-store` is Degraded or the store does not report `Ready=True`, check the `ecommerce/doppler-token` Secret and its Doppler config.
+The `secret-store` child Application (`infra/charts/secret-store`) is the only renderer of `SecretStore/doppler`; it syncs in wave 1, before Meilisearch, marketplace, and Kafka. If `prod-secret-store` is Degraded or the store does not report `Ready=True`, check the `ecommerce/doppler-token` Secret and its Doppler config.

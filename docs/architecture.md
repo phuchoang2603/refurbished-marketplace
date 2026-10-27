@@ -4,27 +4,27 @@ Go marketplace services behind a server-rendered web edge. Browser traffic never
 
 ## Service boundaries
 
-| Service              | Responsibility                                                                                  | Persistence                                      | Internal API                                  |
-| -------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------ | --------------------------------------------- |
-| `services/web`       | Browser edge: `templ` pages, Datastar fragments, auth cookies, checkout submission and progress | none (stateless)                                 | HTTP 8080; gRPC client to all domain services |
-| `services/users`     | Identity, JWT access tokens, refresh sessions                                                   | Postgres (`users_db`)                            | gRPC 9091                                     |
-| `services/products`  | Listing identity and catalog fields; ProductCreated outbox                                      | MongoDB `catalog` (`listings`, `catalog_outbox`) | gRPC 9092                                     |
-| `services/search`    | Storefront catalog projection; `SearchProducts`                                                 | Meilisearch (not source of truth)                | gRPC 9098                                     |
-| `services/inventory` | Available/reserved quantity, reservations, stock seed from ProductCreated                       | Postgres (`inventory_db`)                        | gRPC 9097                                     |
-| `services/cart`      | Ephemeral carts with merchant + display snapshots                                               | Redis (operator-managed)                         | gRPC 9094                                     |
-| `services/checkout`  | Durable checkout saga, command/result inbox and outbox, recovery                                | Postgres + Redis account projection              | gRPC 9099                                     |
-| `services/orders`    | Merchant-scoped orders and checkout command/results                                             | Postgres (`orders_db`)                           | gRPC 9093                                     |
+| Service              | Responsibility                                                                                  | Persistence                                                   | Internal API                                  |
+| -------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | --------------------------------------------- |
+| `services/web`       | Browser edge: `templ` pages, Datastar fragments, auth cookies, checkout submission and progress | none (stateless)                                              | HTTP 8080; gRPC client to all domain services |
+| `services/users`     | Identity, JWT access tokens, refresh sessions                                                   | Postgres (`users_db`)                                         | gRPC 9091                                     |
+| `services/products`  | Listing identity and catalog fields; ProductCreated outbox                                      | CNPG PostgreSQL `products_db` (`products`, `products_outbox`) | gRPC 9092                                     |
+| `services/search`    | Storefront catalog projection; `SearchProducts`                                                 | Meilisearch (not source of truth)                             | gRPC 9098                                     |
+| `services/inventory` | Available/reserved quantity, reservations, stock seed from ProductCreated                       | Postgres (`inventory_db`)                                     | gRPC 9097                                     |
+| `services/cart`      | Ephemeral carts with merchant + display snapshots                                               | Redis (operator-managed)                                      | gRPC 9094                                     |
+| `services/checkout`  | Durable checkout saga, command/result inbox and outbox, recovery                                | Postgres + Redis account projection                           | gRPC 9099                                     |
+| `services/orders`    | Merchant-scoped orders and checkout command/results                                             | Postgres (`orders_db`)                                        | gRPC 9093                                     |
 
 ## Runtime topology
 
 Browser → Cloudflare Tunnel → Istio Gateway → web → domain gRPC services. In production, Checkout calls the gateway Edge in `payment-gateway`; its notifier posts signed outcomes to web's internal Service.
 
-`ecommerce` and `kafka` are enrolled in Istio ambient with `STRICT` mTLS, so all east-west traffic, including Kafka Connect → Mongo and Search → Meilisearch, is mutually authenticated by ztunnel. Domain gRPC Services also route through a service waypoint for connection limits, retry budgets, and outlier handling; Kafka and data stores stay ztunnel-only. Kafka keeps its own Strimzi TLS. Proxy retries are opt-in for replay-safe operations only and never replace the checkout saga's durable recovery.
+`ecommerce` and `kafka` are enrolled in Istio ambient with `STRICT` mTLS, so all east-west traffic, including Kafka Connect → PostgreSQL and Search → Meilisearch, is mutually authenticated by ztunnel. Domain gRPC Services also route through a service waypoint for connection limits, retry budgets, and outlier handling; Kafka and data stores stay ztunnel-only. Kafka keeps its own Strimzi TLS. Proxy retries are opt-in for replay-safe operations only and never replace the checkout saga's durable recovery.
 
 ## Catalog write vs read
 
 1. Seller create: `web` → products `CreateProduct` (explicit initial quantity). Products commits listing + `catalog_outbox` in one replica-set transaction.
-2. Debezium Mongo publishes `products.created`.
+2. Debezium PostgreSQL publishes `products.created`.
 3. Inventory consumer group `inventory-product-created` seeds stock.
 4. Search consumer group `search-product-created` upserts catalog fields in Meilisearch.
 5. Browse/seller list: `web` → search `SearchProducts`. Product detail: products `GetProductByID` + inventory `GetStock`. Checkout prices: products `GetProductsByIDs`. Checkout commands Inventory to reserve stock asynchronously.
@@ -49,6 +49,6 @@ Details: [order-placement.md](order-placement.md).
 | Network  | Cilium CNI and Istio ambient (ztunnel, waypoint) installed by `talos-proxmox`                                                                          |
 | Observe  | Apps export OTLP/HTTP traces to VTAgent and metrics to VMAgent and log JSON to stdout; VictoriaMetrics, VictoriaLogs, VictoriaTraces + Grafana on prod |
 
-The cluster's Argo CD runs `prod-root` alongside the platform root. The platform supplies operators and the telemetry pipeline; the marketplace root creates the ambient-enrolled `ecommerce` namespace (wave 0), then submits `secret-store` (wave 1), MongoDB and Meilisearch (2), services (3), then Kafka (4). These waves do not wait for child health: children retry while platform dependencies converge. VMAgent and VTAgent buffer application telemetry and remote-write to the Victoria stores; VLAgent collects container logs.
+The cluster's Argo CD runs `prod-root` alongside the platform root. The platform supplies operators and the telemetry pipeline; the marketplace root creates the ambient-enrolled `ecommerce` namespace (wave 0), then submits `secret-store` (wave 1), Meilisearch (2), services (3), then Kafka (4). These waves do not wait for child health: children retry while platform dependencies converge. VMAgent and VTAgent buffer application telemetry and remote-write to the Victoria stores; VLAgent collects container logs.
 
 See [deployment/gitops.md](deployment/gitops.md), [deployment/networking.md](deployment/networking.md), and [deployment/observability.md](deployment/observability.md).

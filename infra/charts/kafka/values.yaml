@@ -85,15 +85,14 @@ entities:
         partitions: 1
         retention: -1 # Retain creation history for independent consumers and replay.
     connector:
-      name: products-outbox
-      kind: mongodb
-      sourceSecretName: mongodb-catalog-app
-      databaseHost: catalog-mongodb-svc
-      databasePort: 27017
-      databaseName: catalog
-      authSource: catalog
-      replicaSet: catalog-mongodb
-      outboxCollection: catalog.catalog_outbox
+      name: products-postgres-outbox
+      sourceSecretName: products-app
+      databaseHost: products-db-rw
+      databasePort: 5432
+      databaseName: products_db
+      outboxTable: public.products_outbox
+      publicationAutocreateMode: filtered
+      snapshotMode: initial
   checkout:
     topics:
       - name: checkout.prepare.requested.v1

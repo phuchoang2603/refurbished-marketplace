@@ -30,7 +30,7 @@ spec:
         # Read by the platform agent's k8sattributes for stdout log records.
         resource.opentelemetry.io/service.name: {{ $name }}
     spec:
-{{- if or $svc.db $svc.mongo $svc.meili }}
+{{- if or $svc.db $svc.meili }}
       initContainers:
 {{- if $svc.db }}
         - name: migrate
@@ -43,29 +43,6 @@ spec:
               value: {{ $svc.db.runtimeRole | quote }}
           resources:
 {{ toYaml ($svc.migrationResources | default $.Values.defaults.migrationResources) | nindent 12 }}
-{{- end }}
-{{- if $svc.mongo }}
-        - name: wait-for-mongo
-          image: mongo:8.0.9
-          command: ["sh", "-c"]
-          args:
-            - >-
-              until mongosh --quiet
-              "mongodb://${MONGO_USER}:${MONGO_PASSWORD}@{{ $svc.mongo.host }}:{{ $svc.mongo.port }}/{{ $svc.mongo.database }}?authSource={{ default $svc.mongo.database $svc.mongo.authSource }}"
-              --eval 'db.runCommand({ ping: 1 })';
-              do echo "waiting for mongodb {{ $svc.mongo.host }}"; sleep 2; done
-          env:
-            - name: MONGO_USER
-              value: {{ $svc.mongo.user | quote }}
-            - name: MONGO_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $svc.mongo.secretName }}
-                  key: {{ default "password" $svc.mongo.passwordKey }}
-{{- with $initResources }}
-          resources:
-{{ toYaml . | nindent 12 }}
-{{- end }}
 {{- end }}
 {{- if $svc.meili }}
         - name: wait-for-meili
@@ -108,23 +85,6 @@ spec:
           env:
 {{- if $svc.db }}
 {{ include "refurbished-marketplace.postgresEnv" (dict "service" $svc "user" $svc.db.runtimeRole "secret" $svc.db.runtimeSecretName) | nindent 12 }}
-{{- end }}
-{{- if $svc.mongo }}
-            - name: MONGO_USER
-              value: {{ $svc.mongo.user | quote }}
-            - name: MONGO_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: {{ $svc.mongo.secretName }}
-                  key: {{ default "password" $svc.mongo.passwordKey }}
-            - name: MONGO_ADDR
-              value: {{ printf "%s:%v" $svc.mongo.host $svc.mongo.port | quote }}
-            - name: MONGO_DATABASE
-              value: {{ $svc.mongo.database | quote }}
-            - name: MONGO_AUTH_SOURCE
-              value: {{ default $svc.mongo.database $svc.mongo.authSource | quote }}
-            - name: MONGO_REPLICA_SET
-              value: {{ $svc.mongo.replicaSet | quote }}
 {{- end }}
 {{- if $svc.meili }}
             - name: MEILI_URL
