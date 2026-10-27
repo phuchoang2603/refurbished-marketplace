@@ -4,10 +4,12 @@ go 1.26.5
 
 require (
 	github.com/XSAM/otelsql v0.43.0
+	github.com/lib/pq v1.12.3
 	github.com/phuchoang2603/refurbished-marketplace/shared/messaging v0.0.0
 	github.com/phuchoang2603/refurbished-marketplace/shared/observe/log v0.0.0
 	github.com/phuchoang2603/refurbished-marketplace/shared/observe/metric v0.0.0
 	github.com/phuchoang2603/refurbished-marketplace/shared/observe/trace v0.0.0
+	github.com/pressly/goose/v3 v3.27.3
 	github.com/redis/go-redis/extra/redisotel/v9 v9.22.0
 	github.com/redis/go-redis/v9 v9.22.0
 	go.opentelemetry.io/otel v1.46.0
@@ -22,8 +24,10 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.30.0 // indirect
 	github.com/klauspost/compress v1.19.2 // indirect
+	github.com/mfridman/interpolate v0.0.2 // indirect
 	github.com/pierrec/lz4/v4 v4.1.28 // indirect
 	github.com/redis/go-redis/extra/rediscmd/v9 v9.22.0 // indirect
+	github.com/sethvargo/go-retry v0.4.0 // indirect
 	github.com/twmb/franz-go v1.21.5 // indirect
 	github.com/twmb/franz-go/pkg/kmsg v1.13.1 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
@@ -37,6 +41,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.46.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.11.0 // indirect
 	go.uber.org/atomic v1.11.0 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/net v0.57.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect

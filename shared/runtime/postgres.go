@@ -19,7 +19,6 @@ const maxDBQueryTextLen = 1024
 var sqlcNameRe = regexp.MustCompile(`(?m)^--\s*name:\s*(\S+)`)
 
 // OpenPostgres opens an instrumented *sql.DB using standard PostgreSQL environment variables.
-// The caller must import a postgres driver (e.g. github.com/lib/pq).
 // Query spans nest under the active request/consumer context; statement
 // text is truncated and bound args are never recorded. Span names prefer
 // the sqlc `-- name:` comment when present.

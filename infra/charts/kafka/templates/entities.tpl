@@ -1,4 +1,4 @@
-{{- $appNamespace := .Values.appNamespace | default .Release.Namespace }}
+{{- $appNamespace := .Release.Namespace }}
 {{- range $entityName, $entity := .Values.entities }}
 ---
 apiVersion: rbac.authorization.k8s.io/v1

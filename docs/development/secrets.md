@@ -14,11 +14,15 @@ Marketplace resources do not use the platform `ClusterSecretStore/doppler`. That
 | Doppler key                      | K8s Secret                                | K8s key                            |
 | -------------------------------- | ----------------------------------------- | ---------------------------------- |
 | `USERS_APP_PASSWORD`             | `users-app`                               | `password`                         |
+| `USERS_RUNTIME_PASSWORD` | `users-runtime` | `password` |
 | `PRODUCTS_APP_PASSWORD`          | `mongodb-catalog-app` (ns `ecommerce`)    | `password`, `username` (`catalog`) |
 | `MEILI_MASTER_KEY`               | `meilisearch-master-key` (ns `ecommerce`) | `MEILI_MASTER_KEY`                 |
 | `INVENTORY_APP_PASSWORD`         | `inventory-app`                           | `password`                         |
+| `INVENTORY_RUNTIME_PASSWORD` | `inventory-runtime` | `password` |
 | `ORDERS_APP_PASSWORD`            | `orders-app`                              | `password`                         |
+| `ORDERS_RUNTIME_PASSWORD` | `orders-runtime` | `password` |
 | `CHECKOUT_APP_PASSWORD`          | `checkout-app`                            | `password`                         |
+| `CHECKOUT_RUNTIME_PASSWORD` | `checkout-runtime` | `password` |
 | `PAYMENT_GATEWAY_API_KEY`        | `checkout-payment-gateway` (prod only)    | `PAYMENT_GATEWAY_API_KEY`          |
 | `PAYMENT_GATEWAY_WEBHOOK_SECRET` | `checkout-payment-gateway` (prod only)    | `PAYMENT_GATEWAY_WEBHOOK_SECRET`   |
 | `JWT_SECRET`                     | `users-auth`                              | `JWT_SECRET`                       |

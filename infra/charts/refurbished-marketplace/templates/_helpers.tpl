@@ -32,3 +32,21 @@
 {{- $image -}}
 {{- end -}}
 {{- end -}}
+
+{{- define "refurbished-marketplace.postgresEnv" -}}
+- name: PGUSER
+  value: {{ .user | quote }}
+- name: PGPASSWORD
+  valueFrom:
+    secretKeyRef:
+      name: {{ .secret }}
+      key: {{ .service.db.passwordKey }}
+- name: PGHOST
+  value: {{ .service.db.host | quote }}
+- name: PGPORT
+  value: {{ .service.db.port | quote }}
+- name: PGDATABASE
+  value: {{ .service.db.name | quote }}
+- name: PGSSLMODE
+  value: "disable"
+{{- end -}}

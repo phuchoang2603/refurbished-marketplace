@@ -7,6 +7,7 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/phuchoang2603/refurbished-marketplace/services/checkout/db/migrations"
 	"github.com/phuchoang2603/refurbished-marketplace/services/checkout/internal/accounts"
 	"github.com/phuchoang2603/refurbished-marketplace/services/checkout/internal/grpcserver"
 	"github.com/phuchoang2603/refurbished-marketplace/services/checkout/internal/service"
@@ -21,6 +22,12 @@ import (
 
 func main() {
 	runtime.InitLogging("checkout")
+	if len(os.Args) == 2 && os.Args[1] == "migrate" {
+		if err := runtime.MigratePostgres(context.Background(), migrations.Files); err != nil {
+			sharedlog.Fatal("migrate postgres", "err", err)
+		}
+		return
+	}
 	config := service.LoadConfig()
 	if err := service.ValidateConfig(config); err != nil {
 		sharedlog.Fatal("config", "err", err)

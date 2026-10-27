@@ -26,9 +26,9 @@ jobs:
           repo = os.environ["REPO"]
           pr = os.environ["PR"]
           images = [
-              "web", "users", "users-migrator", "products", "search",
-              "inventory", "inventory-migrator",
-              "orders", "orders-migrator", "checkout", "checkout-migrator",
+              "web", "users", "products", "search",
+              "inventory",
+              "orders", "checkout",
               "cart", "connect-debezium",
           ]
 
