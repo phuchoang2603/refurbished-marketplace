@@ -30,9 +30,6 @@ spec:
             injectGlobalImages: false
             valueFiles:
               - values-prod.yaml
-          mongodb:
-            valueFiles:
-              - values-prod.yaml
           meilisearch:
             valueFiles:
               - values-prod.yaml

@@ -37,7 +37,6 @@ env:
     ./shared/testutil/postgres/...
     ./shared/testutil/kafka/...
     ./shared/testutil/meilisearch/...
-    ./shared/testutil/mongo/...
     ./shared/testutil/redis/...
 
 jobs:
@@ -100,7 +99,7 @@ jobs:
               - 'shared/observe/log/**'
               - 'shared/observe/trace/**'
               - 'shared/testutil/kafka/**'
-              - 'shared/testutil/mongo/**'
+              - 'shared/testutil/postgres/**'
               - 'go.work*'
               - '.github/workflows/ci.yml'
             search:

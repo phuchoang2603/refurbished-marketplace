@@ -2,15 +2,15 @@
 
 Each domain service owns its store. Cross-service references are logical IDs, not shared foreign keys. There is no products Postgres cluster after the catalog cutover.
 
-| Owner     | Store                   | What it holds                                                        |
-| --------- | ----------------------- | -------------------------------------------------------------------- |
-| products  | MongoDB `catalog`       | `listings`, `catalog_outbox`                                         |
-| search    | Meilisearch             | Catalog-field documents (projection)                                 |
-| inventory | Postgres `inventory_db` | Stock, reservations, seed intent, inbox, outbox                      |
-| users     | Postgres `users_db`     | Users, refresh tokens                                                |
-| orders    | Postgres `orders_db`    | Orders, items, inbox, outbox                                         |
-| checkout  | Postgres `checkout_db`  | Saga, frozen gateway snapshot, operations, inbox, outbox, exceptions |
-| cart      | Redis/Valkey            | Ephemeral cart documents                                             |
+| Owner     | Store                    | What it holds                                                        |
+| --------- | ------------------------ | -------------------------------------------------------------------- |
+| products  | PostgreSQL `products_db` | `products`, `products_outbox`                                        |
+| search    | Meilisearch              | Catalog-field documents (projection)                                 |
+| inventory | Postgres `inventory_db`  | Stock, reservations, seed intent, inbox, outbox                      |
+| users     | Postgres `users_db`      | Users, refresh tokens                                                |
+| orders    | Postgres `orders_db`     | Orders, items, inbox, outbox                                         |
+| checkout  | Postgres `checkout_db`   | Saga, frozen gateway snapshot, operations, inbox, outbox, exceptions |
+| cart      | Redis/Valkey             | Ephemeral cart documents                                             |
 
 Logical IDs: listing `_id` = inventory `product_id` = order item `product_id`. `merchant_id` is stored on listings, cart lines, and orders. Cart items also carry caller-supplied `product_name` and `unit_price_cents` snapshots.
 

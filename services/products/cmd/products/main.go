@@ -6,6 +6,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/phuchoang2603/refurbished-marketplace/services/products/db/migrations"
 	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/catalog"
 	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/grpcserver"
 	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/service"
@@ -19,6 +20,12 @@ import (
 
 func main() {
 	runtime.InitLogging("products")
+	if len(os.Args) > 1 && os.Args[1] == "migrate" {
+		if err := runtime.MigratePostgres(context.Background(), migrations.Files); err != nil {
+			sharedlog.Fatal("migrate postgres", "err", err)
+		}
+		return
+	}
 	cfg := service.LoadConfig()
 	if err := service.ValidateConfig(cfg); err != nil {
 		sharedlog.Fatal("config", "err", err)
@@ -27,17 +34,17 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	store, err := catalog.Open(ctx, cfg.MongoURI)
+	db, err := runtime.OpenPostgres()
 	if err != nil {
-		sharedlog.Fatal("open mongodb", "err", err)
+		sharedlog.Fatal("open postgres", "err", err)
 	}
 	defer func() {
-		if err := store.Close(context.Background()); err != nil {
-			sharedlog.Error("close mongodb", "err", err)
+		if err := db.Close(); err != nil {
+			sharedlog.Error("close db", "err", err)
 		}
 	}()
 
-	svc := service.New(store)
+	svc := service.New(catalog.New(db))
 	grpcSvc := grpcserver.New(svc)
 
 	shutdownTracing, err := runtime.InitTracing(ctx, "products")

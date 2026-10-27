@@ -35,7 +35,7 @@ func (s *Service) CreateProduct(ctx context.Context, name, description, category
 		return Product{}, ErrInvalidCondition
 	}
 
-	now := time.Now().UTC()
+	now := time.Now().UTC().Truncate(time.Microsecond)
 	listing := catalog.Listing{
 		ID:          uuid.New(),
 		Name:        name,

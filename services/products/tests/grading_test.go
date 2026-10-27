@@ -7,7 +7,6 @@ import (
 	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/grpcserver"
 	"github.com/phuchoang2603/refurbished-marketplace/services/products/internal/service"
 	productsv1 "github.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1"
-	"go.mongodb.org/mongo-driver/v2/bson"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/proto"
@@ -58,7 +57,7 @@ func TestGradingPersistsInReadsAndEvents(t *testing.T) {
 				}
 			}
 			var row outboxRow
-			if err := store.Database().Collection("catalog_outbox").FindOne(t.Context(), bson.M{"aggregate_id": created.Id}).Decode(&row); err != nil {
+			if err := store.Database().QueryRowContext(t.Context(), "SELECT id, aggregate_id, event_type, payload FROM products_outbox WHERE aggregate_id = $1", created.Id).Scan(&row.ID, &row.AggregateID, &row.EventType, &row.Payload); err != nil {
 				t.Fatal(err)
 			}
 			var event productsv1.ProductCreated

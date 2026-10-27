@@ -12,7 +12,7 @@ Learning project for distributed Go services around a refurbished-goods marketpl
 | -------------------- | ----------------------------- | -------------------------------------------------- |
 | `services/web`       | Browser edge and SSR          | `templ`, Datastar fragments, internal gRPC clients |
 | `services/users`     | Identity and sessions         | JWT, refresh tokens, PostgreSQL                    |
-| `services/products`  | Listing identity              | Mongo `catalog` listings + outbox; no stock        |
+| `services/products`  | Listing identity              | PostgreSQL products + outbox; no stock             |
 | `services/search`    | Storefront catalog read model | Kafka → Meilisearch; `SearchProducts`              |
 | `services/inventory` | Stock and reservations        | PostgreSQL, `ReserveStock`, Kafka consumers        |
 | `services/cart`      | Ephemeral carts               | Redis/Valkey; merchant + name/price snapshots      |
@@ -27,13 +27,12 @@ Checkout: [docs/order-placement.md](docs/order-placement.md).
 
 - Go services and shared libraries (`go.work`).
 - gRPC / Protocol Buffers for internal APIs (`shared/proto`).
-- PostgreSQL + `sqlc` + `goose` for users, inventory, orders, checkout.
-- MongoDB Community (MCK) for catalog documents and the products outbox.
+- PostgreSQL + `sqlc` + `goose` for users, products, inventory, orders, checkout.
 - Meilisearch for browse/text search (projection only).
 - Redis/Valkey for cart state.
-- Kafka (Strimzi) + Debezium outbox (Postgres and Mongo).
+- Kafka (Strimzi) + Debezium PostgreSQL outbox.
 - `templ` + Datastar for server-rendered HTML.
-- Kubernetes / Helm: CloudNativePG, Strimzi, MCK, Istio Gateway API, External Secrets.
+- Kubernetes / Helm: CloudNativePG, Strimzi, Istio Gateway API, External Secrets.
 - Istio ambient: strict mTLS for `ecommerce` and `kafka`, plus a waypoint with connection limits, retry budgets, and outlier handling for domain gRPC. Cilium remains the platform CNI.
 - GitOps: one Argo CD per Talos environment; `talos-proxmox` owns shared operators and this repo owns marketplace Applications.
 - Cloudflare Tunnel to Istio Gateway for shop; HyperDX stays on the prod LAN.
