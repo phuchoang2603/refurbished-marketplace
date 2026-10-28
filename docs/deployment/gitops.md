@@ -1,9 +1,9 @@
 # GitOps deployment (Argo CD)
 
-The Talos **prod** cluster is the development server. It runs Argo CD in namespace `argo-cd`, installed by the [`talos-proxmox`](https://github.com/phuchoang2603/talos-proxmox) platform OpenTofu root. Argo CD manages its local cluster and hosts two independent roots:
+Proxmox **dev** and AWS **prod** each run their own Argo CD in namespace `argo-cd`, installed by the [`talos-proxmox`](https://github.com/phuchoang2603/talos-proxmox) platform OpenTofu root. Argo CD manages its local cluster and hosts two independent roots:
 
 1. `platform` from `talos-proxmox` installs shared operators, the Doppler `ClusterSecretStore`, storage, observability, and the Cloudflare operator with its `ClusterTunnel`.
-2. `prod-root` from this repository deploys marketplace-owned resources that consume those platform APIs.
+2. `dev-root` or `prod-root` from this repository deploys marketplace-owned resources that consume those platform APIs.
 
 All marketplace Applications destine `https://kubernetes.default.svc`. There are no cluster registrations or cross-environment kubeconfigs.
 
@@ -21,7 +21,7 @@ doppler secrets get KUBECONFIG --plain \
 export KUBECONFIG="$HOME/.kube/talos-prod.yaml"
 ```
 
-Apply the Doppler token as described in [secrets.md](../development/secrets.md), then the project and root with the same kubeconfig:
+Bootstrap once per environment. Apply the Doppler token as described in [secrets.md](../development/secrets.md), then the project and root with the same kubeconfig:
 
 ```bash
 kubectl create namespace ecommerce --dry-run=client -o yaml | kubectl apply -f -
@@ -32,22 +32,22 @@ kubectl apply --server-side -f infra/argocd/prod/root.yaml
 
 ## Environment configuration
 
-| Layer            | Prod                                         |
-| ---------------- | -------------------------------------------- |
-| Argo CD          | UI `http://10.69.12.254`                     |
-| Kubeconfig       | Doppler `talos-proxmox/prod` `KUBECONFIG`    |
-| Marketplace root | `prod-root`                                  |
-| Doppler token    | `ecommerce/doppler-token` for config `prd`   |
-| Images           | Immutable SHA pinned by the release workflow |
-| Values           | Chart `values.yaml` plus `values-prod.yaml`  |
+| Layer                      | Dev                                | Prod                           |
+| -------------------------- | ---------------------------------- | ------------------------------ |
+| Argo CD                    | `https://argocd-dev.phuchoang.sbs` | `https://argocd.phuchoang.sbs` |
+| Platform kubeconfig        | `talos-proxmox/dev`                | `talos-proxmox/prod`           |
+| Marketplace root           | `dev-root`                         | `prod-root`                    |
+| Marketplace Doppler config | `dev`                              | `prd`                          |
+| Root Git ref               | `deploy/dev`                       | `deploy/prod`                  |
+| Shop                       | `shop-dev.phuchoang.sbs`           | `shop.phuchoang.sbs`           |
 
-The committed `infra/argocd/prod/root.yaml` tracks `main` for both the root and child Applications. The release workflow pins immutable image SHAs in `values-prod.yaml` after building images. Doppler config names do not belong in Helm or Argo values.
+Apply `infra/argocd/project.yaml` and the matching `infra/argocd/{dev,prod}/root.yaml` once using that environment's kubeconfig. Each root watches its deployment ref. After image publication, CI updates that ref with the immutable source revision and image tag inherited by its children. Roots select the matching `values-dev.yaml` or `values-prod.yaml` overlays. Subsequent releases need no Kubernetes API access from CI. A root may initially report an unavailable ref until the first release publishes it.
 
 The marketplace chart's `TunnelBinding` publishes shop through the platform's `ClusterTunnel/talos-proxmox`; the Cloudflare operator creates its DNS records. The origin is `http://ecommerce-ingress-istio.ecommerce.svc.cluster.local:80`. See [networking.md](networking.md#edge).
 
 Production Checkout uses `PAYMENT_GATEWAY_URL=http://edge.payment-gateway.svc.cluster.local:8080`, `CHECKOUT_RETURN_BASE_URL=https://shop.phuchoang.sbs`, and the two keys from `checkout-payment-gateway`; see [secrets.md](../development/secrets.md). The API key identifies the integration at Edge. Chart defaults leave the gateway disabled and refuse checkout submission. The marketplace no longer renders Payment, its database, or the hosted-page simulator, and publishes no `pay` / `pay-dev` hostname.
 
-Production cluster end-to-end verification is deferred. Provision the gateway integration and matching credentials before deploying this release; see [the rollout gate](../order-placement.md#rollout-gate). Local Helm renders do not satisfy that gate.
+Dev intentionally leaves gateway integration disabled: browsing, accounts, cart and search are in scope, while checkout submissions return unavailable without creating orders or reservations. Production checkout verification requires the separate gateway deployment. Provision the gateway integration and matching credentials before deploying this release; see [the rollout gate](../order-placement.md#rollout-gate). Local Helm renders do not satisfy that gate.
 
 ## Marketplace ownership
 
@@ -66,7 +66,7 @@ CNPG PostgreSQL is the products catalog source of truth; Meilisearch is its stor
 
 Cart and Checkout use separate persistent `Redis` resources (`cart-redis` and `checkout-redis`) from the platform's OT-CONTAINER-KIT Redis operator. Both use AOF and `noeviction`; the checkout projection also recovers its account facts and checkpoint from the retained Users topic. Deploy the Users migration and connector before enabling the new checkout image, and wait for account replay before the checkout smoke test.
 
-Fresh installations start with empty cart and checkout Redis instances; no cart-data copy or legacy sidecar cutover is required. The release workflow pins matching image SHAs in the production overlays after publishing images.
+Fresh installations start with empty cart and checkout Redis instances; no cart-data copy or legacy sidecar cutover is required. The release workflow publishes matching Git and image pins to the environment deployment ref after all images build.
 
 Each PostgreSQL service image supports `migrate`, using SQL embedded in the binary and Goose's Go SDK with a PostgreSQL advisory lock. A `migrate` init container runs before each application container; a failure blocks startup and Kubernetes retries it. There are no migration Jobs or separate migrator images. Existing `goose_db_version` history is preserved.
 
@@ -82,7 +82,7 @@ Marketplace child annotations give this local order:
 namespaces (0) → secret-store (1) → Meilisearch (2) → marketplace (3) → Kafka (4)
 ```
 
-Waves order submission of child Applications only; they do not wait for each child to become Healthy and do not order the marketplace root against `platform`. Children converge asynchronously: unlimited retries with backoff (capped at five minutes) and `SkipDryRunOnMissingResource` absorb CRDs, storage, and secret stores that platform Applications have not finished installing. The only manual prerequisite is `ecommerce/doppler-token`.
+Waves order submission of child Applications only; they do not wait for each child to become Healthy and do not order the marketplace root against `platform`. Children converge asynchronously: unlimited retries with backoff (capped at five minutes) and `SkipDryRunOnMissingResource` absorb CRDs, storage, and secret stores that platform Applications have not finished installing. The one-time bootstrap prerequisite is `ecommerce/doppler-token`.
 
 Useful checks:
 
@@ -107,6 +107,7 @@ infra/argocd/
 │       ├── applications.tpl
 │       └── namespaces.tpl
 ├── project.yaml
+├── dev/root.yaml
 └── prod/root.yaml
 ```
 

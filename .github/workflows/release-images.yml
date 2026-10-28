@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths:
       - infra/docker/**
+      - infra/charts/**
+      - infra/argocd/**
       - services/**
       - shared/**
       - go.work
@@ -15,6 +17,8 @@ on:
     types: [opened, synchronize, reopened, closed]
     paths:
       - infra/docker/**
+      - infra/charts/**
+      - infra/argocd/**
       - services/**
       - shared/**
       - go.work
@@ -29,10 +33,15 @@ permissions:
 
 concurrency:
   group: release-images-${{ github.event.pull_request.number || github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: false
 
 jobs:
+  charts:
+    if: github.event.action != 'closed'
+    uses: ./.github/workflows/chart-lint.yml
+
   release:
+    needs: charts
     if: github.event.action != 'closed'
     runs-on: ubuntu-latest
     strategy:
@@ -122,9 +131,11 @@ jobs:
             tags="${base}:main-${{ github.sha }}
           ${base}:latest"
           fi
-          echo "tags<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$tags" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
+          {
+            echo "tags<<EOF"
+            echo "$tags"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - uses: docker/setup-buildx-action@v3
 
@@ -138,50 +149,47 @@ jobs:
           push: ${{ steps.publish.outputs.enabled == 'true' }}
           tags: ${{ steps.tags.outputs.tags }}
 
-  pin:
+  deploy:
     needs: release
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: (github.event_name == 'pull_request' && github.event.action != 'closed' && github.base_ref == 'main' && github.event.pull_request.head.repo.full_name == github.repository) || (github.event_name != 'pull_request' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
+    environment: ${{ github.event_name == 'pull_request' && 'dev' || 'prod' }}
     permissions:
       contents: write
+    concurrency:
+      group: marketplace-${{ github.event_name == 'pull_request' && 'dev' || 'prod' }}
+      cancel-in-progress: false
+    env:
+      DEPLOY_ENVIRONMENT: ${{ github.event_name == 'pull_request' && 'dev' || 'prod' }}
+      DEPLOY_IMAGE_TAG: ${{ github.event_name == 'pull_request' && format('pr-{0}-{1}', github.event.number, github.sha) || format('main-{0}', github.sha) }}
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: main
-
-      - name: Pin chart image tags after a successful build
+          fetch-depth: 0
+      - name: Publish the GitOps release
         env:
-          TAG: main-${{ github.sha }}
-          SHA: ${{ github.sha }}
+          SOURCE_REF: ${{ github.event_name == 'pull_request' && format('refs/pull/{0}/merge', github.event.number) || 'refs/heads/main' }}
         run: |
           set -euo pipefail
-          head_sha="$(git ls-remote origin refs/heads/main | cut -f1)"
-          if [ "${head_sha}" != "${SHA}" ]; then
-            echo "main moved to ${head_sha}; skipping stale pin for ${SHA}"
+          source_sha=$(git ls-remote origin "$SOURCE_REF" | cut -f1)
+          if [ "$source_sha" != "$GITHUB_SHA" ]; then
+            echo "Source ref moved; skipping stale release."
             exit 0
           fi
-          changed=0
-          for file in \
-            infra/charts/refurbished-marketplace/values-prod.yaml \
-            infra/charts/kafka/values-prod.yaml; do
-            tmp="${file}.tmp"
-            awk -v tag="${TAG}" '
-              /^global:/ { in_global = 1 }
-              in_global && /^[[:space:]]*imageTag:/ { sub(/imageTag:.*/, "imageTag: " tag); in_global = 0 }
-              { print }
-            ' "${file}" > "${tmp}"
-            if cmp -s "${file}" "${tmp}"; then
-              rm "${tmp}"
-            else
-              mv "${tmp}" "${file}"
-              changed=1
-            fi
-          done
-          if [ "${changed}" -eq 0 ]; then
-            echo "image tags already pinned to ${TAG}"
-            exit 0
-          fi
+          branch="deploy/${DEPLOY_ENVIRONMENT}"
+          previous=$(git ls-remote origin "refs/heads/$branch" | cut -f1)
+          git switch --force-create "$branch" "$GITHUB_SHA"
+          python3 - <<'PYCODE'
+          import os, pathlib, re
+          path = pathlib.Path("infra/argocd/app-of-apps/values.yaml")
+          content = path.read_text()
+          content, revision_count = re.subn(r"^targetRevision: .*$", "targetRevision: " + os.environ["GITHUB_SHA"], content, flags=re.M)
+          content, tag_count = re.subn(r"^  imageTag: .*$", "  imageTag: " + os.environ["DEPLOY_IMAGE_TAG"], content, flags=re.M)
+          assert revision_count == 1 and tag_count == 1
+          path.write_text(content)
+          PYCODE
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -am "chore(deploy): pin images to ${SHA:0:7} [skip ci]"
-          git push origin HEAD:main
+          git add infra/argocd/app-of-apps/values.yaml
+          git commit -m "Deploy ${DEPLOY_ENVIRONMENT} from ${GITHUB_SHA}"
+          git push --force-with-lease="refs/heads/$branch:$previous" origin "HEAD:refs/heads/$branch"

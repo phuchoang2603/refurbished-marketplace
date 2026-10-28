@@ -2,6 +2,8 @@ global:
   imagePullPolicy: IfNotPresent
   imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
   imageTag: latest
+  clusterName: dev-talos
+  environment: dev
 
 ingress:
   enabled: true

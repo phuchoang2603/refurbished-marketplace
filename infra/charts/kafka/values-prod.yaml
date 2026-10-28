@@ -1,6 +1,7 @@
 global:
   imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
-  imageTag: main-b8a947bb55b1b9c9e0a9922cafa64f4a02bd2a6a
+  clusterName: prod-talos
+  environment: prod
   imagePullPolicy: Always
 
 # Prod Kafka: single broker (RF 1) to save RAM, 7-day retention, six preparation partitions.

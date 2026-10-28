@@ -18,8 +18,11 @@ Treefmt's existing Oxfmt integration formats plain YAML locally. Helm templates 
 
 ## Container images (GHCR)
 
-Each event builds every service image once. Pull requests (same-repo only; fork PRs build without publishing) push `:pr-<number>-<full-merge-sha>`, a new push cancels the previous build, and closing the PR cancels any active build. Pushes to `main` that touch image-related paths push `:main-<full-sha>` and `:latest`, then the `pin` job commits `global.imageTag: main-<full-sha>` to the production values of the `refurbished-marketplace` and `kafka` charts (`[skip ci]`). `.github/workflows/cleanup-pr-images.yml` runs when a PR closes and deletes only versions tagged exclusively with `pr-<number>-*`; `main-*` and `latest` are never selected. Dev charts default to `:latest`.
+Image, chart, Argo-root and release-workflow changes validate the charts and build the complete image matrix. Trusted PRs publish `pr-<number>-<merge-sha>`; main releases publish `main-<sha>`. Fork PRs build without publishing or deployment credentials.
 
+After all images publish, CI updates `deploy/dev` for a trusted PR or `deploy/prod` for main. The deployment commit pins child Applications to the built source SHA and image tag. Each locally bootstrapped Argo root watches its own deployment ref, so CI needs only registry/Git access and never Kubernetes or Doppler credentials. Publishing skips source refs that moved and uses force-with-lease to protect concurrent updates. Deployment refs are generated release snapshots and should not be edited manually.
+
+Closing a PR does not delete its images: dev may still need them for pod restart until the next successful release. No workflow writes image-pin commits to main.
 See [gitops.md](gitops.md).
 
 ## Path-filter fan-out for tests

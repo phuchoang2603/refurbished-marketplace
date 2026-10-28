@@ -1,6 +1,3 @@
-# Apply to prod's own Argo CD after talos-proxmox platform bring-up, using the kubeconfig from
-# Doppler talos-proxmox/prod. Apply infra/k8s/doppler-token.prd.secret.yaml and infra/argocd/project.yaml first.
-# Images: immutable GHCR SHAs pinned by the release workflow. Hosts/Kafka/tunnel: chart values-prod.yaml.
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -12,7 +9,7 @@ spec:
   project: refurbished-marketplace
   source:
     repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
-    targetRevision: main
+    targetRevision: deploy/prod
     path: infra/argocd/app-of-apps
     helm:
       values: |
@@ -22,20 +19,17 @@ spec:
           imagePullPolicy: Always
         marketplace:
           enabled: true
-          injectGlobalImages: false
+          injectGlobalImages: true
           valueFiles:
             - values-prod.yaml
         apps:
           kafka:
-            injectGlobalImages: false
+            injectGlobalImages: true
             valueFiles:
               - values-prod.yaml
           meilisearch:
             valueFiles:
               - values-prod.yaml
-      parameters:
-        - name: targetRevision
-          value: main
   destination:
     server: https://kubernetes.default.svc
     namespace: argo-cd
