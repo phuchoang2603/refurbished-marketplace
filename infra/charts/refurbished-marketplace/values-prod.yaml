@@ -1,6 +1,7 @@
 global:
   imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
-  imageTag: main-b8a947bb55b1b9c9e0a9922cafa64f4a02bd2a6a
+  clusterName: prod-talos
+  environment: prod
   imagePullPolicy: Always
 
 # Prod overlay (Argo `prod-root` valueFiles). Doppler env is the cluster
@@ -18,7 +19,3 @@ services:
       CHECKOUT_RETURN_BASE_URL: https://shop.phuchoang.sbs
     paymentGateway:
       secretName: checkout-payment-gateway
-  orders:
-    replicas: 3
-  inventory:
-    replicas: 3

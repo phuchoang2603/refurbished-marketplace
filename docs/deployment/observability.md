@@ -1,6 +1,6 @@
 # Marketplace observability
 
-The shared telemetry pipeline is installed and administered by `talos-proxmox`: prod's VictoriaMetrics, VictoriaLogs, VictoriaTraces, VMAgent, VLAgent, VTAgent and Grafana live in [`apps/components/observability`](https://github.com/phuchoang2603/talos-proxmox/tree/main/apps/components/observability). Dev runs no telemetry components. This repository owns only the marketplace telemetry producers.
+The shared telemetry pipeline is installed and administered by `talos-proxmox`: each environment's VictoriaMetrics, VictoriaLogs, VictoriaTraces, VMAgent, VLAgent, VTAgent and Grafana live in [`apps/components/observability`](https://github.com/phuchoang2603/talos-proxmox/tree/main/apps/components/observability). Dev runs its own equivalent telemetry stack. This repository owns only the marketplace telemetry producers.
 
 ## Application contract
 
@@ -10,7 +10,7 @@ The shared telemetry pipeline is installed and administered by `talos-proxmox`: 
 | Metrics | Cumulative OTLP/HTTP to `http://vmagent-vmks.observability.svc.cluster.local:8429/opentelemetry/v1/metrics` every 30 s | VMAgent → VictoriaMetrics |
 | Logs    | Single-line slog JSON on stdout                                                                                        | VLAgent → VictoriaLogs    |
 
-Charts set the per-signal `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` and `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`, plus `k8s.cluster.name=prod-talos` and `deployment.environment=prod` resource attributes. Applications do not depend on an OpenTelemetry collector. VMAgent and VTAgent persist bounded remote-write queues on a separate node from the stores and replay after storage outages. VLAgent attaches Kubernetes metadata to container logs.
+Charts set the per-signal `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` and `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`, plus environment-specific `k8s.cluster.name` and `deployment.environment` resource attributes. Applications do not depend on an OpenTelemetry collector. VMAgent and VTAgent persist bounded remote-write queues on a separate node from the stores and replay after storage outages. VLAgent attaches Kubernetes metadata to container logs.
 
 ## Platform prerequisites
 
@@ -25,7 +25,7 @@ Fetch kubeconfigs as described in [gitops.md](gitops.md#environment-configuratio
 
 ## Grafana access
 
-Grafana is served at <https://grafana.phuchoang.sbs> and `http://10.69.12.128`. Both require Dex or local admin login; see the platform [access guide](https://github.com/phuchoang2603/talos-proxmox/blob/main/docs/operations/cluster-access.md#public-urls-prod).
+Grafana is served at <https://grafana-dev.phuchoang.sbs> and <https://grafana.phuchoang.sbs>, with management port-forward available. Both require Dex or local admin login; see the platform [access guide](https://github.com/phuchoang2603/talos-proxmox/blob/main/docs/operations/cluster-access.md#public-urls-prod).
 
 The default sources are **Logs** (`otel_logs`), **Traces** (`otel_traces`), and **Metrics** (`otel_metrics_gauge`, `otel_metrics_sum`, `otel_metrics_histogram`).
 

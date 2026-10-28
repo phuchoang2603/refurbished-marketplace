@@ -7,7 +7,7 @@ Marketplace resources do not use the platform `ClusterSecretStore/doppler`. That
 ## Doppler project
 
 1. Create a Doppler project named `refurbished-marketplace`.
-2. Use Doppler config `prd` on the prod cluster, which serves as the development server. The service token Secret on that cluster selects the config; Argo does not set it.
+2. Use Doppler config `dev` on Proxmox dev and `prd` on AWS prod, with independent database credentials. The service token Secret on that cluster selects the config; Argo does not set it.
 
 ## Application secrets
 
@@ -42,20 +42,27 @@ Kafka Connect reads only catalog, inventory, orders and checkout credentials thr
 
 ## Bootstrap service token
 
-The marketplace `SecretStore/doppler` reads `ecommerce/doppler-token` key `dopplerToken`. Copy the tracked `.example` manifest for prod and replace only `REPLACE_ME` in the untracked copy.
+Bootstrap locally once per environment; CI does not receive kubeconfigs or application tokens. Create a read-only service token for the matching config. The marketplace `SecretStore/doppler` reads `ecommerce/doppler-token` key `dopplerToken`. Use a read-only config service token. The matching platform kubeconfig must be used for the token, AppProject and root.
 
-Apply it with the environment kubeconfig from the `talos-proxmox` Doppler project (the same kubeconfig used for the Argo CD project and root). Create `ecommerce` first; the root's `CreateNamespace` would otherwise create it only after the token is needed.
+For dev, using an operator-authenticated Doppler CLI:
 
 ```bash
 umask 077
 doppler secrets get KUBECONFIG --plain \
-  --project talos-proxmox --config prod \
-  > "$HOME/.kube/talos-prod.yaml"
-export KUBECONFIG="$HOME/.kube/talos-prod.yaml"
-
+  --project talos-proxmox --config dev > /tmp/marketplace-dev-kubeconfig
+export KUBECONFIG=/tmp/marketplace-dev-kubeconfig
 kubectl create namespace ecommerce --dry-run=client -o yaml | kubectl apply -f -
-kubectl apply -f infra/k8s/doppler-token.prd.secret.yaml
+doppler configs tokens create marketplace-eso --access read --plain \
+  --project refurbished-marketplace --config dev > /tmp/marketplace-eso-token
+kubectl create secret generic doppler-token -n ecommerce \
+  --from-file=dopplerToken=/tmp/marketplace-eso-token \
+  --dry-run=client -o yaml | kubectl apply -f -
+rm /tmp/marketplace-eso-token
+kubectl apply -f infra/argocd/project.yaml
+kubectl apply -f infra/argocd/dev/root.yaml
 ```
+
+For production, use platform config `prod`, marketplace config `prd`, and `infra/argocd/prod/root.yaml`. Keep the kubeconfig private and remove the temporary copy after bootstrap.
 
 Do not commit tokens. Do not set the Doppler config in Helm or Argo values.
 

@@ -1,0 +1,30 @@
+name: Chart validation
+
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  charts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: azure/setup-helm@v4
+      - name: Validate both environments
+        run: |
+          set -euo pipefail
+          for environment in dev prod; do
+            for chart in infra/charts/*; do
+              helm lint "$chart"
+              values=()
+              if [ -f "$chart/values-${environment}.yaml" ]; then
+                values=(-f "$chart/values-${environment}.yaml")
+              fi
+              helm lint "$chart" "${values[@]}"
+              helm template marketplace "$chart" --namespace ecommerce "${values[@]}" >/dev/null
+            done
+            helm lint infra/argocd/app-of-apps
+            helm template root infra/argocd/app-of-apps --set namePrefix="$environment" >/dev/null
+          done

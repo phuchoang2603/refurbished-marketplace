@@ -1,0 +1,7 @@
+ingress:
+  webHostname: shop-dev.phuchoang.sbs
+
+services:
+  web:
+    env:
+      PUBLIC_BASE_URL: https://shop-dev.phuchoang.sbs

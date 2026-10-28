@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: dev-root
+  namespace: argo-cd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io/foreground
+spec:
+  project: refurbished-marketplace
+  source:
+    repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
+    targetRevision: deploy/dev
+    path: infra/argocd/app-of-apps
+    helm:
+      values: |
+        namePrefix: dev
+        global:
+          imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
+          imagePullPolicy: Always
+        marketplace:
+          enabled: true
+          injectGlobalImages: true
+          valueFiles:
+            - values-dev.yaml
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argo-cd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true

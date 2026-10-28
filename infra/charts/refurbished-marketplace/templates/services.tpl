@@ -117,7 +117,7 @@ spec:
             - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
               value: {{ .tracesEndpoint | quote }}
             - name: OTEL_RESOURCE_ATTRIBUTES
-              value: k8s.cluster.name=prod-talos,deployment.environment=prod
+              value: {{ printf "k8s.cluster.name=%s,deployment.environment=%s" $.Values.global.clusterName $.Values.global.environment | quote }}
             - name: OTEL_SERVICE_NAME
               value: {{ $name | quote }}
             - name: OTEL_TRACES_SAMPLER_ARG
