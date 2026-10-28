@@ -10,6 +10,11 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "3"
 spec:
+  {{- with $.Values.databaseNodeSelector }}
+  affinity:
+    nodeSelector:
+      {{- toYaml . | nindent 6 }}
+  {{- end }}
   instances: {{ default 1 $svc.db.instances }}
   postgresql:
     parameters:

@@ -19,3 +19,6 @@ services:
       CHECKOUT_RETURN_BASE_URL: https://shop.phuchoang.sbs
     paymentGateway:
       secretName: checkout-payment-gateway
+
+databaseNodeSelector:
+  karpenter.sh/capacity-type: on-demand
