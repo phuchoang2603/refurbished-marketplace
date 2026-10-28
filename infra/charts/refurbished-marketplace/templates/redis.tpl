@@ -23,6 +23,9 @@ metadata:
   annotations:
     argocd.argoproj.io/sync-wave: "3"
 spec:
+  podSecurityContext:
+    fsGroup: 1000
+    fsGroupChangePolicy: OnRootMismatch
   kubernetesConfig:
     image: {{ $.Values.redis.image }}
     imagePullPolicy: IfNotPresent
