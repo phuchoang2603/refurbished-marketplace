@@ -13,18 +13,7 @@
 {{- define "kafka.image" -}}
 {{- $root := index . 0 -}}
 {{- $image := index . 1 -}}
-{{- $tagOverride := "" -}}
-{{- if gt (len .) 2 -}}
-{{- $tagOverride = index . 2 | default "" -}}
-{{- end -}}
-{{- if $root.Values.global.imageRegistry -}}
-{{- $tag := $tagOverride | default $root.Values.global.imageTag | default "" -}}
-{{- if $tag -}}
-{{- printf "%s/%s:%s" $root.Values.global.imageRegistry $image $tag -}}
-{{- else -}}
-{{- printf "%s/%s" $root.Values.global.imageRegistry $image -}}
-{{- end -}}
-{{- else -}}
-{{- $image -}}
-{{- end -}}
+{{- $repository := printf "%s/%s" $root.Values.global.imageRegistry $image -}}
+{{- $tag := required (printf "image tag missing for %s" $repository) (index $root.Values.global.imageTags $repository) -}}
+{{- printf "%s:%s" $repository $tag -}}
 {{- end -}}

@@ -1,0 +1,117 @@
+{
+  "include": [
+    {
+      "service": "web",
+      "image-suffix": "/web",
+      "context": ".",
+      "dockerfile": "infra/docker/web.Dockerfile",
+      "paths": ["infra/docker/web.Dockerfile", "services/web", "shared", "go.work", "go.work.sum"],
+      "build-args": "BUILD_PKG=./services/web/cmd/web\nBUILD_BIN=web\nEXPOSE_PORT=8080\n"
+    },
+    {
+      "service": "users",
+      "image-suffix": "/users",
+      "context": ".",
+      "dockerfile": "infra/docker/go-service.Dockerfile",
+      "paths": [
+        "infra/docker/go-service.Dockerfile",
+        "services/users",
+        "shared",
+        "go.work",
+        "go.work.sum"
+      ],
+      "build-args": "BUILD_PKG=./services/users/cmd/users\nBUILD_BIN=users\nEXPOSE_PORT=9091\n"
+    },
+    {
+      "service": "products",
+      "image-suffix": "/products",
+      "context": ".",
+      "dockerfile": "infra/docker/go-service.Dockerfile",
+      "paths": [
+        "infra/docker/go-service.Dockerfile",
+        "services/products",
+        "shared",
+        "go.work",
+        "go.work.sum"
+      ],
+      "build-args": "BUILD_PKG=./services/products/cmd/products\nBUILD_BIN=products\nEXPOSE_PORT=9092\n"
+    },
+    {
+      "service": "search",
+      "image-suffix": "/search",
+      "context": ".",
+      "dockerfile": "infra/docker/go-service.Dockerfile",
+      "paths": [
+        "infra/docker/go-service.Dockerfile",
+        "services/search",
+        "shared",
+        "go.work",
+        "go.work.sum"
+      ],
+      "build-args": "BUILD_PKG=./services/search/cmd/search\nBUILD_BIN=search\nEXPOSE_PORT=9098\n"
+    },
+    {
+      "service": "inventory",
+      "image-suffix": "/inventory",
+      "context": ".",
+      "dockerfile": "infra/docker/go-service.Dockerfile",
+      "paths": [
+        "infra/docker/go-service.Dockerfile",
+        "services/inventory",
+        "shared",
+        "go.work",
+        "go.work.sum"
+      ],
+      "build-args": "BUILD_PKG=./services/inventory/cmd/inventory\nBUILD_BIN=inventory\nEXPOSE_PORT=9097\n"
+    },
+    {
+      "service": "orders",
+      "image-suffix": "/orders",
+      "context": ".",
+      "dockerfile": "infra/docker/go-service.Dockerfile",
+      "paths": [
+        "infra/docker/go-service.Dockerfile",
+        "services/orders",
+        "shared",
+        "go.work",
+        "go.work.sum"
+      ],
+      "build-args": "BUILD_PKG=./services/orders/cmd/orders\nBUILD_BIN=orders\nEXPOSE_PORT=9093\n"
+    },
+    {
+      "service": "checkout",
+      "image-suffix": "/checkout",
+      "context": ".",
+      "dockerfile": "infra/docker/go-service.Dockerfile",
+      "paths": [
+        "infra/docker/go-service.Dockerfile",
+        "services/checkout",
+        "shared",
+        "go.work",
+        "go.work.sum"
+      ],
+      "build-args": "BUILD_PKG=./services/checkout/cmd/checkout\nBUILD_BIN=checkout\nEXPOSE_PORT=9099\n"
+    },
+    {
+      "service": "cart",
+      "image-suffix": "/cart",
+      "context": ".",
+      "dockerfile": "infra/docker/go-service.Dockerfile",
+      "paths": [
+        "infra/docker/go-service.Dockerfile",
+        "services/cart",
+        "shared",
+        "go.work",
+        "go.work.sum"
+      ],
+      "build-args": "BUILD_PKG=./services/cart/cmd/cart\nBUILD_BIN=cart\nEXPOSE_PORT=9094\n"
+    },
+    {
+      "service": "connect-debezium",
+      "image-suffix": "/connect-debezium",
+      "context": ".",
+      "dockerfile": "infra/docker/connect-debezium.Dockerfile",
+      "paths": ["infra/docker/connect-debezium.Dockerfile"]
+    }
+  ]
+}

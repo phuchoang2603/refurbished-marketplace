@@ -18,9 +18,9 @@ Treefmt's existing Oxfmt integration formats plain YAML locally. Helm templates 
 
 ## Container images (GHCR)
 
-Image, chart, Argo-root and release-workflow changes validate the charts and build the complete image matrix. Trusted PRs publish `pr-<number>-<merge-sha>`; main releases publish `main-<sha>`. Fork PRs build without publishing or deployment credentials.
+CI validates charts and builds only images whose service dependencies changed since their last deployed image commit. Shared code and build-input changes rebuild their consumers; chart-only changes reuse all image tags. The first release builds every image. Trusted PRs publish `pr-<number>-<merge-sha>`; main releases publish `main-<sha>`. Fork PRs build without publishing or deployment credentials.
 
-After all images publish, CI updates `deploy/dev` for a trusted PR or `deploy/prod` for main. The deployment commit pins child Applications to the built source SHA and image tag. Each locally bootstrapped Argo root watches its own deployment ref, so CI needs only registry/Git access and never Kubernetes or Doppler credentials. Publishing skips source refs that moved and uses force-with-lease to protect concurrent updates. Deployment refs are generated release snapshots and should not be edited manually.
+After all affected images publish, CI updates `deploy/dev` for a trusted PR or `deploy/prod` for main. The deployment commit pins child Applications to the built source SHA and per-service commit tags. Unchanged services retain their existing tags in `infra/argocd/app-of-apps/release.yaml`; no digest manifest is maintained. Each locally bootstrapped Argo root watches its own deployment ref, so CI needs only registry/Git access and never Kubernetes or Doppler credentials. Publishing skips source refs that moved and uses force-with-lease to protect concurrent updates. Deployment refs are generated release snapshots and should not be edited manually.
 
 Closing a PR does not delete its images: dev may still need them for pod restart until the next successful release. No workflow writes image-pin commits to main.
 See [gitops.md](gitops.md).
