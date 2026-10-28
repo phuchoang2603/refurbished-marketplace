@@ -34,7 +34,7 @@ spec:
       initContainers:
 {{- if $svc.db }}
         - name: migrate
-          image: {{ include "refurbished-marketplace.image" (list $ $svc.image $svc.imageTag) }}
+          image: {{ include "refurbished-marketplace.image" (list $ $svc.image) }}
           imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
           args: [migrate]
           env:
@@ -73,7 +73,7 @@ spec:
 {{- end }}
 {{- end }}
         - name: {{ $name }}
-          image: {{ include "refurbished-marketplace.image" (list $ $svc.image $svc.imageTag) }}
+          image: {{ include "refurbished-marketplace.image" (list $ $svc.image) }}
           imagePullPolicy: {{ $.Values.global.imagePullPolicy }}
           ports:
             - name: {{ default "http" $svc.protocol }}

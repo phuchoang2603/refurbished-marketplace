@@ -1,195 +1,89 @@
 name: Release Images
 
 on:
+  workflow_dispatch:
+  pull_request:
   push:
     branches: [main]
-    paths:
-      - infra/docker/**
-      - infra/charts/**
-      - infra/argocd/**
-      - services/**
-      - shared/**
-      - go.work
-      - go.work.sum
-      - "**/go.mod"
-      - .github/workflows/release-images.yml
-  pull_request:
-    types: [opened, synchronize, reopened, closed]
-    paths:
-      - infra/docker/**
-      - infra/charts/**
-      - infra/argocd/**
-      - services/**
-      - shared/**
-      - go.work
-      - go.work.sum
-      - "**/go.mod"
-      - .github/workflows/release-images.yml
-  workflow_dispatch:
 
 permissions:
   contents: read
   packages: write
 
 concurrency:
-  group: release-images-${{ github.event.pull_request.number || github.ref }}
+  group: service-release-${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && format('fork-{0}', github.event.number) || (github.event_name == 'pull_request' && 'dev' || 'prod') }}
   cancel-in-progress: false
+
+env:
+  DEPLOY_ENVIRONMENT: ${{ github.event_name == 'pull_request' && 'dev' || 'prod' }}
+  DEPLOY_IMAGE_TAG: ${{ github.event_name == 'pull_request' && format('pr-{0}-{1}', github.event.number, github.sha) || format('main-{0}', github.sha) }}
+  SOURCE_REF: ${{ github.event_name == 'pull_request' && format('refs/pull/{0}/merge', github.event.number) || 'refs/heads/main' }}
 
 jobs:
   charts:
-    if: github.event.action != 'closed'
     uses: ./.github/workflows/chart-lint.yml
 
-  release:
-    needs: charts
-    if: github.event.action != 'closed'
+  plan:
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - image: web
-            dockerfile: infra/docker/web.Dockerfile
-            build_args: ""
-          - image: users
-            dockerfile: infra/docker/go-service.Dockerfile
-            build_args: |
-              BUILD_PKG=./services/users/cmd/users
-              BUILD_BIN=users
-              EXPOSE_PORT=9091
-          - image: products
-            dockerfile: infra/docker/go-service.Dockerfile
-            build_args: |
-              BUILD_PKG=./services/products/cmd/products
-              BUILD_BIN=products
-              EXPOSE_PORT=9092
-          - image: search
-            dockerfile: infra/docker/go-service.Dockerfile
-            build_args: |
-              BUILD_PKG=./services/search/cmd/search
-              BUILD_BIN=search
-              EXPOSE_PORT=9098
-          - image: inventory
-            dockerfile: infra/docker/go-service.Dockerfile
-            build_args: |
-              BUILD_PKG=./services/inventory/cmd/inventory
-              BUILD_BIN=inventory
-              EXPOSE_PORT=9097
-          - image: orders
-            dockerfile: infra/docker/go-service.Dockerfile
-            build_args: |
-              BUILD_PKG=./services/orders/cmd/orders
-              BUILD_BIN=orders
-              EXPOSE_PORT=9093
-          - image: checkout
-            dockerfile: infra/docker/go-service.Dockerfile
-            build_args: |
-              BUILD_PKG=./services/checkout/cmd/checkout
-              BUILD_BIN=checkout
-              EXPOSE_PORT=9099
-          - image: cart
-            dockerfile: infra/docker/go-service.Dockerfile
-            build_args: |
-              BUILD_PKG=./services/cart/cmd/cart
-              BUILD_BIN=cart
-              EXPOSE_PORT=9094
-          - image: connect-debezium
-            dockerfile: infra/docker/connect-debezium.Dockerfile
-            build_args: ""
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      build: ${{ steps.plan.outputs.build }}
+      image_tags: ${{ steps.plan.outputs.image_tags }}
+      previous: ${{ steps.plan.outputs.previous }}
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - id: plan
+        run: python3 scripts/release.py plan
 
-      - id: publish
-        name: Decide whether to publish
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request" ] \
-            && [ "${{ github.event.pull_request.head.repo.full_name }}" != "${{ github.repository }}" ]; then
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-          elif [ "${{ github.event_name }}" != "pull_request" ] && [ "${{ github.ref }}" != "refs/heads/main" ]; then
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "enabled=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - if: steps.publish.outputs.enabled == 'true'
-        uses: docker/login-action@v3
+  images:
+    needs: plan
+    if: needs.plan.outputs.build == 'true'
+    name: ${{ matrix.service }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Image tags
-        id: tags
-        run: |
-          set -euo pipefail
-          repo="${{ github.repository }}"
-          image="${{ matrix.image }}"
-          base="ghcr.io/${repo}/${image}"
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            tags="${base}:pr-${{ github.event.number }}-${{ github.sha }}"
-          else
-            tags="${base}:main-${{ github.sha }}
-          ${base}:latest"
-          fi
-          {
-            echo "tags<<EOF"
-            echo "$tags"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-
-      - uses: docker/setup-buildx-action@v3
-
       - uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ${{ matrix.context }}
           file: ${{ matrix.dockerfile }}
-          build-args: ${{ matrix.build_args }}
+          build-args: ${{ matrix.build-args }}
           platforms: linux/amd64
           provenance: false
-          push: ${{ steps.publish.outputs.enabled == 'true' }}
-          tags: ${{ steps.tags.outputs.tags }}
+          push: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
+          tags: ghcr.io/${{ github.repository }}${{ matrix.image-suffix }}:${{ env.DEPLOY_IMAGE_TAG }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
 
   deploy:
-    needs: release
-    if: (github.event_name == 'pull_request' && github.event.action != 'closed' && github.base_ref == 'main' && github.event.pull_request.head.repo.full_name == github.repository) || (github.event_name != 'pull_request' && github.ref == 'refs/heads/main')
+    needs: [plan, images, charts]
+    if: >-
+      always() && !cancelled() && needs.plan.result == 'success' &&
+      (needs.images.result == 'success' || (needs.plan.outputs.build == 'false' && needs.images.result == 'skipped')) &&
+      needs.charts.result == 'success' &&
+      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     environment: ${{ github.event_name == 'pull_request' && 'dev' || 'prod' }}
     permissions:
       contents: write
-    concurrency:
-      group: marketplace-${{ github.event_name == 'pull_request' && 'dev' || 'prod' }}
-      cancel-in-progress: false
     env:
-      DEPLOY_ENVIRONMENT: ${{ github.event_name == 'pull_request' && 'dev' || 'prod' }}
-      DEPLOY_IMAGE_TAG: ${{ github.event_name == 'pull_request' && format('pr-{0}-{1}', github.event.number, github.sha) || format('main-{0}', github.sha) }}
+      IMAGE_TAGS: ${{ needs.plan.outputs.image_tags }}
+      PREVIOUS_RELEASE: ${{ needs.plan.outputs.previous }}
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Publish the GitOps release
-        env:
-          SOURCE_REF: ${{ github.event_name == 'pull_request' && format('refs/pull/{0}/merge', github.event.number) || 'refs/heads/main' }}
-        run: |
-          set -euo pipefail
-          source_sha=$(git ls-remote origin "$SOURCE_REF" | cut -f1)
-          if [ "$source_sha" != "$GITHUB_SHA" ]; then
-            echo "Source ref moved; skipping stale release."
-            exit 0
-          fi
-          branch="deploy/${DEPLOY_ENVIRONMENT}"
-          previous=$(git ls-remote origin "refs/heads/$branch" | cut -f1)
-          git switch --force-create "$branch" "$GITHUB_SHA"
-          python3 - <<'PYCODE'
-          import os, pathlib, re
-          path = pathlib.Path("infra/argocd/app-of-apps/values.yaml")
-          content = path.read_text()
-          content, revision_count = re.subn(r"^targetRevision: .*$", "targetRevision: " + os.environ["GITHUB_SHA"], content, flags=re.M)
-          content, tag_count = re.subn(r"^  imageTag: .*$", "  imageTag: " + os.environ["DEPLOY_IMAGE_TAG"], content, flags=re.M)
-          assert revision_count == 1 and tag_count == 1
-          path.write_text(content)
-          PYCODE
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add infra/argocd/app-of-apps/values.yaml
-          git commit -m "Deploy ${DEPLOY_ENVIRONMENT} from ${GITHUB_SHA}"
-          git push --force-with-lease="refs/heads/$branch:$previous" origin "HEAD:refs/heads/$branch"
+        run: python3 scripts/release.py publish

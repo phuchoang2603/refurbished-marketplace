@@ -1,7 +1,15 @@
 global:
   imagePullPolicy: IfNotPresent
   imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
-  imageTag: latest
+  imageTags:
+    ghcr.io/phuchoang2603/refurbished-marketplace/web: dev
+    ghcr.io/phuchoang2603/refurbished-marketplace/users: dev
+    ghcr.io/phuchoang2603/refurbished-marketplace/products: dev
+    ghcr.io/phuchoang2603/refurbished-marketplace/search: dev
+    ghcr.io/phuchoang2603/refurbished-marketplace/inventory: dev
+    ghcr.io/phuchoang2603/refurbished-marketplace/orders: dev
+    ghcr.io/phuchoang2603/refurbished-marketplace/checkout: dev
+    ghcr.io/phuchoang2603/refurbished-marketplace/cart: dev
   clusterName: dev-talos
   environment: dev
 

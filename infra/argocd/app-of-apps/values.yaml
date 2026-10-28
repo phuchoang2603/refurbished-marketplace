@@ -3,7 +3,7 @@
 # retries absorb platform components that are still converging.
 # Env lives in:
 # - local cluster: ecommerce/doppler-token (Doppler dev vs prd)
-# - infra/argocd/{dev,prod}/root.yaml: namePrefix, git revision, imageTag
+# - infra/argocd/{dev,prod}/root.yaml: namePrefix and environment values
 # Chart values.yaml is the Talos-dev shape. Do not add Doppler config names here.
 repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
 targetRevision: main
@@ -18,7 +18,16 @@ syncRetry:
 
 global:
   imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
-  imageTag: latest
+  imageTags:
+    ghcr.io/phuchoang2603/refurbished-marketplace/web: dev
+    ghcr.io/phuchoang2603/refurbished-marketplace/users: dev
+    ghcr.io/phuchoang2603/refurbished-marketplace/products: dev
+    ghcr.io/phuchoang2603/refurbished-marketplace/search: dev
+    ghcr.io/phuchoang2603/refurbished-marketplace/inventory: dev
+    ghcr.io/phuchoang2603/refurbished-marketplace/orders: dev
+    ghcr.io/phuchoang2603/refurbished-marketplace/checkout: dev
+    ghcr.io/phuchoang2603/refurbished-marketplace/cart: dev
+    ghcr.io/phuchoang2603/refurbished-marketplace/connect-debezium: dev
   imagePullPolicy: Always
 
 # The root is the only owner of these namespaces and their Istio ambient enrollment;
