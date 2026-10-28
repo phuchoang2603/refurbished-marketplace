@@ -1,6 +1,7 @@
 global:
   imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace
-  imageTag: latest
+  imageTags:
+    ghcr.io/phuchoang2603/refurbished-marketplace/connect-debezium: dev
   clusterName: dev-talos
   environment: dev
 

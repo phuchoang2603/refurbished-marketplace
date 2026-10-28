@@ -41,7 +41,7 @@ kubectl apply --server-side -f infra/argocd/prod/root.yaml
 | Root Git ref               | `deploy/dev`                       | `deploy/prod`                  |
 | Shop                       | `shop-dev.phuchoang.sbs`           | `shop.phuchoang.sbs`           |
 
-Apply `infra/argocd/project.yaml` and the matching `infra/argocd/{dev,prod}/root.yaml` once using that environment's kubeconfig. Each root watches its deployment ref. After image publication, CI updates that ref with the immutable source revision and image tag inherited by its children. Roots select the matching `values-dev.yaml` or `values-prod.yaml` overlays. Subsequent releases need no Kubernetes API access from CI. A root may initially report an unavailable ref until the first release publishes it.
+Apply `infra/argocd/project.yaml` and the matching `infra/argocd/{dev,prod}/root.yaml` once using that environment's kubeconfig. Each root watches its deployment ref. After image publication, CI updates that ref with the immutable chart source revision and per-service commit tags inherited by its children. Roots select the matching `values-dev.yaml` or `values-prod.yaml` overlays. Subsequent releases need no Kubernetes API access from CI. A root may initially report an unavailable ref until the first release publishes it.
 
 The marketplace chart's `TunnelBinding` publishes shop through the platform's `ClusterTunnel/talos-proxmox`; the Cloudflare operator creates its DNS records. The origin is `http://ecommerce-ingress-istio.ecommerce.svc.cluster.local:80`. See [networking.md](networking.md#edge).
 
@@ -66,7 +66,7 @@ CNPG PostgreSQL is the products catalog source of truth; Meilisearch is its stor
 
 Cart and Checkout use separate persistent `Redis` resources (`cart-redis` and `checkout-redis`) from the platform's OT-CONTAINER-KIT Redis operator. Both use AOF and `noeviction`; the checkout projection also recovers its account facts and checkpoint from the retained Users topic. Deploy the Users migration and connector before enabling the new checkout image, and wait for account replay before the checkout smoke test.
 
-Fresh installations start with empty cart and checkout Redis instances; no cart-data copy or legacy sidecar cutover is required. The release workflow publishes matching Git and image pins to the environment deployment ref after all images build.
+Fresh installations start with empty cart and checkout Redis instances; no cart-data copy or legacy sidecar cutover is required. The release workflow publishes the chart revision and per-service commit tags to the environment deployment ref after affected images build.
 
 Each PostgreSQL service image supports `migrate`, using SQL embedded in the binary and Goose's Go SDK with a PostgreSQL advisory lock. A `migrate` init container runs before each application container; a failure blocks startup and Kubernetes retries it. There are no migration Jobs or separate migrator images. Existing `goose_db_version` history is preserved.
 

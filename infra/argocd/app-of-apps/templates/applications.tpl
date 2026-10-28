@@ -1,3 +1,6 @@
+{{- with .Files.Get "release.yaml" }}
+{{- $_ := set $ "Values" (mergeOverwrite (deepCopy $.Values) (fromJson .)) }}
+{{- end }}
 {{- range $name, $app := .Values.apps }}
 {{- /* sprig `default` treats false as empty — use hasKey for explicit disables */ -}}
 {{- if or (not (hasKey $app "enabled")) $app.enabled }}
@@ -28,7 +31,7 @@ spec:
       values: |
         global:
           imageRegistry: {{ $.Values.global.imageRegistry }}
-          imageTag: {{ $.Values.global.imageTag | quote }}
+          imageTags: {{ $.Values.global.imageTags | toJson }}
           imagePullPolicy: {{ $.Values.global.imagePullPolicy | default "IfNotPresent" | quote }}
 {{- end }}
   destination:
@@ -77,7 +80,7 @@ spec:
       values: |
         global:
           imageRegistry: {{ .Values.global.imageRegistry }}
-          imageTag: {{ .Values.global.imageTag | quote }}
+          imageTags: {{ .Values.global.imageTags | toJson }}
           imagePullPolicy: {{ .Values.global.imagePullPolicy | default "IfNotPresent" | quote }}
 {{- end }}
   destination:
