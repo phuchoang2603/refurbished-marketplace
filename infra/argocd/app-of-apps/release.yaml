@@ -1,0 +1,16 @@
+{
+  "targetRevision": "6e9b6c0649ce11222c81d059e3f2bd82979ff175",
+  "global": {
+    "imageTags": {
+      "ghcr.io/phuchoang2603/refurbished-marketplace/web": "pr-76-6e9b6c0649ce11222c81d059e3f2bd82979ff175",
+      "ghcr.io/phuchoang2603/refurbished-marketplace/users": "pr-76-6e9b6c0649ce11222c81d059e3f2bd82979ff175",
+      "ghcr.io/phuchoang2603/refurbished-marketplace/products": "pr-76-6e9b6c0649ce11222c81d059e3f2bd82979ff175",
+      "ghcr.io/phuchoang2603/refurbished-marketplace/search": "pr-76-6e9b6c0649ce11222c81d059e3f2bd82979ff175",
+      "ghcr.io/phuchoang2603/refurbished-marketplace/inventory": "pr-76-6e9b6c0649ce11222c81d059e3f2bd82979ff175",
+      "ghcr.io/phuchoang2603/refurbished-marketplace/orders": "pr-76-6e9b6c0649ce11222c81d059e3f2bd82979ff175",
+      "ghcr.io/phuchoang2603/refurbished-marketplace/checkout": "pr-76-6e9b6c0649ce11222c81d059e3f2bd82979ff175",
+      "ghcr.io/phuchoang2603/refurbished-marketplace/cart": "pr-76-6e9b6c0649ce11222c81d059e3f2bd82979ff175",
+      "ghcr.io/phuchoang2603/refurbished-marketplace/connect-debezium": "pr-76-6e9b6c0649ce11222c81d059e3f2bd82979ff175"
+    }
+  }
+}
