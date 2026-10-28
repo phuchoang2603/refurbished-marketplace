@@ -8,5 +8,5 @@
 ## 2. Validation and rollout
 
 - [x] 2.1 Validate both environment renders, workflow guards and OpenSpec artifacts.
-- [ ] 2.2 Open a marketplace PR and verify CI image publication and dev deployment.
-- [ ] 2.3 Verify dev application/secret/storage readiness, migrations, event delivery, search, public storefront and unavailable checkout without the gateway.
+- [x] 2.2 Open a marketplace PR and verify CI image publication and dev deployment.
+- [x] 2.3 Verify dev application/secret/storage readiness, migrations, event delivery, search, public storefront and unavailable checkout without the gateway.
