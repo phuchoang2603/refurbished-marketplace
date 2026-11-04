@@ -1,6 +1,6 @@
 ## Purpose
 
-Deliver the marketplace independently to Proxmox dev and AWS prod with matching published images, isolated secrets and verifiable GitOps convergence.
+Deliver the marketplace independently to Proxmox dev and GCP prod with matching published images, isolated secrets and verifiable GitOps convergence.
 
 ## ADDED Requirements
 

@@ -7,7 +7,7 @@ Marketplace resources do not use the platform `ClusterSecretStore/doppler`. That
 ## Doppler project
 
 1. Create a Doppler project named `refurbished-marketplace`.
-2. Use Doppler config `dev` on Proxmox dev and `prd` on AWS prod, with independent database credentials. The service token Secret on that cluster selects the config; Argo does not set it.
+2. Use Doppler config `dev` on Proxmox dev and `prd` on GCP prod, with independent database credentials. The service token Secret on that cluster selects the config; Argo does not set it.
 
 ## Application secrets
 

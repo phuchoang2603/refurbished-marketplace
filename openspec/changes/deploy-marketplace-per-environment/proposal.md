@@ -1,6 +1,6 @@
 ## Why
 
-The marketplace still treats the former Proxmox production cluster as a development server. The platform now provides independent Proxmox dev and AWS prod clusters, but the marketplace has no dev root or automated deployment and its production overlay retains excess replicas.
+The marketplace previously treated the former Proxmox production cluster as a development server. The platform provides independent Proxmox dev and GCP prod clusters; this change adds a dev root and automated deployment and reduces excess production replicas.
 
 ## What Changes
 
@@ -10,7 +10,7 @@ The marketplace still treats the former Proxmox production cluster as a developm
 - Keep dev checkout unavailable until a separate payment gateway rollout.
 - Validate charts and live dev convergence before considering this rollout complete.
 
-Non-goals: deploying the payment gateway, moving marketplace resources into platform data/ML namespaces, database-engine changes, or applying AWS infrastructure locally.
+Non-goals: deploying the payment gateway, moving marketplace resources into platform data/ML namespaces, database-engine changes, or applying cloud infrastructure locally.
 
 ## Capabilities
 

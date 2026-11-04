@@ -21,4 +21,4 @@ services:
       secretName: checkout-payment-gateway
 
 databaseNodeSelector:
-  karpenter.sh/capacity-type: on-demand
+  talos.dev/capacity-type: on-demand

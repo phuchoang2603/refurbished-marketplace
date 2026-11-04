@@ -1,6 +1,6 @@
 # GitOps deployment (Argo CD)
 
-Proxmox **dev** and AWS **prod** each run their own Argo CD in namespace `argo-cd`, installed by the [`talos-proxmox`](https://github.com/phuchoang2603/talos-proxmox) platform OpenTofu root. Argo CD manages its local cluster and hosts two independent roots:
+Proxmox **dev** and GCP **prod** each run their own Argo CD in namespace `argo-cd`, installed by the [`talos-proxmox`](https://github.com/phuchoang2603/talos-proxmox) platform OpenTofu root. Argo CD manages its local cluster and hosts two independent roots:
 
 1. `platform` from `talos-proxmox` installs shared operators, the Doppler `ClusterSecretStore`, storage, observability, and the Cloudflare operator with its `ClusterTunnel`.
 2. `dev-root` or `prod-root` from this repository deploys marketplace-owned resources that consume those platform APIs.

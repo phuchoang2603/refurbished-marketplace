@@ -1,6 +1,6 @@
 # Networking, Istio ambient, and ingress
 
-The **talos-proxmox** platform owns the cluster network. Cilium is the CNI and L2/LB IPAM provider; its Gateway controller, SPIRE authentication, and L7 proxy are disabled. Istio (base, istiod, CNI, ztunnel) supplies ambient mesh transport and the `istio` / `istio-waypoint` GatewayClasses. This repo installs neither and must not duplicate their Helm values.
+The **talos-proxmox** platform owns the cluster network. Cilium is the CNI; its Gateway controller, SPIRE authentication, and L7 proxy are disabled. Istio (base, istiod, CNI, ztunnel) supplies ambient mesh transport and the `istio` / `istio-waypoint` GatewayClasses. This repo installs neither and must not duplicate their Helm values.
 
 This repo consumes that dataplane:
 
