@@ -1,0 +1,1992 @@
+{
+  "recordedAt": "2026-11-06T05:14:41.693270+00:00",
+  "applications": [
+    {
+      "name": "agentgateway",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "operators",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "agentgateway"
+            },
+            "path": "apps/components/agentgateway",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-05T23:43:19Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "agentregistry",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "agentregistry",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "agentregistry",
+              "valueFiles": ["environments/dev/values.yaml"]
+            },
+            "path": "apps/components/agentregistry",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-05T23:50:18Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "argo-rollouts",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "operators",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "argo-rollouts",
+              "valueFiles": ["environments/dev/values.yaml"]
+            },
+            "path": "apps/components/argo-rollouts",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-05T23:43:44Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "argo-workflows",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "operators",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "argo-workflows",
+              "valueFiles": ["environments/dev/values.yaml"]
+            },
+            "path": "apps/components/argo-workflows",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-05T23:51:35Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "argocd-post",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "argo-cd",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "argocd-post",
+              "valueFiles": ["environments/dev/values.yaml"]
+            },
+            "path": "apps/components/argocd-post",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-05T23:47:49Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "auth",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "auth",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "auth",
+              "valueFiles": ["environments/dev/values.yaml"]
+            },
+            "path": "apps/components/auth",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-05T23:48:59Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "cert-manager",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "operators",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "cert-manager"
+            },
+            "path": "apps/components/cert-manager",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-05T23:43:16Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "clickhouse-operator",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "operators",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "clickhouse-operator"
+            },
+            "path": "apps/components/clickhouse-operator",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-05T23:51:01Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "cloudflare-tunnel",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "operators",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "cloudflare-tunnel",
+              "valueFiles": ["environments/dev/values.yaml"]
+            },
+            "path": "apps/components/cloudflare-tunnel",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-05T23:46:49Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "cnpg",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "operators",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "cnpg"
+            },
+            "path": "apps/components/cnpg",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-06T04:50:05Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "dev-kafka",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "ecommerce",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "ecommerce-kafka-cluster",
+              "values": "global:\n  imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace\n  imageTags: {\"ghcr.io/phuchoang2603/refurbished-marketplace/cart\":\"pr-77-38cb74856b428c9154a85abbfa17f2c832f88221\",\"ghcr.io/phuchoang2603/refurbished-marketplace/checkout\":\"pr-77-38cb74856b428c9154a85abbfa17f2c832f88221\",\"ghcr.io/phuchoang2603/refurbished-marketplace/connect-debezium\":\"pr-77-38cb74856b428c9154a85abbfa17f2c832f88221\",\"ghcr.io/phuchoang2603/refurbished-marketplace/inventory\":\"pr-77-38cb74856b428c9154a85abbfa17f2c832f88221\",\"ghcr.io/phuchoang2603/refurbished-marketplace/orders\":\"pr-77-38cb74856b428c9154a85abbfa17f2c832f88221\",\"ghcr.io/phuchoang2603/refurbished-marketplace/products\":\"pr-77-38cb74856b428c9154a85abbfa17f2c832f88221\",\"ghcr.io/phuchoang2603/refurbished-marketplace/search\":\"pr-77-38cb74856b428c9154a85abbfa17f2c832f88221\",\"ghcr.io/phuchoang2603/refurbished-marketplace/users\":\"pr-77-38cb74856b428c9154a85abbfa17f2c832f88221\",\"ghcr.io/phuchoang2603/refurbished-marketplace/web\":\"pr-77-38cb74856b428c9154a85abbfa17f2c832f88221\"}\n  imagePullPolicy: \"Always\"\n"
+            },
+            "path": "infra/charts/kafka",
+            "repoURL": "https://github.com/phuchoang2603/refurbished-marketplace.git",
+            "targetRevision": "f8fdc6a88cacd55cc73d0be33655c2cf71ffa2a0"
+          }
+        },
+        "revision": "f8fdc6a88cacd55cc73d0be33655c2cf71ffa2a0",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-06T04:28:34Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "dev-meilisearch",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "ecommerce",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "catalog-meilisearch",
+              "valueFiles": ["values-dev.yaml"]
+            },
+            "path": "infra/charts/meilisearch",
+            "repoURL": "https://github.com/phuchoang2603/refurbished-marketplace.git",
+            "targetRevision": "f8fdc6a88cacd55cc73d0be33655c2cf71ffa2a0"
+          }
+        },
+        "revision": "f8fdc6a88cacd55cc73d0be33655c2cf71ffa2a0",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-06T04:48:54Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "dev-refurbished-marketplace",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "ecommerce",
+            "server": "https://kubernetes.default.svc"
+          },
+          "ignoreDifferences": [
+            {
+              "jqPathExpressions": [".spec.selector[\"rollouts-pod-template-hash\"]"],
+              "kind": "Service"
+            },
+            {
+              "group": "gateway.networking.k8s.io",
+              "jqPathExpressions": [".spec.rules[].backendRefs[].weight"],
+              "kind": "HTTPRoute",
+              "name": "web"
+            }
+          ],
+          "source": {
+            "helm": {
+              "releaseName": "refurbished-marketplace",
+              "valueFiles": ["values-dev.yaml"],
+              "values": "global:\n  imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace\n  imageTags: {\"ghcr.io/phuchoang2603/refurbished-marketplace/cart\":\"pr-77-38cb74856b428c9154a85abbfa17f2c832f88221\",\"ghcr.io/phuchoang2603/refurbished-marketplace/checkout\":\"pr-77-38cb74856b428c9154a85abbfa17f2c832f88221\",\"ghcr.io/phuchoang2603/refurbished-marketplace/connect-debezium\":\"pr-77-38cb74856b428c9154a85abbfa17f2c832f88221\",\"ghcr.io/phuchoang2603/refurbished-marketplace/inventory\":\"pr-77-38cb74856b428c9154a85abbfa17f2c832f88221\",\"ghcr.io/phuchoang2603/refurbished-marketplace/orders\":\"pr-77-38cb74856b428c9154a85abbfa17f2c832f88221\",\"ghcr.io/phuchoang2603/refurbished-marketplace/products\":\"pr-77-38cb74856b428c9154a85abbfa17f2c832f88221\",\"ghcr.io/phuchoang2603/refurbished-marketplace/search\":\"pr-77-38cb74856b428c9154a85abbfa17f2c832f88221\",\"ghcr.io/phuchoang2603/refurbished-marketplace/users\":\"pr-77-38cb74856b428c9154a85abbfa17f2c832f88221\",\"ghcr.io/phuchoang2603/refurbished-marketplace/web\":\"pr-77-38cb74856b428c9154a85abbfa17f2c832f88221\"}\n  imagePullPolicy: \"Always\"\n"
+            },
+            "path": "infra/charts/refurbished-marketplace",
+            "repoURL": "https://github.com/phuchoang2603/refurbished-marketplace.git",
+            "targetRevision": "f8fdc6a88cacd55cc73d0be33655c2cf71ffa2a0"
+          }
+        },
+        "revision": "f8fdc6a88cacd55cc73d0be33655c2cf71ffa2a0",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-06T05:11:20Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "dev-root",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "argo-cd",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "values": "namePrefix: dev\nglobal:\n  imageRegistry: ghcr.io/phuchoang2603/refurbished-marketplace\n  imagePullPolicy: Always\nmarketplace:\n  enabled: true\n  injectGlobalImages: true\n  valueFiles:\n    - values-dev.yaml\n"
+            },
+            "path": "infra/argocd/app-of-apps",
+            "repoURL": "https://github.com/phuchoang2603/refurbished-marketplace.git",
+            "targetRevision": "deploy/dev"
+          }
+        },
+        "revision": "40281f262c006b452863cde17996cc15287e3a05",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-06T04:22:38Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "dev-secret-store",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "ecommerce",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "ecommerce-secret-store"
+            },
+            "path": "infra/charts/secret-store",
+            "repoURL": "https://github.com/phuchoang2603/refurbished-marketplace.git",
+            "targetRevision": "f8fdc6a88cacd55cc73d0be33655c2cf71ffa2a0"
+          }
+        },
+        "revision": "f8fdc6a88cacd55cc73d0be33655c2cf71ffa2a0",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-06T04:22:44Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "external-secrets",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "operators",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "external-secrets"
+            },
+            "path": "apps/components/external-secrets",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-05T23:45:07Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "flink-operator",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "operators",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "flink-kubernetes-operator"
+            },
+            "path": "apps/components/flink-operator",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-05T23:45:23Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "gpu-operator",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "operators",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "gpu-operator",
+              "skipCrds": true,
+              "valueFiles": ["environments/dev/values.yaml"]
+            },
+            "path": "apps/components/gpu-operator",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-05T23:45:05Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "istio",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "istio-system",
+            "server": "https://kubernetes.default.svc"
+          },
+          "ignoreDifferences": [
+            {
+              "group": "admissionregistration.k8s.io",
+              "jsonPointers": ["/webhooks/0/clientConfig/caBundle", "/webhooks/0/failurePolicy"],
+              "kind": "ValidatingWebhookConfiguration",
+              "name": "istio-validator-istio-system"
+            },
+            {
+              "group": "admissionregistration.k8s.io",
+              "jsonPointers": ["/webhooks/0/clientConfig/caBundle", "/webhooks/0/failurePolicy"],
+              "kind": "ValidatingWebhookConfiguration",
+              "name": "istiod-default-validator"
+            }
+          ],
+          "source": {
+            "helm": {
+              "releaseName": "istio"
+            },
+            "path": "apps/components/istio",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-06T04:52:18Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "kagent",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "kagent",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "kagent",
+              "valueFiles": ["environments/dev/values.yaml"]
+            },
+            "path": "apps/components/kagent",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-06T00:01:39Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "keda",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "operators",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "keda"
+            },
+            "path": "apps/components/keda",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-06T04:50:28Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "kubeflow",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "ml",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "kubeflow",
+              "valueFiles": ["environments/dev/values.yaml"]
+            },
+            "path": "apps/components/kubeflow",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-06T04:50:41Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "local-path-provisioner",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "operators",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "local-path-provisioner"
+            },
+            "path": "apps/components/local-path-provisioner",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-06T04:24:55Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "metrics-server",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "kube-system",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "metrics-server"
+            },
+            "path": "apps/components/metrics-server",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-05T23:43:28Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "observability",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "observability",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "observability",
+              "valueFiles": ["environments/dev/values.yaml"]
+            },
+            "path": "apps/components/observability",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-05T23:50:04Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "openmetadata",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "data",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "openmetadata",
+              "valueFiles": ["environments/dev/values.yaml"]
+            },
+            "path": "apps/components/openmetadata",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-06T00:12:31Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "platform",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "argo-cd",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "parameters": [
+                {
+                  "name": "cluster",
+                  "value": "dev"
+                },
+                {
+                  "name": "cloudProvider",
+                  "value": "proxmox"
+                },
+                {
+                  "name": "cloudRegion"
+                },
+                {
+                  "name": "repoURL",
+                  "value": "https://github.com/phuchoang2603/talos-proxmox.git"
+                },
+                {
+                  "name": "targetRevision",
+                  "value": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+                }
+              ]
+            },
+            "path": "apps/argocd/platform",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-05T23:41:19Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "redis-operator",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "operators",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "redis-operator"
+            },
+            "path": "apps/components/redis-operator",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-06T04:50:09Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "spark-operator",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "operators",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "spark-operator"
+            },
+            "path": "apps/components/spark-operator",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-05T23:43:30Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "strimzi",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "operators",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "strimzi-cluster-operator"
+            },
+            "path": "apps/components/strimzi",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-06T04:52:36Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "substrate",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "ate-system",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "substrate",
+              "valueFiles": ["environments/dev/values.yaml"]
+            },
+            "path": "apps/components/substrate",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-05T23:53:39Z",
+        "status": "Healthy"
+      }
+    },
+    {
+      "name": "substrate-podcert",
+      "sync": {
+        "comparedTo": {
+          "destination": {
+            "namespace": "podcertificate-controller-system",
+            "server": "https://kubernetes.default.svc"
+          },
+          "source": {
+            "helm": {
+              "releaseName": "substrate-podcert"
+            },
+            "path": "apps/components/substrate-podcert",
+            "repoURL": "https://github.com/phuchoang2603/talos-proxmox.git",
+            "targetRevision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a"
+          }
+        },
+        "revision": "5cb3a4bf7192748cd5635caa2e2c9f2aa09a894a",
+        "status": "Synced"
+      },
+      "health": {
+        "lastTransitionTime": "2026-11-05T23:49:11Z",
+        "status": "Healthy"
+      }
+    }
+  ],
+  "pods": [
+    {
+      "name": "cart-b54688dc8-4x2zw",
+      "phase": "Running",
+      "conditions": [
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:49:36Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodReadyToStartContainers"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:49:04Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Initialized"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:50:30Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:50:30Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "ContainersReady"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:49:03Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodScheduled"
+        }
+      ],
+      "containers": [
+        {
+          "name": "cart",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    },
+    {
+      "name": "cart-redis-0",
+      "phase": "Running",
+      "conditions": [
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:23:20Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodReadyToStartContainers"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:23:17Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Initialized"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:23:47Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:23:47Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "ContainersReady"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:23:17Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodScheduled"
+        }
+      ],
+      "containers": [
+        {
+          "name": "cart-redis",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    },
+    {
+      "name": "catalog-meilisearch-0",
+      "phase": "Running",
+      "conditions": [
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:48:50Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodReadyToStartContainers"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:48:46Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Initialized"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:48:53Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:48:53Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "ContainersReady"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:48:46Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodScheduled"
+        }
+      ],
+      "containers": [
+        {
+          "name": "meilisearch",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    },
+    {
+      "name": "checkout-66ccb59c45-5wzmt",
+      "phase": "Running",
+      "conditions": [
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:49:37Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodReadyToStartContainers"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:50:30Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Initialized"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:50:40Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:50:40Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "ContainersReady"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:49:03Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodScheduled"
+        }
+      ],
+      "containers": [
+        {
+          "name": "checkout",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    },
+    {
+      "name": "checkout-db-1",
+      "phase": "Running",
+      "conditions": [
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:25:02Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodReadyToStartContainers"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:25:07Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Initialized"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:25:19Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:25:19Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "ContainersReady"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:24:53Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodScheduled"
+        }
+      ],
+      "containers": [
+        {
+          "name": "postgres",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    },
+    {
+      "name": "checkout-redis-0",
+      "phase": "Running",
+      "conditions": [
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:23:22Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodReadyToStartContainers"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:23:17Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Initialized"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:23:47Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:23:47Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "ContainersReady"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:23:17Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodScheduled"
+        }
+      ],
+      "containers": [
+        {
+          "name": "checkout-redis",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    },
+    {
+      "name": "ecommerce-connect-cluster-connect-0",
+      "phase": "Running",
+      "conditions": [
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:49:01Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodReadyToStartContainers"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:48:59Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Initialized"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:52:02Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:52:02Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "ContainersReady"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:48:59Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodScheduled"
+        }
+      ],
+      "containers": [
+        {
+          "name": "ecommerce-connect-cluster-connect",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    },
+    {
+      "name": "ecommerce-ingress-istio-789884bcb8-qvpjj",
+      "phase": "Running",
+      "conditions": [
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:25:45Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodReadyToStartContainers"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:25:40Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Initialized"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:26:10Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:26:10Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "ContainersReady"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:25:40Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodScheduled"
+        }
+      ],
+      "containers": [
+        {
+          "name": "istio-proxy",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    },
+    {
+      "name": "ecommerce-kafka-cluster-ecommerce-kafka-cluster-dual-role-0",
+      "phase": "Running",
+      "conditions": [
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:24:22Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodReadyToStartContainers"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:24:15Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Initialized"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:25:51Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:25:51Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "ContainersReady"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:24:15Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodScheduled"
+        }
+      ],
+      "containers": [
+        {
+          "name": "kafka",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    },
+    {
+      "name": "ecommerce-kafka-cluster-entity-operator-c444ccc64-6sdnh",
+      "phase": "Running",
+      "conditions": [
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:26:45Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodReadyToStartContainers"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:26:38Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Initialized"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:28:18Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:28:18Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "ContainersReady"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:26:38Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodScheduled"
+        }
+      ],
+      "containers": [
+        {
+          "name": "topic-operator",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    },
+    {
+      "name": "inventory-84795696d9-ccvbt",
+      "phase": "Running",
+      "conditions": [
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:49:28Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodReadyToStartContainers"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:49:48Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Initialized"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:49:54Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:49:54Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "ContainersReady"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:49:04Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodScheduled"
+        }
+      ],
+      "containers": [
+        {
+          "name": "inventory",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    },
+    {
+      "name": "inventory-db-1",
+      "phase": "Running",
+      "conditions": [
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:24:54Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodReadyToStartContainers"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:25:01Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Initialized"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:25:13Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:25:13Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "ContainersReady"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:24:22Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodScheduled"
+        }
+      ],
+      "containers": [
+        {
+          "name": "postgres",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    },
+    {
+      "name": "orders-6dd5d5dfc7-plkz6",
+      "phase": "Running",
+      "conditions": [
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:49:33Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodReadyToStartContainers"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:50:30Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Initialized"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:50:40Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:50:40Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "ContainersReady"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:49:03Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodScheduled"
+        }
+      ],
+      "containers": [
+        {
+          "name": "orders",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    },
+    {
+      "name": "orders-db-1",
+      "phase": "Running",
+      "conditions": [
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:24:28Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodReadyToStartContainers"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:24:36Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Initialized"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:25:03Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:25:03Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "ContainersReady"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:24:21Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodScheduled"
+        }
+      ],
+      "containers": [
+        {
+          "name": "postgres",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    },
+    {
+      "name": "products-7ccdb5c7f-j94kl",
+      "phase": "Running",
+      "conditions": [
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:49:35Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodReadyToStartContainers"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:50:30Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Initialized"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:50:39Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:50:39Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "ContainersReady"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:49:04Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodScheduled"
+        }
+      ],
+      "containers": [
+        {
+          "name": "products",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    },
+    {
+      "name": "products-db-1",
+      "phase": "Running",
+      "conditions": [
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:24:22Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodReadyToStartContainers"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:24:28Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Initialized"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:24:42Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:24:42Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "ContainersReady"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:24:15Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodScheduled"
+        }
+      ],
+      "containers": [
+        {
+          "name": "postgres",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    },
+    {
+      "name": "search-6664b9cd59-rtv59",
+      "phase": "Running",
+      "conditions": [
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:49:37Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodReadyToStartContainers"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:49:50Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Initialized"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:50:33Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:50:33Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "ContainersReady"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:49:03Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodScheduled"
+        }
+      ],
+      "containers": [
+        {
+          "name": "search",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    },
+    {
+      "name": "users-5c444d8484-ztnf5",
+      "phase": "Running",
+      "conditions": [
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:49:37Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodReadyToStartContainers"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:50:30Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Initialized"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:50:41Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:50:41Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "ContainersReady"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:49:03Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodScheduled"
+        }
+      ],
+      "containers": [
+        {
+          "name": "users",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    },
+    {
+      "name": "users-db-1",
+      "phase": "Running",
+      "conditions": [
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:24:15Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodReadyToStartContainers"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:24:21Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Initialized"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:24:34Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:24:34Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "ContainersReady"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:24:10Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodScheduled"
+        }
+      ],
+      "containers": [
+        {
+          "name": "postgres",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    },
+    {
+      "name": "waypoint-84c6c644c6-ldddw",
+      "phase": "Running",
+      "conditions": [
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:48:51Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodReadyToStartContainers"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:48:48Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Initialized"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:48:53Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:48:53Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "ContainersReady"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T04:48:48Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodScheduled"
+        }
+      ],
+      "containers": [
+        {
+          "name": "istio-proxy",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    },
+    {
+      "name": "web-76665754cf-2hq4m",
+      "phase": "Running",
+      "conditions": [
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T05:02:49Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodReadyToStartContainers"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T05:02:47Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Initialized"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T05:02:56Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T05:02:56Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "ContainersReady"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T05:02:47Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodScheduled"
+        }
+      ],
+      "containers": [
+        {
+          "name": "web",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    },
+    {
+      "name": "web-76665754cf-w59h5",
+      "phase": "Running",
+      "conditions": [
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T05:09:09Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodReadyToStartContainers"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T05:09:04Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Initialized"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T05:09:13Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "Ready"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T05:09:13Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "ContainersReady"
+        },
+        {
+          "lastProbeTime": null,
+          "lastTransitionTime": "2026-11-06T05:09:04Z",
+          "observedGeneration": 1,
+          "status": "True",
+          "type": "PodScheduled"
+        }
+      ],
+      "containers": [
+        {
+          "name": "web",
+          "ready": true,
+          "restarts": 0
+        }
+      ]
+    }
+  ],
+  "rollout": {
+    "HPAReplicas": 2,
+    "abort": false,
+    "availableReplicas": 2,
+    "blueGreen": {},
+    "canary": {
+      "weights": {
+        "canary": {
+          "podTemplateHash": "76665754cf",
+          "serviceName": "web-canary",
+          "weight": 0
+        },
+        "stable": {
+          "podTemplateHash": "76665754cf",
+          "serviceName": "web",
+          "weight": 100
+        },
+        "verified": true
+      }
+    },
+    "conditions": [
+      {
+        "lastTransitionTime": "2026-11-06T04:35:31Z",
+        "lastUpdateTime": "2026-11-06T04:35:31Z",
+        "message": "Rollout has minimum availability",
+        "reason": "AvailableReason",
+        "status": "True",
+        "type": "Available"
+      },
+      {
+        "lastTransitionTime": "2026-11-06T05:11:19Z",
+        "lastUpdateTime": "2026-11-06T05:11:19Z",
+        "message": "RolloutCompleted",
+        "reason": "RolloutCompleted",
+        "status": "True",
+        "type": "Completed"
+      },
+      {
+        "lastTransitionTime": "2026-11-06T05:11:52Z",
+        "lastUpdateTime": "2026-11-06T05:11:52Z",
+        "message": "Rollout is healthy",
+        "reason": "RolloutHealthy",
+        "status": "True",
+        "type": "Healthy"
+      },
+      {
+        "lastTransitionTime": "2026-11-06T05:02:48Z",
+        "lastUpdateTime": "2026-11-06T05:11:52Z",
+        "message": "ReplicaSet \"web-76665754cf\" has successfully progressed.",
+        "reason": "NewReplicaSetAvailable",
+        "status": "True",
+        "type": "Progressing"
+      }
+    ],
+    "currentPodHash": "76665754cf",
+    "currentStepHash": "56dcc7797c",
+    "currentStepIndex": 8,
+    "observedGeneration": "2",
+    "phase": "Healthy",
+    "readyReplicas": 2,
+    "replicas": 2,
+    "selector": "app=web",
+    "stableRS": "76665754cf",
+    "updatedReplicas": 2
+  },
+  "publicStorefrontHTTPStatus": 200
+}

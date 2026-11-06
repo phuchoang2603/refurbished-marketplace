@@ -1,0 +1,22 @@
+{
+  "job": "storefront-load-1793941494",
+  "startedAt": "2026-11-06T05:04:54.971301+00:00",
+  "mode": "load",
+  "workload": "storefront",
+  "parameters": {
+    "MODE": "load",
+    "RATE": "30",
+    "DURATION": "10m",
+    "PRODUCTS": "1000"
+  },
+  "scriptSha256": "7577ef705110a781d0c8b22a3c76c39c5de0a601881356c5c6f2d08aa24a128c",
+  "datasetSha256": "45cd3b90bd25fbff621ba2f7a92e1fef7e425eb9c575a7a414601cd51590e5c6",
+  "target": "Istio Gateway \u2192 web \u2192 domain gRPC services",
+  "mix": {
+    "browse": 0.45,
+    "search": 0.35,
+    "detail": 0.2
+  },
+  "finishedAt": "2026-11-06T05:11:25.820370+00:00",
+  "succeeded": false
+}

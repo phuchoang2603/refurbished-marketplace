@@ -1,0 +1,1226 @@
+{
+  "apiVersion": "v1",
+  "items": [
+    {
+      "apiVersion": "argoproj.io/v1alpha1",
+      "kind": "AnalysisRun",
+      "metadata": {
+        "annotations": {
+          "rollout.argoproj.io/revision": "2"
+        },
+        "creationTimestamp": "2026-11-06T04:50:35Z",
+        "generation": 4,
+        "labels": {
+          "app": "web",
+          "rollout-type": "Step",
+          "rollouts-pod-template-hash": "76665754cf",
+          "step-index": "1"
+        },
+        "name": "web-76665754cf-2-1",
+        "namespace": "ecommerce",
+        "ownerReferences": [
+          {
+            "apiVersion": "argoproj.io/v1alpha1",
+            "blockOwnerDeletion": true,
+            "controller": true,
+            "kind": "Rollout",
+            "name": "web",
+            "uid": "a1e97e76-40f0-4e1f-9ad0-bdef1b83daba"
+          }
+        ],
+        "resourceVersion": "282165",
+        "uid": "1b9b958d-227c-4db1-baf4-36fa06a88bcb"
+      },
+      "spec": {
+        "args": [
+          {
+            "name": "revision",
+            "value": "76665754cf"
+          }
+        ],
+        "metrics": [
+          {
+            "consecutiveErrorLimit": 2,
+            "count": 3,
+            "failureLimit": 0,
+            "initialDelay": "45s",
+            "interval": "15s",
+            "name": "requests",
+            "provider": {
+              "prometheus": {
+                "address": "http://vmsingle-vmks.observability.svc.cluster.local:8428",
+                "authentication": {
+                  "oauth2": {},
+                  "sigv4": {}
+                },
+                "query": "sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"{{args.revision}}\",\"http.route\"=~\"/|/products.*\"}[1m]))",
+                "timeout": 10
+              }
+            },
+            "successCondition": "len(result) == 1 && !isNaN(result[0]) && !isInf(result[0]) && result[0] >= 0 && result[0] >= 20"
+          },
+          {
+            "consecutiveErrorLimit": 2,
+            "count": 3,
+            "failureLimit": 0,
+            "initialDelay": "45s",
+            "interval": "15s",
+            "name": "freshness",
+            "provider": {
+              "prometheus": {
+                "address": "http://vmsingle-vmks.observability.svc.cluster.local:8428",
+                "authentication": {
+                  "oauth2": {},
+                  "sigv4": {}
+                },
+                "query": "time() - max(timestamp({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"{{args.revision}}\",\"http.route\"=~\"/|/products.*\"}))",
+                "timeout": 10
+              }
+            },
+            "successCondition": "len(result) == 1 && !isNaN(result[0]) && !isInf(result[0]) && result[0] >= 0 && result[0] <= 45"
+          },
+          {
+            "consecutiveErrorLimit": 2,
+            "count": 3,
+            "failureLimit": 0,
+            "initialDelay": "45s",
+            "interval": "15s",
+            "name": "error-rate",
+            "provider": {
+              "prometheus": {
+                "address": "http://vmsingle-vmks.observability.svc.cluster.local:8428",
+                "authentication": {
+                  "oauth2": {},
+                  "sigv4": {}
+                },
+                "query": "(sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"{{args.revision}}\",\"http.route\"=~\"/|/products.*\",\"http.response.status_code\"=~\"5..\"}[1m])) or vector(0)) / sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"{{args.revision}}\",\"http.route\"=~\"/|/products.*\"}[1m]))",
+                "timeout": 10
+              }
+            },
+            "successCondition": "len(result) == 1 && !isNaN(result[0]) && !isInf(result[0]) && result[0] >= 0 && result[0] <= 0.01"
+          },
+          {
+            "consecutiveErrorLimit": 2,
+            "count": 3,
+            "failureLimit": 0,
+            "initialDelay": "45s",
+            "interval": "15s",
+            "name": "p95",
+            "provider": {
+              "prometheus": {
+                "address": "http://vmsingle-vmks.observability.svc.cluster.local:8428",
+                "authentication": {
+                  "oauth2": {},
+                  "sigv4": {}
+                },
+                "query": "histogram_quantile(0.95, sum by (le) (rate({__name__=\"http.server.request.duration_bucket\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"{{args.revision}}\",\"http.route\"=~\"/|/products.*\"}[1m])))",
+                "timeout": 10
+              }
+            },
+            "successCondition": "len(result) == 1 && !isNaN(result[0]) && !isInf(result[0]) && result[0] >= 0 && result[0] <= 0.5"
+          }
+        ]
+      },
+      "status": {
+        "completedAt": "2026-11-06T04:51:21Z",
+        "dryRunSummary": {},
+        "message": "Metric \"requests\" assessed Failed due to failed (1) > failureLimit (0)",
+        "metricResults": [
+          {
+            "count": 1,
+            "failed": 1,
+            "measurements": [
+              {
+                "finishedAt": "2026-11-06T04:51:21Z",
+                "phase": "Failed",
+                "startedAt": "2026-11-06T04:51:21Z",
+                "value": "[]"
+              }
+            ],
+            "metadata": {
+              "ResolvedPrometheusQuery": "histogram_quantile(0.95, sum by (le) (rate({__name__=\"http.server.request.duration_bucket\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}[1m])))"
+            },
+            "name": "p95",
+            "phase": "Failed"
+          },
+          {
+            "consecutiveSuccess": 1,
+            "count": 1,
+            "measurements": [
+              {
+                "finishedAt": "2026-11-06T04:51:21Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T04:51:21Z",
+                "value": "[5.6540000438690186]"
+              }
+            ],
+            "metadata": {
+              "ResolvedPrometheusQuery": "time() - max(timestamp({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}))"
+            },
+            "name": "freshness",
+            "phase": "Successful",
+            "successful": 1
+          },
+          {
+            "consecutiveSuccess": 1,
+            "count": 1,
+            "measurements": [
+              {
+                "finishedAt": "2026-11-06T04:51:21Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T04:51:21Z",
+                "value": "[0]"
+              }
+            ],
+            "metadata": {
+              "ResolvedPrometheusQuery": "(sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\",\"http.response.status_code\"=~\"5..\"}[1m])) or vector(0)) / sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}[1m]))"
+            },
+            "name": "error-rate",
+            "phase": "Successful",
+            "successful": 1
+          },
+          {
+            "count": 1,
+            "failed": 1,
+            "measurements": [
+              {
+                "finishedAt": "2026-11-06T04:51:21Z",
+                "phase": "Failed",
+                "startedAt": "2026-11-06T04:51:21Z",
+                "value": "[13]"
+              }
+            ],
+            "metadata": {
+              "ResolvedPrometheusQuery": "sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}[1m]))"
+            },
+            "name": "requests",
+            "phase": "Failed"
+          }
+        ],
+        "phase": "Failed",
+        "runSummary": {
+          "count": 4,
+          "failed": 2,
+          "successful": 2
+        },
+        "startedAt": "2026-11-06T04:50:36Z"
+      }
+    },
+    {
+      "apiVersion": "argoproj.io/v1alpha1",
+      "kind": "AnalysisRun",
+      "metadata": {
+        "annotations": {
+          "rollout.argoproj.io/revision": "2"
+        },
+        "creationTimestamp": "2026-11-06T05:03:02Z",
+        "generation": 5,
+        "labels": {
+          "app": "web",
+          "rollout-type": "Step",
+          "rollouts-pod-template-hash": "76665754cf",
+          "step-index": "1"
+        },
+        "name": "web-76665754cf-2-1.1",
+        "namespace": "ecommerce",
+        "ownerReferences": [
+          {
+            "apiVersion": "argoproj.io/v1alpha1",
+            "blockOwnerDeletion": true,
+            "controller": true,
+            "kind": "Rollout",
+            "name": "web",
+            "uid": "a1e97e76-40f0-4e1f-9ad0-bdef1b83daba"
+          }
+        ],
+        "resourceVersion": "296782",
+        "uid": "3c397fad-7df8-4d27-8721-8082ff0353b4"
+      },
+      "spec": {
+        "args": [
+          {
+            "name": "revision",
+            "value": "76665754cf"
+          }
+        ],
+        "metrics": [
+          {
+            "consecutiveErrorLimit": 2,
+            "count": 3,
+            "failureLimit": 0,
+            "initialDelay": "90s",
+            "interval": "15s",
+            "name": "requests",
+            "provider": {
+              "prometheus": {
+                "address": "http://vmsingle-vmks.observability.svc.cluster.local:8428",
+                "authentication": {
+                  "oauth2": {},
+                  "sigv4": {}
+                },
+                "query": "sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"{{args.revision}}\",\"http.route\"=~\"/|/products.*\"}[1m]))",
+                "timeout": 10
+              }
+            },
+            "successCondition": "len(result) == 1 && !isNaN(result[0]) && !isInf(result[0]) && result[0] >= 0 && result[0] >= 20"
+          },
+          {
+            "consecutiveErrorLimit": 2,
+            "count": 3,
+            "failureLimit": 0,
+            "initialDelay": "90s",
+            "interval": "15s",
+            "name": "freshness",
+            "provider": {
+              "prometheus": {
+                "address": "http://vmsingle-vmks.observability.svc.cluster.local:8428",
+                "authentication": {
+                  "oauth2": {},
+                  "sigv4": {}
+                },
+                "query": "time() - max(timestamp({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"{{args.revision}}\",\"http.route\"=~\"/|/products.*\"}))",
+                "timeout": 10
+              }
+            },
+            "successCondition": "len(result) == 1 && !isNaN(result[0]) && !isInf(result[0]) && result[0] >= 0 && result[0] <= 45"
+          },
+          {
+            "consecutiveErrorLimit": 2,
+            "count": 3,
+            "failureLimit": 0,
+            "initialDelay": "90s",
+            "interval": "15s",
+            "name": "error-rate",
+            "provider": {
+              "prometheus": {
+                "address": "http://vmsingle-vmks.observability.svc.cluster.local:8428",
+                "authentication": {
+                  "oauth2": {},
+                  "sigv4": {}
+                },
+                "query": "(sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"{{args.revision}}\",\"http.route\"=~\"/|/products.*\",\"http.response.status_code\"=~\"5..\"}[1m])) or vector(0)) / sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"{{args.revision}}\",\"http.route\"=~\"/|/products.*\"}[1m]))",
+                "timeout": 10
+              }
+            },
+            "successCondition": "len(result) == 1 && !isNaN(result[0]) && !isInf(result[0]) && result[0] >= 0 && result[0] <= 0.01"
+          },
+          {
+            "consecutiveErrorLimit": 2,
+            "count": 3,
+            "failureLimit": 0,
+            "initialDelay": "90s",
+            "interval": "15s",
+            "name": "p95",
+            "provider": {
+              "prometheus": {
+                "address": "http://vmsingle-vmks.observability.svc.cluster.local:8428",
+                "authentication": {
+                  "oauth2": {},
+                  "sigv4": {}
+                },
+                "query": "histogram_quantile(0.95, sum by (le) (rate({__name__=\"http.server.request.duration_bucket\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"{{args.revision}}\",\"http.route\"=~\"/|/products.*\"}[1m])))",
+                "timeout": 10
+              }
+            },
+            "successCondition": "len(result) == 1 && !isNaN(result[0]) && !isInf(result[0]) && result[0] >= 0 && result[0] <= 0.5"
+          }
+        ]
+      },
+      "status": {
+        "completedAt": "2026-11-06T05:05:02Z",
+        "dryRunSummary": {},
+        "metricResults": [
+          {
+            "consecutiveSuccess": 3,
+            "count": 3,
+            "measurements": [
+              {
+                "finishedAt": "2026-11-06T05:04:32Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:04:32Z",
+                "value": "[6.361000061035156]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:04:47Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:04:47Z",
+                "value": "[1.2840001583099365]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:05:02Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:05:02Z",
+                "value": "[6.2799999713897705]"
+              }
+            ],
+            "metadata": {
+              "ResolvedPrometheusQuery": "time() - max(timestamp({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}))"
+            },
+            "name": "freshness",
+            "phase": "Successful",
+            "successful": 3
+          },
+          {
+            "consecutiveSuccess": 3,
+            "count": 3,
+            "measurements": [
+              {
+                "finishedAt": "2026-11-06T05:04:32Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:04:32Z",
+                "value": "[0]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:04:47Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:04:47Z",
+                "value": "[0]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:05:02Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:05:02Z",
+                "value": "[0]"
+              }
+            ],
+            "metadata": {
+              "ResolvedPrometheusQuery": "(sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\",\"http.response.status_code\"=~\"5..\"}[1m])) or vector(0)) / sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}[1m]))"
+            },
+            "name": "error-rate",
+            "phase": "Successful",
+            "successful": 3
+          },
+          {
+            "consecutiveSuccess": 3,
+            "count": 3,
+            "measurements": [
+              {
+                "finishedAt": "2026-11-06T05:04:32Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:04:32Z",
+                "value": "[147]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:04:47Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:04:47Z",
+                "value": "[142]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:05:02Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:05:02Z",
+                "value": "[141]"
+              }
+            ],
+            "metadata": {
+              "ResolvedPrometheusQuery": "sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}[1m]))"
+            },
+            "name": "requests",
+            "phase": "Successful",
+            "successful": 3
+          },
+          {
+            "consecutiveSuccess": 3,
+            "count": 3,
+            "measurements": [
+              {
+                "finishedAt": "2026-11-06T05:04:32Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:04:32Z",
+                "value": "[0.47797619047619033]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:04:47Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:04:47Z",
+                "value": "[0.45543478260869535]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:05:02Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:05:02Z",
+                "value": "[0.4682291666666666]"
+              }
+            ],
+            "metadata": {
+              "ResolvedPrometheusQuery": "histogram_quantile(0.95, sum by (le) (rate({__name__=\"http.server.request.duration_bucket\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}[1m])))"
+            },
+            "name": "p95",
+            "phase": "Successful",
+            "successful": 3
+          }
+        ],
+        "phase": "Successful",
+        "runSummary": {
+          "count": 4,
+          "successful": 4
+        },
+        "startedAt": "2026-11-06T05:03:02Z"
+      }
+    },
+    {
+      "apiVersion": "argoproj.io/v1alpha1",
+      "kind": "AnalysisRun",
+      "metadata": {
+        "annotations": {
+          "rollout.argoproj.io/revision": "2"
+        },
+        "creationTimestamp": "2026-11-06T05:05:03Z",
+        "generation": 5,
+        "labels": {
+          "app": "web",
+          "rollout-type": "Step",
+          "rollouts-pod-template-hash": "76665754cf",
+          "step-index": "3"
+        },
+        "name": "web-76665754cf-2-3",
+        "namespace": "ecommerce",
+        "ownerReferences": [
+          {
+            "apiVersion": "argoproj.io/v1alpha1",
+            "blockOwnerDeletion": true,
+            "controller": true,
+            "kind": "Rollout",
+            "name": "web",
+            "uid": "a1e97e76-40f0-4e1f-9ad0-bdef1b83daba"
+          }
+        ],
+        "resourceVersion": "298832",
+        "uid": "c789a2bd-c507-49c9-8ee7-0e3a1671551d"
+      },
+      "spec": {
+        "args": [
+          {
+            "name": "revision",
+            "value": "76665754cf"
+          }
+        ],
+        "metrics": [
+          {
+            "consecutiveErrorLimit": 2,
+            "count": 3,
+            "failureLimit": 0,
+            "initialDelay": "90s",
+            "interval": "15s",
+            "name": "requests",
+            "provider": {
+              "prometheus": {
+                "address": "http://vmsingle-vmks.observability.svc.cluster.local:8428",
+                "authentication": {
+                  "oauth2": {},
+                  "sigv4": {}
+                },
+                "query": "sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"{{args.revision}}\",\"http.route\"=~\"/|/products.*\"}[1m]))",
+                "timeout": 10
+              }
+            },
+            "successCondition": "len(result) == 1 && !isNaN(result[0]) && !isInf(result[0]) && result[0] >= 0 && result[0] >= 20"
+          },
+          {
+            "consecutiveErrorLimit": 2,
+            "count": 3,
+            "failureLimit": 0,
+            "initialDelay": "90s",
+            "interval": "15s",
+            "name": "freshness",
+            "provider": {
+              "prometheus": {
+                "address": "http://vmsingle-vmks.observability.svc.cluster.local:8428",
+                "authentication": {
+                  "oauth2": {},
+                  "sigv4": {}
+                },
+                "query": "time() - max(timestamp({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"{{args.revision}}\",\"http.route\"=~\"/|/products.*\"}))",
+                "timeout": 10
+              }
+            },
+            "successCondition": "len(result) == 1 && !isNaN(result[0]) && !isInf(result[0]) && result[0] >= 0 && result[0] <= 45"
+          },
+          {
+            "consecutiveErrorLimit": 2,
+            "count": 3,
+            "failureLimit": 0,
+            "initialDelay": "90s",
+            "interval": "15s",
+            "name": "error-rate",
+            "provider": {
+              "prometheus": {
+                "address": "http://vmsingle-vmks.observability.svc.cluster.local:8428",
+                "authentication": {
+                  "oauth2": {},
+                  "sigv4": {}
+                },
+                "query": "(sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"{{args.revision}}\",\"http.route\"=~\"/|/products.*\",\"http.response.status_code\"=~\"5..\"}[1m])) or vector(0)) / sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"{{args.revision}}\",\"http.route\"=~\"/|/products.*\"}[1m]))",
+                "timeout": 10
+              }
+            },
+            "successCondition": "len(result) == 1 && !isNaN(result[0]) && !isInf(result[0]) && result[0] >= 0 && result[0] <= 0.01"
+          },
+          {
+            "consecutiveErrorLimit": 2,
+            "count": 3,
+            "failureLimit": 0,
+            "initialDelay": "90s",
+            "interval": "15s",
+            "name": "p95",
+            "provider": {
+              "prometheus": {
+                "address": "http://vmsingle-vmks.observability.svc.cluster.local:8428",
+                "authentication": {
+                  "oauth2": {},
+                  "sigv4": {}
+                },
+                "query": "histogram_quantile(0.95, sum by (le) (rate({__name__=\"http.server.request.duration_bucket\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"{{args.revision}}\",\"http.route\"=~\"/|/products.*\"}[1m])))",
+                "timeout": 10
+              }
+            },
+            "successCondition": "len(result) == 1 && !isNaN(result[0]) && !isInf(result[0]) && result[0] >= 0 && result[0] <= 0.5"
+          }
+        ]
+      },
+      "status": {
+        "completedAt": "2026-11-06T05:07:03Z",
+        "dryRunSummary": {},
+        "metricResults": [
+          {
+            "consecutiveSuccess": 3,
+            "count": 3,
+            "measurements": [
+              {
+                "finishedAt": "2026-11-06T05:06:33Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:06:33Z",
+                "value": "[392]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:06:48Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:06:48Z",
+                "value": "[456]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:07:03Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:07:03Z",
+                "value": "[451]"
+              }
+            ],
+            "metadata": {
+              "ResolvedPrometheusQuery": "sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}[1m]))"
+            },
+            "name": "requests",
+            "phase": "Successful",
+            "successful": 3
+          },
+          {
+            "consecutiveSuccess": 3,
+            "count": 3,
+            "measurements": [
+              {
+                "finishedAt": "2026-11-06T05:06:33Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:06:33Z",
+                "value": "[0.12217391304347794]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:06:48Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:06:48Z",
+                "value": "[0.10749999999999985]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:07:03Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:07:03Z",
+                "value": "[0.10293478260869542]"
+              }
+            ],
+            "metadata": {
+              "ResolvedPrometheusQuery": "histogram_quantile(0.95, sum by (le) (rate({__name__=\"http.server.request.duration_bucket\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}[1m])))"
+            },
+            "name": "p95",
+            "phase": "Successful",
+            "successful": 3
+          },
+          {
+            "consecutiveSuccess": 3,
+            "count": 3,
+            "measurements": [
+              {
+                "finishedAt": "2026-11-06T05:06:33Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:06:33Z",
+                "value": "[7.307999849319458]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:06:48Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:06:48Z",
+                "value": "[2.2929999828338623]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:07:03Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:07:03Z",
+                "value": "[7.289000034332275]"
+              }
+            ],
+            "metadata": {
+              "ResolvedPrometheusQuery": "time() - max(timestamp({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}))"
+            },
+            "name": "freshness",
+            "phase": "Successful",
+            "successful": 3
+          },
+          {
+            "consecutiveSuccess": 3,
+            "count": 3,
+            "measurements": [
+              {
+                "finishedAt": "2026-11-06T05:06:33Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:06:33Z",
+                "value": "[0]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:06:48Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:06:48Z",
+                "value": "[0]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:07:03Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:07:03Z",
+                "value": "[0]"
+              }
+            ],
+            "metadata": {
+              "ResolvedPrometheusQuery": "(sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\",\"http.response.status_code\"=~\"5..\"}[1m])) or vector(0)) / sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}[1m]))"
+            },
+            "name": "error-rate",
+            "phase": "Successful",
+            "successful": 3
+          }
+        ],
+        "phase": "Successful",
+        "runSummary": {
+          "count": 4,
+          "successful": 4
+        },
+        "startedAt": "2026-11-06T05:05:03Z"
+      }
+    },
+    {
+      "apiVersion": "argoproj.io/v1alpha1",
+      "kind": "AnalysisRun",
+      "metadata": {
+        "annotations": {
+          "rollout.argoproj.io/revision": "2"
+        },
+        "creationTimestamp": "2026-11-06T05:07:03Z",
+        "generation": 5,
+        "labels": {
+          "app": "web",
+          "rollout-type": "Step",
+          "rollouts-pod-template-hash": "76665754cf",
+          "step-index": "5"
+        },
+        "name": "web-76665754cf-2-5",
+        "namespace": "ecommerce",
+        "ownerReferences": [
+          {
+            "apiVersion": "argoproj.io/v1alpha1",
+            "blockOwnerDeletion": true,
+            "controller": true,
+            "kind": "Rollout",
+            "name": "web",
+            "uid": "a1e97e76-40f0-4e1f-9ad0-bdef1b83daba"
+          }
+        ],
+        "resourceVersion": "300874",
+        "uid": "605f6941-fdb5-4567-9e25-a5e490ef99fa"
+      },
+      "spec": {
+        "args": [
+          {
+            "name": "revision",
+            "value": "76665754cf"
+          }
+        ],
+        "metrics": [
+          {
+            "consecutiveErrorLimit": 2,
+            "count": 3,
+            "failureLimit": 0,
+            "initialDelay": "90s",
+            "interval": "15s",
+            "name": "requests",
+            "provider": {
+              "prometheus": {
+                "address": "http://vmsingle-vmks.observability.svc.cluster.local:8428",
+                "authentication": {
+                  "oauth2": {},
+                  "sigv4": {}
+                },
+                "query": "sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"{{args.revision}}\",\"http.route\"=~\"/|/products.*\"}[1m]))",
+                "timeout": 10
+              }
+            },
+            "successCondition": "len(result) == 1 && !isNaN(result[0]) && !isInf(result[0]) && result[0] >= 0 && result[0] >= 20"
+          },
+          {
+            "consecutiveErrorLimit": 2,
+            "count": 3,
+            "failureLimit": 0,
+            "initialDelay": "90s",
+            "interval": "15s",
+            "name": "freshness",
+            "provider": {
+              "prometheus": {
+                "address": "http://vmsingle-vmks.observability.svc.cluster.local:8428",
+                "authentication": {
+                  "oauth2": {},
+                  "sigv4": {}
+                },
+                "query": "time() - max(timestamp({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"{{args.revision}}\",\"http.route\"=~\"/|/products.*\"}))",
+                "timeout": 10
+              }
+            },
+            "successCondition": "len(result) == 1 && !isNaN(result[0]) && !isInf(result[0]) && result[0] >= 0 && result[0] <= 45"
+          },
+          {
+            "consecutiveErrorLimit": 2,
+            "count": 3,
+            "failureLimit": 0,
+            "initialDelay": "90s",
+            "interval": "15s",
+            "name": "error-rate",
+            "provider": {
+              "prometheus": {
+                "address": "http://vmsingle-vmks.observability.svc.cluster.local:8428",
+                "authentication": {
+                  "oauth2": {},
+                  "sigv4": {}
+                },
+                "query": "(sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"{{args.revision}}\",\"http.route\"=~\"/|/products.*\",\"http.response.status_code\"=~\"5..\"}[1m])) or vector(0)) / sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"{{args.revision}}\",\"http.route\"=~\"/|/products.*\"}[1m]))",
+                "timeout": 10
+              }
+            },
+            "successCondition": "len(result) == 1 && !isNaN(result[0]) && !isInf(result[0]) && result[0] >= 0 && result[0] <= 0.01"
+          },
+          {
+            "consecutiveErrorLimit": 2,
+            "count": 3,
+            "failureLimit": 0,
+            "initialDelay": "90s",
+            "interval": "15s",
+            "name": "p95",
+            "provider": {
+              "prometheus": {
+                "address": "http://vmsingle-vmks.observability.svc.cluster.local:8428",
+                "authentication": {
+                  "oauth2": {},
+                  "sigv4": {}
+                },
+                "query": "histogram_quantile(0.95, sum by (le) (rate({__name__=\"http.server.request.duration_bucket\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"{{args.revision}}\",\"http.route\"=~\"/|/products.*\"}[1m])))",
+                "timeout": 10
+              }
+            },
+            "successCondition": "len(result) == 1 && !isNaN(result[0]) && !isInf(result[0]) && result[0] >= 0 && result[0] <= 0.5"
+          }
+        ]
+      },
+      "status": {
+        "completedAt": "2026-11-06T05:09:03Z",
+        "dryRunSummary": {},
+        "metricResults": [
+          {
+            "consecutiveSuccess": 3,
+            "count": 3,
+            "measurements": [
+              {
+                "finishedAt": "2026-11-06T05:08:33Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:08:33Z",
+                "value": "[7.315999984741211]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:08:48Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:08:48Z",
+                "value": "[2.2760000228881836]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:09:03Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:09:03Z",
+                "value": "[7.284999847412109]"
+              }
+            ],
+            "metadata": {
+              "ResolvedPrometheusQuery": "time() - max(timestamp({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}))"
+            },
+            "name": "freshness",
+            "phase": "Successful",
+            "successful": 3
+          },
+          {
+            "consecutiveSuccess": 3,
+            "count": 3,
+            "measurements": [
+              {
+                "finishedAt": "2026-11-06T05:08:33Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:08:33Z",
+                "value": "[0]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:08:48Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:08:48Z",
+                "value": "[0]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:09:03Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:09:03Z",
+                "value": "[0]"
+              }
+            ],
+            "metadata": {
+              "ResolvedPrometheusQuery": "(sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\",\"http.response.status_code\"=~\"5..\"}[1m])) or vector(0)) / sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}[1m]))"
+            },
+            "name": "error-rate",
+            "phase": "Successful",
+            "successful": 3
+          },
+          {
+            "consecutiveSuccess": 3,
+            "count": 3,
+            "measurements": [
+              {
+                "finishedAt": "2026-11-06T05:08:33Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:08:33Z",
+                "value": "[0.12100000000000008]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:08:48Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:08:48Z",
+                "value": "[0.09901620370370372]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:09:03Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:09:03Z",
+                "value": "[0.09825242718446599]"
+              }
+            ],
+            "metadata": {
+              "ResolvedPrometheusQuery": "histogram_quantile(0.95, sum by (le) (rate({__name__=\"http.server.request.duration_bucket\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}[1m])))"
+            },
+            "name": "p95",
+            "phase": "Successful",
+            "successful": 3
+          },
+          {
+            "consecutiveSuccess": 3,
+            "count": 3,
+            "measurements": [
+              {
+                "finishedAt": "2026-11-06T05:08:33Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:08:33Z",
+                "value": "[860]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:08:48Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:08:48Z",
+                "value": "[885]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:09:03Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:09:03Z",
+                "value": "[884]"
+              }
+            ],
+            "metadata": {
+              "ResolvedPrometheusQuery": "sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}[1m]))"
+            },
+            "name": "requests",
+            "phase": "Successful",
+            "successful": 3
+          }
+        ],
+        "phase": "Successful",
+        "runSummary": {
+          "count": 4,
+          "successful": 4
+        },
+        "startedAt": "2026-11-06T05:07:03Z"
+      }
+    },
+    {
+      "apiVersion": "argoproj.io/v1alpha1",
+      "kind": "AnalysisRun",
+      "metadata": {
+        "annotations": {
+          "rollout.argoproj.io/revision": "2"
+        },
+        "creationTimestamp": "2026-11-06T05:09:18Z",
+        "generation": 5,
+        "labels": {
+          "app": "web",
+          "rollout-type": "Step",
+          "rollouts-pod-template-hash": "76665754cf",
+          "step-index": "7"
+        },
+        "name": "web-76665754cf-2-7",
+        "namespace": "ecommerce",
+        "ownerReferences": [
+          {
+            "apiVersion": "argoproj.io/v1alpha1",
+            "blockOwnerDeletion": true,
+            "controller": true,
+            "kind": "Rollout",
+            "name": "web",
+            "uid": "a1e97e76-40f0-4e1f-9ad0-bdef1b83daba"
+          }
+        ],
+        "resourceVersion": "303214",
+        "uid": "7769c6bb-1c16-4435-88e4-23ad4dd706f5"
+      },
+      "spec": {
+        "args": [
+          {
+            "name": "revision",
+            "value": "76665754cf"
+          }
+        ],
+        "metrics": [
+          {
+            "consecutiveErrorLimit": 2,
+            "count": 3,
+            "failureLimit": 0,
+            "initialDelay": "90s",
+            "interval": "15s",
+            "name": "requests",
+            "provider": {
+              "prometheus": {
+                "address": "http://vmsingle-vmks.observability.svc.cluster.local:8428",
+                "authentication": {
+                  "oauth2": {},
+                  "sigv4": {}
+                },
+                "query": "sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"{{args.revision}}\",\"http.route\"=~\"/|/products.*\"}[1m]))",
+                "timeout": 10
+              }
+            },
+            "successCondition": "len(result) == 1 && !isNaN(result[0]) && !isInf(result[0]) && result[0] >= 0 && result[0] >= 20"
+          },
+          {
+            "consecutiveErrorLimit": 2,
+            "count": 3,
+            "failureLimit": 0,
+            "initialDelay": "90s",
+            "interval": "15s",
+            "name": "freshness",
+            "provider": {
+              "prometheus": {
+                "address": "http://vmsingle-vmks.observability.svc.cluster.local:8428",
+                "authentication": {
+                  "oauth2": {},
+                  "sigv4": {}
+                },
+                "query": "time() - max(timestamp({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"{{args.revision}}\",\"http.route\"=~\"/|/products.*\"}))",
+                "timeout": 10
+              }
+            },
+            "successCondition": "len(result) == 1 && !isNaN(result[0]) && !isInf(result[0]) && result[0] >= 0 && result[0] <= 45"
+          },
+          {
+            "consecutiveErrorLimit": 2,
+            "count": 3,
+            "failureLimit": 0,
+            "initialDelay": "90s",
+            "interval": "15s",
+            "name": "error-rate",
+            "provider": {
+              "prometheus": {
+                "address": "http://vmsingle-vmks.observability.svc.cluster.local:8428",
+                "authentication": {
+                  "oauth2": {},
+                  "sigv4": {}
+                },
+                "query": "(sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"{{args.revision}}\",\"http.route\"=~\"/|/products.*\",\"http.response.status_code\"=~\"5..\"}[1m])) or vector(0)) / sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"{{args.revision}}\",\"http.route\"=~\"/|/products.*\"}[1m]))",
+                "timeout": 10
+              }
+            },
+            "successCondition": "len(result) == 1 && !isNaN(result[0]) && !isInf(result[0]) && result[0] >= 0 && result[0] <= 0.01"
+          },
+          {
+            "consecutiveErrorLimit": 2,
+            "count": 3,
+            "failureLimit": 0,
+            "initialDelay": "90s",
+            "interval": "15s",
+            "name": "p95",
+            "provider": {
+              "prometheus": {
+                "address": "http://vmsingle-vmks.observability.svc.cluster.local:8428",
+                "authentication": {
+                  "oauth2": {},
+                  "sigv4": {}
+                },
+                "query": "histogram_quantile(0.95, sum by (le) (rate({__name__=\"http.server.request.duration_bucket\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"{{args.revision}}\",\"http.route\"=~\"/|/products.*\"}[1m])))",
+                "timeout": 10
+              }
+            },
+            "successCondition": "len(result) == 1 && !isNaN(result[0]) && !isInf(result[0]) && result[0] >= 0 && result[0] <= 0.5"
+          }
+        ]
+      },
+      "status": {
+        "completedAt": "2026-11-06T05:11:19Z",
+        "dryRunSummary": {},
+        "metricResults": [
+          {
+            "consecutiveSuccess": 3,
+            "count": 3,
+            "measurements": [
+              {
+                "finishedAt": "2026-11-06T05:10:49Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:10:49Z",
+                "value": "[1712]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:11:04Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:11:04Z",
+                "value": "[1788]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:11:19Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:11:19Z",
+                "value": "[1802]"
+              }
+            ],
+            "metadata": {
+              "ResolvedPrometheusQuery": "sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}[1m]))"
+            },
+            "name": "requests",
+            "phase": "Successful",
+            "successful": 3
+          },
+          {
+            "consecutiveSuccess": 3,
+            "count": 3,
+            "measurements": [
+              {
+                "finishedAt": "2026-11-06T05:10:49Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:10:49Z",
+                "value": "[0]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:11:04Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:11:04Z",
+                "value": "[0]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:11:19Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:11:19Z",
+                "value": "[0]"
+              }
+            ],
+            "metadata": {
+              "ResolvedPrometheusQuery": "(sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\",\"http.response.status_code\"=~\"5..\"}[1m])) or vector(0)) / sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}[1m]))"
+            },
+            "name": "error-rate",
+            "phase": "Successful",
+            "successful": 3
+          },
+          {
+            "consecutiveSuccess": 3,
+            "count": 3,
+            "measurements": [
+              {
+                "finishedAt": "2026-11-06T05:10:49Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:10:49Z",
+                "value": "[3.3010001182556152]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:11:04Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:11:04Z",
+                "value": "[1.7029998302459717]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:11:19Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:11:19Z",
+                "value": "[3.2829999923706055]"
+              }
+            ],
+            "metadata": {
+              "ResolvedPrometheusQuery": "time() - max(timestamp({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}))"
+            },
+            "name": "freshness",
+            "phase": "Successful",
+            "successful": 3
+          },
+          {
+            "consecutiveSuccess": 3,
+            "count": 3,
+            "measurements": [
+              {
+                "finishedAt": "2026-11-06T05:10:49Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:10:49Z",
+                "value": "[0.1897562200091067]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:11:04Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:11:04Z",
+                "value": "[0.18633322024770926]"
+              },
+              {
+                "finishedAt": "2026-11-06T05:11:19Z",
+                "phase": "Successful",
+                "startedAt": "2026-11-06T05:11:19Z",
+                "value": "[0.2031781376518217]"
+              }
+            ],
+            "metadata": {
+              "ResolvedPrometheusQuery": "histogram_quantile(0.95, sum by (le) (rate({__name__=\"http.server.request.duration_bucket\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}[1m])))"
+            },
+            "name": "p95",
+            "phase": "Successful",
+            "successful": 3
+          }
+        ],
+        "phase": "Successful",
+        "runSummary": {
+          "count": 4,
+          "successful": 4
+        },
+        "startedAt": "2026-11-06T05:09:19Z"
+      }
+    }
+  ],
+  "kind": "List",
+  "metadata": {
+    "resourceVersion": ""
+  }
+}

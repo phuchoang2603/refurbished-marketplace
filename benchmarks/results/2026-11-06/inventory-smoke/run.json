@@ -1,0 +1,20 @@
+{
+  "job": "storefront-load-1793940117",
+  "startedAt": "2026-11-06T04:41:57.868324+00:00",
+  "mode": "load",
+  "workload": "inventory",
+  "parameters": {
+    "MODE": "load",
+    "RATE": "100",
+    "DURATION": "30s",
+    "PRODUCTS": "1000"
+  },
+  "scriptSha256": "4264ed98fa1e3adafb45402afffe7aa0ab5b20e77cb980c208e6973c6d1e005c",
+  "datasetSha256": "45cd3b90bd25fbff621ba2f7a92e1fef7e425eb9c575a7a414601cd51590e5c6",
+  "target": "Inventory gRPC through Istio waypoint \u2192 PostgreSQL",
+  "mix": {
+    "GetStock": 1
+  },
+  "finishedAt": "2026-11-06T04:42:44.816224+00:00",
+  "succeeded": false
+}

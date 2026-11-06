@@ -1,0 +1,30 @@
+{
+  "recordedAt": "2026-11-06T05:11:38.705934+00:00",
+  "meilisearch": {
+    "databaseSize": 10948608,
+    "usedDatabaseSize": 10182656,
+    "lastUpdate": "2026-11-06T04:56:43.306559346Z",
+    "indexes": {
+      "listings": {
+        "numberOfDocuments": 1000,
+        "indexSize": 1531904,
+        "usedIndexSize": 974848,
+        "rawDocumentDbSize": 233472,
+        "avgDocumentSize": 225,
+        "isIndexing": false,
+        "numberOfEmbeddings": 0,
+        "numberOfEmbeddedDocuments": 0,
+        "fieldDistribution": {
+          "created_at": 1000,
+          "description": 1000,
+          "id": 1000,
+          "merchant_id": 1000,
+          "name": 1000,
+          "price_cents": 1000
+        }
+      }
+    }
+  },
+  "productsCount": 1000,
+  "inventoryCount": 1000
+}

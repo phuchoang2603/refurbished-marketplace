@@ -1,0 +1,81 @@
+{
+  "environment": "Talos Proxmox dev; three nodes, 20 vCPU / 64 GiB provisioned",
+  "datasetProducts": 1000,
+  "measurementBoundary": {
+    "storefront": "In-cluster Istio Gateway \u2192 web \u2192 gRPC services; 45% browse, 35% search, 20% product detail",
+    "inventory": "In-cluster InventoryService/GetStock through Istio waypoint \u2192 PostgreSQL; checks product ID and available quantity"
+  },
+  "limitations": [
+    "Development load tests, not production traffic or an availability SLA.",
+    "Client-side k6 timings; excludes Cloudflare, WAN, browser rendering, checkout and payment processing.",
+    "100% application tracing enabled. Inventory has one replica, web has two.",
+    "Tests use 1-CPU Go service limits, a 1-CPU waypoint limit, and 2-CPU / 512-MiB Meilisearch limits.",
+    "PostgreSQL application pools have a maximum of 16 connections per pod."
+  ],
+  "runs": [
+    {
+      "run": "inventory-100rps",
+      "workload": "inventory",
+      "requestedRate": 100,
+      "achievedRate": 99.998953774799,
+      "requests": 12001,
+      "duration": "2m",
+      "p50Ms": 8.610057,
+      "p95Ms": 19.447246,
+      "p99Ms": 36.331867,
+      "errorRate": 0,
+      "droppedIterations": 0,
+      "passed": true,
+      "startedAt": "2026-11-06T04:54:52.656411+00:00",
+      "finishedAt": "2026-11-06T04:57:04.255327+00:00"
+    },
+    {
+      "run": "inventory-500rps-preallocated",
+      "workload": "inventory",
+      "requestedRate": 500,
+      "achievedRate": 499.74476413640247,
+      "requests": 60000,
+      "duration": "2m",
+      "p50Ms": 10.865737,
+      "p95Ms": 92.03166704999995,
+      "p99Ms": 112.08783663000006,
+      "errorRate": 0,
+      "droppedIterations": 0,
+      "passed": true,
+      "startedAt": "2026-11-06T05:00:08.821006+00:00",
+      "finishedAt": "2026-11-06T05:02:23.729334+00:00"
+    },
+    {
+      "run": "storefront-30rps",
+      "workload": "storefront",
+      "requestedRate": 30,
+      "achievedRate": 29.995794362662178,
+      "requests": 3600,
+      "duration": "2m",
+      "p50Ms": 77.97336200000001,
+      "p95Ms": 150.55546079999996,
+      "p99Ms": 200.96630602999943,
+      "errorRate": 0,
+      "droppedIterations": 0,
+      "passed": true,
+      "startedAt": "2026-11-06T05:13:50.584479+00:00",
+      "finishedAt": "2026-11-06T05:16:00.859127+00:00"
+    },
+    {
+      "run": "storefront-50rps",
+      "workload": "storefront",
+      "requestedRate": 50,
+      "achievedRate": 49.92373595752406,
+      "requests": 5999,
+      "duration": "2m",
+      "p50Ms": 221.489049,
+      "p95Ms": 826.1988379999993,
+      "p99Ms": 1181.920244999999,
+      "errorRate": 0,
+      "droppedIterations": 2,
+      "passed": false,
+      "startedAt": "2026-11-06T05:11:25.927991+00:00",
+      "finishedAt": "2026-11-06T05:13:35.828629+00:00"
+    }
+  ]
+}

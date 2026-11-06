@@ -1,0 +1,546 @@
+[
+  {
+    "phase": "Healthy",
+    "current": "685755ff57",
+    "stable": "685755ff57",
+    "step": 8,
+    "message": null,
+    "available": 2,
+    "weights": [
+      [
+        {
+          "group": "",
+          "kind": "Service",
+          "name": "web",
+          "port": 8080,
+          "weight": 100
+        },
+        {
+          "group": "",
+          "kind": "Service",
+          "name": "web-canary",
+          "port": 8080,
+          "weight": 0
+        }
+      ],
+      [
+        {
+          "group": "",
+          "kind": "Service",
+          "name": "web",
+          "port": 8080,
+          "weight": 100
+        },
+        {
+          "group": "",
+          "kind": "Service",
+          "name": "web-canary",
+          "port": 8080,
+          "weight": 0
+        }
+      ]
+    ],
+    "analyses": [],
+    "observedAt": "2026-11-06T04:40:13.457977+00:00"
+  },
+  {
+    "phase": "Progressing",
+    "current": "76665754cf",
+    "stable": "685755ff57",
+    "step": 0,
+    "message": "more replicas need to be updated",
+    "available": 2,
+    "weights": [
+      [
+        {
+          "group": "",
+          "kind": "Service",
+          "name": "web",
+          "port": 8080,
+          "weight": 100
+        },
+        {
+          "group": "",
+          "kind": "Service",
+          "name": "web-canary",
+          "port": 8080,
+          "weight": 0
+        }
+      ],
+      [
+        {
+          "group": "",
+          "kind": "Service",
+          "name": "web",
+          "port": 8080,
+          "weight": 100
+        },
+        {
+          "group": "",
+          "kind": "Service",
+          "name": "web-canary",
+          "port": 8080,
+          "weight": 0
+        }
+      ]
+    ],
+    "analyses": [],
+    "observedAt": "2026-11-06T04:49:07.918710+00:00"
+  },
+  {
+    "phase": "Progressing",
+    "current": "76665754cf",
+    "stable": "685755ff57",
+    "step": 1,
+    "message": "more replicas need to be updated",
+    "available": 3,
+    "weights": [
+      [
+        {
+          "group": "",
+          "kind": "Service",
+          "name": "web",
+          "port": 8080,
+          "weight": 95
+        },
+        {
+          "group": "",
+          "kind": "Service",
+          "name": "web-canary",
+          "port": 8080,
+          "weight": 5
+        }
+      ],
+      [
+        {
+          "group": "",
+          "kind": "Service",
+          "name": "web",
+          "port": 8080,
+          "weight": 95
+        },
+        {
+          "group": "",
+          "kind": "Service",
+          "name": "web-canary",
+          "port": 8080,
+          "weight": 5
+        }
+      ]
+    ],
+    "analyses": [
+      {
+        "name": "web-76665754cf-2-1",
+        "createdAt": "2026-11-06T04:50:35Z",
+        "status": {
+          "dryRunSummary": {},
+          "phase": "Running",
+          "runSummary": {
+            "count": 4
+          },
+          "startedAt": "2026-11-06T04:50:36Z"
+        }
+      }
+    ],
+    "observedAt": "2026-11-06T04:50:39.073842+00:00"
+  },
+  {
+    "phase": "Degraded",
+    "current": "76665754cf",
+    "stable": "685755ff57",
+    "step": 0,
+    "message": "RolloutAborted: Rollout aborted update to revision 2: Step-based analysis phase error/failed: Metric \"requests\" assessed Failed due to failed (1) > failureLimit (0)",
+    "available": 3,
+    "weights": [
+      [
+        {
+          "group": "",
+          "kind": "Service",
+          "name": "web",
+          "port": 8080,
+          "weight": 100
+        },
+        {
+          "group": "",
+          "kind": "Service",
+          "name": "web-canary",
+          "port": 8080,
+          "weight": 0
+        }
+      ],
+      [
+        {
+          "group": "",
+          "kind": "Service",
+          "name": "web",
+          "port": 8080,
+          "weight": 100
+        },
+        {
+          "group": "",
+          "kind": "Service",
+          "name": "web-canary",
+          "port": 8080,
+          "weight": 0
+        }
+      ]
+    ],
+    "analyses": [
+      {
+        "name": "web-76665754cf-2-1",
+        "createdAt": "2026-11-06T04:50:35Z",
+        "status": {
+          "completedAt": "2026-11-06T04:51:21Z",
+          "dryRunSummary": {},
+          "message": "Metric \"requests\" assessed Failed due to failed (1) > failureLimit (0)",
+          "metricResults": [
+            {
+              "count": 1,
+              "failed": 1,
+              "measurements": [
+                {
+                  "finishedAt": "2026-11-06T04:51:21Z",
+                  "phase": "Failed",
+                  "startedAt": "2026-11-06T04:51:21Z",
+                  "value": "[]"
+                }
+              ],
+              "metadata": {
+                "ResolvedPrometheusQuery": "histogram_quantile(0.95, sum by (le) (rate({__name__=\"http.server.request.duration_bucket\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}[1m])))"
+              },
+              "name": "p95",
+              "phase": "Failed"
+            },
+            {
+              "consecutiveSuccess": 1,
+              "count": 1,
+              "measurements": [
+                {
+                  "finishedAt": "2026-11-06T04:51:21Z",
+                  "phase": "Successful",
+                  "startedAt": "2026-11-06T04:51:21Z",
+                  "value": "[5.6540000438690186]"
+                }
+              ],
+              "metadata": {
+                "ResolvedPrometheusQuery": "time() - max(timestamp({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}))"
+              },
+              "name": "freshness",
+              "phase": "Successful",
+              "successful": 1
+            },
+            {
+              "consecutiveSuccess": 1,
+              "count": 1,
+              "measurements": [
+                {
+                  "finishedAt": "2026-11-06T04:51:21Z",
+                  "phase": "Successful",
+                  "startedAt": "2026-11-06T04:51:21Z",
+                  "value": "[0]"
+                }
+              ],
+              "metadata": {
+                "ResolvedPrometheusQuery": "(sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\",\"http.response.status_code\"=~\"5..\"}[1m])) or vector(0)) / sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}[1m]))"
+              },
+              "name": "error-rate",
+              "phase": "Successful",
+              "successful": 1
+            },
+            {
+              "count": 1,
+              "failed": 1,
+              "measurements": [
+                {
+                  "finishedAt": "2026-11-06T04:51:21Z",
+                  "phase": "Failed",
+                  "startedAt": "2026-11-06T04:51:21Z",
+                  "value": "[13]"
+                }
+              ],
+              "metadata": {
+                "ResolvedPrometheusQuery": "sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}[1m]))"
+              },
+              "name": "requests",
+              "phase": "Failed"
+            }
+          ],
+          "phase": "Failed",
+          "runSummary": {
+            "count": 4,
+            "failed": 2,
+            "successful": 2
+          },
+          "startedAt": "2026-11-06T04:50:36Z"
+        }
+      }
+    ],
+    "observedAt": "2026-11-06T04:51:23.607960+00:00"
+  },
+  {
+    "phase": "Degraded",
+    "current": "76665754cf",
+    "stable": "685755ff57",
+    "step": 0,
+    "message": "RolloutAborted: Rollout aborted update to revision 2: Step-based analysis phase error/failed: Metric \"requests\" assessed Failed due to failed (1) > failureLimit (0)",
+    "available": 2,
+    "weights": [
+      [
+        {
+          "group": "",
+          "kind": "Service",
+          "name": "web",
+          "port": 8080,
+          "weight": 100
+        },
+        {
+          "group": "",
+          "kind": "Service",
+          "name": "web-canary",
+          "port": 8080,
+          "weight": 0
+        }
+      ],
+      [
+        {
+          "group": "",
+          "kind": "Service",
+          "name": "web",
+          "port": 8080,
+          "weight": 100
+        },
+        {
+          "group": "",
+          "kind": "Service",
+          "name": "web-canary",
+          "port": 8080,
+          "weight": 0
+        }
+      ]
+    ],
+    "analyses": [
+      {
+        "name": "web-76665754cf-2-1",
+        "createdAt": "2026-11-06T04:50:35Z",
+        "status": {
+          "completedAt": "2026-11-06T04:51:21Z",
+          "dryRunSummary": {},
+          "message": "Metric \"requests\" assessed Failed due to failed (1) > failureLimit (0)",
+          "metricResults": [
+            {
+              "count": 1,
+              "failed": 1,
+              "measurements": [
+                {
+                  "finishedAt": "2026-11-06T04:51:21Z",
+                  "phase": "Failed",
+                  "startedAt": "2026-11-06T04:51:21Z",
+                  "value": "[]"
+                }
+              ],
+              "metadata": {
+                "ResolvedPrometheusQuery": "histogram_quantile(0.95, sum by (le) (rate({__name__=\"http.server.request.duration_bucket\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}[1m])))"
+              },
+              "name": "p95",
+              "phase": "Failed"
+            },
+            {
+              "consecutiveSuccess": 1,
+              "count": 1,
+              "measurements": [
+                {
+                  "finishedAt": "2026-11-06T04:51:21Z",
+                  "phase": "Successful",
+                  "startedAt": "2026-11-06T04:51:21Z",
+                  "value": "[5.6540000438690186]"
+                }
+              ],
+              "metadata": {
+                "ResolvedPrometheusQuery": "time() - max(timestamp({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}))"
+              },
+              "name": "freshness",
+              "phase": "Successful",
+              "successful": 1
+            },
+            {
+              "consecutiveSuccess": 1,
+              "count": 1,
+              "measurements": [
+                {
+                  "finishedAt": "2026-11-06T04:51:21Z",
+                  "phase": "Successful",
+                  "startedAt": "2026-11-06T04:51:21Z",
+                  "value": "[0]"
+                }
+              ],
+              "metadata": {
+                "ResolvedPrometheusQuery": "(sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\",\"http.response.status_code\"=~\"5..\"}[1m])) or vector(0)) / sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}[1m]))"
+              },
+              "name": "error-rate",
+              "phase": "Successful",
+              "successful": 1
+            },
+            {
+              "count": 1,
+              "failed": 1,
+              "measurements": [
+                {
+                  "finishedAt": "2026-11-06T04:51:21Z",
+                  "phase": "Failed",
+                  "startedAt": "2026-11-06T04:51:21Z",
+                  "value": "[13]"
+                }
+              ],
+              "metadata": {
+                "ResolvedPrometheusQuery": "sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}[1m]))"
+              },
+              "name": "requests",
+              "phase": "Failed"
+            }
+          ],
+          "phase": "Failed",
+          "runSummary": {
+            "count": 4,
+            "failed": 2,
+            "successful": 2
+          },
+          "startedAt": "2026-11-06T04:50:36Z"
+        }
+      }
+    ],
+    "observedAt": "2026-11-06T04:51:57.623191+00:00"
+  },
+  {
+    "phase": "Progressing",
+    "current": "76665754cf",
+    "stable": "685755ff57",
+    "step": 0,
+    "message": "more replicas need to be updated",
+    "available": 2,
+    "weights": [
+      [
+        {
+          "group": "",
+          "kind": "Service",
+          "name": "web",
+          "port": 8080,
+          "weight": 100
+        },
+        {
+          "group": "",
+          "kind": "Service",
+          "name": "web-canary",
+          "port": 8080,
+          "weight": 0
+        }
+      ],
+      [
+        {
+          "group": "",
+          "kind": "Service",
+          "name": "web",
+          "port": 8080,
+          "weight": 100
+        },
+        {
+          "group": "",
+          "kind": "Service",
+          "name": "web-canary",
+          "port": 8080,
+          "weight": 0
+        }
+      ]
+    ],
+    "analyses": [
+      {
+        "name": "web-76665754cf-2-1",
+        "createdAt": "2026-11-06T04:50:35Z",
+        "status": {
+          "completedAt": "2026-11-06T04:51:21Z",
+          "dryRunSummary": {},
+          "message": "Metric \"requests\" assessed Failed due to failed (1) > failureLimit (0)",
+          "metricResults": [
+            {
+              "count": 1,
+              "failed": 1,
+              "measurements": [
+                {
+                  "finishedAt": "2026-11-06T04:51:21Z",
+                  "phase": "Failed",
+                  "startedAt": "2026-11-06T04:51:21Z",
+                  "value": "[]"
+                }
+              ],
+              "metadata": {
+                "ResolvedPrometheusQuery": "histogram_quantile(0.95, sum by (le) (rate({__name__=\"http.server.request.duration_bucket\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}[1m])))"
+              },
+              "name": "p95",
+              "phase": "Failed"
+            },
+            {
+              "consecutiveSuccess": 1,
+              "count": 1,
+              "measurements": [
+                {
+                  "finishedAt": "2026-11-06T04:51:21Z",
+                  "phase": "Successful",
+                  "startedAt": "2026-11-06T04:51:21Z",
+                  "value": "[5.6540000438690186]"
+                }
+              ],
+              "metadata": {
+                "ResolvedPrometheusQuery": "time() - max(timestamp({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}))"
+              },
+              "name": "freshness",
+              "phase": "Successful",
+              "successful": 1
+            },
+            {
+              "consecutiveSuccess": 1,
+              "count": 1,
+              "measurements": [
+                {
+                  "finishedAt": "2026-11-06T04:51:21Z",
+                  "phase": "Successful",
+                  "startedAt": "2026-11-06T04:51:21Z",
+                  "value": "[0]"
+                }
+              ],
+              "metadata": {
+                "ResolvedPrometheusQuery": "(sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\",\"http.response.status_code\"=~\"5..\"}[1m])) or vector(0)) / sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}[1m]))"
+              },
+              "name": "error-rate",
+              "phase": "Successful",
+              "successful": 1
+            },
+            {
+              "count": 1,
+              "failed": 1,
+              "measurements": [
+                {
+                  "finishedAt": "2026-11-06T04:51:21Z",
+                  "phase": "Failed",
+                  "startedAt": "2026-11-06T04:51:21Z",
+                  "value": "[13]"
+                }
+              ],
+              "metadata": {
+                "ResolvedPrometheusQuery": "sum(increase({__name__=\"http.server.request.duration_count\",\"service.name\"=\"web\",\"deployment.environment\"=\"dev\",\"k8s.namespace.name\"=\"ecommerce\",\"rollout.revision\"=\"76665754cf\",\"http.route\"=~\"/|/products.*\"}[1m]))"
+              },
+              "name": "requests",
+              "phase": "Failed"
+            }
+          ],
+          "phase": "Failed",
+          "runSummary": {
+            "count": 4,
+            "failed": 2,
+            "successful": 2
+          },
+          "startedAt": "2026-11-06T04:50:36Z"
+        }
+      }
+    ],
+    "observedAt": "2026-11-06T05:02:47.162841+00:00"
+  }
+]

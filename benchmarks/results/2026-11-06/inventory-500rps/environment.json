@@ -1,0 +1,890 @@
+[
+  {
+    "name": "cart-b54688dc8-4x2zw",
+    "node": "dev-server2",
+    "containers": [
+      {
+        "name": "cart",
+        "image": "ghcr.io/phuchoang2603/refurbished-marketplace/cart:pr-77-38cb74856b428c9154a85abbfa17f2c832f88221",
+        "resources": {
+          "limits": {
+            "cpu": "1",
+            "memory": "128Mi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "32Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "cart",
+        "imageID": "ghcr.io/phuchoang2603/refurbished-marketplace/cart@sha256:b54b2640cf452ecf9e51973e3f9e9ce914fa6cd80c1b362eaaa9236d6e385225",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "cart-redis-0",
+    "node": "dev-server1",
+    "containers": [
+      {
+        "name": "cart-redis",
+        "image": "quay.io/opstree/redis:v7.2.16",
+        "resources": {
+          "limits": {
+            "memory": "256Mi"
+          },
+          "requests": {
+            "cpu": "50m",
+            "memory": "128Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "cart-redis",
+        "imageID": "quay.io/opstree/redis@sha256:68d3bb380d755dc5ec1c8656af24aaa801a16b3aa1cf9ed137087cfc89f26b62",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "catalog-meilisearch-0",
+    "node": "dev-server2",
+    "containers": [
+      {
+        "name": "meilisearch",
+        "image": "getmeili/meilisearch:v1.53.1",
+        "resources": {
+          "limits": {
+            "cpu": "2",
+            "memory": "512Mi"
+          },
+          "requests": {
+            "cpu": "250m",
+            "memory": "256Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "meilisearch",
+        "imageID": "docker.io/getmeili/meilisearch@sha256:8d6643d86d71fad6ad3cba92cde7ccfce9e4d6c384bda67598eb553571c32431",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "checkout-66ccb59c45-5wzmt",
+    "node": "dev-server2",
+    "containers": [
+      {
+        "name": "checkout",
+        "image": "ghcr.io/phuchoang2603/refurbished-marketplace/checkout:pr-77-38cb74856b428c9154a85abbfa17f2c832f88221",
+        "resources": {
+          "limits": {
+            "cpu": "1",
+            "memory": "128Mi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "32Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "checkout",
+        "imageID": "ghcr.io/phuchoang2603/refurbished-marketplace/checkout@sha256:26c7b94b7f3d9440f6800c8c79f7758144d88dee0b09ede995ea687dd428e21c",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "checkout-db-1",
+    "node": "dev-server2",
+    "containers": [
+      {
+        "name": "postgres",
+        "image": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie",
+        "resources": {
+          "limits": {
+            "cpu": "500m",
+            "memory": "512Mi"
+          },
+          "requests": {
+            "cpu": "50m",
+            "memory": "128Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "postgres",
+        "imageID": "ghcr.io/cloudnative-pg/postgresql@sha256:44d17e8570dc25055376148a2918840def5bef0193969be3e79101afa25eafc2",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "checkout-redis-0",
+    "node": "dev-server1",
+    "containers": [
+      {
+        "name": "checkout-redis",
+        "image": "quay.io/opstree/redis:v7.2.16",
+        "resources": {
+          "limits": {
+            "memory": "256Mi"
+          },
+          "requests": {
+            "cpu": "50m",
+            "memory": "128Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "checkout-redis",
+        "imageID": "quay.io/opstree/redis@sha256:68d3bb380d755dc5ec1c8656af24aaa801a16b3aa1cf9ed137087cfc89f26b62",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "ecommerce-connect-cluster-connect-0",
+    "node": "dev-server1",
+    "containers": [
+      {
+        "name": "ecommerce-connect-cluster-connect",
+        "image": "ghcr.io/phuchoang2603/refurbished-marketplace/connect-debezium:pr-77-38cb74856b428c9154a85abbfa17f2c832f88221",
+        "resources": {
+          "limits": {
+            "memory": "1Gi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "768Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "ecommerce-connect-cluster-connect",
+        "imageID": "ghcr.io/phuchoang2603/refurbished-marketplace/connect-debezium@sha256:e11429a1ec8d5ae544eed479c02ad41d1964b5d69dfbbde6ddc2def89bc3b657",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "ecommerce-ingress-istio-789884bcb8-qvpjj",
+    "node": "dev-server1",
+    "containers": [
+      {
+        "name": "istio-proxy",
+        "image": "registry.istio.io/release/proxyv2:1.30.7-distroless",
+        "resources": {
+          "limits": {
+            "cpu": "2",
+            "memory": "1Gi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "128Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "istio-proxy",
+        "imageID": "registry.istio.io/release/proxyv2@sha256:773c3509b49424dbde78ae67a4ce2cd0228c814a665d6037312f890eb1038b19",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "ecommerce-kafka-cluster-ecommerce-kafka-cluster-dual-role-0",
+    "node": "dev-server1",
+    "containers": [
+      {
+        "name": "kafka",
+        "image": "quay.io/strimzi/kafka:1.3.0-kafka-4.3.1",
+        "resources": {
+          "limits": {
+            "cpu": "1",
+            "memory": "1Gi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "768Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "kafka",
+        "imageID": "quay.io/strimzi/kafka@sha256:1f189b1f0f32684302d8b018b1d21b411e2469a9c465fbdc18fa3599cb5bbdad",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "ecommerce-kafka-cluster-entity-operator-c444ccc64-6sdnh",
+    "node": "dev-server2",
+    "containers": [
+      {
+        "name": "topic-operator",
+        "image": "quay.io/strimzi/operator:1.3.0",
+        "resources": {
+          "limits": {
+            "cpu": "500m",
+            "memory": "512Mi"
+          },
+          "requests": {
+            "cpu": "50m",
+            "memory": "384Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "topic-operator",
+        "imageID": "quay.io/strimzi/operator@sha256:4deb564fa329afa4046c550a6f8f1a6d00be3b9297e556969acabe6647b6676f",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "inventory-84795696d9-ccvbt",
+    "node": "dev-server1",
+    "containers": [
+      {
+        "name": "inventory",
+        "image": "ghcr.io/phuchoang2603/refurbished-marketplace/inventory:pr-77-38cb74856b428c9154a85abbfa17f2c832f88221",
+        "resources": {
+          "limits": {
+            "cpu": "1",
+            "memory": "128Mi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "32Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "inventory",
+        "imageID": "ghcr.io/phuchoang2603/refurbished-marketplace/inventory@sha256:679f5277233610a2e8c8a936eff130c0cd0f0bf89aa1f48c93ca9f994e000068",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "inventory-db-1",
+    "node": "dev-server1",
+    "containers": [
+      {
+        "name": "postgres",
+        "image": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie",
+        "resources": {
+          "limits": {
+            "cpu": "500m",
+            "memory": "512Mi"
+          },
+          "requests": {
+            "cpu": "50m",
+            "memory": "128Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "postgres",
+        "imageID": "ghcr.io/cloudnative-pg/postgresql@sha256:44d17e8570dc25055376148a2918840def5bef0193969be3e79101afa25eafc2",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "inventory-load-1793940686-2wl6m",
+    "node": "dev-server3",
+    "containers": [
+      {
+        "name": "k6",
+        "image": "grafana/k6:1.6.1",
+        "resources": {
+          "limits": {
+            "cpu": "2",
+            "memory": "1Gi"
+          },
+          "requests": {
+            "cpu": "250m",
+            "memory": "256Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "k6",
+        "imageID": "docker.io/grafana/k6@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "inventory-load-1793940891-77tz7",
+    "node": "dev-server2",
+    "containers": [
+      {
+        "name": "k6",
+        "image": "grafana/k6:1.6.1",
+        "resources": {
+          "limits": {
+            "cpu": "2",
+            "memory": "1Gi"
+          },
+          "requests": {
+            "cpu": "250m",
+            "memory": "256Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "k6",
+        "imageID": "docker.io/grafana/k6@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "inventory-load-1793941049-nxdfn",
+    "node": "dev-server2",
+    "containers": [
+      {
+        "name": "k6",
+        "image": "grafana/k6:1.6.1",
+        "resources": {
+          "limits": {
+            "cpu": "2",
+            "memory": "1Gi"
+          },
+          "requests": {
+            "cpu": "250m",
+            "memory": "256Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "k6",
+        "imageID": "docker.io/grafana/k6@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "orders-6dd5d5dfc7-plkz6",
+    "node": "dev-server2",
+    "containers": [
+      {
+        "name": "orders",
+        "image": "ghcr.io/phuchoang2603/refurbished-marketplace/orders:pr-77-38cb74856b428c9154a85abbfa17f2c832f88221",
+        "resources": {
+          "limits": {
+            "cpu": "1",
+            "memory": "128Mi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "32Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "orders",
+        "imageID": "ghcr.io/phuchoang2603/refurbished-marketplace/orders@sha256:2b8009f885ef13f17a3eb9a6c4748fffc2aef51e25fa4ae180fa825586b97893",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "orders-db-1",
+    "node": "dev-server1",
+    "containers": [
+      {
+        "name": "postgres",
+        "image": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie",
+        "resources": {
+          "limits": {
+            "cpu": "500m",
+            "memory": "512Mi"
+          },
+          "requests": {
+            "cpu": "50m",
+            "memory": "128Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "postgres",
+        "imageID": "ghcr.io/cloudnative-pg/postgresql@sha256:44d17e8570dc25055376148a2918840def5bef0193969be3e79101afa25eafc2",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "products-7ccdb5c7f-j94kl",
+    "node": "dev-server2",
+    "containers": [
+      {
+        "name": "products",
+        "image": "ghcr.io/phuchoang2603/refurbished-marketplace/products:pr-77-38cb74856b428c9154a85abbfa17f2c832f88221",
+        "resources": {
+          "limits": {
+            "cpu": "1",
+            "memory": "128Mi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "32Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "products",
+        "imageID": "ghcr.io/phuchoang2603/refurbished-marketplace/products@sha256:b051e8524017fe4521db1b29124dbfdd4f165289207311c8d534c7de9f99a69c",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "products-db-1",
+    "node": "dev-server1",
+    "containers": [
+      {
+        "name": "postgres",
+        "image": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie",
+        "resources": {
+          "limits": {
+            "cpu": "500m",
+            "memory": "512Mi"
+          },
+          "requests": {
+            "cpu": "50m",
+            "memory": "128Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "postgres",
+        "imageID": "ghcr.io/cloudnative-pg/postgresql@sha256:44d17e8570dc25055376148a2918840def5bef0193969be3e79101afa25eafc2",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "search-6664b9cd59-rtv59",
+    "node": "dev-server2",
+    "containers": [
+      {
+        "name": "search",
+        "image": "ghcr.io/phuchoang2603/refurbished-marketplace/search:pr-77-38cb74856b428c9154a85abbfa17f2c832f88221",
+        "resources": {
+          "limits": {
+            "cpu": "1",
+            "memory": "128Mi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "32Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "search",
+        "imageID": "ghcr.io/phuchoang2603/refurbished-marketplace/search@sha256:daab3a34def04e1373679facfae6304ecde500320e796b68d8a4a246c6d72196",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "storefront-load-1793939760-gx5tr",
+    "node": "dev-server2",
+    "containers": [
+      {
+        "name": "k6",
+        "image": "grafana/k6:1.6.1",
+        "resources": {
+          "limits": {
+            "cpu": "2",
+            "memory": "1Gi"
+          },
+          "requests": {
+            "cpu": "250m",
+            "memory": "256Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "k6",
+        "imageID": "docker.io/grafana/k6@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "storefront-load-1793939810-vkf56",
+    "node": "dev-server2",
+    "containers": [
+      {
+        "name": "k6",
+        "image": "grafana/k6:1.6.1",
+        "resources": {
+          "limits": {
+            "cpu": "2",
+            "memory": "1Gi"
+          },
+          "requests": {
+            "cpu": "250m",
+            "memory": "256Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "k6",
+        "imageID": "docker.io/grafana/k6@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "storefront-load-1793940117-69w8b",
+    "node": "dev-server2",
+    "containers": [
+      {
+        "name": "k6",
+        "image": "grafana/k6:1.6.1",
+        "resources": {
+          "limits": {
+            "cpu": "2",
+            "memory": "1Gi"
+          },
+          "requests": {
+            "cpu": "250m",
+            "memory": "256Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "k6",
+        "imageID": "docker.io/grafana/k6@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "storefront-load-1793940559-j7d4d",
+    "node": "dev-server2",
+    "containers": [
+      {
+        "name": "k6",
+        "image": "grafana/k6:1.6.1",
+        "resources": {
+          "limits": {
+            "cpu": "2",
+            "memory": "1Gi"
+          },
+          "requests": {
+            "cpu": "250m",
+            "memory": "256Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "k6",
+        "imageID": "docker.io/grafana/k6@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "storefront-seed-1793939313-vqxwf",
+    "node": "dev-server1",
+    "containers": [
+      {
+        "name": "k6",
+        "image": "grafana/k6:1.6.1",
+        "resources": {
+          "limits": {
+            "cpu": "2",
+            "memory": "1Gi"
+          },
+          "requests": {
+            "cpu": "250m",
+            "memory": "256Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "k6",
+        "imageID": "docker.io/grafana/k6@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "storefront-seed-1793939368-bw9g7",
+    "node": "dev-server1",
+    "containers": [
+      {
+        "name": "k6",
+        "image": "grafana/k6:1.6.1",
+        "resources": {
+          "limits": {
+            "cpu": "2",
+            "memory": "1Gi"
+          },
+          "requests": {
+            "cpu": "250m",
+            "memory": "256Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "k6",
+        "imageID": "docker.io/grafana/k6@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "storefront-verify-1793939613-5wgjj",
+    "node": "dev-server1",
+    "containers": [
+      {
+        "name": "k6",
+        "image": "grafana/k6:1.6.1",
+        "resources": {
+          "limits": {
+            "cpu": "2",
+            "memory": "1Gi"
+          },
+          "requests": {
+            "cpu": "250m",
+            "memory": "256Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "k6",
+        "imageID": "docker.io/grafana/k6@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "storefront-verify-1793940613-wvs5v",
+    "node": "dev-server1",
+    "containers": [
+      {
+        "name": "k6",
+        "image": "grafana/k6:1.6.1",
+        "resources": {
+          "limits": {
+            "cpu": "2",
+            "memory": "1Gi"
+          },
+          "requests": {
+            "cpu": "250m",
+            "memory": "256Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "k6",
+        "imageID": "docker.io/grafana/k6@sha256:a5ad6bc089a08d77c3ec49f3db8c6fa7a148e4073efcac44c675dbaf3568d8e1",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "users-5c444d8484-ztnf5",
+    "node": "dev-server2",
+    "containers": [
+      {
+        "name": "users",
+        "image": "ghcr.io/phuchoang2603/refurbished-marketplace/users:pr-77-38cb74856b428c9154a85abbfa17f2c832f88221",
+        "resources": {
+          "limits": {
+            "cpu": "1",
+            "memory": "128Mi"
+          },
+          "requests": {
+            "cpu": "100m",
+            "memory": "32Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "users",
+        "imageID": "ghcr.io/phuchoang2603/refurbished-marketplace/users@sha256:504fa18a05ed3d2c22b3ee2cb800042bef71b7cbc4b27732a0c9ae6850b01c0e",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "users-db-1",
+    "node": "dev-server1",
+    "containers": [
+      {
+        "name": "postgres",
+        "image": "ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie",
+        "resources": {
+          "limits": {
+            "cpu": "500m",
+            "memory": "512Mi"
+          },
+          "requests": {
+            "cpu": "50m",
+            "memory": "128Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "postgres",
+        "imageID": "ghcr.io/cloudnative-pg/postgresql@sha256:44d17e8570dc25055376148a2918840def5bef0193969be3e79101afa25eafc2",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "waypoint-84c6c644c6-ldddw",
+    "node": "dev-server1",
+    "containers": [
+      {
+        "name": "istio-proxy",
+        "image": "registry.istio.io/release/proxyv2:1.30.7-distroless",
+        "resources": {
+          "limits": {
+            "cpu": "1",
+            "memory": "256Mi"
+          },
+          "requests": {
+            "cpu": "50m",
+            "memory": "64Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "istio-proxy",
+        "imageID": "registry.istio.io/release/proxyv2@sha256:773c3509b49424dbde78ae67a4ce2cd0228c814a665d6037312f890eb1038b19",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "web-685755ff57-pj5sm",
+    "node": "dev-server3",
+    "containers": [
+      {
+        "name": "web",
+        "image": "ghcr.io/phuchoang2603/refurbished-marketplace/web:pr-76-6e9b6c0649ce11222c81d059e3f2bd82979ff175",
+        "resources": {
+          "limits": {
+            "cpu": "200m",
+            "memory": "128Mi"
+          },
+          "requests": {
+            "cpu": "25m",
+            "memory": "32Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "web",
+        "imageID": "ghcr.io/phuchoang2603/refurbished-marketplace/web@sha256:ff91dd6723af2c206ab9170188b765e0d7b920c7a5134128c082b26598c8bfef",
+        "restarts": 0
+      }
+    ]
+  },
+  {
+    "name": "web-685755ff57-x7l7m",
+    "node": "dev-server2",
+    "containers": [
+      {
+        "name": "web",
+        "image": "ghcr.io/phuchoang2603/refurbished-marketplace/web:pr-76-6e9b6c0649ce11222c81d059e3f2bd82979ff175",
+        "resources": {
+          "limits": {
+            "cpu": "200m",
+            "memory": "128Mi"
+          },
+          "requests": {
+            "cpu": "25m",
+            "memory": "32Mi"
+          }
+        }
+      }
+    ],
+    "status": [
+      {
+        "name": "web",
+        "imageID": "ghcr.io/phuchoang2603/refurbished-marketplace/web@sha256:ff91dd6723af2c206ab9170188b765e0d7b920c7a5134128c082b26598c8bfef",
+        "restarts": 0
+      }
+    ]
+  }
+]

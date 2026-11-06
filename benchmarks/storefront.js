@@ -133,6 +133,8 @@ export default function () {
     {
       "HTTP 200": (r) => r.status === 200,
       "seeded product rendered": (r) => r.body.includes(expected),
+      "listing hits rendered": (r) => operation === "detail" || r.body.includes('id="product-'),
+      "correct stock rendered": (r) => operation !== "detail" || r.body.includes("In stock 100"),
     },
     { operation },
   );

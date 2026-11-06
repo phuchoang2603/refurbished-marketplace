@@ -1,0 +1,20 @@
+{
+  "job": "inventory-load-1793940891",
+  "startedAt": "2026-11-06T04:54:52.656411+00:00",
+  "mode": "load",
+  "workload": "inventory",
+  "parameters": {
+    "MODE": "load",
+    "RATE": "100",
+    "DURATION": "2m",
+    "PRODUCTS": "1000"
+  },
+  "scriptSha256": "be3bbc14fae735ad6b284a9875197e7c676740c2ae745f83366fd798aac4e13e",
+  "datasetSha256": "45cd3b90bd25fbff621ba2f7a92e1fef7e425eb9c575a7a414601cd51590e5c6",
+  "target": "Inventory gRPC through Istio waypoint \u2192 PostgreSQL",
+  "mix": {
+    "GetStock": 1
+  },
+  "finishedAt": "2026-11-06T04:57:04.255327+00:00",
+  "succeeded": true
+}

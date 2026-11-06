@@ -1,0 +1,115 @@
+
+         /\      Grafana   /‾‾/  
+    /\  /  \     |\  __   /  /   
+   /  \/    \    | |/ /  /   ‾‾\ 
+  /          \   |   (  |  (‾)  |
+ / __________ \  |_|\_\  \_____/ 
+
+
+     execution: local
+        script: /scripts/storefront.js
+        output: -
+
+     scenarios: (100.00%) 1 scenario, 200 max VUs, 1m0s max duration (incl. graceful stop):
+              * storefront: 10.00 iterations/s for 30s (maxVUs: 50-200, gracefulStop: 30s)
+
+
+Init         [  28% ] 14/50 VUs initialized
+storefront   [   0% ]
+
+running (0m00.1s), 001/050 VUs, 0 complete and 0 interrupted iterations
+storefront   [   0% ] 001/050 VUs  00.1s/30s  10.00 iters/s
+
+running (0m01.1s), 002/050 VUs, 9 complete and 0 interrupted iterations
+storefront   [   4% ] 002/050 VUs  01.1s/30s  10.00 iters/s
+
+running (0m02.1s), 000/050 VUs, 21 complete and 0 interrupted iterations
+storefront   [   7% ] 000/050 VUs  02.1s/30s  10.00 iters/s
+
+running (0m03.1s), 002/050 VUs, 29 complete and 0 interrupted iterations
+storefront   [  10% ] 002/050 VUs  03.1s/30s  10.00 iters/s
+
+running (0m04.1s), 000/050 VUs, 41 complete and 0 interrupted iterations
+storefront   [  14% ] 000/050 VUs  04.1s/30s  10.00 iters/s
+
+running (0m05.1s), 002/050 VUs, 49 complete and 0 interrupted iterations
+storefront   [  17% ] 002/050 VUs  05.1s/30s  10.00 iters/s
+
+running (0m06.1s), 001/050 VUs, 60 complete and 0 interrupted iterations
+storefront   [  20% ] 001/050 VUs  06.1s/30s  10.00 iters/s
+
+running (0m07.1s), 001/050 VUs, 70 complete and 0 interrupted iterations
+storefront   [  24% ] 001/050 VUs  07.1s/30s  10.00 iters/s
+
+running (0m08.1s), 000/050 VUs, 81 complete and 0 interrupted iterations
+storefront   [  27% ] 000/050 VUs  08.1s/30s  10.00 iters/s
+
+running (0m09.1s), 001/050 VUs, 90 complete and 0 interrupted iterations
+storefront   [  30% ] 001/050 VUs  09.1s/30s  10.00 iters/s
+
+running (0m10.1s), 001/050 VUs, 100 complete and 0 interrupted iterations
+storefront   [  34% ] 001/050 VUs  10.1s/30s  10.00 iters/s
+
+running (0m11.1s), 001/050 VUs, 110 complete and 0 interrupted iterations
+storefront   [  37% ] 001/050 VUs  11.1s/30s  10.00 iters/s
+
+running (0m12.1s), 000/050 VUs, 121 complete and 0 interrupted iterations
+storefront   [  40% ] 000/050 VUs  12.1s/30s  10.00 iters/s
+
+running (0m13.1s), 002/050 VUs, 129 complete and 0 interrupted iterations
+storefront   [  44% ] 002/050 VUs  13.1s/30s  10.00 iters/s
+
+running (0m14.1s), 001/050 VUs, 140 complete and 0 interrupted iterations
+storefront   [  47% ] 001/050 VUs  14.1s/30s  10.00 iters/s
+
+running (0m15.1s), 001/050 VUs, 150 complete and 0 interrupted iterations
+storefront   [  50% ] 001/050 VUs  15.1s/30s  10.00 iters/s
+
+running (0m16.1s), 001/050 VUs, 160 complete and 0 interrupted iterations
+storefront   [  54% ] 001/050 VUs  16.1s/30s  10.00 iters/s
+
+running (0m17.1s), 002/050 VUs, 169 complete and 0 interrupted iterations
+storefront   [  57% ] 002/050 VUs  17.1s/30s  10.00 iters/s
+
+running (0m18.1s), 001/050 VUs, 180 complete and 0 interrupted iterations
+storefront   [  60% ] 001/050 VUs  18.1s/30s  10.00 iters/s
+
+running (0m19.1s), 001/050 VUs, 190 complete and 0 interrupted iterations
+storefront   [  64% ] 001/050 VUs  19.1s/30s  10.00 iters/s
+
+running (0m20.1s), 000/050 VUs, 201 complete and 0 interrupted iterations
+storefront   [  67% ] 000/050 VUs  20.1s/30s  10.00 iters/s
+
+running (0m21.1s), 000/050 VUs, 211 complete and 0 interrupted iterations
+storefront   [  70% ] 000/050 VUs  21.1s/30s  10.00 iters/s
+
+running (0m22.1s), 000/050 VUs, 221 complete and 0 interrupted iterations
+storefront   [  74% ] 000/050 VUs  22.1s/30s  10.00 iters/s
+
+running (0m23.1s), 000/050 VUs, 231 complete and 0 interrupted iterations
+storefront   [  77% ] 000/050 VUs  23.1s/30s  10.00 iters/s
+
+running (0m24.1s), 001/050 VUs, 240 complete and 0 interrupted iterations
+storefront   [  80% ] 001/050 VUs  24.1s/30s  10.00 iters/s
+
+running (0m25.1s), 001/050 VUs, 250 complete and 0 interrupted iterations
+storefront   [  84% ] 001/050 VUs  25.1s/30s  10.00 iters/s
+
+running (0m26.1s), 000/050 VUs, 261 complete and 0 interrupted iterations
+storefront   [  87% ] 000/050 VUs  26.1s/30s  10.00 iters/s
+
+running (0m27.1s), 000/050 VUs, 271 complete and 0 interrupted iterations
+storefront   [  90% ] 000/050 VUs  27.1s/30s  10.00 iters/s
+
+running (0m28.1s), 000/050 VUs, 281 complete and 0 interrupted iterations
+storefront   [  94% ] 000/050 VUs  28.1s/30s  10.00 iters/s
+
+running (0m29.1s), 002/050 VUs, 289 complete and 0 interrupted iterations
+storefront   [  97% ] 002/050 VUs  29.1s/30s  10.00 iters/s
+
+running (0m30.1s), 001/050 VUs, 300 complete and 0 interrupted iterations
+storefront ↓ [ 100% ] 001/050 VUs  30s  10.00 iters/s
+BENCHMARK_SUMMARY={"root_group":{"name":"","path":"","id":"d41d8cd98f00b204e9800998ecf8427e","groups":[],"checks":[{"path":"::HTTP 200","id":"b70aee8a9f7a77d66dd70844a901558a","passes":301,"fails":0,"name":"HTTP 200"},{"name":"seeded product rendered","path":"::seeded product rendered","id":"f23ca0bf01e4e0168a71173e0048a294","passes":301,"fails":0}]},"options":{"summaryTrendStats":["avg","min","med","max","p(90)","p(95)","p(99)"],"summaryTimeUnit":"","noColor":false},"state":{"isStdOutTTY":false,"isStdErrTTY":false,"testRunDurationMs":30224.123387},"metrics":{"storefront_latency":{"type":"trend","contains":"time","values":{"p(95)":286.451735,"p(99)":342.071827,"avg":135.85333731561465,"min":35.060353,"med":124.444741,"max":394.388544,"p(90)":224.362989},"thresholds":{"p(95)<500":{"ok":true}}},"storefront_latency{operation:search}":{"values":{"min":53.059612,"med":142.896174,"max":394.388544,"p(90)":297.70312500000006,"p(95)":337.96743639999994,"p(99)":379.6526589199998,"avg":176.34465112380954},"thresholds":{"p(95)<500":{"ok":true}},"type":"trend","contains":"time"},"vus":{"values":{"max":2,"value":1,"min":0},"type":"gauge","contains":"default"},"http_req_receiving":{"type":"trend","contains":"time","values":{"avg":14.425242325581403,"min":0.204435,"med":11.330753,"max":94.78971,"p(90)":21.718339,"p(95)":55.157469,"p(99)":89.328349}},"http_req_failed":{"type":"rate","contains":"default","values":{"rate":0,"passes":0,"fails":301}},"iterations":{"values":{"count":301,"rate":9.958932345064014},"type":"counter","contains":"default"},"checks":{"values":{"rate":1,"passes":602,"fails":0},"thresholds":{"rate==1":{"ok":true}},"type":"rate","contains":"default"},"http_req_tls_handshaking":{"type":"trend","contains":"time","values":{"med":0,"max":0,"p(90)":0,"p(95)":0,"p(99)":0,"avg":0,"min":0}},"data_received":{"type":"counter","contains":"data","values":{"count":18477728,"rate":611356.9536295515}},"http_reqs":{"type":"counter","contains":"default","values":{"rate":9.958932345064014,"count":301}},"iteration_duration":{"type":"trend","contains":"time","values":{"p(95)":288.391089,"p(99)":343.8967,"avg":138.03356430232557,"min":36.303376,"med":125.908301,"max":401.118364,"p(90)":227.147493}},"data_sent":{"type":"counter","contains":"data","values":{"count":31781,"rate":1051.5110593304964}},"storefront_latency{operation:detail}":{"type":"trend","contains":"time","values":{"p(90)":100.8246017,"p(95)":126.72500689999995,"p(99)":184.77205333999993,"avg":60.40170746666666,"min":35.060353,"med":46.6438905,"max":195.728574},"thresholds":{"p(95)<500":{"ok":true}}},"http_req_sending":{"type":"trend","contains":"time","values":{"p(90)":0.318564,"p(95)":0.454595,"p(99)":0.636918,"avg":0.17471657807308966,"min":0.048071,"med":0.118907,"max":1.822479}},"http_req_waiting":{"type":"trend","contains":"time","values":{"avg":121.25337841196018,"min":34.243758,"med":112.020897,"max":333.685158,"p(90)":207.079434,"p(95)":238.181463,"p(99)":318.87744}},"http_req_blocked":{"type":"trend","contains":"time","values":{"p(95)":1.803083,"p(99)":4.041666,"avg":0.3468947342192692,"min":0.01453,"med":0.024747,"max":6.860477,"p(90)":1.297856}},"vus_max":{"values":{"value":50,"min":14,"max":50},"type":"gauge","contains":"default"},"http_req_duration{expected_response:true}":{"type":"trend","contains":"time","values":{"p(90)":224.362989,"p(95)":286.451735,"p(99)":342.071827,"avg":135.85333731561465,"min":35.060353,"med":124.444741,"max":394.388544}},"storefront_latency{operation:browse}":{"type":"trend","contains":"time","values":{"avg":137.8791449705882,"min":44.863536,"med":126.0093635,"max":325.87041,"p(90)":220.1524095,"p(95)":269.3761115,"p(99)":290.46695100000005},"thresholds":{"p(95)<500":{"ok":true}}},"storefront_errors":{"type":"rate","contains":"default","values":{"rate":0,"passes":0,"fails":301},"thresholds":{"rate<0.01":{"ok":true}}},"dropped_iterations":{"type":"counter","contains":"default","values":{"count":0,"rate":0},"thresholds":{"count==0":{"ok":true}}},"http_req_duration":{"type":"trend","contains":"time","values":{"avg":135.85333731561465,"min":35.060353,"med":124.444741,"max":394.388544,"p(90)":224.362989,"p(95)":286.451735,"p(99)":342.071827}},"http_req_connecting":{"type":"trend","contains":"time","values":{"p(99)":3.719559,"avg":0.22310530897009961,"min":0,"med":0,"max":6.115835,"p(90)":0.857961,"p(95)":1.018092}}}}
+
+running (0m30.2s), 000/050 VUs, 301 complete and 0 interrupted iterations
+storefront ✓ [ 100% ] 000/050 VUs  30s  10.00 iters/s

@@ -17,7 +17,7 @@ export const options = {
       rate: Number(__ENV.RATE || 100),
       timeUnit: "1s",
       duration: __ENV.DURATION || "2m",
-      preAllocatedVUs: 50,
+      preAllocatedVUs: 200,
       maxVUs: 200,
     },
   },
