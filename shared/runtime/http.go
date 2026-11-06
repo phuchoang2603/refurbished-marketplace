@@ -20,6 +20,9 @@ type HTTPServerConfig struct {
 }
 
 func ServeHTTP(ctx context.Context, cfg HTTPServerConfig) error {
+	if err := startProfiling(ctx); err != nil {
+		return err
+	}
 	srv := &http.Server{
 		Addr:              cfg.Addr,
 		Handler:           cfg.Handler,

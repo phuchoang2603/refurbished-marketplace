@@ -25,4 +25,8 @@ services:
   web:
     replicas: 2
     env:
+      PPROF_ENABLED: "true"
       PUBLIC_BASE_URL: https://shop-dev.phuchoang.sbs
+  search:
+    env:
+      PPROF_ENABLED: "true"

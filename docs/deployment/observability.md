@@ -101,3 +101,15 @@ kubernetes.pod_namespace:=ecommerce level:=ERROR
 ```
 
 For a failed checkout, open the trace first; the trace side panel lists log records that share its `trace_id`. From a log record, use its trace link to open the waterfall, then narrow by `order_id` if needed. Align the time range with the trace before concluding that logs are missing.
+
+## Dev CPU profiles
+
+Dev web and search processes enable Go pprof on loopback port 6060 with `PPROF_ENABLED=true`. It is separate from the application listener and has no Service or ingress route. Forward a selected pod's port to collect a profile during load:
+
+```bash
+kubectl --kubeconfig="$HOME/.kube/talos-dev.yaml" -n ecommerce port-forward pod/<pod-name> 16060:6060
+curl -o /tmp/service-cpu.pprof 'http://127.0.0.1:16060/debug/pprof/profile?seconds=30'
+go tool pprof -top /tmp/service-cpu.pprof
+```
+
+Keep profiles outside Git. Production leaves profiling disabled.
