@@ -9,7 +9,7 @@ Talos Proxmox dev; three nodes, 20 vCPU / 64 GiB provisioned. Dataset: 1,000 syn
 | storefront | 2m       |    3,600 |                  30.0 | 150.6 ms |  201.0 ms |  0.00% |                0 | True   |
 | storefront | 2m       |    5,999 |                  49.9 | 826.2 ms | 1181.9 ms |  0.00% |                2 | False  |
 
-Only passing runs with no errors and no dropped arrivals support résumé throughput claims. The 50-RPS storefront attempt is included as a failed threshold result. Warm-ups, earlier stress attempts and rollout traffic remain in separate directories and are excluded from this table.
+Only passing runs with no errors and no dropped arrivals support résumé throughput claims. The 50-RPS storefront attempt is included as a failed threshold result. Warm-ups, earlier stress attempts and rollout traffic are excluded from this table.
 
 ## Measurement boundaries
 
@@ -24,20 +24,15 @@ Only passing runs with no errors and no dropped arrivals support résumé throug
 - Tests use 1-CPU Go service limits, a 1-CPU waypoint limit, and 2-CPU / 512-MiB Meilisearch limits.
 - PostgreSQL application pools have a maximum of 16 connections per pod.
 
-## Operational evidence
+## Observations
 
-- `nodes.json`: Kubernetes node capacity, allocation and versions.
-- Each run directory: timestamps, parameters, script/dataset hashes, k6 JSON summary and deployed image/resource snapshots.
-- `inventory-pool.json`: observed database connection count under load.
-- `aborted-analysis.json`: failed candidate analysis that restored stable traffic.
-- `rollout.json` / `rollout-retry.json`: observed route weights and analysis results.
-- `projection-after-sizing`: successful verification of the seeded search projection.
+The seeded catalog was verified to contain 1,000 products, inventory rows and search documents. The observed PostgreSQL application pool reached 16 connections under load. Raw run artifacts are excluded from Git; this report and the interactive chart retain the results.
 
-The initial 30 requests/sec attempt ran during indexing with the original small resource limits and exhausted Meilisearch memory. The initial inventory smoke test exhausted PostgreSQL connections with unbounded pools. Those runs are retained as failure evidence, not as comparable steady-state baselines. The first 500-RPS inventory attempt dropped 276 arrivals while dynamically allocating clients; the repeat preallocated 200 virtual users and retained the zero-drop threshold.
+The initial 30 requests/sec attempt ran during indexing with the original small resource limits and exhausted Meilisearch memory. The initial inventory smoke test exhausted PostgreSQL connections with unbounded pools. Those runs are excluded from steady-state comparisons. The first 500-RPS inventory attempt dropped 276 arrivals while dynamically allocating clients; the repeat preallocated 200 virtual users and retained the zero-drop threshold.
 
 ## Canary validation
 
-The candidate completed metric-gated traffic stages at 5%, 25%, 50% and 100%, with all four analyses successful. The rollout finished Healthy with matching stable and current pod hashes. An earlier analysis rejected insufficient candidate traffic and restored stable traffic to 100%; increasing the metrics warm-up from 45 to 90 seconds allowed a retry without weakening the gates. See `analyses.json`, `promoted-rollout.json` and `rollout-retry.json`.
+The candidate completed metric-gated traffic stages at 5%, 25%, 50% and 100%, with all four analyses successful. The rollout finished Healthy with matching stable and current pod hashes. An earlier analysis rejected insufficient candidate traffic and restored stable traffic to 100%; increasing the metrics warm-up from 45 to 90 seconds allowed a retry without weakening the gates.
 
 ## Résumé wording
 
