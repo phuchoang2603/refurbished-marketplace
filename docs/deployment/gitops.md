@@ -67,6 +67,19 @@ python3 benchmarks/run.py load --workload inventory \
 
 The seed creates 1,000 synthetic listings through the HTTP application and waits for the first and last listing to appear in the Kafka-backed search projection. The load is 45% catalog browse, 35% text search, and 20% product detail through the internal Istio Gateway. Catalog responses must contain 20 cards by default; use `--page-size 100` when comparing the old page size or `--page-size 0` only for mixed-version rollout traffic. Set `--vus` and `--max-vus` to preallocate enough clients for a load sweep. Local results include raw k6 logs, JSON metrics, parameters, and timestamps. All output under `benchmarks/results/` is ignored by Git. Recorded results are summarized in [the dev benchmark report](dev-benchmarks.md). This measures server latency within the dev cluster; it excludes Cloudflare, browser rendering, and checkout/payment processing. Jobs expire after one day; synthetic accounts and products remain in the dev database.
 
+For longer CQRS tests, `--workload mixed --diverse` varies catalog pages, product-type text queries, exact-name queries and product details. Exact-name searches must include the requested product and may return fewer than 20 cards. Keep `--write-rate 0` for the read-only baseline, then repeat with concurrent writes:
+
+```bash
+python3 benchmarks/run.py seed --workload mixed --products 1000 --seed-vus 20 \
+  --kubeconfig "$HOME/.kube/talos-dev.yaml" \
+  --dataset /tmp/marketplace-large.json --output benchmarks/results/mixed/seed
+python3 benchmarks/run.py load --workload mixed --diverse --rate 20 --write-rate 1 \
+  --duration 10m --kubeconfig "$HOME/.kube/talos-dev.yaml" \
+  --dataset /tmp/marketplace-large.json --output benchmarks/results/mixed/load
+```
+
+The mixed seed adds the requested number of listings to the existing catalog. Adjust `--products` and `--deadline-seconds` to the measured projection rate; the current single-document indexer can take over an hour for 9,000 additional listings. It uses bounded concurrency and waits for each created product to appear in search before its worker creates another. Larger fixtures are split across ConfigMaps and shared between k6 virtual users. Mixed writes measure latency separately from reads, then poll search every 500 ms for the actual product ID. Freshness runs from the successful create response to the first observed search response, including polling and request latency; the last unsuccessful search request provides a lower bound. The benchmark target is p95 below five seconds with every product visible within 30 seconds. Visibility timeouts and polling errors are reported separately from successful latency samples. Browsing stays within Meilisearch's existing 1,000-result window; a larger fixture does not make the entire catalog navigable.
+
 The inventory workload measures `InventoryService/GetStock` through the Istio waypoint against the same product IDs, checks each returned stock quantity, and uses a 100 ms p95 threshold. Run workloads sequentially for isolated measurements. Dev grants each Go service a 1-CPU limit and Meilisearch a 2-CPU / 512-MiB limit. PostgreSQL application pools retain up to 16 connections per pod, leaving room within each database's connection budget for rollout overlap, migrations, and CDC.
 
 ## Marketplace ownership

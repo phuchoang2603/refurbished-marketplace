@@ -2,12 +2,12 @@ import http from "k6/http";
 import { check, fail, sleep } from "k6";
 import { Trend, Rate } from "k6/metrics";
 import execution from "k6/execution";
+import { dataset } from "./dataset.js";
 
 const seed = __ENV.MODE === "seed";
 const verify = __ENV.MODE === "verify";
 const base = __ENV.BASE_URL || "http://ecommerce-ingress-istio.ecommerce.svc.cluster.local";
 const headers = { Host: __ENV.HOST || "shop-dev.phuchoang.sbs" };
-const dataset = seed ? null : JSON.parse(open("/scripts/dataset.json"));
 const latency = new Trend("storefront_latency", true);
 const errors = new Rate("storefront_errors");
 const pageSize = Number(__ENV.PAGE_SIZE || 20);
@@ -109,15 +109,22 @@ export default function () {
   if (seed || verify) return;
   const iteration = execution.scenario.iterationInTest;
   const slot = iteration % 20;
-  const product = dataset.products[iteration % dataset.products.length];
+  const diverse = __ENV.DIVERSE === "true";
+  const product = dataset.products[(iteration * (diverse ? 7919 : 1)) % dataset.products.length];
+  const maxPages = Math.max(1, Math.min(45, Math.floor(dataset.products.length / 100) - 1));
+  const page = 1 + (Math.floor(iteration / 20) % maxPages);
   let operation, path, expected;
   if (slot < 9) {
     operation = "browse";
-    path = "/products";
+    path = diverse ? `/products?page=${page}` : "/products";
     expected = dataset.prefix;
   } else if (slot < 16) {
     operation = "search";
     path = `/products?q=${encodeURIComponent(`${dataset.prefix} ${["Laptop", "Phone", "Tablet", "Monitor", "Camera"][iteration % 5]}`)}`;
+    if (diverse) {
+      path =
+        iteration % 2 ? `/products?q=${encodeURIComponent(product.name)}` : `${path}&page=${page}`;
+    }
     expected = dataset.prefix;
   } else {
     operation = "detail";
@@ -133,13 +140,18 @@ export default function () {
     response,
     {
       "HTTP 200": (r) => r.status === 200,
-      "seeded product rendered": (r) => r.body.includes(expected),
-      "listing hits rendered": (r) => operation === "detail" || r.body.includes('id="product-'),
+      "seeded product rendered": (r) => (r.body || "").includes(expected),
+      "listing hits rendered": (r) =>
+        operation === "detail" || (r.body || "").includes('id="product-'),
       "correct page size": (r) =>
         operation === "detail" ||
         pageSize === 0 ||
-        (r.body.match(/id="product-/g) || []).length === pageSize,
-      "correct stock rendered": (r) => operation !== "detail" || r.body.includes("In stock 100"),
+        (diverse && operation === "search" && iteration % 2
+          ? (r.body || "").includes(`id="product-${product.id}"`) &&
+            ((r.body || "").match(/id="product-/g) || []).length <= pageSize
+          : ((r.body || "").match(/id="product-/g) || []).length === pageSize),
+      "correct stock rendered": (r) =>
+        operation !== "detail" || (r.body || "").includes("In stock 100"),
     },
     { operation },
   );

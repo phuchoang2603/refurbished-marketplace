@@ -1,11 +1,12 @@
 import grpc from "k6/net/grpc";
 import execution from "k6/execution";
+import { dataset } from "./dataset.js";
 import { check } from "k6";
 import { Rate } from "k6/metrics";
 
 const client = new grpc.Client();
 client.load(["/scripts"], "inventory.proto");
-const dataset = JSON.parse(open("/scripts/dataset.json"));
+
 let connected = false;
 const errors = new Rate("inventory_errors");
 
