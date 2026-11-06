@@ -13,6 +13,20 @@ global:
   clusterName: dev-talos
   environment: dev
 
+rollout:
+  enabled: false
+  weights: [5, 25, 50, 100]
+  metricsAddress: http://vmsingle-vmks.observability.svc.cluster.local:8428
+  analysis:
+    window: 1m
+    warmup: 90s
+    interval: 15s
+    count: 3
+    minimumRequests: 20
+    maximumSampleAgeSeconds: 45
+    maximumErrorRate: 0.01
+    maximumP95Seconds: 0.5
+
 ingress:
   enabled: true
   name: ecommerce-ingress

@@ -1,5 +1,7 @@
 package products
 
+import "strconv"
+
 import templpkg "github.com/a-h/templ"
 import badge "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/components/badge"
 import button "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/components/button"
@@ -10,8 +12,8 @@ import page "github.com/phuchoang2603/refurbished-marketplace/services/web/inter
 import textarea "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/components/textarea"
 import sharedviews "github.com/phuchoang2603/refurbished-marketplace/services/web/internal/views/shared"
 
-templ ProductsPage(products []sharedviews.ProductView, query string) {
-	@sharedviews.AppShell("Products", sharedviews.DefaultNav, ProductListSection(products, query))
+templ ProductsPage(products []sharedviews.ProductView, query string, pagination CatalogPagination) {
+	@sharedviews.AppShell("Products", sharedviews.DefaultNav, ProductListSection(products, query, pagination))
 }
 
 templ ProductDetailPage(product sharedviews.ProductView) {
@@ -26,7 +28,7 @@ templ SellerProductsPage(products []sharedviews.ProductView) {
 	@sharedviews.AppShell("Your products", sharedviews.DefaultNav, SellerProductsSection(products))
 }
 
-templ ProductListSection(products []sharedviews.ProductView, query string) {
+templ ProductListSection(products []sharedviews.ProductView, query string, pagination CatalogPagination) {
 	@card.Card(card.CardArgs{Attributes: templpkg.Attributes{"id": "products"}}) {
 		@page.Header("Products", "Browse quality refurbished tech, verified devices, and sustainable deals from trusted sellers.")
 		@card.CardContent(card.CardContentArgs{Class: "grid gap-4"}) {
@@ -86,6 +88,21 @@ templ ProductListSection(products []sharedviews.ProductView, query string) {
 						}
 					}
 				</div>
+			}
+			if pagination.PreviousURL != "" || pagination.NextURL != "" {
+				<nav class="flex items-center justify-between gap-4" aria-label="Catalog pages">
+					<div>
+						if pagination.PreviousURL != "" {
+							<a class="text-sm hover:underline" href={ templpkg.SafeURL(pagination.PreviousURL) } rel="prev">Previous</a>
+						}
+					</div>
+					<span class="text-sm text-muted-foreground">Page { strconv.Itoa(pagination.Page) }</span>
+					<div>
+						if pagination.NextURL != "" {
+							<a class="text-sm hover:underline" href={ templpkg.SafeURL(pagination.NextURL) } rel="next">Next</a>
+						}
+					</div>
+				</nav>
 			}
 		}
 	}

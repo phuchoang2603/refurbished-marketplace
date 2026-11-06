@@ -48,3 +48,5 @@ infra/k8s/doppler-token.prd.secret.yaml
 .cursor*
 .agents*
 .opencode*
+
+/benchmarks/results/

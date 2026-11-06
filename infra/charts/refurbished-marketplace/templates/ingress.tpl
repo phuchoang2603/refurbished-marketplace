@@ -28,7 +28,7 @@ metadata:
   name: web
   namespace: {{ $.Release.Namespace }}
   annotations:
-    argocd.argoproj.io/sync-wave: "6"
+    argocd.argoproj.io/sync-wave: "5"
 spec:
   parentRefs:
     - name: {{ $gatewayName }}
@@ -63,6 +63,12 @@ spec:
       backendRefs:
         - name: web
           port: {{ $.Values.services.web.port }}
+{{- if $.Values.rollout.enabled }}
+          weight: 100
+        - name: web-canary
+          port: {{ $.Values.services.web.port }}
+          weight: 0
+{{- end }}
 {{- end }}
 ---
 apiVersion: security.istio.io/v1

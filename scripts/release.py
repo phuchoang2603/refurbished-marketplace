@@ -18,6 +18,22 @@ def remote_head(branch):
     return result[0] if result else ""
 
 
+def ensure_commit(revision):
+    available = subprocess.run(
+        ["git", "cat-file", "-e", f"{revision}^{{commit}}"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    if available.returncode == 0:
+        return True
+    fetched = subprocess.run(
+        ["git", "fetch", "--no-tags", "origin", revision],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    return fetched.returncode == 0
+
+
 def release_target():
     revision = os.environ["GITHUB_SHA"]
     environment = os.environ["DEPLOY_ENVIRONMENT"]
@@ -45,6 +61,7 @@ def plan():
     images = json.loads(Path(".github/service-images.json").read_text())["include"]
     selected = []
     planned = {}
+    available_commits = {}
     common = [
         ".dockerignore",
         ".github/service-images.json",
@@ -60,16 +77,20 @@ def plan():
         match = re.fullmatch(r"(?:pr-[0-9]+|main)-([a-f0-9]{40})", old_tag)
         changed = True
         if match:
-            diff = git(
-                "diff",
-                "--name-only",
-                match[1],
-                revision,
-                "--",
-                *common,
-                *image["paths"],
-            )
-            changed = bool(diff)
+            old_revision = match[1]
+            if old_revision not in available_commits:
+                available_commits[old_revision] = ensure_commit(old_revision)
+            if available_commits[old_revision]:
+                diff = git(
+                    "diff",
+                    "--name-only",
+                    old_revision,
+                    revision,
+                    "--",
+                    *common,
+                    *image["paths"],
+                )
+                changed = bool(diff)
         planned[repository] = tag if changed else old_tag
         if changed:
             selected.append(image)

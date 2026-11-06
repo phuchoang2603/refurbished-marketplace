@@ -6,9 +6,15 @@
 {{- end }}
 {{- $resources := default $.Values.defaults.resources $svc.resources }}
 {{- $initResources := default $.Values.defaults.initResources $svc.initResources }}
+{{- $canary := and (eq $name "web") $.Values.rollout.enabled }}
 ---
+{{- if $canary }}
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+{{- else }}
 apiVersion: apps/v1
 kind: Deployment
+{{- end }}
 metadata:
   name: {{ $name }}
   namespace: {{ $.Release.Namespace }}
@@ -18,6 +24,37 @@ metadata:
     app: {{ $name }}
 spec:
   replicas: {{ default 1 $svc.replicas }}
+{{- if $canary }}
+  revisionHistoryLimit: 2
+  minReadySeconds: 5
+  progressDeadlineSeconds: 600
+  progressDeadlineAbort: true
+  strategy:
+    canary:
+      stableService: web
+      canaryService: web-canary
+      maxSurge: 1
+      maxUnavailable: 0
+      scaleDownDelaySeconds: 30
+      abortScaleDownDelaySeconds: 30
+      trafficRouting:
+        plugins:
+          argoproj-labs/gatewayAPI:
+            httpRoutes:
+              - name: web
+            namespace: {{ $.Release.Namespace }}
+      steps:
+{{- range $.Values.rollout.weights }}
+        - setWeight: {{ . }}
+        - analysis:
+            templates:
+              - templateName: web-catalog
+            args:
+              - name: revision
+                valueFrom:
+                  podTemplateHashValue: Latest
+{{- end }}
+{{- end }}
   selector:
     matchLabels:
       app: {{ $name }}
@@ -78,6 +115,18 @@ spec:
           ports:
             - name: {{ default "http" $svc.protocol }}
               containerPort: {{ $svc.port }}
+{{- if eq $name "web" }}
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+            initialDelaySeconds: 10
+{{- end }}
 {{- with $resources }}
           resources:
 {{ toYaml . | nindent 12 }}
@@ -112,18 +161,28 @@ spec:
 {{- end }}
 {{- end }}
 {{- with $.Values.defaults.otel }}
+            - name: POD_UID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
+{{- if $canary }}
+            - name: ROLLOUT_REVISION
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.labels['rollouts-pod-template-hash']
+{{- end }}
             - name: OTEL_EXPORTER_OTLP_METRICS_ENDPOINT
               value: {{ .metricsEndpoint | quote }}
             - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
               value: {{ .tracesEndpoint | quote }}
             - name: OTEL_RESOURCE_ATTRIBUTES
-              value: {{ printf "k8s.cluster.name=%s,deployment.environment=%s" $.Values.global.clusterName $.Values.global.environment | quote }}
+              value: {{ printf "k8s.cluster.name=%s,deployment.environment=%s,k8s.namespace.name=%s,service.instance.id=$(POD_UID)%s" $.Values.global.clusterName $.Values.global.environment $.Release.Namespace (ternary ",rollout.revision=$(ROLLOUT_REVISION)" "" $canary) | quote }}
             - name: OTEL_SERVICE_NAME
               value: {{ $name | quote }}
             - name: OTEL_TRACES_SAMPLER_ARG
               value: "1"
             - name: OTEL_METRIC_EXPORT_INTERVAL
-              value: "30000"
+              value: {{ $.Values.defaults.otel.metricExportInterval | default "30000" | quote }}
 {{- end }}
 {{- if $svc.env }}
 {{- range $key, $value := $svc.env }}

@@ -50,6 +50,8 @@ apps:
     path: infra/charts/meilisearch
     releaseName: catalog-meilisearch
     namespace: ecommerce
+    valueFiles:
+      - values-dev.yaml
   kafka:
     syncWave: "4"
     path: infra/charts/kafka

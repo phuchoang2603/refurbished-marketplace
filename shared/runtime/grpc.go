@@ -25,6 +25,9 @@ type GRPCServerConfig struct {
 }
 
 func ServeGRPC(ctx context.Context, cfg GRPCServerConfig) error {
+	if err := startProfiling(ctx); err != nil {
+		return err
+	}
 	lis, err := net.Listen("tcp", cfg.Addr)
 	if err != nil {
 		return err

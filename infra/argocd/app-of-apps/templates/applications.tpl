@@ -86,6 +86,16 @@ spec:
   destination:
     server: https://kubernetes.default.svc
     namespace: ecommerce
+  ignoreDifferences:
+    - group: ""
+      kind: Service
+      jqPathExpressions:
+        - .spec.selector["rollouts-pod-template-hash"]
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: web
+      jqPathExpressions:
+        - .spec.rules[].backendRefs[].weight
   syncPolicy:
     automated:
       prune: true
@@ -95,4 +105,5 @@ spec:
     syncOptions:
       - ServerSideApply=true
       - SkipDryRunOnMissingResource=true
+      - RespectIgnoreDifferences=true
 {{- end }}
