@@ -26,7 +26,7 @@ Only passing runs with no errors and no dropped arrivals support résumé throug
 
 ## Observations
 
-The seeded catalog was verified to contain 1,000 products, inventory rows and search documents. The observed PostgreSQL application pool reached 16 connections under load. Raw run artifacts are excluded from Git; this report and the interactive chart retain the results.
+The seeded catalog was verified to contain 1,000 products, inventory rows and search documents. The observed PostgreSQL application pool reached 16 connections under load. Raw run artifacts are excluded from Git; this report retains the results.
 
 The initial 30 requests/sec attempt ran during indexing with the original small resource limits and exhausted Meilisearch memory. The initial inventory smoke test exhausted PostgreSQL connections with unbounded pools. Those runs are excluded from steady-state comparisons. The first 500-RPS inventory attempt dropped 276 arrivals while dynamically allocating clients; the repeat preallocated 200 virtual users and retained the zero-drop threshold.
 
