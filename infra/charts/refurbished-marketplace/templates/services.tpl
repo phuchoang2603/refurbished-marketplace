@@ -161,6 +161,10 @@ spec:
 {{- end }}
 {{- end }}
 {{- with $.Values.defaults.otel }}
+            - name: POD_UID
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.uid
 {{- if $canary }}
             - name: ROLLOUT_REVISION
               valueFrom:
@@ -172,7 +176,7 @@ spec:
             - name: OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
               value: {{ .tracesEndpoint | quote }}
             - name: OTEL_RESOURCE_ATTRIBUTES
-              value: {{ printf "k8s.cluster.name=%s,deployment.environment=%s,k8s.namespace.name=%s%s" $.Values.global.clusterName $.Values.global.environment $.Release.Namespace (ternary ",rollout.revision=$(ROLLOUT_REVISION)" "" $canary) | quote }}
+              value: {{ printf "k8s.cluster.name=%s,deployment.environment=%s,k8s.namespace.name=%s,service.instance.id=$(POD_UID)%s" $.Values.global.clusterName $.Values.global.environment $.Release.Namespace (ternary ",rollout.revision=$(ROLLOUT_REVISION)" "" $canary) | quote }}
             - name: OTEL_SERVICE_NAME
               value: {{ $name | quote }}
             - name: OTEL_TRACES_SAMPLER_ARG
