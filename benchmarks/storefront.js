@@ -1,43 +1,51 @@
 import http from "k6/http";
 import { check, fail, sleep } from "k6";
 import { Trend, Rate } from "k6/metrics";
+import execution from "k6/execution";
 
 const seed = __ENV.MODE === "seed";
+const verify = __ENV.MODE === "verify";
 const base = __ENV.BASE_URL || "http://ecommerce-ingress-istio.ecommerce.svc.cluster.local";
 const headers = { Host: __ENV.HOST || "shop-dev.phuchoang.sbs" };
 const dataset = seed ? null : JSON.parse(open("/scripts/dataset.json"));
 const latency = new Trend("storefront_latency", true);
 const errors = new Rate("storefront_errors");
 
-export const options = seed
-  ? {
-      vus: 1,
-      iterations: 1,
-      setupTimeout: "15m",
-    }
-  : {
-      scenarios: {
-        storefront: {
-          executor: "constant-arrival-rate",
-          rate: Number(__ENV.RATE || 50),
-          timeUnit: "1s",
-          duration: __ENV.DURATION || "2m",
-          preAllocatedVUs: Number(__ENV.VUS || 50),
-          maxVUs: Number(__ENV.MAX_VUS || 200),
+export const options =
+  seed || verify
+    ? {
+        vus: 1,
+        iterations: 1,
+        setupTimeout: "15m",
+      }
+    : {
+        summaryTrendStats: ["avg", "min", "med", "max", "p(90)", "p(95)", "p(99)"],
+        scenarios: {
+          storefront: {
+            executor: "constant-arrival-rate",
+            rate: Number(__ENV.RATE || 50),
+            timeUnit: "1s",
+            duration: __ENV.DURATION || "2m",
+            preAllocatedVUs: Number(__ENV.VUS || 50),
+            maxVUs: Number(__ENV.MAX_VUS || 200),
+          },
         },
-      },
-      thresholds: {
-        storefront_errors: ["rate<0.01"],
-        storefront_latency: ["p(95)<500"],
-        dropped_iterations: ["count==0"],
-        checks: ["rate==1"],
-        "storefront_latency{operation:browse}": ["p(95)<500"],
-        "storefront_latency{operation:search}": ["p(95)<500"],
-        "storefront_latency{operation:detail}": ["p(95)<500"],
-      },
-    };
+        thresholds: {
+          storefront_errors: ["rate<0.01"],
+          storefront_latency: ["p(95)<500"],
+          dropped_iterations: ["count==0"],
+          checks: ["rate==1"],
+          "storefront_latency{operation:browse}": ["p(95)<500"],
+          "storefront_latency{operation:search}": ["p(95)<500"],
+          "storefront_latency{operation:detail}": ["p(95)<500"],
+        },
+      };
 
 export function setup() {
+  if (verify) {
+    waitForProjection(dataset.products);
+    return;
+  }
   if (!seed) return;
   const prefix = `Benchmark-${Date.now()}`;
   const registration = http.post(
@@ -74,9 +82,14 @@ export function setup() {
     if (!match) fail(`product ${i}: missing product location`);
     products.push({ id: match[1], name });
   }
+  console.log(`DATASET=${JSON.stringify({ prefix, products })}`);
+  waitForProjection(products);
+}
+
+function waitForProjection(products) {
   for (const product of [products[0], products[products.length - 1]]) {
     let projected = false;
-    for (let attempt = 0; attempt < 120; attempt++) {
+    for (let attempt = 0; attempt < 450; attempt++) {
       const response = http.get(`${base}/products?q=${encodeURIComponent(product.name)}`, {
         headers,
       });
@@ -88,13 +101,14 @@ export function setup() {
     }
     if (!projected) fail(`catalog projection did not catch up for ${product.id}`);
   }
-  console.log(`DATASET=${JSON.stringify({ prefix, products })}`);
+  console.log(`PROJECTION_VERIFIED=${products.length}`);
 }
 
 export default function () {
-  if (seed) return;
-  const slot = __ITER % 20;
-  const product = dataset.products[(__VU * 997 + __ITER) % dataset.products.length];
+  if (seed || verify) return;
+  const iteration = execution.scenario.iterationInTest;
+  const slot = iteration % 20;
+  const product = dataset.products[iteration % dataset.products.length];
   let operation, path, expected;
   if (slot < 9) {
     operation = "browse";
@@ -102,7 +116,7 @@ export default function () {
     expected = dataset.prefix;
   } else if (slot < 16) {
     operation = "search";
-    path = `/products?q=${encodeURIComponent(`${dataset.prefix} ${["Laptop", "Phone", "Tablet", "Monitor", "Camera"][__ITER % 5]}`)}`;
+    path = `/products?q=${encodeURIComponent(`${dataset.prefix} ${["Laptop", "Phone", "Tablet", "Monitor", "Camera"][iteration % 5]}`)}`;
     expected = dataset.prefix;
   } else {
     operation = "detail";

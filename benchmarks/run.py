@@ -1,4 +1,5 @@
 import argparse
+import hashlib
 import json
 import re
 import subprocess
@@ -9,7 +10,7 @@ from pathlib import Path
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("mode", choices=["seed", "load"])
+    parser.add_argument("mode", choices=["seed", "verify", "load"])
     parser.add_argument("--kubeconfig", required=True)
     parser.add_argument("--dataset", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
@@ -26,7 +27,7 @@ def main():
     name = f"storefront-{args.mode}-{int(time.time())}"
     script = Path(__file__).with_name("storefront.js")
     data = {"storefront.js": script.read_text()}
-    if args.mode == "load":
+    if args.mode != "seed":
         data["dataset.json"] = args.dataset.read_text()
     config = {"apiVersion": "v1", "kind": "ConfigMap",
               "metadata": {"name": name}, "data": data}
@@ -60,6 +61,8 @@ def main():
     run("apply", "-f", "-", input=json.dumps(job), capture_output=True)
     metadata = {"job": name, "startedAt": datetime.now(timezone.utc).isoformat(),
                 "mode": args.mode, "parameters": env,
+                "scriptSha256": hashlib.sha256(script.read_bytes()).hexdigest(),
+                "datasetSha256": hashlib.sha256(args.dataset.read_bytes()).hexdigest() if args.mode == "load" else None,
                 "target": "Istio Gateway → web → domain gRPC services",
                 "mix": {"browse": 0.45, "search": 0.35, "detail": 0.20}}
     (args.output / "run.json").write_text(json.dumps(metadata, indent=2) + "\n")
@@ -85,11 +88,20 @@ def main():
         if match:
             args.dataset.parent.mkdir(parents=True, exist_ok=True)
             args.dataset.write_text(json.dumps(json.loads(match[1]), indent=2) + "\n")
-        else:
-            raise SystemExit(f"Seed failed; inspect {args.output / 'k6.log'}")
+        elif status.get("succeeded"):
+            raise SystemExit(f"Seed produced no dataset; inspect {args.output / 'k6.log'}")
     metadata["finishedAt"] = datetime.now(timezone.utc).isoformat()
     metadata["succeeded"] = bool(status.get("succeeded"))
     (args.output / "run.json").write_text(json.dumps(metadata, indent=2) + "\n")
+    pods = json.loads(run("get", "pods", "-o", "json", capture_output=True).stdout)
+    environment = [{
+        "name": pod["metadata"]["name"], "node": pod["spec"].get("nodeName"),
+        "containers": [{"name": c["name"], "image": c["image"], "resources": c.get("resources", {})}
+                       for c in pod["spec"]["containers"]],
+        "status": [{"name": c["name"], "imageID": c.get("imageID"), "restarts": c["restartCount"]}
+                   for c in pod.get("status", {}).get("containerStatuses", [])],
+    } for pod in pods["items"]]
+    (args.output / "environment.json").write_text(json.dumps(environment, indent=2) + "\n")
     run("delete", "configmap", name, capture_output=True)
     if not metadata["succeeded"]:
         raise SystemExit(f"Benchmark failed; inspect {args.output / 'k6.log'}")
