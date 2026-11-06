@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -35,18 +36,20 @@ func (s *Service) SearchProducts(ctx context.Context, query, merchantID string, 
 		req.Filter = fmt.Sprintf(`merchant_id = "%s"`, merchantID)
 	}
 
-	res, err := s.index.SearchWithContext(ctx, query, req)
+	res, err := s.index.SearchRawWithContext(ctx, query, req)
 	if err != nil {
 		return nil, err
 	}
 
-	var docs []listingDocument
-	if err := res.Hits.DecodeInto(&docs); err != nil {
+	var response struct {
+		Hits []listingDocument `json:"hits"`
+	}
+	if err := json.Unmarshal(*res, &response); err != nil {
 		return nil, fmt.Errorf("decode search hits: %w", err)
 	}
 
-	out := make([]*searchv1.ListingHit, 0, len(docs))
-	for _, doc := range docs {
+	out := make([]*searchv1.ListingHit, 0, len(response.Hits))
+	for _, doc := range response.Hits {
 		out = append(out, &searchv1.ListingHit{
 			Id:          doc.ID,
 			Name:        doc.Name,

@@ -16,6 +16,8 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--rate", type=int, default=50)
     parser.add_argument("--duration", default="2m")
+    parser.add_argument("--vus", type=int)
+    parser.add_argument("--max-vus", type=int)
     parser.add_argument("--products", type=int, default=1000)
     parser.add_argument("--workload", choices=["storefront", "inventory"], default="storefront")
     args = parser.parse_args()
@@ -39,6 +41,10 @@ def main():
     run("apply", "-f", "-", input=json.dumps(config), capture_output=True)
     env = {"MODE": args.mode, "RATE": str(args.rate), "DURATION": args.duration,
            "PRODUCTS": str(args.products)}
+    if args.vus is not None:
+        env["VUS"] = str(args.vus)
+    if args.max_vus is not None:
+        env["MAX_VUS"] = str(args.max_vus)
     job = {
         "apiVersion": "batch/v1", "kind": "Job",
         "metadata": {"name": name, "labels": {"app": "storefront-benchmark"}},
