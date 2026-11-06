@@ -28,7 +28,7 @@ metadata:
   name: web
   namespace: {{ $.Release.Namespace }}
   annotations:
-    argocd.argoproj.io/sync-wave: "6"
+    argocd.argoproj.io/sync-wave: "5"
 spec:
   parentRefs:
     - name: {{ $gatewayName }}
