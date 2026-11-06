@@ -1,7 +1,15 @@
 ingress:
   webHostname: shop-dev.phuchoang.sbs
 
+rollout:
+  enabled: true
+
+defaults:
+  otel:
+    metricExportInterval: "10000"
+
 services:
   web:
+    replicas: 2
     env:
       PUBLIC_BASE_URL: https://shop-dev.phuchoang.sbs
