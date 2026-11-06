@@ -27,7 +27,7 @@ def main():
     def run(*command, **kwargs):
         return subprocess.run([*kubectl, *command], check=True, text=True, **kwargs)
 
-    name = f"storefront-{args.mode}-{int(time.time())}"
+    name = f"{args.workload}-{args.mode}-{int(time.time())}"
     script = Path(__file__).with_name(f"{args.workload}.js")
     data = {script.name: script.read_text()}
     if args.workload == "inventory":

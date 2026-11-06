@@ -19,7 +19,7 @@ rollout:
   metricsAddress: http://vmsingle-vmks.observability.svc.cluster.local:8428
   analysis:
     window: 1m
-    warmup: 45s
+    warmup: 90s
     interval: 15s
     count: 3
     minimumRequests: 20

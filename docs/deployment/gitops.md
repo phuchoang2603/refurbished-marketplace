@@ -59,9 +59,15 @@ python3 benchmarks/run.py seed --kubeconfig "$HOME/.kube/talos-dev.yaml" \
 python3 benchmarks/run.py load --kubeconfig "$HOME/.kube/talos-dev.yaml" \
   --dataset /tmp/marketplace-dataset.json --rate 50 --duration 2m \
   --output /tmp/marketplace-50rps
+python3 benchmarks/run.py load --workload inventory \
+  --kubeconfig "$HOME/.kube/talos-dev.yaml" \
+  --dataset /tmp/marketplace-dataset.json --rate 100 --duration 2m \
+  --output /tmp/marketplace-inventory-100rps
 ```
 
 The seed creates 1,000 synthetic listings through the HTTP application and waits for the first and last listing to appear in the Kafka-backed search projection. The load is 45% catalog browse, 35% text search, and 20% product detail through the internal Istio Gateway. Results include raw k6 logs, JSON metrics, parameters, and timestamps. This measures server latency within the dev cluster; it excludes Cloudflare, browser rendering, and checkout/payment processing. Jobs expire after one day; synthetic accounts and products remain in the dev database.
+
+The inventory workload measures `InventoryService/GetStock` through the Istio waypoint against the same product IDs, checks each returned stock quantity, and uses a 100 ms p95 threshold. Run workloads sequentially for isolated measurements. Dev grants each Go service a 1-CPU limit and Meilisearch a 2-CPU / 512-MiB limit. PostgreSQL application pools retain up to 16 connections per pod, leaving room within each database's connection budget for rollout overlap, migrations, and CDC.
 
 ## Marketplace ownership
 

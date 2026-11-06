@@ -1,11 +1,13 @@
 import grpc from "k6/net/grpc";
 import execution from "k6/execution";
 import { check } from "k6";
+import { Rate } from "k6/metrics";
 
 const client = new grpc.Client();
 client.load(["/scripts"], "inventory.proto");
 const dataset = JSON.parse(open("/scripts/dataset.json"));
 let connected = false;
+const errors = new Rate("inventory_errors");
 
 export const options = {
   summaryTrendStats: ["avg", "min", "med", "max", "p(90)", "p(95)", "p(99)"],
@@ -20,6 +22,7 @@ export const options = {
     },
   },
   thresholds: {
+    inventory_errors: ["rate<0.01"],
     checks: ["rate==1"],
     grpc_req_duration: ["p(95)<100"],
     dropped_iterations: ["count==0"],
@@ -35,11 +38,12 @@ export default function () {
   const response = client.invoke("inventory.v1.InventoryService/GetStock", {
     product_id: product.id,
   });
-  check(response, {
+  const valid = check(response, {
     "gRPC OK": (r) => r.status === grpc.StatusOK,
     "correct stock returned": (r) =>
       r.message && r.message.productId === product.id && r.message.availableQty === 100,
   });
+  errors.add(!valid);
 }
 
 export function handleSummary(data) {

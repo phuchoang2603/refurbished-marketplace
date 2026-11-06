@@ -4,13 +4,13 @@ The shared telemetry pipeline is installed and administered by `talos-proxmox`: 
 
 ## Application contract
 
-| Signal  | Marketplace output                                                                                                     | Platform consumer         |
-| ------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------- |
-| Traces  | OTLP/HTTP to `http://vtagent-vmks.observability.svc.cluster.local:10429/insert/opentelemetry/v1/traces`                | VTAgent → VictoriaTraces  |
-| Metrics | Cumulative OTLP/HTTP to `http://vmagent-vmks.observability.svc.cluster.local:8429/opentelemetry/v1/metrics` every 30 s | VMAgent → VictoriaMetrics |
-| Logs    | Single-line slog JSON on stdout                                                                                        | VLAgent → VictoriaLogs    |
+| Signal  | Marketplace output                                                                                                                         | Platform consumer         |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------- |
+| Traces  | OTLP/HTTP to `http://vtagent-vmks.observability.svc.cluster.local:10429/insert/opentelemetry/v1/traces`                                    | VTAgent → VictoriaTraces  |
+| Metrics | Cumulative OTLP/HTTP to `http://vmagent-vmks.observability.svc.cluster.local:8429/opentelemetry/v1/metrics` every 10 s (dev) / 30 s (prod) | VMAgent → VictoriaMetrics |
+| Logs    | Single-line slog JSON on stdout                                                                                                            | VLAgent → VictoriaLogs    |
 
-Charts set the per-signal `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` and `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`, plus environment-specific `k8s.cluster.name` and `deployment.environment` resource attributes. Applications do not depend on an OpenTelemetry collector. VMAgent and VTAgent persist bounded remote-write queues on a separate node from the stores and replay after storage outages. VLAgent attaches Kubernetes metadata to container logs.
+Charts set the per-signal `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` and `OTEL_EXPORTER_OTLP_METRICS_ENDPOINT`, plus `k8s.cluster.name`, `deployment.environment`, and `k8s.namespace.name` resource attributes. `service.instance.id` is the pod UID so replicas export distinct cumulative counters. Web canaries also attach `rollout.revision` for candidate-specific analysis. Applications do not depend on an OpenTelemetry collector. VMAgent and VTAgent persist bounded remote-write queues on a separate node from the stores and replay after storage outages. VLAgent attaches Kubernetes metadata to container logs.
 
 ## Platform prerequisites
 
