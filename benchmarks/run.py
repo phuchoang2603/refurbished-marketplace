@@ -18,6 +18,8 @@ def main():
     parser.add_argument("--duration", default="2m")
     parser.add_argument("--vus", type=int)
     parser.add_argument("--max-vus", type=int)
+    parser.add_argument("--page-size", type=int, default=20,
+                        help="Expected catalog cards; 0 skips the count check for mixed rollout traffic")
     parser.add_argument("--products", type=int, default=1000)
     parser.add_argument("--workload", choices=["storefront", "inventory"], default="storefront")
     args = parser.parse_args()
@@ -40,7 +42,7 @@ def main():
               "metadata": {"name": name}, "data": data}
     run("apply", "-f", "-", input=json.dumps(config), capture_output=True)
     env = {"MODE": args.mode, "RATE": str(args.rate), "DURATION": args.duration,
-           "PRODUCTS": str(args.products)}
+           "PRODUCTS": str(args.products), "PAGE_SIZE": str(args.page_size)}
     if args.vus is not None:
         env["VUS"] = str(args.vus)
     if args.max_vus is not None:

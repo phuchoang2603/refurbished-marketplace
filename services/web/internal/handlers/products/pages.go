@@ -1,7 +1,10 @@
 package products
 
 import (
+	"math"
 	"net/http"
+	"net/url"
+	"strconv"
 	"strings"
 	"unicode/utf8"
 
@@ -90,8 +93,18 @@ func (h *Handler) handleListProducts(w http.ResponseWriter, r *http.Request) {
 		shared.WriteUnavailablePage(w, r, http.StatusServiceUnavailable, catalogUnavailableView())
 		return
 	}
+	pageNumber := int64(1)
+	if raw := r.URL.Query().Get("page"); raw != "" {
+		parsed, err := strconv.ParseInt(raw, 10, 32)
+		if err != nil || parsed < 1 || (parsed-1)*catalogPageSize > math.MaxInt32-catalogPageSize-1 {
+			shared.WriteBadRequest(w, r, "Invalid catalog page")
+			return
+		}
+		pageNumber = parsed
+	}
 	query := catalogSearchQuery(r)
-	resp, err := h.deps.Search.SearchProducts(r.Context(), query, "", 100, 0)
+	offset := int32((pageNumber - 1) * catalogPageSize)
+	resp, err := h.deps.Search.SearchProducts(r.Context(), query, "", catalogPageSize+1, offset)
 	if err != nil {
 		if shared.IsUnavailableError(err) {
 			shared.WriteUnavailablePage(w, r, http.StatusServiceUnavailable, catalogUnavailableView())
@@ -100,14 +113,31 @@ func (h *Handler) handleListProducts(w http.ResponseWriter, r *http.Request) {
 		shared.WriteGRPCError(w, r, err)
 		return
 	}
-	items := make([]sharedviews.ProductView, 0, len(resp.Listings))
-	for _, hit := range resp.Listings {
+	pagination := productviews.CatalogPagination{Page: int(pageNumber)}
+	pageURL := func(page int) string {
+		values := url.Values{"page": {strconv.Itoa(page)}}
+		if query != "" {
+			values.Set("q", query)
+		}
+		return "/products?" + values.Encode()
+	}
+	if pageNumber > 1 {
+		pagination.PreviousURL = pageURL(int(pageNumber) - 1)
+	}
+	listings := resp.Listings
+	if len(listings) > catalogPageSize {
+		pagination.NextURL = pageURL(int(pageNumber) + 1)
+		listings = listings[:catalogPageSize]
+	}
+	items := make([]sharedviews.ProductView, 0, len(listings))
+	for _, hit := range listings {
 		items = append(items, mapListingHit(hit, false))
 	}
-	shared.WriteHTML(w, r, http.StatusOK, productviews.ProductsPage(items, query))
+	shared.WriteHTML(w, r, http.StatusOK, productviews.ProductsPage(items, query, pagination))
 }
 
 const (
+	catalogPageSize        = 20
 	maxCatalogQueryRunes   = 200
 	minCatalogSuggestRunes = 2
 	catalogSuggestLimit    = 8

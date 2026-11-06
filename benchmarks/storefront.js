@@ -10,6 +10,7 @@ const headers = { Host: __ENV.HOST || "shop-dev.phuchoang.sbs" };
 const dataset = seed ? null : JSON.parse(open("/scripts/dataset.json"));
 const latency = new Trend("storefront_latency", true);
 const errors = new Rate("storefront_errors");
+const pageSize = Number(__ENV.PAGE_SIZE || 20);
 
 export const options =
   seed || verify
@@ -134,6 +135,10 @@ export default function () {
       "HTTP 200": (r) => r.status === 200,
       "seeded product rendered": (r) => r.body.includes(expected),
       "listing hits rendered": (r) => operation === "detail" || r.body.includes('id="product-'),
+      "correct page size": (r) =>
+        operation === "detail" ||
+        pageSize === 0 ||
+        (r.body.match(/id="product-/g) || []).length === pageSize,
       "correct stock rendered": (r) => operation !== "detail" || r.body.includes("In stock 100"),
     },
     { operation },
