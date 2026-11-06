@@ -7,16 +7,22 @@ rollout:
 defaults:
   otel:
     metricExportInterval: "10000"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 32Mi
+    limits:
+      cpu: "1"
+      memory: 128Mi
+
+mesh:
+  waypoint:
+    resources:
+      limits:
+        cpu: "1"
 
 services:
   web:
     replicas: 2
-    resources:
-      requests:
-        cpu: 100m
-        memory: 32Mi
-      limits:
-        cpu: 500m
-        memory: 128Mi
     env:
       PUBLIC_BASE_URL: https://shop-dev.phuchoang.sbs
