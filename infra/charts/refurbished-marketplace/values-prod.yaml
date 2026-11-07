@@ -4,8 +4,8 @@ global:
   environment: prod
   imagePullPolicy: Always
 
-# Prod overlay (Argo `prod-root` valueFiles). Doppler env is the cluster
-# `ecommerce/doppler-token` Secret, not this file.
+# Prod overlay (Argo `prod-root` valueFiles). Doppler env resolves through the
+# platform-owned marketplace-doppler ClusterSecretStore, not this file.
 ingress:
   webHostname: shop.phuchoang.sbs
 

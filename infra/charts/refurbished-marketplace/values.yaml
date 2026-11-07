@@ -165,8 +165,8 @@ externalSecrets:
   enabled: true
   refreshInterval: 1h
   secretStoreRef:
-    kind: SecretStore
-    name: doppler
+    kind: ClusterSecretStore
+    name: marketplace-doppler
 
 services:
   web:
