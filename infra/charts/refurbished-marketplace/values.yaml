@@ -31,7 +31,7 @@ ingress:
   enabled: true
   name: ecommerce-ingress
   port: 80
-  webHostname: shop-dev.phuchoang.sbs
+  webHostname: shop.phuchoang.sbs
   # Publishes the shop hostname through the platform's Cloudflare tunnel, which creates its DNS records.
   tunnel:
     enabled: true
@@ -185,7 +185,7 @@ services:
       ORDERS_SVC_ADDR: orders:9093
       CART_SVC_ADDR: cart:9094
       CHECKOUT_SVC_ADDR: checkout:9099
-      PUBLIC_BASE_URL: https://shop-dev.phuchoang.sbs
+      PUBLIC_BASE_URL: https://shop.phuchoang.sbs
 
   users:
     enabled: true
