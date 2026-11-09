@@ -1,5 +1,5 @@
 ingress:
-  webHostname: shop-dev.phuchoang.sbs
+  webHostname: shop.phuchoang.sbs
 
 rollout:
   enabled: true
@@ -26,7 +26,7 @@ services:
     replicas: 2
     env:
       PPROF_ENABLED: "true"
-      PUBLIC_BASE_URL: https://shop-dev.phuchoang.sbs
+      PUBLIC_BASE_URL: https://shop.phuchoang.sbs
   search:
     env:
       PPROF_ENABLED: "true"
