@@ -32,5 +32,5 @@ externalSecrets:
   remoteKey: MEILI_MASTER_KEY
   secretName: meilisearch-master-key
   secretStoreRef:
-    kind: SecretStore
-    name: doppler
+    kind: ClusterSecretStore
+    name: marketplace-doppler
