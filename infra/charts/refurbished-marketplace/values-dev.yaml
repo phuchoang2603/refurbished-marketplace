@@ -2,9 +2,7 @@ ingress:
   webHostname: shop.phuchoang.sbs
 
 rollout:
-  enabled: true
-  analysis:
-    minimumRequests: 0
+  enabled: false
 
 defaults:
   otel:
