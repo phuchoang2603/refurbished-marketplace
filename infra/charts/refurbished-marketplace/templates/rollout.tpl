@@ -30,7 +30,7 @@ spec:
 {{- $errors := printf "{__name__=\"http.server.request.duration_count\",%s,\"http.response.status_code\"=~\"5..\"}" $selector }}
 {{- $window := .Values.rollout.analysis.window }}
 {{- $metrics := list
-  (dict "name" "requests" "condition" (printf "result[0] >= %v" .Values.rollout.analysis.minimumRequests) "query" (printf "sum(increase(%s[%s]))" $count $window))
+  (dict "name" "requests" "condition" (printf "result[0] >= %v" .Values.rollout.analysis.minimumRequests) "query" (printf "sum(increase(%s[%s])) or vector(0)" $count $window))
   (dict "name" "freshness" "condition" (printf "result[0] <= %v" .Values.rollout.analysis.maximumSampleAgeSeconds) "query" (printf "time() - max(timestamp(%s))" $count))
   (dict "name" "error-rate" "condition" (printf "result[0] <= %v" .Values.rollout.analysis.maximumErrorRate) "query" (printf "(sum(increase(%s[%s])) or vector(0)) / sum(increase(%s[%s]))" $errors $window $count $window))
   (dict "name" "p95" "condition" (printf "result[0] <= %v" .Values.rollout.analysis.maximumP95Seconds) "query" (printf "histogram_quantile(0.95, sum by (le) (rate(%s[%s])))" $buckets $window)) }}
