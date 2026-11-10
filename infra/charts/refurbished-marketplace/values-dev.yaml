@@ -3,6 +3,8 @@ ingress:
 
 rollout:
   enabled: true
+  analysis:
+    minimumRequests: 0
 
 defaults:
   otel:
