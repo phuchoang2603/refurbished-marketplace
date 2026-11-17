@@ -29,7 +29,6 @@ spec:
 {{- with $resilience.grpcRetries }}
 {{- with (index .methods $name) }}
 ---
-# Attached at the waypoint; the catch-all rule keeps unlisted methods routed without retries.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:

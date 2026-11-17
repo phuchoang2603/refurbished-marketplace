@@ -87,8 +87,6 @@ func unaryAccessLog(
 		"grpc_code", st.Code().String(),
 		"duration_ms", time.Since(start).Milliseconds(),
 	}
-	// Access logs stay structured; non-OK codes use Warn so Explore level
-	// filters surface failures without treating every RPC as an Error.
 	if st.Code() != codes.OK {
 		sharedlog.WarnContext(ctx, msg, args...)
 	} else {

@@ -70,8 +70,6 @@ func (p *Projection) nextOffset(ctx context.Context) (int64, error) {
 	return offset, nil
 }
 
-// Facts and their checkpoint share one non-expiring, non-evictable hash so Redis
-// recovery cannot retain an offset while losing the corresponding account facts.
 const applyBatch = `
 if (redis.call('HGET', KEYS[1], '_next_offset') or '0') ~= ARGV[1] then
     return 0
@@ -117,8 +115,6 @@ func (p *Projection) Run(ctx context.Context, brokers []string) error {
 	if err != nil {
 		return err
 	}
-	// The retained account topic has one partition. Redis owns the checkpoint;
-	// Kafka group commits would skip facts after Redis data loss or rollback.
 	client, err := kgo.NewClient(
 		kgo.SeedBrokers(brokers...),
 		kgo.ConsumePartitions(map[string]map[int32]kgo.Offset{

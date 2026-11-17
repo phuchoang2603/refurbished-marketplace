@@ -31,8 +31,6 @@ spec:
   readinessProbe:
 {{ toYaml . | nindent 4 }}
 {{- end }}
-  # Activates Strimzi tracing-agent → initializes GlobalOpenTelemetry so Debezium
-  # EventRouter can inject W3C traceparent into Kafka record headers.
   tracing:
     type: opentelemetry
   config:
@@ -41,14 +39,7 @@ spec:
     offset.storage.replication.factor: -1
     config.storage.replication.factor: -1
     status.storage.replication.factor: -1
-    # Let connectors override their producer client config. Needed so Debezium
-    # connectors can drop the Strimzi-injected TracingProducerInterceptor, which
-    # overwrites the traceparent header EventRouter restored from the outbox row
-    # (splitting the e2e TraceId at the Kafka hop).
     connector.client.config.override.policy: All
-    # Kafka 4.x AdminClient busy-loops "Rebootstrapping with Cluster" at INFO
-    # (no backoff) while the broker is unreachable. Bootstrap is a single
-    # Service, so rebootstrap has nothing else to fall back to.
     metadata.recovery.strategy: none
   template:
     pod:

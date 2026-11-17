@@ -1,4 +1,3 @@
-// Package messaging defines shared Kafka topic / event names and the Kafka consumer helpers.
 package messaging
 
 const (

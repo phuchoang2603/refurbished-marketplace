@@ -17,7 +17,6 @@ kafka:
   jvmOptions:
     "-Xms": 512m
     "-Xmx": 512m
-  # Brokers use ~150-200m steady (550m+ at startup); a nominal request hid that load from the scheduler.
   resources:
     requests:
       cpu: 100m
@@ -26,8 +25,6 @@ kafka:
       cpu: "1"
       memory: 1Gi
 
-# Topic/user operators previously ran BestEffort (no requests) and got
-# starved on busy nodes — health probes never bound and Kafka stayed NotReady.
 entityOperator:
   topicOperator:
     jvmOptions:
@@ -47,9 +44,6 @@ connect:
   jvmOptions:
     "-Xms": 512m
     "-Xmx": 512m
-  # spec.tracing (Strimzi OTEL java agent) adds ~200Mi of non-heap overhead
-  # (agent + metaspace + direct buffers); 512Mi limit caused repeated OOMKills.
-  # Startup plugin scanning bursts (~430m observed) above this request; the limit has no CPU cap.
   resources:
     requests:
       cpu: 100m
@@ -86,7 +80,7 @@ entities:
     topics:
       - name: products.created
         partitions: 1
-        retention: -1 # Retain creation history for independent consumers and replay.
+        retention: -1
     connector:
       name: products-postgres-outbox
       sourceSecretName: products-app

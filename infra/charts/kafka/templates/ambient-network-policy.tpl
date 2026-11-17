@@ -1,7 +1,4 @@
 ---
-# Strimzi's generated NetworkPolicies allow only listener ports. Ambient delivers mesh traffic on
-# the HBONE port, where ztunnel still enforces STRICT mTLS, and rewrites kubelet probes to come
-# from a fixed link-local address.
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:

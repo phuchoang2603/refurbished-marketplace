@@ -1,4 +1,3 @@
-# Talos-dev shape. Do not put Doppler config names here.
 name: catalog-meilisearch
 
 meilisearch:

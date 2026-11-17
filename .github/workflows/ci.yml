@@ -5,7 +5,6 @@ on:
   push:
     branches: [main]
   schedule:
-    # Mondays at 0000 UTC — full govulncheck scan (path filters skipped)
     - cron: "0 0 * * 1"
 
 permissions:
@@ -90,6 +89,7 @@ jobs:
               - 'shared/testutil/postgres/**'
               - 'go.work*'
               - '.github/workflows/ci.yml'
+              - 'scripts/check.sh'
             products:
               - 'services/products/**'
               - 'shared/proto/**'
@@ -102,6 +102,7 @@ jobs:
               - 'shared/testutil/postgres/**'
               - 'go.work*'
               - '.github/workflows/ci.yml'
+              - 'scripts/check.sh'
             search:
               - 'services/search/**'
               - 'shared/proto/**'
@@ -114,6 +115,7 @@ jobs:
               - 'shared/testutil/meilisearch/**'
               - 'go.work*'
               - '.github/workflows/ci.yml'
+              - 'scripts/check.sh'
             inventory:
               - 'services/inventory/**'
               - 'shared/proto/**'
@@ -127,6 +129,7 @@ jobs:
               - 'shared/testutil/kafka/**'
               - 'go.work*'
               - '.github/workflows/ci.yml'
+              - 'scripts/check.sh'
             orders:
               - 'services/orders/**'
               - 'shared/proto/**'
@@ -140,6 +143,7 @@ jobs:
               - 'shared/testutil/kafka/**'
               - 'go.work*'
               - '.github/workflows/ci.yml'
+              - 'scripts/check.sh'
             checkout:
               - 'services/checkout/**'
               - 'shared/proto/**'
@@ -153,6 +157,7 @@ jobs:
               - 'shared/testutil/kafka/**'
               - 'go.work*'
               - '.github/workflows/ci.yml'
+              - 'scripts/check.sh'
             cart:
               - 'services/cart/**'
               - 'shared/proto/**'
@@ -162,6 +167,7 @@ jobs:
               - 'shared/testutil/redis/**'
               - 'go.work*'
               - '.github/workflows/ci.yml'
+              - 'scripts/check.sh'
             web:
               - 'services/web/**'
               - 'shared/proto/**'
@@ -171,6 +177,7 @@ jobs:
               - 'shared/observe/trace/**'
               - 'go.work*'
               - '.github/workflows/ci.yml'
+              - 'scripts/check.sh'
 
   test:
     needs: changes
@@ -203,7 +210,7 @@ jobs:
 
       - name: Test ${{ matrix.service }}
         if: needs.changes.outputs[matrix.service] == 'true'
-        run: go test ./services/${{ matrix.service }}/...
+        run: scripts/check.sh ${{ matrix.service }}
 
   govulncheck:
     needs: changes

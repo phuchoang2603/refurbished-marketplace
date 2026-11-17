@@ -54,19 +54,15 @@ metadata:
 spec:
   class: io.debezium.connector.postgresql.PostgresConnector
   tasksMax: 1
-  # Self-heal transient startup failures (e.g. DB not ready yet). Restarts the
-  # connector/task with exponential back-off, indefinitely by default.
   autoRestart:
     enabled: true
   config:
-    # --- Database Connection ---
     database.hostname: {{ printf "%s.%s.svc" $entity.connector.databaseHost $appNamespace }}
     database.port: {{ $entity.connector.databasePort }}
     database.user: ${secrets:{{ $appNamespace }}/{{ $entity.connector.sourceSecretName }}:username}
     database.password: ${secrets:{{ $appNamespace }}/{{ $entity.connector.sourceSecretName }}:password}
     database.dbname: {{ $entity.connector.databaseName }}
     
-    # --- Debezium Engine Settings ---
     topic.prefix: {{ $entityName | quote }}
     plugin.name: pgoutput
     slot.name: {{ printf "debezium_%s_slot" $entityName }}
@@ -79,7 +75,6 @@ spec:
     publication.autocreate.mode: {{ $entity.connector.publicationAutocreateMode | quote }}
 {{- end }}
     
-    # This transforms the DB row into a clean Kafka message
     transforms: outbox
     transforms.outbox.type: io.debezium.transforms.outbox.EventRouter
     transforms.outbox.table.field.event.id: "id"
@@ -90,11 +85,6 @@ spec:
     transforms.outbox.tracing.span.context.field: tracingspancontext
     transforms.outbox.tracing.operation.name: debezium-read
     transforms.outbox.tracing.with.context.field.only: "true"
-    # Strimzi's tracing support injects TracingProducerInterceptor into the
-    # worker producer, which starts a NEW root span and overwrites the
-    # traceparent header EventRouter restored from the outbox row — splitting
-    # the e2e trace at the Kafka hop. Drop the interceptor for outbox topics;
-    # EventRouter's header is authoritative.
     producer.override.interceptor.classes: ""
     key.converter: org.apache.kafka.connect.storage.StringConverter
     transforms.outbox.table.expand.json.payload: "false"

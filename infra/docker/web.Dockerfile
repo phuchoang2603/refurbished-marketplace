@@ -1,6 +1,3 @@
-# Web service — workspace build plus static assets in the runtime image.
-# Build context must be the repository root.
-
 FROM golang:1.26.5-alpine AS builder
 
 ARG BUILD_PKG=./services/web/cmd/web

@@ -16,7 +16,6 @@ import (
 
 const maxDBQueryTextLen = 1024
 
-// sqlcNameRe matches `-- name: GetUserByEmail :one` that sqlc embeds in queries.
 var sqlcNameRe = regexp.MustCompile(`(?m)^--\s*name:\s*(\S+)`)
 
 // OpenPostgres opens an instrumented *sql.DB using standard PostgreSQL environment variables.
@@ -29,7 +28,7 @@ func OpenPostgres() (*sql.DB, error) {
 		otelsql.WithAttributes(semconv.DBSystemNamePostgreSQL),
 		otelsql.WithSpanOptions(otelsql.SpanOptions{
 			DisableErrSkip:       true,
-			DisableQuery:         true, // set truncated db.query.text via AttributesGetter
+			DisableQuery:         true,
 			OmitConnResetSession: true,
 			OmitConnectorConnect: true,
 			OmitRows:             true,
@@ -56,7 +55,6 @@ func dbSpanName(_ context.Context, method otelsql.Method, query string) string {
 		return name
 	}
 	if q := strings.TrimSpace(query); q != "" {
-		// First SQL keyword keeps non-sqlc queries readable without full text.
 		if fields := strings.Fields(q); len(fields) > 0 {
 			return strings.ToUpper(fields[0])
 		}
@@ -73,7 +71,7 @@ func sqlcQueryName(query string) string {
 }
 
 func truncatedDBQueryAttrs(_ context.Context, _ otelsql.Method, query string, args []driver.NamedValue) []attribute.KeyValue {
-	_ = args // never record bound parameter values
+	_ = args
 	if query == "" {
 		return nil
 	}

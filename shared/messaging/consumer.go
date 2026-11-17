@@ -37,7 +37,6 @@ type KafkaConsumerConfig struct {
 	TracerName string
 }
 
-// consumerClient keeps polling and acknowledgement behavior independently testable.
 type consumerClient interface {
 	PollFetches(context.Context) kgo.Fetches
 	CommitUncommittedOffsets(context.Context) error

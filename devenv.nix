@@ -19,28 +19,25 @@ in
   };
 
   packages = with pkgs; [
-    # sql
     sqlc
     sqls
     goose
 
-    # grpc
     protols
     protobuf
     protoc-gen-go
     protoc-gen-go-grpc
 
-    # templ / css
     templ
     tailwindcss
 
-    # kubernetes
     kubectl
     kubernetes-helm
     doppler
     openspec
 
-    # formatter
+    golangci-lint
+
     gofumpt
     sqruff
   ];
@@ -65,6 +62,8 @@ in
 
   tasks = {
     "devenv:treefmt:run".before = lib.mkForce [ ];
+
+    "repo:check".exec = ''bash "${config.git.root}/scripts/check.sh"'';
 
     "codegen:proto" = {
       exec = ''

@@ -108,8 +108,6 @@ func ClearSessionCookies(w http.ResponseWriter) {
 	http.SetCookie(w, &http.Cookie{Name: checkoutIntentCookieName, Value: "", Path: "/", HttpOnly: true, MaxAge: -1, SameSite: http.SameSiteLaxMode})
 }
 
-// clearCartCookieIfEmpty drops the cart_id cookie when Redis/cart state has no lines so the
-// browser does not keep pointing at an empty cart document after UI remove or checkout.
 func (h *Handler) clearCartCookieIfEmpty(w http.ResponseWriter, cart *cartv1.Cart) {
 	if cart != nil && len(cart.GetItems()) == 0 {
 		h.clearCartCookie(w)

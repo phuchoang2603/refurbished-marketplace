@@ -64,7 +64,6 @@ spec:
         app: {{ $name }}
         app.kubernetes.io/name: {{ $name }}
       annotations:
-        # Read by the platform agent's k8sattributes for stdout log records.
         resource.opentelemetry.io/service.name: {{ $name }}
     spec:
 {{- if or $svc.db $svc.meili }}

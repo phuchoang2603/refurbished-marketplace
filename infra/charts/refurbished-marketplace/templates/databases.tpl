@@ -18,12 +18,12 @@ spec:
   instances: {{ default 1 $svc.db.instances }}
   postgresql:
     parameters:
-      wal_level: "logical" # Required for Debezium CDC
+      wal_level: "logical"
   managed:
     roles:
       - name: {{ $svc.db.owner | quote }}
         login: true
-        replication: true  # Required for Debezium CDC
+        replication: true
         passwordSecret:
           name: {{ $svc.db.secretName }}
       - name: {{ $svc.db.runtimeRole | quote }}

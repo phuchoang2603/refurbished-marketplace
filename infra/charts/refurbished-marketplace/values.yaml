@@ -32,11 +32,9 @@ ingress:
   name: ecommerce-ingress
   port: 80
   webHostname: shop.phuchoang.sbs
-  # Publishes the shop hostname through the platform's Cloudflare tunnel, which creates its DNS records.
   tunnel:
     enabled: true
     clusterTunnel: talos-proxmox
-  # Web GETs only read, so transient backend failures retry within the total budget.
   reads:
     method: GET
     timeouts:
@@ -46,13 +44,11 @@ ingress:
       attempts: 2
       backoff: 100ms
       codes: [502, 503]
-  # Everything else, including checkout and cart POSTs, never retries.
   writes:
     timeouts:
       request: 30s
       backendRequest: 25s
 
-# Istio ambient is platform-installed; the app-of-apps root enrolls this namespace.
 mesh:
   waypoint:
     enabled: true
@@ -65,8 +61,6 @@ mesh:
       limits:
         cpu: 500m
         memory: 256Mi
-  # gRPC Services whose east-west traffic goes through the waypoint. Kafka, databases, and the
-  # browser-facing HTTP Services stay on ztunnel only.
   resilience:
     services:
       - users
@@ -85,15 +79,11 @@ mesh:
     retryBudget:
       percent: 20
       minRetryConcurrency: 3
-    # Rendered only for Services with more than one replica, so a sole endpoint is never ejected.
     outlierDetection:
       consecutive5xxErrors: 5
       interval: 10s
       baseEjectionTime: 30s
       maxEjectionPercent: 50
-    # Unary methods that are safe to replay; an identical SubmitCheckout returns the original
-    # checkout. Istio retries connect failures, refused streams, and gRPC UNAVAILABLE/CANCELLED.
-    # Every other method, including cart mutations, is routed without retries.
     grpcRetries:
       timeouts:
         request: 10s

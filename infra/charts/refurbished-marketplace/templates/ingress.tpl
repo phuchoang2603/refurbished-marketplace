@@ -10,7 +10,6 @@ metadata:
   namespace: {{ .Release.Namespace }}
   annotations:
     argocd.argoproj.io/sync-wave: "5"
-    # Only the Cloudflare tunnel reaches the origin, so it needs no LoadBalancer VIP.
     networking.istio.io/service-type: ClusterIP
 spec:
   gatewayClassName: istio
@@ -43,7 +42,6 @@ spec:
 {{- with $rule.method }}
           method: {{ . }}
 {{- end }}
-      # TLS terminates at Cloudflare; origin is HTTP.
       filters:
         - type: RequestHeaderModifier
           requestHeaderModifier:
@@ -94,9 +92,6 @@ spec:
 {{- with .Values.ingress.tunnel }}
 {{- if .enabled }}
 ---
-# The talos-proxmox Cloudflare operator routes these hostnames through its ClusterTunnel to the
-# Gateway Service Istio creates, and owns their DNS records. The target is explicit because that
-# Service also exposes the Istio status port.
 apiVersion: networking.cfargotunnel.com/v1alpha1
 kind: TunnelBinding
 metadata:

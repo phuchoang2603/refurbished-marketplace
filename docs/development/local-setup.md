@@ -60,4 +60,4 @@ Integration tests use Testcontainers (Docker on the laptop). Full flows: Talos +
 
 ## Infrastructure formatting
 
-The existing treefmt/Oxfmt hook formats plain YAML, including chart values and Argo roots. Helm template files remain excluded. No Helm validation script or devenv validation task is configured.
+The existing treefmt/Oxfmt hook formats plain YAML, including chart values and Argo roots. Helm template files remain excluded. Chart validation runs with the other checks in `devenv tasks run repo:check`.

@@ -57,7 +57,6 @@ spec:
       default.replication.factor: {{ .Values.kafka.replicationFactor }}
       min.insync.replicas: {{ .Values.kafka.minInsyncReplicas }}
   entityOperator:
-    # Non-empty objects: bare `{}` becomes YAML/JSON null under Argo SSA and fails CRD validation.
     topicOperator:
       reconciliationIntervalMs: 120000
 {{- with .Values.entityOperator.topicOperator.jvmOptions }}

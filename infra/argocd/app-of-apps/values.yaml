@@ -1,11 +1,3 @@
-# Marketplace Application catalog, rendered by the root on each environment's own Argo CD.
-# Children target the local cluster and consume talos-proxmox platform operators and CRDs;
-# retries absorb platform components that are still converging.
-# Secrets come from the platform-owned marketplace-doppler ClusterSecretStore
-# (talos-proxmox provisions the Doppler token); this repo declares no store or token.
-# Env lives in:
-# - infra/argocd/{dev,prod}/root.yaml: namePrefix and environment values
-# Chart values.yaml is the Talos-dev shape. Do not add Doppler config names here.
 repoURL: https://github.com/phuchoang2603/refurbished-marketplace.git
 targetRevision: main
 namePrefix: dev
@@ -31,8 +23,6 @@ global:
     ghcr.io/phuchoang2603/refurbished-marketplace/connect-debezium: dev
   imagePullPolicy: Always
 
-# The root is the only owner of these namespaces and their Istio ambient enrollment;
-# child Applications target them but never create or relabel them.
 namespaces:
   - ecommerce
 

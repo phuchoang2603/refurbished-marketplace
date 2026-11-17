@@ -14,8 +14,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// maxCheckoutProductLines mirrors services/products GetProductsByIDs max (maxProductsByIDs = 100).
-// Enforced at the web edge so buyers get a clear message instead of an opaque InvalidArgument.
 const maxCheckoutProductLines = 100
 
 func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {

@@ -5,7 +5,6 @@ import (
 	"strings"
 )
 
-// Keys that must never appear in full in log attributes.
 var sensitiveKeys = map[string]struct{}{
 	"password":      {},
 	"passwd":        {},
@@ -29,8 +28,6 @@ var sensitiveKeys = map[string]struct{}{
 
 func replaceAttr(_ []string, a slog.Attr) slog.Attr {
 	if a.Key == slog.LevelKey {
-		// Grafana / VictoriaLogs expect lowercase levels (info, error, …).
-		// Default JSONHandler emits INFO/ERROR via Level.String().
 		return slog.String(a.Key, strings.ToLower(a.Value.String()))
 	}
 	key := strings.ToLower(a.Key)

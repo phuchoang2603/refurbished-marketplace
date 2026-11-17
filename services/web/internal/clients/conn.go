@@ -15,8 +15,6 @@ func newConn(addr string) (*grpc.ClientConn, error) {
 	if err != nil {
 		return nil, err
 	}
-	// grpc.NewClient is lazy; Connect now so checkout is not the first
-	// RPC (mesh mTLS + HTTP/2 setup) to downstream services.
 	conn.Connect()
 	return conn, nil
 }

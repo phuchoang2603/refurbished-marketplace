@@ -37,7 +37,6 @@ func TestKafkaProductCreatedIndependentConsumers(t *testing.T) {
 		return count == 1, err
 	})
 	assertStock(t, svc, uuid.MustParse(event.ProductId), 5, 0)
-	// A later independent group must still receive the original creation event.
 	observed := make(chan []byte, 1)
 	observerCancel, observerErr := testkafka.StartKafkaConsumer(t, t.Context(), brokers, "catalog-observer-"+uuid.NewString(), []string{topic}, func(_ context.Context, msg messaging.KafkaMessage) error {
 		select {

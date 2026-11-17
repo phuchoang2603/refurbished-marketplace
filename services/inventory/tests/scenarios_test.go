@@ -123,7 +123,6 @@ func TestProductCreatedIdempotencyAndValidation(t *testing.T) {
 				t.Fatal(err)
 			}
 		}
-		// Retry after commit (lost acknowledgement) and replay under a new event id.
 		if err := consumeCreation(t, svc, event); err != nil {
 			t.Fatal(err)
 		}
@@ -164,7 +163,6 @@ func TestProductCreatedTransactionRollbackAndRetry(t *testing.T) {
 	db := newInventoryDB(t)
 	svc := service.New(db)
 	event := creationEvent(proto.Int32(3))
-	// Fail the last write, after inbox and intent insertion.
 	if _, err := db.ExecContext(t.Context(), "ALTER TABLE inventory ADD CONSTRAINT reject_seed CHECK (available_qty < 0)"); err != nil {
 		t.Fatal(err)
 	}

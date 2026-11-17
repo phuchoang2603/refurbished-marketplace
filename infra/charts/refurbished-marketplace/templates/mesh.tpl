@@ -8,7 +8,6 @@ spec:
   mtls:
     mode: STRICT
 ---
-# The CloudNativePG operator runs outside the mesh and polls each instance's status port.
 apiVersion: security.istio.io/v1
 kind: PeerAuthentication
 metadata:

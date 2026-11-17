@@ -1,21 +1,3 @@
-# Generic Go service image built from the repo go.work workspace.
-# Build context must be the repository root.
-#
-# Example:
-#   docker build -f infra/docker/go-service.Dockerfile \
-#     --build-arg BUILD_PKG=./services/users/cmd/users \
-#     --build-arg BUILD_BIN=users \
-#     --build-arg EXPOSE_PORT=9091 \
-#     -t users .
-#
-# Service build args (BUILD_PKG / BUILD_BIN / EXPOSE_PORT):
-#   users                     ./services/users/cmd/users                     users                     9091
-#   products                  ./services/products/cmd/products               products                  9092
-#   search                    ./services/search/cmd/search                   search                    9098
-#   orders                    ./services/orders/cmd/orders                   orders                    9093
-#   cart                      ./services/cart/cmd/cart                       cart                      9094
-#   checkout                  ./services/checkout/cmd/checkout               checkout                  9099
-
 FROM golang:1.26.5-alpine AS builder
 
 ARG BUILD_PKG
