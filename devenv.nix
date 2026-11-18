@@ -95,11 +95,6 @@ in
           ];
         };
       };
-    exclusions.paths = [
-      ".*_templ\\.go$"
-      ".*\\.pb\\.go$"
-      ".*/database/.*\\.go$"
-    ];
   };
 
   files = {
