@@ -199,14 +199,14 @@ CI SHALL include search in the lint module list, service path filters and output
 
 ### Requirement: Release builds pin production chart image tags
 
-After a successful image build, the release workflow SHALL write the built commit SHA into the prod marketplace and Kafka chart overlays and commit it, so production Argo CD applications roll to that SHA without a manual tag edit. It MUST NOT pin from forked pull requests and MUST skip the pin when the target branch head has moved past the built SHA.
+After successful image publication, CI SHALL publish a deployment ref pinning all child Applications to the built Git revision and immutable image tag. It SHALL deploy trusted PRs to dev and main to prod, without writing an image-pin commit back to main or deploying fork PRs.
 
 #### Scenario: Images build on a branch push
 
 - **WHEN** all images build successfully for a commit on a branch
-- **THEN** the workflow commits the SHA into both prod overlay `global.imageTag` values with a skip-CI marker
+- **THEN** CI deploys the matching immutable Git/image revision through the root without writing an overlay-pin commit
 
 #### Scenario: Branch moved during the build
 
 - **WHEN** the branch head no longer matches the built SHA
-- **THEN** the workflow leaves both overlays unchanged
+- **THEN** CI deploys the matching immutable Git/image revision through the root without writing an overlay-pin commit

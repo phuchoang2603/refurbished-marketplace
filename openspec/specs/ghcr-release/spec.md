@@ -8,16 +8,16 @@ Define how container images under `infra/docker/` are built and published to Git
 
 ### Requirement: Release workflow publishes Docker images to GHCR
 
-The repository SHALL provide a GitHub Actions workflow that builds and pushes container images from Dockerfiles under `infra/docker/` to GitHub Container Registry.
+The repository SHALL build and publish the complete current image matrix for image, chart, Argo root or delivery workflow changes. Documentation-only changes SHALL NOT trigger delivery.
 
 #### Scenario: Push to main with image-related changes
 
-- **WHEN** a commit is pushed to `main` and modifies paths under `infra/docker/**`, `services/**`, `shared/**`, `tools/**`, `go.work`, or any `go.mod`
+- **WHEN** a commit is pushed to `main` and modifies image or deployment configuration paths
 - **THEN** the release workflow runs and builds and pushes all configured images in the release matrix
 
 #### Scenario: Push to main without image-related changes
 
-- **WHEN** a commit is pushed to `main` without modifying image-related paths
+- **WHEN** a commit is pushed to `main` without modifying image or deployment configuration paths
 - **THEN** the release workflow is not triggered
 
 #### Scenario: Manual release of all images
@@ -27,21 +27,21 @@ The repository SHALL provide a GitHub Actions workflow that builds and pushes co
 
 ### Requirement: GHCR image naming and tags
 
-Published images SHALL use the naming pattern `ghcr.io/<repository>/<image>` where `<repository>` is `${{ github.repository }}` and `<image>` is the short service image name (for example `web`, `users-migrator`, `connect-debezium`).
+Published images SHALL use PR tags `pr-<number>-<merge-sha>` and main tags `main-<sha>`, coordinated across the complete matrix. Image repositories SHALL use the naming pattern `ghcr.io/<repository>/<image>` where `<repository>` is `${{ github.repository }}` and `<image>` is the short service image name (for example `web`, `users-migrator`, `connect-debezium`).
 
 #### Scenario: Image tagged on publish
 
 - **WHEN** the release workflow publishes an image for commit `abc123`
-- **THEN** the image is available at `ghcr.io/<repository>/<image>:abc123` and `ghcr.io/<repository>/<image>:main`
+- **THEN** the image is available at `ghcr.io/<repository>/<image>:main-abc123` for a main release
 
 ### Requirement: Pull request image publish
 
-The repository SHALL build and push marketplace/infra images to GHCR on pull requests so Argo CD can deploy a branch by git SHA before merge. PR workflows SHALL NOT retag `:main`.
+Trusted repository PRs SHALL publish immutable PR image tags for dev deployment. Fork PRs SHALL build without registry or deployment credentials. PRs SHALL NOT overwrite main release tags.
 
 #### Scenario: PR push publishes SHA tags
 
-- **WHEN** a pull request changes image-related paths (same path set as the main release workflow, or a documented subset)
-- **THEN** CI pushes `ghcr.io/<repository>/<image>:<git-sha>` for the PR head commit for each image in the build matrix
+- **WHEN** a trusted repository pull request changes image or delivery configuration paths
+- **THEN** CI publishes the PR merge revision tag for every image in the build matrix
 
 #### Scenario: PR does not overwrite main
 
@@ -51,20 +51,20 @@ The repository SHALL build and push marketplace/infra images to GHCR on pull req
 #### Scenario: Dispatch on a non-main ref is not prod
 
 - **WHEN** the image job runs via `workflow_dispatch` on a ref other than `refs/heads/main`
-- **THEN** it tags `:<git-sha>` only, not `:main`
+- **THEN** it does not publish or deploy production images
 
 ### Requirement: Delete PR-only GHCR versions after the PR closes
 
-After a pull request is merged or closed, the repository SHALL delete GHCR package versions tagged with that PR’s commit SHAs. It SHALL NOT delete `:main` or versions that also carry the `main` tag.
+Closing a PR SHALL NOT delete its GHCR versions while dev can still reference them. No automatic close-triggered cleanup SHALL remove the active dev release.
 
 #### Scenario: Closed PR cleanup
 
-- **WHEN** a pull request is closed (merged or not)
-- **THEN** a workflow deletes GHCR versions whose tags include a SHA from that PR and do not include `main`
+- **WHEN** a pull request closes while dev still references its published images
+- **THEN** those images remain available for pod restart and replacement
 
 ### Requirement: Release workflow includes all infra docker images
 
-The release workflow SHALL build and push all marketplace and infra images declared in the `release-images.yml` matrix on every workflow run that executes the release job, including application services (including `search`), migrators, `payment-gateway-simulator`, and `connect-debezium`. Cluster deploys SHALL pull those GHCR tags via Argo CD.
+The release workflow SHALL build and push all marketplace and infra images declared in the `release-images.yml` matrix on every workflow run that executes the release job, including all eight application services and `connect-debezium`. Cluster deploys SHALL pull those GHCR tags via Argo CD.
 
 #### Scenario: Full image matrix on main push
 

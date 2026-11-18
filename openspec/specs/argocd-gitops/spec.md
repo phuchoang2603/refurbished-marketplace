@@ -31,7 +31,7 @@ The marketplace root SHALL declaratively create and enroll `ecommerce` in Istio 
 
 ### Requirement: Argo CD deploys marketplace locally
 
-The prod cluster's Argo CD (namespace `argo-cd`, installed by the talos-proxmox platform root) SHALL host the `prod-root` Application and enable the marketplace chart. Children SHALL destine the local cluster through `https://kubernetes.default.svc`. The repository SHALL NOT depend on a management cluster or on Argo CD cluster registrations. Child Applications SHALL inherit `targetRevision` from the root so branch tracking moves git and (with matching GHCR tags) images together. The committed prod root SHALL track `main` for both its source and child Applications, with immutable SHA image tags pinned in the production overlays.
+Each environment SHALL host its own marketplace root and children on its local Argo CD. Each root SHALL watch its environment deployment ref; that release commit SHALL pin child Git revisions and immutable GHCR image tags to the successfully published source release. Dev SHALL receive trusted PRs and prod main releases, without cross-cluster registration.
 
 #### Scenario: Marketplace is an Argo Application
 
@@ -40,8 +40,8 @@ The prod cluster's Argo CD (namespace `argo-cd`, installed by the talos-proxmox 
 
 #### Scenario: Root revision is inherited
 
-- **WHEN** the root Application `targetRevision` is a branch or `main`
-- **THEN** child Applications use that same git revision
+- **WHEN** the root Application `targetRevision` is an immutable release SHA
+- **THEN** child Applications use that same immutable git revision
 
 #### Scenario: Root runs in the target environment
 
@@ -73,16 +73,16 @@ The `refurbished-marketplace` and `kafka` Helm charts SHALL support `global.imag
 
 ### Requirement: Production Helm values
 
-The repository SHALL provide a chart-adjacent `values-prod.yaml` overlay (referenced from prod-root via `valueFiles`) for production marketplace hostnames. Chart `values.yaml` defaults SHALL remain available for standalone rendering.
+Production SHALL use chart-adjacent values-prod.yaml overlays for hostnames and storage sizing. CI SHALL provide the immutable image tag in the coordinated deployment ref to marketplace and Kafka after all images publish.
 
 #### Scenario: Production pulls pinned images
 
 - **WHEN** the production marketplace Application syncs
-- **THEN** Helm values set `global.imageTag` to the immutable SHA pinned in `values-prod.yaml`
+- **THEN** the environment deployment ref sets `global.imageTag` to the immutable published tag
 
 ### Requirement: Loose sync ordering
 
-Child Applications SHALL retain local ordering hints for data stores, marketplace, and Kafka. Waves SHALL NOT be described as ordering the platform root against the marketplace root. Deployment guidance SHALL NOT require a manual platform-readiness check before the marketplace root is applied; convergence against platform operators, CRDs, storage, and telemetry SHALL rely on child sync retries. The `ecommerce/doppler-token` Secret SHALL remain a manual prerequisite for application secrets.
+Children SHALL retain ordering hints and retry against platform CRDs and operators. The operator SHALL bootstrap the environment-scoped ecommerce/doppler-token and root once; subsequent releases SHALL reconcile from Git without CI access to Kubernetes.
 
 #### Scenario: Operator wave before apps
 
@@ -96,7 +96,7 @@ Child Applications SHALL retain local ordering hints for data stores, marketplac
 
 ### Requirement: GitOps documentation
 
-The repository SHALL document the Argo CD layout (the prod cluster's Argo CD hosting `prod-root` and destining its local cluster), `values-prod.yaml` overlays, immutable image tags pinned in the production overlays, and fresh-install prerequisites (talos-proxmox platform bring-up for prod, the prod kubeconfig fetched from the `talos-proxmox` Doppler project, the ecommerce Doppler token, and Cloudflare origin configuration). It SHALL identify the talos-proxmox platform root and `apps/components` as platform references and SHALL NOT reference a management cluster, `platform-dev` / `platform-prod` roots, or `apps/argocd/roots/`. It SHALL NOT prescribe legacy ownership transfer or data migration.
+Deployment documentation SHALL describe independent dev/prod roots, matching Git/image revision pins, local secret bootstrap and the platform-owned dependencies. It SHALL NOT describe prod as the development server or require a LAN LoadBalancer.
 
 #### Scenario: Contributor finds deploy guide
 
@@ -106,7 +106,7 @@ The repository SHALL document the Argo CD layout (the prod cluster's Argo CD hos
 #### Scenario: Contributor uses the prod kubeconfig
 
 - **WHEN** a contributor follows the deploy guide for prod
-- **THEN** they fetch the prod `KUBECONFIG` from Doppler and use it for the token Secret, the AppProject, and the root, with no separate management kubeconfig
+- **THEN** they fetch the matching environment `KUBECONFIG` from Doppler and use it for the token Secret, the AppProject, and the root, with no separate management kubeconfig
 
 ### Requirement: Kafka messaging namespace
 

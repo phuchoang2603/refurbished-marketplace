@@ -55,17 +55,17 @@ The repository SHALL NOT commit plaintext Kubernetes Secret manifests for applic
 
 ### Requirement: Doppler bootstrap secret manifests
 
-The repository SHALL provide example Kubernetes Secret manifests for Doppler service tokens and document manual creation of the gitignored `prd` bootstrap file under `infra/k8s/`.
+The operator SHALL create the bootstrap Secret from an environment-scoped marketplace token. The repository SHALL document equivalent manual recovery without requiring committed token values.
 
 #### Scenario: Developer creates the bootstrap secret
 
-- **WHEN** a developer prepares the prod development server
-- **THEN** they copy `infra/k8s/doppler-token.prd.secret.yaml.example` to `infra/k8s/doppler-token.prd.secret.yaml` and paste a `prd` config service token
+- **WHEN** an operator bootstraps an environment
+- **THEN** its own ecommerce/doppler-token is bootstrapped privately from an environment-scoped read-only marketplace token without CI access
 
 #### Scenario: Operator bootstraps prod cluster secret
 
-- **WHEN** the prod cluster is prepared for GitOps
-- **THEN** an operator applies `infra/k8s/doppler-token.prd.secret.yaml` manually before application `ExternalSecret` resources sync
+- **WHEN** an operator bootstraps an environment
+- **THEN** its own ecommerce/doppler-token is bootstrapped privately from an environment-scoped read-only marketplace token without CI access
 
 ### Requirement: devenv Doppler CLI defaults
 
@@ -92,12 +92,12 @@ Secret provisioning SHALL remain provider-agnostic at the service deployment lay
 
 ### Requirement: Doppler environment configs
 
-The development server SHALL use Doppler config `prd` for application secrets. Bootstrap of `ecommerce/doppler-token` SHALL use kubectl (or equivalent) with the prod kubeconfig, fetched from the `talos-proxmox` Doppler project config `prod`.
+Dev SHALL use the marketplace dev Doppler config and prod prd. The operator SHALL use the matching platform kubeconfig to bootstrap a read-only marketplace token into ecommerce/doppler-token. CI SHALL NOT receive kubeconfig or application tokens.
 
 #### Scenario: Bootstrap with kubectl
 
-- **WHEN** a contributor bootstraps secrets for prod
-- **THEN** they fetch the prod `KUBECONFIG` from Doppler project `talos-proxmox` and create `ecommerce/doppler-token` with kubectl against that cluster
+- **WHEN** an operator bootstraps an environment
+- **THEN** its own ecommerce/doppler-token is bootstrapped privately from an environment-scoped read-only marketplace token without CI access
 
 ### Requirement: Mongo credentials from Doppler
 

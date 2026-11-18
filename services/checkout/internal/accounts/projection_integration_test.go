@@ -107,7 +107,10 @@ func TestIntegrationAccountConsumerReplaysAfterRedisLoss(t *testing.T) {
 	waitForAccount(t, p, id, done)
 	cancel()
 	select {
-	case <-done:
+	case err := <-done:
+		if err != nil && !errors.Is(err, context.Canceled) {
+			t.Fatalf("consumer stopped with %v", err)
+		}
 	case <-time.After(10 * time.Second):
 		t.Fatal("consumer did not stop")
 	}

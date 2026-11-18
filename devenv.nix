@@ -63,7 +63,9 @@ in
     tailwindcss
 
     doppler
-    govulncheck
+    (govulncheck.override {
+      buildGoLatestModule = buildGoModule.override { go = config.languages.go.package; };
+    })
     openspec
 
     sqruff
