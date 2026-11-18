@@ -41,6 +41,7 @@ in
   imports = map (m: "${inputs.devenv-modules}/${m}.nix") [
     "base"
     "go"
+    "sqlc"
     "kubernetes"
   ];
 
@@ -50,10 +51,6 @@ in
   };
 
   packages = with pkgs; [
-    sqlc
-    sqls
-    goose
-
     protols
     protobuf
     protoc-gen-go
@@ -132,21 +129,6 @@ in
       execIfModified = [
         "services/**/proto/**/*.proto"
         "shared/**/proto/**/*.proto"
-      ];
-    };
-
-    "codegen:sqlc" = {
-      exec = ''
-        cd "${config.git.root}"
-        echo "Bootstrap sql queries..."
-        for dir in $(find services -maxdepth 2 -name sqlc.yaml -exec dirname {} \;); do
-          (cd "$dir" && sqlc generate)
-        done
-      '';
-
-      execIfModified = [
-        "services/**/sqlc.yaml"
-        "services/**/*.sql"
       ];
     };
 

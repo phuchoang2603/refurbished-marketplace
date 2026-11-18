@@ -41,4 +41,4 @@ See [gitops.md](gitops.md).
 | `shared/testutil/meilisearch/**` | search                                                |
 | `shared/testutil/redis/**`       | cart, checkout                                        |
 
-Local formatting and codegen drift checks (`treefmt`, `codegen:proto`, `codegen:sqlc`) stay out of CI. Changes to `devenv.*` trigger every service.
+Formatting and protobuf codegen (`treefmt`, `codegen:proto`) stay out of CI; `repo:lint` fails when sqlc output is stale. Changes to `devenv.*` trigger every service.
