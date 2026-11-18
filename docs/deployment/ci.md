@@ -2,17 +2,15 @@
 
 GitHub Actions runs `.github/workflows/ci.yml` on every pull request and push to `main`.
 
-| Job             | When it runs                           | What it does                                                       |
-| --------------- | -------------------------------------- | ------------------------------------------------------------------ |
-| `lint`          | Always                                 | `golangci-lint` via Reviewdog (blocking PR comments)               |
-| `govulncheck`   | Path filter match (or weekly schedule) | `govulncheck` SARIF uploaded to Code Scanning per affected service |
-| `test` (matrix) | Path filter match                      | `go test ./...` for the affected service module                    |
+| Job             | When it runs      | What it does                                                                                         |
+| --------------- | ----------------- | ---------------------------------------------------------------------------------------------------- |
+| `lint`          | Always            | `devenv tasks run repo:lint`: ast-grep rules, `scripts/lint.sh` (golangci-lint, helm lint, conftest) |
+| `test` (matrix) | Path filter match | `scripts/check.sh <service>` for each affected service                                               |
+| `govulncheck`   | Weekly schedule   | `scripts/vulncheck.sh` across all Go modules                                                         |
 
-On pull requests, Reviewdog posts inline review comments for `golangci-lint` findings on changed lines.
+Every job runs inside devenv through the shared reusable workflow, so CI uses the same toolchain as local development. Import boundaries (`depguard` in `devenv.nix`) and chart policies (`policy/`) are enforced by `lint`.
 
-The `govulncheck` job uses the same service matrix and path-filter fan-out as `test`. SARIF results are uploaded to GitHub Code Scanning and do not fail CI. A weekly schedule runs a full scan across all services.
-
-**Branch protection:** require the `lint` job. Service test jobs may be skipped when a PR does not touch relevant paths — that is expected.
+**Branch protection:** require the `lint` job. Service test jobs are not created when a PR does not touch relevant paths — that is expected.
 
 Treefmt's existing Oxfmt integration formats plain YAML locally. Helm templates remain excluded. The marketplace repository does not validate or deploy the platform-owned Cloudflare Tunnel chart.
 
@@ -43,4 +41,4 @@ See [gitops.md](gitops.md).
 | `shared/testutil/meilisearch/**` | search                                                |
 | `shared/testutil/redis/**`       | cart, checkout                                        |
 
-Local formatting and codegen drift checks (`treefmt`, `codegen:proto`, `codegen:sqlc`) stay out of CI.
+Local formatting and codegen drift checks (`treefmt`, `codegen:proto`, `codegen:sqlc`) stay out of CI. Changes to `devenv.*` trigger every service.

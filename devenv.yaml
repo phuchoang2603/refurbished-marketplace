@@ -1,6 +1,9 @@
 inputs:
   nixpkgs:
     url: github:cachix/devenv-nixpkgs/rolling
+  devenv-modules:
+    url: github:phuchoang2603/devenv-modules
+    flake: false
   treefmt-nix:
     url: github:numtide/treefmt-nix
     inputs:

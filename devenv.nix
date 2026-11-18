@@ -2,18 +2,49 @@
   pkgs,
   lib,
   config,
+  inputs,
   ...
 }:
 
 let
-  homeDir = builtins.getEnv "HOME";
-  colimaSocket = "${homeDir}/.config/colima/default/docker.sock";
+  services = [
+    "cart"
+    "checkout"
+    "inventory"
+    "orders"
+    "products"
+    "search"
+    "users"
+    "web"
+  ];
+  sharedDirs = [
+    "auth"
+    "err"
+    "messaging"
+    "observe"
+    "proto"
+    "runtime"
+    "testutil"
+  ];
+  modulePath = "github.com/phuchoang2603/refurbished-marketplace";
+  isolateService = service: {
+    files = [ "**/services/${service}/**" ];
+    list-mode = "lax";
+    deny = map (other: {
+      pkg = "${modulePath}/services/${other}";
+      desc = "services must not import other services";
+    }) (lib.remove service services);
+  };
 in
 
 {
+  imports = map (m: "${inputs.devenv-modules}/${m}.nix") [
+    "base"
+    "go"
+    "kubernetes"
+  ];
+
   env = {
-    TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE = "/var/run/docker.sock";
-    DOCKER_HOST = "unix://${colimaSocket}";
     DOPPLER_PROJECT = "refurbished-marketplace";
     DOPPLER_CONFIG = "prd";
   };
@@ -31,25 +62,44 @@ in
     templ
     tailwindcss
 
-    kubectl
-    kubernetes-helm
     doppler
+    govulncheck
     openspec
 
-    golangci-lint
-
-    gofumpt
     sqruff
   ];
 
-  languages.go = {
-    enable = true;
-    delve = {
-      enable = true;
-    };
-    lsp = {
-      enable = true;
-    };
+  enterShell = ''
+    colima_socket="$HOME/.config/colima/default/docker.sock"
+    if [ -S "$colima_socket" ]; then
+      export DOCKER_HOST="unix://$colima_socket"
+      export TESTCONTAINERS_DOCKER_SOCKET_OVERRIDE=/var/run/docker.sock
+    fi
+  '';
+
+  repo.golangci.run.allow-parallel-runners = true;
+
+  repo.golangci.linters = {
+    enable = [ "depguard" ];
+    settings.depguard.rules =
+      lib.genAttrs' services (service: lib.nameValuePair "service-${service}" (isolateService service))
+      // {
+        shared-isolated = {
+          files = map (dir: "**/shared/${dir}/**") sharedDirs;
+          list-mode = "lax";
+          deny = [
+            {
+              pkg = "${modulePath}/services";
+              desc = "shared must not import services";
+            }
+          ];
+        };
+      };
+    exclusions.paths = [
+      ".*_templ\\.go$"
+      ".*\\.pb\\.go$"
+      ".*/database/.*\\.go$"
+    ];
   };
 
   files = {
@@ -62,8 +112,6 @@ in
 
   tasks = {
     "devenv:treefmt:run".before = lib.mkForce [ ];
-
-    "repo:check".exec = ''bash "${config.git.root}/scripts/check.sh"'';
 
     "codegen:proto" = {
       exec = ''
@@ -147,17 +195,10 @@ in
     };
   };
 
-  git-hooks.hooks = {
-    treefmt.enable = true;
-  };
-
   treefmt = {
     enable = true;
     config.programs = {
-      nixfmt.enable = true;
       gofumpt = {
-        enable = true;
-        extra = true;
         excludes = [
           "vendor/*"
           "**/proto/*.go"

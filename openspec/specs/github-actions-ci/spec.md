@@ -34,51 +34,32 @@ The CI workflow SHALL lint every Go module in the repository on each run using `
 - **WHEN** CI runs and a Go module fails `golangci-lint`
 - **THEN** the lint job reports failure and the workflow fails
 
-### Requirement: Lint posts PR review comments via Reviewdog
+### Requirement: Weekly vulnerability scanning
 
-On pull requests, the CI lint job SHALL post review comments for `golangci-lint` findings using the official Reviewdog GitHub Action, without custom JavaScript comment scripts.
-
-#### Scenario: Pull request lint comments
-
-- **WHEN** CI runs on a pull request and `golangci-lint` reports findings on changed lines
-- **THEN** Reviewdog posts PR review comments for those findings
-
-#### Scenario: Push to main uses check annotations
-
-- **WHEN** CI lint runs on a push to `main`
-- **THEN** Reviewdog reports `golangci-lint` findings via GitHub Checks rather than PR review comments
-
-### Requirement: Vulnerability scanning via govulncheck SARIF
-
-The CI workflow SHALL run `govulncheck` for service modules selected by the same path filters as integration tests, produce SARIF output, and upload results via `github/codeql-action/upload-sarif`. The job SHALL NOT fail when vulnerabilities are found.
-
-#### Scenario: SARIF uploaded for affected services
-
-- **WHEN** CI runs and path filters select a service module
-- **THEN** `govulncheck` scans that service and uploads SARIF to GitHub Code Scanning
-
-#### Scenario: Vulnerabilities do not fail CI
-
-- **WHEN** `govulncheck` reports vulnerabilities
-- **THEN** the govulncheck job completes successfully
+The CI workflow SHALL run `govulncheck` for every Go module through `scripts/vulncheck.sh` on the weekly schedule. The scheduled job SHALL fail when vulnerabilities are found; pull requests SHALL NOT be blocked by it.
 
 #### Scenario: Weekly full scan
 
 - **WHEN** CI runs on the scheduled weekly workflow trigger
-- **THEN** `govulncheck` scans all service modules regardless of path filters
+- **THEN** `govulncheck` scans all Go modules
+
+#### Scenario: Pull requests are not blocked
+
+- **WHEN** CI runs on a pull request or push
+- **THEN** no `govulncheck` job runs
 
 ### Requirement: Go toolchain version
 
-The repository CI and Go module toolchain SHALL use Go **1.26.5**.
+The repository CI SHALL run lint and test jobs inside the devenv shell, which pins the Go toolchain.
 
 #### Scenario: CI Go version
 
-- **WHEN** CI installs Go for lint or test jobs
-- **THEN** it uses Go 1.26.5
+- **WHEN** CI runs lint or test jobs
+- **THEN** they use the Go toolchain provided by devenv
 
 ### Requirement: golangci-lint configuration
 
-The repository SHALL include a root `golangci-lint` configuration that excludes generated code paths consistent with local formatting excludes (protobuf outputs, templ outputs, sqlc database outputs).
+The repository SHALL generate a root `golangci-lint` configuration from `repo.golangci` in `devenv.nix` that excludes generated code paths consistent with local formatting excludes (protobuf outputs, templ outputs, sqlc database outputs).
 
 #### Scenario: Generated code excluded
 

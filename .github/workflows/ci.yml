@@ -10,67 +10,16 @@ on:
 permissions:
   contents: read
 
-env:
-  GO_VERSION: "1.26.5"
-  GO_CACHE_DEPENDENCY_PATH: |
-    go.work
-    **/go.sum
-  GO_MODULE_GLOBS: >-
-    ./services/users/...
-    ./services/products/...
-    ./services/search/...
-    ./services/inventory/...
-    ./services/orders/...
-    ./services/checkout/...
-    ./services/cart/...
-    ./services/web/...
-    ./shared/auth/...
-    ./shared/err/dberr/...
-    ./shared/err/grpcerr/...
-    ./shared/messaging/...
-    ./shared/observe/metric/...
-    ./shared/observe/log/...
-    ./shared/observe/trace/...
-    ./shared/proto/...
-    ./shared/runtime/...
-    ./shared/testutil/postgres/...
-    ./shared/testutil/kafka/...
-    ./shared/testutil/meilisearch/...
-    ./shared/testutil/redis/...
-
 jobs:
   lint:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
-      checks: write
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - uses: reviewdog/action-golangci-lint@v2
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          go_version: ${{ env.GO_VERSION }}
-          golangci_lint_version: v2.12.2
-          golangci_lint_flags: --config=.golangci.yml ${{ env.GO_MODULE_GLOBS }}
-          reporter: ${{ github.event_name == 'pull_request' && 'github-pr-review' || 'github-check' }}
-          filter_mode: diff_context
-          fail_level: error
+    uses: phuchoang2603/devenv-modules/.github/workflows/devenv.yml@main
+    with:
+      run: devenv tasks run repo:lint
 
   changes:
     runs-on: ubuntu-latest
     outputs:
-      users: ${{ steps.filter.outputs.users }}
-      products: ${{ steps.filter.outputs.products }}
-      search: ${{ steps.filter.outputs.search }}
-      inventory: ${{ steps.filter.outputs.inventory }}
-      orders: ${{ steps.filter.outputs.orders }}
-      checkout: ${{ steps.filter.outputs.checkout }}
-      cart: ${{ steps.filter.outputs.cart }}
-      web: ${{ steps.filter.outputs.web }}
+      services: ${{ steps.filter.outputs.changes }}
     steps:
       - uses: actions/checkout@v6
       - uses: dorny/paths-filter@v4
@@ -90,6 +39,7 @@ jobs:
               - 'go.work*'
               - '.github/workflows/ci.yml'
               - 'scripts/check.sh'
+              - 'devenv.*'
             products:
               - 'services/products/**'
               - 'shared/proto/**'
@@ -103,6 +53,7 @@ jobs:
               - 'go.work*'
               - '.github/workflows/ci.yml'
               - 'scripts/check.sh'
+              - 'devenv.*'
             search:
               - 'services/search/**'
               - 'shared/proto/**'
@@ -116,6 +67,7 @@ jobs:
               - 'go.work*'
               - '.github/workflows/ci.yml'
               - 'scripts/check.sh'
+              - 'devenv.*'
             inventory:
               - 'services/inventory/**'
               - 'shared/proto/**'
@@ -130,6 +82,7 @@ jobs:
               - 'go.work*'
               - '.github/workflows/ci.yml'
               - 'scripts/check.sh'
+              - 'devenv.*'
             orders:
               - 'services/orders/**'
               - 'shared/proto/**'
@@ -144,6 +97,7 @@ jobs:
               - 'go.work*'
               - '.github/workflows/ci.yml'
               - 'scripts/check.sh'
+              - 'devenv.*'
             checkout:
               - 'services/checkout/**'
               - 'shared/proto/**'
@@ -158,6 +112,7 @@ jobs:
               - 'go.work*'
               - '.github/workflows/ci.yml'
               - 'scripts/check.sh'
+              - 'devenv.*'
             cart:
               - 'services/cart/**'
               - 'shared/proto/**'
@@ -168,6 +123,7 @@ jobs:
               - 'go.work*'
               - '.github/workflows/ci.yml'
               - 'scripts/check.sh'
+              - 'devenv.*'
             web:
               - 'services/web/**'
               - 'shared/proto/**'
@@ -178,82 +134,21 @@ jobs:
               - 'go.work*'
               - '.github/workflows/ci.yml'
               - 'scripts/check.sh'
+              - 'devenv.*'
 
   test:
     needs: changes
-    runs-on: ubuntu-latest
+    if: needs.changes.outputs.services != '[]'
     strategy:
       fail-fast: false
       matrix:
-        service:
-          - users
-          - products
-          - search
-          - inventory
-          - orders
-          - checkout
-          - cart
-          - web
-    steps:
-      - name: Skip when path filter does not match
-        if: needs.changes.outputs[matrix.service] != 'true'
-        run: echo "Skipping tests for ${{ matrix.service }}"
-
-      - uses: actions/checkout@v6
-        if: needs.changes.outputs[matrix.service] == 'true'
-
-      - uses: actions/setup-go@v6
-        if: needs.changes.outputs[matrix.service] == 'true'
-        with:
-          go-version: ${{ env.GO_VERSION }}
-          cache-dependency-path: ${{ env.GO_CACHE_DEPENDENCY_PATH }}
-
-      - name: Test ${{ matrix.service }}
-        if: needs.changes.outputs[matrix.service] == 'true'
-        run: scripts/check.sh ${{ matrix.service }}
+        service: ${{ fromJSON(needs.changes.outputs.services) }}
+    uses: phuchoang2603/devenv-modules/.github/workflows/devenv.yml@main
+    with:
+      run: bash scripts/check.sh ${{ matrix.service }}
 
   govulncheck:
-    needs: changes
-    runs-on: ubuntu-latest
-    permissions:
-      security-events: write
-      contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        service:
-          - users
-          - products
-          - search
-          - inventory
-          - orders
-          - checkout
-          - cart
-          - web
-    steps:
-      - name: Skip when path filter does not match
-        if: github.event_name != 'schedule' && needs.changes.outputs[matrix.service] != 'true'
-        run: echo "Skipping govulncheck for ${{ matrix.service }}"
-
-      - uses: actions/checkout@v6
-        if: github.event_name == 'schedule' || needs.changes.outputs[matrix.service] == 'true'
-
-      - uses: actions/setup-go@v6
-        if: github.event_name == 'schedule' || needs.changes.outputs[matrix.service] == 'true'
-        with:
-          go-version: ${{ env.GO_VERSION }}
-          cache-dependency-path: ${{ env.GO_CACHE_DEPENDENCY_PATH }}
-
-      - name: Run govulncheck
-        if: github.event_name == 'schedule' || needs.changes.outputs[matrix.service] == 'true'
-        run: |
-          go install golang.org/x/vuln/cmd/govulncheck@latest
-          govulncheck -C "services/${{ matrix.service }}" -format sarif ./... > govulncheck.raw.sarif
-          jq '(.runs[].results[]? | select(has("stacks")) | .stacks) |= unique' govulncheck.raw.sarif > govulncheck.sarif
-
-      - name: Upload SARIF file
-        if: github.event_name == 'schedule' || needs.changes.outputs[matrix.service] == 'true'
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: govulncheck.sarif
-          category: govulncheck-${{ matrix.service }}
+    if: github.event_name == 'schedule'
+    uses: phuchoang2603/devenv-modules/.github/workflows/devenv.yml@main
+    with:
+      run: bash scripts/vulncheck.sh

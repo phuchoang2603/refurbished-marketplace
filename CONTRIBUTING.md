@@ -23,7 +23,7 @@ kubectl apply --server-side -f infra/argocd/prod/root.yaml
 # https://shop.phuchoang.sbs
 ```
 
-Before opening a PR, run `devenv tasks run repo:check`. It runs the lint, chart validation, and service tests that CI runs.
+Before opening a PR, run `devenv tasks run repo:lint` (ast-grep rules, golangci-lint, chart validation and policies). Service tests run in CI; `scripts/check.sh [service]` runs them locally.
 
 ## Development guides
 
