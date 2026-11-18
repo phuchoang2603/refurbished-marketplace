@@ -29,7 +29,8 @@ func (c *InventoryClient) Close() error {
 }
 
 func (c *InventoryClient) GetStock(ctx context.Context, productID string) (*inventoryv1.Stock, error) {
-	return c.client.GetStock(ctx, &inventoryv1.GetStockRequest{ProductId: productID})
+	response, err := c.client.GetStock(ctx, &inventoryv1.GetStockRequest{ProductId: productID})
+	return response.GetStock(), err
 }
 
 func (c *InventoryClient) GetStocksByIDs(ctx context.Context, productIDs []string) (*inventoryv1.GetStocksByIDsResponse, error) {

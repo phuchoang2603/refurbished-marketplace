@@ -30,24 +30,24 @@ func TestCreateProductDurableEvent(t *testing.T) {
 		t.Fatal(err)
 	}
 	var row outboxRow
-	if err := store.Database().QueryRowContext(t.Context(), "SELECT id, aggregate_id, event_type, payload FROM products_outbox WHERE aggregate_id = $1", created.GetId()).Scan(&row.ID, &row.AggregateID, &row.EventType, &row.Payload); err != nil {
+	if err := store.Database().QueryRowContext(t.Context(), "SELECT id, aggregate_id, event_type, payload FROM products_outbox WHERE aggregate_id = $1", created.GetProduct().GetId()).Scan(&row.ID, &row.AggregateID, &row.EventType, &row.Payload); err != nil {
 		t.Fatal(err)
 	}
 	var event productsv1.ProductCreated
 	if err := proto.Unmarshal(row.Payload, &event); err != nil {
 		t.Fatal(err)
 	}
-	if row.ID != event.GetEventId() || row.AggregateID != event.GetProductId() || row.AggregateID != created.GetId() || row.EventType != messaging.EventTypeProductCreated {
+	if row.ID != event.GetEventId() || row.AggregateID != event.GetProductId() || row.AggregateID != created.GetProduct().GetId() || row.EventType != messaging.EventTypeProductCreated {
 		t.Fatalf("outbox identity mismatch: %v", &event)
 	}
-	if event.InitialQty == nil || event.GetInitialQty() != 0 || event.GetName() != req.Name || event.GetDescription() != req.Description || event.GetPriceCents() != req.PriceCents || event.GetMerchantId() != req.MerchantId || event.GetSchemaVersion() != 1 || event.GetProductVersion() != 1 || !event.GetOccurredAt().AsTime().Equal(created.GetCreatedAt().AsTime()) {
+	if event.InitialQty == nil || event.GetInitialQty() != 0 || event.GetName() != req.Name || event.GetDescription() != req.Description || event.GetPriceCents() != req.PriceCents || event.GetMerchantId() != req.MerchantId || event.GetSchemaVersion() != 1 || event.GetProductVersion() != 1 || !event.GetOccurredAt().AsTime().Equal(created.GetProduct().GetCreatedAt().AsTime()) {
 		t.Fatalf("unexpected event: %v", &event)
 	}
-	if _, err := svc.GetProductByID(t.Context(), uuid.MustParse(created.Id)); err != nil {
+	if _, err := svc.GetProductByID(t.Context(), uuid.MustParse(created.GetProduct().GetId())); err != nil {
 		t.Fatal(err)
 	}
 	var retained outboxRow
-	if err := store.Database().QueryRowContext(t.Context(), "SELECT id, aggregate_id, event_type, payload FROM products_outbox WHERE aggregate_id = $1", created.Id).Scan(&retained.ID, &retained.AggregateID, &retained.EventType, &retained.Payload); err != nil {
+	if err := store.Database().QueryRowContext(t.Context(), "SELECT id, aggregate_id, event_type, payload FROM products_outbox WHERE aggregate_id = $1", created.GetProduct().GetId()).Scan(&retained.ID, &retained.AggregateID, &retained.EventType, &retained.Payload); err != nil {
 		t.Fatal(err)
 	}
 	var retainedEvent productsv1.ProductCreated

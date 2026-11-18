@@ -7,13 +7,13 @@ import (
 )
 
 type UsersService struct {
-	LoginFn      func(context.Context, string, string) (*usersv1.TokenResponse, error)
-	RefreshFn    func(context.Context, string) (*usersv1.TokenResponse, error)
+	LoginFn      func(context.Context, string, string) (*usersv1.Tokens, error)
+	RefreshFn    func(context.Context, string) (*usersv1.Tokens, error)
 	LogoutFn     func(context.Context, string) (*usersv1.LogoutResponse, error)
 	CreateUserFn func(context.Context, string, string) (*usersv1.User, error)
 }
 
-func (f *UsersService) Login(ctx context.Context, email, password string) (*usersv1.TokenResponse, error) {
+func (f *UsersService) Login(ctx context.Context, email, password string) (*usersv1.Tokens, error) {
 	if f.LoginFn != nil {
 		return f.LoginFn(ctx, email, password)
 	}
@@ -34,7 +34,7 @@ func (f *UsersService) CreateUser(ctx context.Context, email, password string) (
 	return &usersv1.User{}, nil
 }
 
-func (f *UsersService) Refresh(ctx context.Context, refreshToken string) (*usersv1.TokenResponse, error) {
+func (f *UsersService) Refresh(ctx context.Context, refreshToken string) (*usersv1.Tokens, error) {
 	if f.RefreshFn != nil {
 		return f.RefreshFn(ctx, refreshToken)
 	}

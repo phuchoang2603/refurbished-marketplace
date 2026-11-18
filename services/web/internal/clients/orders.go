@@ -29,7 +29,8 @@ func (c *OrdersClient) Close() error {
 }
 
 func (c *OrdersClient) GetOrderByID(ctx context.Context, id string) (*ordersv1.Order, error) {
-	return c.client.GetOrderByID(ctx, &ordersv1.GetOrderByIDRequest{Id: id})
+	response, err := c.client.GetOrderByID(ctx, &ordersv1.GetOrderByIDRequest{Id: id})
+	return response.GetOrder(), err
 }
 
 func (c *OrdersClient) ListOrdersByBuyer(ctx context.Context, buyerUserID string, limit, offset int32) (*ordersv1.ListOrdersByBuyerResponse, error) {

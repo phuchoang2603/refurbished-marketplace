@@ -10,8 +10,8 @@ import (
 	"google.golang.org/grpc/codes"
 )
 
-func mapTokens(t service.Tokens) *usersv1.TokenResponse {
-	return &usersv1.TokenResponse{
+func mapTokens(t service.Tokens) *usersv1.Tokens {
+	return &usersv1.Tokens{
 		AccessToken:      t.AccessToken,
 		RefreshToken:     t.RefreshToken,
 		TokenType:        t.TokenType,
@@ -20,16 +20,16 @@ func mapTokens(t service.Tokens) *usersv1.TokenResponse {
 	}
 }
 
-func (s *Server) Login(ctx context.Context, req *usersv1.LoginRequest) (*usersv1.TokenResponse, error) {
+func (s *Server) Login(ctx context.Context, req *usersv1.LoginRequest) (*usersv1.LoginResponse, error) {
 	tokens, err := s.svc.Login(ctx, req.GetEmail(), req.GetPassword())
 	if err != nil {
 		return nil, grpcerr.Map(err, grpcerr.Mapping{Err: service.ErrInvalidCredentials, Code: codes.Unauthenticated, Message: "invalid credentials"})
 	}
 
-	return mapTokens(tokens), nil
+	return &usersv1.LoginResponse{Tokens: mapTokens(tokens)}, nil
 }
 
-func (s *Server) Refresh(ctx context.Context, req *usersv1.RefreshRequest) (*usersv1.TokenResponse, error) {
+func (s *Server) Refresh(ctx context.Context, req *usersv1.RefreshRequest) (*usersv1.RefreshResponse, error) {
 	tokens, err := s.svc.Refresh(ctx, req.GetRefreshToken())
 	if err != nil {
 		return nil, grpcerr.Map(
@@ -40,7 +40,7 @@ func (s *Server) Refresh(ctx context.Context, req *usersv1.RefreshRequest) (*use
 		)
 	}
 
-	return mapTokens(tokens), nil
+	return &usersv1.RefreshResponse{Tokens: mapTokens(tokens)}, nil
 }
 
 func (s *Server) Logout(ctx context.Context, req *usersv1.LogoutRequest) (*usersv1.LogoutResponse, error) {

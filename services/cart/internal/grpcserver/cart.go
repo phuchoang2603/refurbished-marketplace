@@ -25,7 +25,7 @@ func mapCart(c service.Cart) *cartv1.Cart {
 	return &cartv1.Cart{CartId: c.CartID, Items: items, CreatedAt: timestamppb.New(c.CreatedAt), UpdatedAt: timestamppb.New(c.UpdatedAt)}
 }
 
-func (s *Server) GetCart(ctx context.Context, req *cartv1.GetCartRequest) (*cartv1.Cart, error) {
+func (s *Server) GetCart(ctx context.Context, req *cartv1.GetCartRequest) (*cartv1.GetCartResponse, error) {
 	if _, err := grpcerr.ParseUUID(req.GetCartId(), "cart id"); err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (s *Server) GetCart(ctx context.Context, req *cartv1.GetCartRequest) (*cart
 	if err != nil {
 		return nil, grpcerr.Map(err, grpcerr.Mapping{Err: service.ErrInvalidCartID, Code: codes.InvalidArgument})
 	}
-	return mapCart(c), nil
+	return &cartv1.GetCartResponse{Cart: mapCart(c)}, nil
 }
 
 func cartWriteMappings(err error) error {
@@ -48,7 +48,7 @@ func cartWriteMappings(err error) error {
 	)
 }
 
-func (s *Server) AddCartItem(ctx context.Context, req *cartv1.AddCartItemRequest) (*cartv1.Cart, error) {
+func (s *Server) AddCartItem(ctx context.Context, req *cartv1.AddCartItemRequest) (*cartv1.AddCartItemResponse, error) {
 	if _, err := grpcerr.ParseUUID(req.GetCartId(), "cart id"); err != nil {
 		return nil, err
 	}
@@ -62,10 +62,10 @@ func (s *Server) AddCartItem(ctx context.Context, req *cartv1.AddCartItemRequest
 	if err != nil {
 		return nil, cartWriteMappings(err)
 	}
-	return mapCart(c), nil
+	return &cartv1.AddCartItemResponse{Cart: mapCart(c)}, nil
 }
 
-func (s *Server) SetCartItemQuantity(ctx context.Context, req *cartv1.SetCartItemQuantityRequest) (*cartv1.Cart, error) {
+func (s *Server) SetCartItemQuantity(ctx context.Context, req *cartv1.SetCartItemQuantityRequest) (*cartv1.SetCartItemQuantityResponse, error) {
 	if _, err := grpcerr.ParseUUID(req.GetCartId(), "cart id"); err != nil {
 		return nil, err
 	}
@@ -81,10 +81,10 @@ func (s *Server) SetCartItemQuantity(ctx context.Context, req *cartv1.SetCartIte
 	if err != nil {
 		return nil, cartWriteMappings(err)
 	}
-	return mapCart(c), nil
+	return &cartv1.SetCartItemQuantityResponse{Cart: mapCart(c)}, nil
 }
 
-func (s *Server) RemoveCartItems(ctx context.Context, req *cartv1.RemoveCartItemsRequest) (*cartv1.Cart, error) {
+func (s *Server) RemoveCartItems(ctx context.Context, req *cartv1.RemoveCartItemsRequest) (*cartv1.RemoveCartItemsResponse, error) {
 	if _, err := grpcerr.ParseUUID(req.GetCartId(), "cart id"); err != nil {
 		return nil, err
 	}
@@ -97,5 +97,5 @@ func (s *Server) RemoveCartItems(ctx context.Context, req *cartv1.RemoveCartItem
 	if err != nil {
 		return nil, cartWriteMappings(err)
 	}
-	return mapCart(c), nil
+	return &cartv1.RemoveCartItemsResponse{Cart: mapCart(c)}, nil
 }

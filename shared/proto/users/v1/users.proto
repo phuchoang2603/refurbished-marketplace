@@ -2,15 +2,15 @@ syntax = "proto3";
 
 package users.v1;
 
-option go_package = "github.com/phuchoang2603/refurbished-marketplace/shared/proto/users/v1;usersv1";
-
 import "google/protobuf/timestamp.proto";
 
+option go_package = "github.com/phuchoang2603/refurbished-marketplace/shared/proto/users/v1;usersv1";
+
 service UsersService {
-  rpc CreateUser(CreateUserRequest) returns (User);
-  rpc GetUserByID(GetUserByIDRequest) returns (User);
-  rpc Login(LoginRequest) returns (TokenResponse);
-  rpc Refresh(RefreshRequest) returns (TokenResponse);
+  rpc CreateUser(CreateUserRequest) returns (CreateUserResponse);
+  rpc GetUserByID(GetUserByIDRequest) returns (GetUserByIDResponse);
+  rpc Login(LoginRequest) returns (LoginResponse);
+  rpc Refresh(RefreshRequest) returns (RefreshResponse);
   rpc Logout(LogoutRequest) returns (LogoutResponse);
 }
 
@@ -38,7 +38,7 @@ message LogoutRequest {
 
 message LogoutResponse {}
 
-message TokenResponse {
+message Tokens {
   string access_token = 1;
   string refresh_token = 2;
   string token_type = 3;
@@ -51,4 +51,20 @@ message User {
   string email = 2;
   google.protobuf.Timestamp created_at = 3;
   google.protobuf.Timestamp updated_at = 4;
+}
+
+message CreateUserResponse {
+  User user = 1;
+}
+
+message GetUserByIDResponse {
+  User user = 1;
+}
+
+message LoginResponse {
+  Tokens tokens = 1;
+}
+
+message RefreshResponse {
+  Tokens tokens = 1;
 }

@@ -15,11 +15,11 @@ import (
 
 func TestLoginSetsCookiesAndRedirects(t *testing.T) {
 	usersSvc := &fakes.UsersService{
-		LoginFn: func(ctx context.Context, email, password string) (*usersv1.TokenResponse, error) {
+		LoginFn: func(ctx context.Context, email, password string) (*usersv1.Tokens, error) {
 			if email != "buyer@example.com" || password != "secret123" {
 				t.Fatalf("unexpected credentials: %q %q", email, password)
 			}
-			return &usersv1.TokenResponse{
+			return &usersv1.Tokens{
 				AccessToken:      "access-token",
 				RefreshToken:     "refresh-token",
 				ExpiresIn:        60,
@@ -56,8 +56,8 @@ func TestRegisterSetsCookiesAndRedirects(t *testing.T) {
 			}
 			return &usersv1.User{Id: "user-1", Email: email}, nil
 		},
-		LoginFn: func(ctx context.Context, email, password string) (*usersv1.TokenResponse, error) {
-			return &usersv1.TokenResponse{
+		LoginFn: func(ctx context.Context, email, password string) (*usersv1.Tokens, error) {
+			return &usersv1.Tokens{
 				AccessToken:      "access-token",
 				RefreshToken:     "refresh-token",
 				ExpiresIn:        60,

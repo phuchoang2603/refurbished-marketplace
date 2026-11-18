@@ -16,11 +16,11 @@ import (
 func TestExpiredAccessIsRefreshedFromRefreshCookie(t *testing.T) {
 	newAccess := signedAccessToken(t, "user-1")
 	usersSvc := &fakes.UsersService{
-		RefreshFn: func(ctx context.Context, refreshToken string) (*usersv1.TokenResponse, error) {
+		RefreshFn: func(ctx context.Context, refreshToken string) (*usersv1.Tokens, error) {
 			if refreshToken != "old-refresh" {
 				t.Fatalf("refresh token = %q, want old-refresh", refreshToken)
 			}
-			return &usersv1.TokenResponse{AccessToken: newAccess, RefreshToken: "new-refresh", ExpiresIn: 60, RefreshExpiresIn: 3600}, nil
+			return &usersv1.Tokens{AccessToken: newAccess, RefreshToken: "new-refresh", ExpiresIn: 60, RefreshExpiresIn: 3600}, nil
 		},
 	}
 	ordersSvc := &fakes.OrdersService{
@@ -47,7 +47,7 @@ func TestExpiredAccessIsRefreshedFromRefreshCookie(t *testing.T) {
 
 func TestFailedRefreshClearsCookies(t *testing.T) {
 	usersSvc := &fakes.UsersService{
-		RefreshFn: func(ctx context.Context, refreshToken string) (*usersv1.TokenResponse, error) {
+		RefreshFn: func(ctx context.Context, refreshToken string) (*usersv1.Tokens, error) {
 			return nil, context.Canceled
 		},
 	}

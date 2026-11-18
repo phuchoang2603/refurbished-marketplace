@@ -28,12 +28,14 @@ func (c *UsersClient) Close() error {
 	return nil
 }
 
-func (c *UsersClient) Login(ctx context.Context, email, password string) (*usersv1.TokenResponse, error) {
-	return c.client.Login(ctx, &usersv1.LoginRequest{Email: email, Password: password})
+func (c *UsersClient) Login(ctx context.Context, email, password string) (*usersv1.Tokens, error) {
+	response, err := c.client.Login(ctx, &usersv1.LoginRequest{Email: email, Password: password})
+	return response.GetTokens(), err
 }
 
-func (c *UsersClient) Refresh(ctx context.Context, refreshToken string) (*usersv1.TokenResponse, error) {
-	return c.client.Refresh(ctx, &usersv1.RefreshRequest{RefreshToken: refreshToken})
+func (c *UsersClient) Refresh(ctx context.Context, refreshToken string) (*usersv1.Tokens, error) {
+	response, err := c.client.Refresh(ctx, &usersv1.RefreshRequest{RefreshToken: refreshToken})
+	return response.GetTokens(), err
 }
 
 func (c *UsersClient) Logout(ctx context.Context, refreshToken string) (*usersv1.LogoutResponse, error) {
@@ -41,5 +43,6 @@ func (c *UsersClient) Logout(ctx context.Context, refreshToken string) (*usersv1
 }
 
 func (c *UsersClient) CreateUser(ctx context.Context, email, password string) (*usersv1.User, error) {
-	return c.client.CreateUser(ctx, &usersv1.CreateUserRequest{Email: email, Password: password})
+	response, err := c.client.CreateUser(ctx, &usersv1.CreateUserRequest{Email: email, Password: password})
+	return response.GetUser(), err
 }

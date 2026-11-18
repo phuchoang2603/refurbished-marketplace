@@ -26,7 +26,7 @@ func mapProduct(p service.Product) *productsv1.Product {
 	}
 }
 
-func (s *Server) CreateProduct(ctx context.Context, req *productsv1.CreateProductRequest) (*productsv1.Product, error) {
+func (s *Server) CreateProduct(ctx context.Context, req *productsv1.CreateProductRequest) (*productsv1.CreateProductResponse, error) {
 	merchantID, err := grpcerr.ParseUUID(req.GetMerchantId(), "merchant id")
 	if err != nil {
 		return nil, err
@@ -45,10 +45,10 @@ func (s *Server) CreateProduct(ctx context.Context, req *productsv1.CreateProduc
 		)
 	}
 
-	return mapProduct(p), nil
+	return &productsv1.CreateProductResponse{Product: mapProduct(p)}, nil
 }
 
-func (s *Server) GetProductByID(ctx context.Context, req *productsv1.GetProductByIDRequest) (*productsv1.Product, error) {
+func (s *Server) GetProductByID(ctx context.Context, req *productsv1.GetProductByIDRequest) (*productsv1.GetProductByIDResponse, error) {
 	id, err := grpcerr.ParseUUID(req.GetId(), "id")
 	if err != nil {
 		return nil, err
@@ -59,7 +59,7 @@ func (s *Server) GetProductByID(ctx context.Context, req *productsv1.GetProductB
 		return nil, grpcerr.Map(err, grpcerr.Mapping{Err: service.ErrProductNotFound, Code: codes.NotFound, Message: "product not found"})
 	}
 
-	return mapProduct(p), nil
+	return &productsv1.GetProductByIDResponse{Product: mapProduct(p)}, nil
 }
 
 func (s *Server) GetProductsByIDs(ctx context.Context, req *productsv1.GetProductsByIDsRequest) (*productsv1.GetProductsByIDsResponse, error) {

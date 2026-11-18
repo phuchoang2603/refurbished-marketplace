@@ -43,21 +43,21 @@ func TestGradingPersistsInReadsAndEvents(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			read, err := server.GetProductByID(t.Context(), &productsv1.GetProductByIDRequest{Id: created.Id})
+			read, err := server.GetProductByID(t.Context(), &productsv1.GetProductByIDRequest{Id: created.GetProduct().GetId()})
 			if err != nil {
 				t.Fatal(err)
 			}
-			batch, err := server.GetProductsByIDs(t.Context(), &productsv1.GetProductsByIDsRequest{Ids: []string{created.Id}})
+			batch, err := server.GetProductsByIDs(t.Context(), &productsv1.GetProductsByIDsRequest{Ids: []string{created.GetProduct().GetId()}})
 			if err != nil || len(batch.GetProducts()) != 1 {
 				t.Fatalf("batch=%v error=%v", batch, err)
 			}
-			for _, p := range []*productsv1.Product{created, read, batch.Products[0]} {
+			for _, p := range []*productsv1.Product{created.GetProduct(), read.GetProduct(), batch.Products[0]} {
 				if p.GetCategory() != category || p.GetCondition() != condition {
 					t.Fatalf("grading lost: %v", p)
 				}
 			}
 			var row outboxRow
-			if err := store.Database().QueryRowContext(t.Context(), "SELECT id, aggregate_id, event_type, payload FROM products_outbox WHERE aggregate_id = $1", created.Id).Scan(&row.ID, &row.AggregateID, &row.EventType, &row.Payload); err != nil {
+			if err := store.Database().QueryRowContext(t.Context(), "SELECT id, aggregate_id, event_type, payload FROM products_outbox WHERE aggregate_id = $1", created.GetProduct().GetId()).Scan(&row.ID, &row.AggregateID, &row.EventType, &row.Payload); err != nil {
 				t.Fatal(err)
 			}
 			var event productsv1.ProductCreated

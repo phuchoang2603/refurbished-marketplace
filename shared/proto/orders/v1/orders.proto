@@ -2,12 +2,12 @@ syntax = "proto3";
 
 package orders.v1;
 
-option go_package = "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1;ordersv1";
-
 import "google/protobuf/timestamp.proto";
 
+option go_package = "github.com/phuchoang2603/refurbished-marketplace/shared/proto/orders/v1;ordersv1";
+
 service OrdersService {
-  rpc GetOrderByID(GetOrderByIDRequest) returns (Order);
+  rpc GetOrderByID(GetOrderByIDRequest) returns (GetOrderByIDResponse);
   rpc ListOrdersByBuyer(ListOrdersByBuyerRequest) returns (ListOrdersByBuyerResponse);
 }
 
@@ -70,4 +70,8 @@ message ListOrdersByBuyerResponse {
 message UpdateOrderStatusRequest {
   string id = 1;
   OrderStatus status = 2;
+}
+
+message GetOrderByIDResponse {
+  Order order = 1;
 }

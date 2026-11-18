@@ -48,7 +48,7 @@ func mapOrder(o service.Order) *ordersv1.Order {
 	}
 }
 
-func (s *Server) GetOrderByID(ctx context.Context, req *ordersv1.GetOrderByIDRequest) (*ordersv1.Order, error) {
+func (s *Server) GetOrderByID(ctx context.Context, req *ordersv1.GetOrderByIDRequest) (*ordersv1.GetOrderByIDResponse, error) {
 	id, err := grpcerr.ParseUUID(req.GetId(), "id")
 	if err != nil {
 		return nil, err
@@ -59,7 +59,7 @@ func (s *Server) GetOrderByID(ctx context.Context, req *ordersv1.GetOrderByIDReq
 		return nil, grpcerr.Map(err, grpcerr.Mapping{Err: service.ErrOrderNotFound, Code: codes.NotFound, Message: "order not found"})
 	}
 
-	return mapOrder(order), nil
+	return &ordersv1.GetOrderByIDResponse{Order: mapOrder(order)}, nil
 }
 
 func (s *Server) ListOrdersByBuyer(ctx context.Context, req *ordersv1.ListOrdersByBuyerRequest) (*ordersv1.ListOrdersByBuyerResponse, error) {

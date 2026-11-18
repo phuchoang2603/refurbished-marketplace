@@ -74,7 +74,7 @@ func (server *Server) SubmitCheckout(ctx context.Context, request *checkoutv1.Su
 	return submitter.SubmitCheckout(ctx, request)
 }
 
-func (server *Server) GetCheckout(ctx context.Context, request *checkoutv1.GetCheckoutRequest) (*checkoutv1.CheckoutStatus, error) {
+func (server *Server) GetCheckout(ctx context.Context, request *checkoutv1.GetCheckoutRequest) (*checkoutv1.GetCheckoutResponse, error) {
 	authenticatedBuyer, err := server.authenticatedBuyer(ctx)
 	if err != nil {
 		return nil, err
@@ -118,7 +118,7 @@ func (server *Server) GetCheckout(ctx context.Context, request *checkoutv1.GetCh
 	if view.BuyerUserID != buyerID {
 		return nil, status.Error(codes.NotFound, "checkout not found")
 	}
-	return &checkoutv1.CheckoutStatus{
+	return &checkoutv1.GetCheckoutResponse{Checkout: &checkoutv1.CheckoutStatus{
 		CheckoutId:        view.CheckoutID.String(),
 		OrderId:           view.OrderID,
 		State:             view.State,
@@ -128,7 +128,7 @@ func (server *Server) GetCheckout(ctx context.Context, request *checkoutv1.GetCh
 		BuyerUserId:       view.BuyerUserID.String(),
 		PaymentStatus:     view.PaymentStatus,
 		IntentKey:         view.IntentKey,
-	}, nil
+	}}, nil
 }
 
 func (server *Server) HandleGatewayWebhook(ctx context.Context, request *checkoutv1.HandleGatewayWebhookRequest) (*checkoutv1.HandleGatewayWebhookResponse, error) {

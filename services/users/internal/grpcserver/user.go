@@ -20,7 +20,7 @@ func mapUser(u service.User) *usersv1.User {
 	}
 }
 
-func (s *Server) CreateUser(ctx context.Context, req *usersv1.CreateUserRequest) (*usersv1.User, error) {
+func (s *Server) CreateUser(ctx context.Context, req *usersv1.CreateUserRequest) (*usersv1.CreateUserResponse, error) {
 	u, err := s.svc.CreateUser(ctx, req.GetEmail(), req.GetPassword())
 	if err != nil {
 		return nil, grpcerr.Map(
@@ -31,10 +31,10 @@ func (s *Server) CreateUser(ctx context.Context, req *usersv1.CreateUserRequest)
 		)
 	}
 
-	return mapUser(u), nil
+	return &usersv1.CreateUserResponse{User: mapUser(u)}, nil
 }
 
-func (s *Server) GetUserByID(ctx context.Context, req *usersv1.GetUserByIDRequest) (*usersv1.User, error) {
+func (s *Server) GetUserByID(ctx context.Context, req *usersv1.GetUserByIDRequest) (*usersv1.GetUserByIDResponse, error) {
 	id, err := grpcerr.ParseUUID(req.GetId(), "id")
 	if err != nil {
 		return nil, err
@@ -45,5 +45,5 @@ func (s *Server) GetUserByID(ctx context.Context, req *usersv1.GetUserByIDReques
 		return nil, grpcerr.Map(err, grpcerr.Mapping{Err: service.ErrUserNotFound, Code: codes.NotFound, Message: "user not found"})
 	}
 
-	return mapUser(u), nil
+	return &usersv1.GetUserByIDResponse{User: mapUser(u)}, nil
 }

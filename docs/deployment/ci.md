@@ -41,4 +41,4 @@ See [gitops.md](gitops.md).
 | `shared/testutil/meilisearch/**` | search                                                |
 | `shared/testutil/redis/**`       | cart, checkout                                        |
 
-Formatting and protobuf codegen (`treefmt`, `codegen:proto`) stay out of CI; `repo:lint` fails when sqlc output is stale. Changes to `devenv.*` trigger every service.
+Formatting (`treefmt`) stays out of CI; `repo:lint` runs `buf lint` and fails when protobuf or sqlc output is stale. Changes to `devenv.*` trigger every service.

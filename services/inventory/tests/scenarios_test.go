@@ -76,7 +76,7 @@ func TestStockReadRPCs(t *testing.T) {
 		t.Fatal(err)
 	}
 	row, err := server.GetStock(t.Context(), &inventoryv1.GetStockRequest{ProductId: known.String()})
-	if err != nil || row.GetAvailableQty() != 4 || row.GetReservedQty() != 0 {
+	if err != nil || row.GetStock().GetAvailableQty() != 4 || row.GetStock().GetReservedQty() != 0 {
 		t.Fatalf("stock = %v, %v", row, err)
 	}
 	if _, err := server.GetStock(t.Context(), &inventoryv1.GetStockRequest{ProductId: missing.String()}); status.Code(err) != codes.NotFound {

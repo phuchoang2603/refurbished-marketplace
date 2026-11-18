@@ -42,7 +42,10 @@ export default function () {
   const valid = check(response, {
     "gRPC OK": (r) => r.status === grpc.StatusOK,
     "correct stock returned": (r) =>
-      r.message && r.message.productId === product.id && r.message.availableQty === 100,
+      r.message &&
+      r.message.stock &&
+      r.message.stock.productId === product.id &&
+      r.message.stock.availableQty === 100,
   });
   errors.add(!valid);
 }

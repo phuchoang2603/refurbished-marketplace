@@ -13,8 +13,8 @@ import (
 )
 
 type UsersService interface {
-	Login(ctx context.Context, email, password string) (*usersv1.TokenResponse, error)
-	Refresh(ctx context.Context, refreshToken string) (*usersv1.TokenResponse, error)
+	Login(ctx context.Context, email, password string) (*usersv1.Tokens, error)
+	Refresh(ctx context.Context, refreshToken string) (*usersv1.Tokens, error)
 	Logout(ctx context.Context, refreshToken string) (*usersv1.LogoutResponse, error)
 	CreateUser(ctx context.Context, email, password string) (*usersv1.User, error)
 }

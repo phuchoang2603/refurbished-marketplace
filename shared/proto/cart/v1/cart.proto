@@ -2,15 +2,15 @@ syntax = "proto3";
 
 package cart.v1;
 
-option go_package = "github.com/phuchoang2603/refurbished-marketplace/shared/proto/cart/v1;cartv1";
-
 import "google/protobuf/timestamp.proto";
 
+option go_package = "github.com/phuchoang2603/refurbished-marketplace/shared/proto/cart/v1;cartv1";
+
 service CartService {
-  rpc GetCart(GetCartRequest) returns (Cart);
-  rpc AddCartItem(AddCartItemRequest) returns (Cart);
-  rpc SetCartItemQuantity(SetCartItemQuantityRequest) returns (Cart);
-  rpc RemoveCartItems(RemoveCartItemsRequest) returns (Cart);
+  rpc GetCart(GetCartRequest) returns (GetCartResponse);
+  rpc AddCartItem(AddCartItemRequest) returns (AddCartItemResponse);
+  rpc SetCartItemQuantity(SetCartItemQuantityRequest) returns (SetCartItemQuantityResponse);
+  rpc RemoveCartItems(RemoveCartItemsRequest) returns (RemoveCartItemsResponse);
 }
 
 message CartItem {
@@ -28,7 +28,9 @@ message Cart {
   google.protobuf.Timestamp updated_at = 4;
 }
 
-message GetCartRequest { string cart_id = 1; }
+message GetCartRequest {
+  string cart_id = 1;
+}
 
 message AddCartItemRequest {
   string cart_id = 1;
@@ -51,4 +53,20 @@ message SetCartItemQuantityRequest {
 message RemoveCartItemsRequest {
   string cart_id = 1;
   repeated string product_ids = 2;
+}
+
+message GetCartResponse {
+  Cart cart = 1;
+}
+
+message AddCartItemResponse {
+  Cart cart = 1;
+}
+
+message SetCartItemQuantityResponse {
+  Cart cart = 1;
+}
+
+message RemoveCartItemsResponse {
+  Cart cart = 1;
 }

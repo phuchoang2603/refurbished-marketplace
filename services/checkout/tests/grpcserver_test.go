@@ -58,7 +58,7 @@ func TestGetCheckoutBuyerOwnership(t *testing.T) {
 	response, err := server.GetCheckout(buyerContext, &checkoutv1.GetCheckoutRequest{
 		CheckoutId: checkoutID.String(), BuyerUserId: buyerID.String(),
 	})
-	if err != nil || response.GetGatewayPaymentId() != "hosted-session" || response.GetIntentKey() != "original-intent" {
+	if err != nil || response.GetCheckout().GetGatewayPaymentId() != "hosted-session" || response.GetCheckout().GetIntentKey() != "original-intent" {
 		t.Fatalf("buyer should see the ready checkout: response=%v error=%v", response, err)
 	}
 }

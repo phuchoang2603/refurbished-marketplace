@@ -19,7 +19,7 @@ func mapStock(inv service.Inventory) *inventoryv1.Stock {
 	}
 }
 
-func (s *Server) GetStock(ctx context.Context, req *inventoryv1.GetStockRequest) (*inventoryv1.Stock, error) {
+func (s *Server) GetStock(ctx context.Context, req *inventoryv1.GetStockRequest) (*inventoryv1.GetStockResponse, error) {
 	productID, err := grpcerr.ParseUUID(req.GetProductId(), "product id")
 	if err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func (s *Server) GetStock(ctx context.Context, req *inventoryv1.GetStockRequest)
 	if err != nil {
 		return nil, grpcerr.Map(err, grpcerr.Mapping{Err: service.ErrInventoryNotFound, Code: codes.NotFound, Message: "stock not found"})
 	}
-	return mapStock(inv), nil
+	return &inventoryv1.GetStockResponse{Stock: mapStock(inv)}, nil
 }
 
 func (s *Server) GetStocksByIDs(ctx context.Context, req *inventoryv1.GetStocksByIDsRequest) (*inventoryv1.GetStocksByIDsResponse, error) {

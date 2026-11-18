@@ -29,7 +29,7 @@ func (c *ProductsClient) Close() error {
 }
 
 func (c *ProductsClient) CreateProduct(ctx context.Context, name, description, category, condition string, priceCents int64, merchantID string, initialStock int32) (*productsv1.Product, error) {
-	return c.client.CreateProduct(ctx, &productsv1.CreateProductRequest{
+	response, err := c.client.CreateProduct(ctx, &productsv1.CreateProductRequest{
 		Name:     name,
 		Category: category, Condition: condition,
 		Description:  description,
@@ -37,10 +37,12 @@ func (c *ProductsClient) CreateProduct(ctx context.Context, name, description, c
 		MerchantId:   merchantID,
 		InitialStock: &initialStock,
 	})
+	return response.GetProduct(), err
 }
 
 func (c *ProductsClient) GetProductByID(ctx context.Context, id string) (*productsv1.Product, error) {
-	return c.client.GetProductByID(ctx, &productsv1.GetProductByIDRequest{Id: id})
+	response, err := c.client.GetProductByID(ctx, &productsv1.GetProductByIDRequest{Id: id})
+	return response.GetProduct(), err
 }
 
 func (c *ProductsClient) GetProductsByIDs(ctx context.Context, ids []string) (*productsv1.GetProductsByIDsResponse, error) {

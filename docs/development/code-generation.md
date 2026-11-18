@@ -2,13 +2,13 @@
 
 Run tasks explicitly via `devenv tasks run <task>`. Tasks use `execIfModified` to skip unchanged inputs and do not run on shell entry:
 
-| Task / Command                      | Purpose                                                     |
-| ----------------------------------- | ----------------------------------------------------------- |
-| `devenv tasks run codegen:proto`    | Regenerate Go code from `**/proto/*/v1/*.proto`             |
-| `devenv tasks run codegen:sqlc`     | Regenerate sqlc query code for services with `sqlc.yaml`    |
-| `devenv tasks run go:tidy`          | `go work sync` — keep workspace module dependencies aligned |
-| `devenv tasks run codegen:templ`    | `templ generate` in `services/web`                          |
-| `devenv tasks run codegen:tailwind` | Tailwind → `services/web/static/app.css`                    |
+| Task / Command                      | Purpose                                                                 |
+| ----------------------------------- | ----------------------------------------------------------------------- |
+| `devenv tasks run codegen:proto`    | Regenerate Go code from `shared/proto/*/v1/*.proto` with `buf generate` |
+| `devenv tasks run codegen:sqlc`     | Regenerate sqlc query code for services with `sqlc.yaml`                |
+| `devenv tasks run go:tidy`          | `go work sync` — keep workspace module dependencies aligned             |
+| `devenv tasks run codegen:templ`    | `templ generate` in `services/web`                                      |
+| `devenv tasks run codegen:tailwind` | Tailwind → `services/web/static/app.css`                                |
 
 Commit `*_templ.go` and `static/app.css`. CI builds the `web` image from those files. For a live watch while editing, run `templ generate --watch` / `tailwindcss … --watch=always` in `services/web`.
 

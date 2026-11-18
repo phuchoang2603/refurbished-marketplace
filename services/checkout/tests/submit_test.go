@@ -70,7 +70,7 @@ func TestSubmitIdempotencyAndOwnership(t *testing.T) {
 	owned, err := server.GetCheckout(buyerContext, &checkoutv1.GetCheckoutRequest{
 		CheckoutId: first.GetCheckoutId(), BuyerUserId: request.GetBuyerUserId(),
 	})
-	if err != nil || owned.GetState() != checkoutv1.CheckoutState_CHECKOUT_STATE_PREPARING || owned.GetOrderId() == "" {
+	if err != nil || owned.GetCheckout().GetState() != checkoutv1.CheckoutState_CHECKOUT_STATE_PREPARING || owned.GetCheckout().GetOrderId() == "" {
 		t.Fatalf("owner should see pending order: %v, %v", owned, err)
 	}
 }
@@ -124,12 +124,12 @@ func TestCheckoutLookupByOrderIsBuyerOwned(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	byOrder, err := server.GetCheckout(ctx, &checkoutv1.GetCheckoutRequest{OrderId: owned.GetOrderId(), BuyerUserId: request.GetBuyerUserId()})
+	byOrder, err := server.GetCheckout(ctx, &checkoutv1.GetCheckoutRequest{OrderId: owned.GetCheckout().GetOrderId(), BuyerUserId: request.GetBuyerUserId()})
 	if err != nil || !proto.Equal(owned, byOrder) {
 		t.Fatalf("order lookup %v %v", byOrder, err)
 	}
 	other := uuid.NewString()
-	_, err = server.GetCheckout(authenticatedContext(t, other), &checkoutv1.GetCheckoutRequest{OrderId: owned.GetOrderId(), BuyerUserId: other})
+	_, err = server.GetCheckout(authenticatedContext(t, other), &checkoutv1.GetCheckoutRequest{OrderId: owned.GetCheckout().GetOrderId(), BuyerUserId: other})
 	if status.Code(err) != codes.NotFound {
 		t.Fatalf("order lookup ownership %v", err)
 	}
@@ -145,11 +145,11 @@ func TestCheckoutLookupByOrderIsBuyerOwned(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			byOrder, err := server.GetCheckout(ctx, &checkoutv1.GetCheckoutRequest{OrderId: owned.GetOrderId(), BuyerUserId: request.GetBuyerUserId()})
+			byOrder, err := server.GetCheckout(ctx, &checkoutv1.GetCheckoutRequest{OrderId: owned.GetCheckout().GetOrderId(), BuyerUserId: request.GetBuyerUserId()})
 			if err != nil || !proto.Equal(byID, byOrder) {
 				t.Fatalf("lookup views differ: byID=%v byOrder=%v err=%v", byID, byOrder, err)
 			}
-			if (byOrder.GetHostedCheckoutUrl() != "") != (state == checkoutv1.CheckoutState_CHECKOUT_STATE_READY_TO_PAY) {
+			if (byOrder.GetCheckout().GetHostedCheckoutUrl() != "") != (state == checkoutv1.CheckoutState_CHECKOUT_STATE_READY_TO_PAY) {
 				t.Fatalf("unexpected hosted URL for %v: %v", state, byOrder)
 			}
 		})

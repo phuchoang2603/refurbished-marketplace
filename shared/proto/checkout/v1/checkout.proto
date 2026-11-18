@@ -2,13 +2,13 @@ syntax = "proto3";
 
 package checkout.v1;
 
-option go_package = "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1;checkoutv1";
+import "checkout/v1/events.proto";
 
-import "shared/proto/checkout/v1/events.proto";
+option go_package = "github.com/phuchoang2603/refurbished-marketplace/shared/proto/checkout/v1;checkoutv1";
 
 service CheckoutService {
   rpc SubmitCheckout(SubmitCheckoutRequest) returns (SubmitCheckoutResponse);
-  rpc GetCheckout(GetCheckoutRequest) returns (CheckoutStatus);
+  rpc GetCheckout(GetCheckoutRequest) returns (GetCheckoutResponse);
   rpc HandleGatewayWebhook(HandleGatewayWebhookRequest) returns (HandleGatewayWebhookResponse);
 }
 
@@ -78,4 +78,8 @@ enum GatewayWebhookResult {
   GATEWAY_WEBHOOK_RESULT_ACCEPTED = 1;
   GATEWAY_WEBHOOK_RESULT_DUPLICATE = 2;
   GATEWAY_WEBHOOK_RESULT_REJECTED = 3;
+}
+
+message GetCheckoutResponse {
+  CheckoutStatus checkout = 1;
 }

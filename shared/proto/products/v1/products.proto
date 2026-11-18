@@ -2,13 +2,13 @@ syntax = "proto3";
 
 package products.v1;
 
-option go_package = "github.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1;productsv1";
-
 import "google/protobuf/timestamp.proto";
 
+option go_package = "github.com/phuchoang2603/refurbished-marketplace/shared/proto/products/v1;productsv1";
+
 service ProductsService {
-  rpc CreateProduct(CreateProductRequest) returns (Product);
-  rpc GetProductByID(GetProductByIDRequest) returns (Product);
+  rpc CreateProduct(CreateProductRequest) returns (CreateProductResponse);
+  rpc GetProductByID(GetProductByIDRequest) returns (GetProductByIDResponse);
   rpc GetProductsByIDs(GetProductsByIDsRequest) returns (GetProductsByIDsResponse);
 }
 
@@ -36,8 +36,22 @@ message CreateProductRequest {
   string condition = 7;
 }
 
-message GetProductByIDRequest { string id = 1; }
+message GetProductByIDRequest {
+  string id = 1;
+}
 
-message GetProductsByIDsRequest { repeated string ids = 1; }
+message GetProductsByIDsRequest {
+  repeated string ids = 1;
+}
 
-message GetProductsByIDsResponse { repeated Product products = 1; }
+message GetProductsByIDsResponse {
+  repeated Product products = 1;
+}
+
+message CreateProductResponse {
+  Product product = 1;
+}
+
+message GetProductByIDResponse {
+  Product product = 1;
+}
