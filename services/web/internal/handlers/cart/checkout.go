@@ -1,6 +1,7 @@
 package cart
 
 import (
+	"errors"
 	"net/http"
 	"strings"
 
@@ -53,7 +54,7 @@ func (h *Handler) handleCheckoutCart(w http.ResponseWriter, r *http.Request) {
 
 	lineItems, totalCents, err := h.buildCheckoutOrderItems(r, cart, merchantID)
 	if err != nil {
-		if checkoutErr, ok := err.(*checkoutError); ok {
+		if checkoutErr, ok := errors.AsType[*checkoutError](err); ok {
 			checkoutErr.Write(w, r)
 			return
 		}

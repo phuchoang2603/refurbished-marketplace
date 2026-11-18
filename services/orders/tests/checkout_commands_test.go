@@ -2,6 +2,7 @@ package tests
 
 import (
 	"database/sql"
+	"errors"
 	"sync"
 	"testing"
 
@@ -65,7 +66,7 @@ func TestCheckoutOrderCreateReplaysWithoutMutation(t *testing.T) {
 	conflicting := proto.Clone(create).(*checkoutv1.PrepareCheckout)
 	conflicting.Items[0].Name = "Not a laptop"
 	conflict := checkoutOrderRecord(t, checkoutID, orderID, operationID, uuid.NewString(), conflicting)
-	if err := ordersService.HandleCheckoutCommand(t.Context(), conflict); err != service.ErrIdempotencyConflict {
+	if err := ordersService.HandleCheckoutCommand(t.Context(), conflict); !errors.Is(err, service.ErrIdempotencyConflict) {
 		t.Fatalf("changed snapshot must conflict: %v", err)
 	}
 	order, err = ordersService.GetOrderByID(t.Context(), uuid.MustParse(orderID))
@@ -88,7 +89,7 @@ func TestCheckoutFinalizationRequiresCommandAndRejectsTerminalConflict(t *testin
 	if err != nil || order.Status != service.OrderStatusPending {
 		t.Fatalf("created order should remain pending: %v %v", order, err)
 	}
-	if _, err := ordersService.UpdateOrderStatus(t.Context(), uuid.MustParse(orderID), service.OrderStatusPaid); err != service.ErrOrderNotPayable {
+	if _, err := ordersService.UpdateOrderStatus(t.Context(), uuid.MustParse(orderID), service.OrderStatusPaid); !errors.Is(err, service.ErrOrderNotPayable) {
 		t.Fatalf("legacy status write must not finalize checkout order: %v", err)
 	}
 	paid := checkoutFinalizeRecord(t, checkoutID, orderID, uuid.NewString(), checkoutv1.FinalOrderStatus_FINAL_ORDER_STATUS_PAID)
@@ -148,7 +149,7 @@ func TestFailedFinalizationBeforeCreationFencesLatePreparation(t *testing.T) {
 	if err := ordersService.HandleCheckoutCommand(t.Context(), late); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := ordersService.GetOrderByID(t.Context(), uuid.MustParse(orderID)); err != service.ErrOrderNotFound {
+	if _, err := ordersService.GetOrderByID(t.Context(), uuid.MustParse(orderID)); !errors.Is(err, service.ErrOrderNotFound) {
 		t.Fatalf("fenced checkout must not create an order: %v", err)
 	}
 	topics := resultTopics(t, db, checkoutID)
@@ -176,7 +177,7 @@ func TestInvalidPreparationIsDurablyRejected(t *testing.T) {
 	if len(topics) != 2 || topics[0] != messaging.EventTypeCheckoutOrderRejected || topics[1] != messaging.EventTypeCheckoutOrderRejected {
 		t.Fatalf("result topics: %v", topics)
 	}
-	if _, err := ordersService.GetOrderByID(t.Context(), uuid.MustParse(orderID)); err != service.ErrOrderNotFound {
+	if _, err := ordersService.GetOrderByID(t.Context(), uuid.MustParse(orderID)); !errors.Is(err, service.ErrOrderNotFound) {
 		t.Fatalf("rejected preparation must not create an order: %v", err)
 	}
 }
@@ -200,7 +201,7 @@ func TestConcurrentCreateAndFailedFinalizationNeverLeavesPendingOrder(t *testing
 		if err == nil && order.Status != service.OrderStatusFailed {
 			t.Fatalf("order left %s after failed finalization", order.Status)
 		}
-		if err != nil && err != service.ErrOrderNotFound {
+		if err != nil && !errors.Is(err, service.ErrOrderNotFound) {
 			t.Fatal(err)
 		}
 	}

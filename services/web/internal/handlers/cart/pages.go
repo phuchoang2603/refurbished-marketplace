@@ -32,7 +32,7 @@ func (h *Handler) RegisterProtectedPages(r chi.Router) {
 	r.Get("/checkouts/{id}/progress", h.handleCheckoutProgress)
 }
 
-func (h *Handler) mapCartView(w http.ResponseWriter, r *http.Request, c *cartv1.Cart) (sharedviews.CartView, error) {
+func (h *Handler) mapCartView(w http.ResponseWriter, r *http.Request, c *cartv1.Cart) sharedviews.CartView {
 	items := make([]sharedviews.CartItemView, 0, len(c.GetItems()))
 	groups := make(map[string]*sharedviews.CartMerchantGroupView, len(c.GetItems()))
 	groupOrder := make([]string, 0, len(c.GetItems()))
@@ -78,7 +78,7 @@ func (h *Handler) mapCartView(w http.ResponseWriter, r *http.Request, c *cartv1.
 		EstimatedTotalCents: estimatedTotalCents,
 		CreatedAt:           shared.FormatTimestamp(c.GetCreatedAt()),
 		UpdatedAt:           shared.FormatTimestamp(c.GetUpdatedAt()),
-	}, nil
+	}
 }
 
 func cartIDFromRequest(r *http.Request) string {
@@ -125,10 +125,6 @@ func (h *Handler) handleGetCart(w http.ResponseWriter, r *http.Request) {
 		shared.WriteGRPCError(w, r, err)
 		return
 	}
-	view, err := h.mapCartView(w, r, cart)
-	if err != nil {
-		shared.WriteGRPCError(w, r, err)
-		return
-	}
+	view := h.mapCartView(w, r, cart)
 	shared.WriteHTML(w, r, http.StatusOK, cartviews.CartPage(view))
 }

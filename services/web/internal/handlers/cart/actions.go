@@ -76,11 +76,7 @@ func (h *Handler) handleSetCartItemQuantity(w http.ResponseWriter, r *http.Reque
 		return
 	}
 	h.clearCartCookieIfEmpty(w, cart)
-	view, err := h.mapCartView(w, r, cart)
-	if err != nil {
-		shared.WriteGRPCError(w, r, err)
-		return
-	}
+	view := h.mapCartView(w, r, cart)
 	shared.WriteFragment(w, r, http.StatusOK, "#cart", cartviews.CartSection(view))
 }
 
@@ -96,10 +92,6 @@ func (h *Handler) handleRemoveCartItem(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	h.clearCartCookieIfEmpty(w, cart)
-	view, err := h.mapCartView(w, r, cart)
-	if err != nil {
-		shared.WriteGRPCError(w, r, err)
-		return
-	}
+	view := h.mapCartView(w, r, cart)
 	shared.WriteFragment(w, r, http.StatusOK, "#cart", cartviews.CartSection(view))
 }

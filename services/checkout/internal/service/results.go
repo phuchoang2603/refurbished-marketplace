@@ -87,10 +87,7 @@ func (service *Service) HandleResult(ctx context.Context, kafkaMessage messaging
 		return tx.Commit()
 	}
 
-	step, err := nextTransition(row, kafkaMessage.Topic, message)
-	if err != nil {
-		return err
-	}
+	step := nextTransition(row, kafkaMessage.Topic, message)
 	if step == nil {
 		if messageContext.GetWorkflowVersion() > uint64(row.Version) {
 			return fmt.Errorf("checkout result arrived before its command: checkout %s version %d, result version %d", checkoutID, row.Version, messageContext.GetWorkflowVersion())
@@ -128,7 +125,7 @@ func (service *Service) HandleResult(ctx context.Context, kafkaMessage messaging
 	return tx.Commit()
 }
 
-func nextTransition(row database.Checkout, topic string, result *checkoutv1.CheckoutMessage) (*transition, error) {
+func nextTransition(row database.Checkout, topic string, result *checkoutv1.CheckoutMessage) *transition {
 	current := checkoutv1.CheckoutState(checkoutv1.CheckoutState_value[row.State])
 	context := result.GetContext()
 	expectedStep := ""
@@ -147,7 +144,7 @@ func nextTransition(row database.Checkout, topic string, result *checkoutv1.Chec
 	validExpected := expectedStep != "" && context.GetOperationId() == uuid.NewSHA1(row.ID, []byte(expectedStep)).String() &&
 		context.GetWorkflowVersion() == uint64(expectedVersion)
 	if !validExpected {
-		return nil, nil
+		return nil
 	}
 
 	switch current {
@@ -158,7 +155,7 @@ func nextTransition(row database.Checkout, topic string, result *checkoutv1.Chec
 				commandTopic:   messaging.EventTypeCheckoutFinalizeOrder,
 				commandPayload: &checkoutv1.FinalizeOrder{Status: checkoutv1.FinalOrderStatus_FINAL_ORDER_STATUS_PAID},
 				operation:      "finalize-paid", deadline: preparationDeadline,
-			}, nil
+			}
 		}
 	case checkoutv1.CheckoutState_CHECKOUT_STATE_RELEASING_STOCK:
 		if topic == messaging.EventTypeCheckoutStockReleased && result.GetStockReleased() != nil {
@@ -167,18 +164,18 @@ func nextTransition(row database.Checkout, topic string, result *checkoutv1.Chec
 				commandTopic:   messaging.EventTypeCheckoutFinalizeOrder,
 				commandPayload: &checkoutv1.FinalizeOrder{Status: checkoutv1.FinalOrderStatus_FINAL_ORDER_STATUS_FAILED},
 				operation:      "finalize-failed", deadline: preparationDeadline,
-			}, nil
+			}
 		}
 	case checkoutv1.CheckoutState_CHECKOUT_STATE_FINALIZING_PAID:
 		if topic == messaging.EventTypeCheckoutOrderFinalized && result.GetOrderFinalized().GetStatus() == checkoutv1.FinalOrderStatus_FINAL_ORDER_STATUS_PAID {
-			return &transition{state: checkoutv1.CheckoutState_CHECKOUT_STATE_COMPLETED}, nil
+			return &transition{state: checkoutv1.CheckoutState_CHECKOUT_STATE_COMPLETED}
 		}
 	case checkoutv1.CheckoutState_CHECKOUT_STATE_FINALIZING_FAILED:
 		if topic == messaging.EventTypeCheckoutOrderFinalized && result.GetOrderFinalized().GetStatus() == checkoutv1.FinalOrderStatus_FINAL_ORDER_STATUS_FAILED {
-			return &transition{state: checkoutv1.CheckoutState_CHECKOUT_STATE_FAILED}, nil
+			return &transition{state: checkoutv1.CheckoutState_CHECKOUT_STATE_FAILED}
 		}
 	}
-	return nil, nil
+	return nil
 }
 
 func preparationResult(topic string, result *checkoutv1.CheckoutMessage) (participant, outcome, reason string, ok bool) {

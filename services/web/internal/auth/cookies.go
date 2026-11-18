@@ -13,14 +13,14 @@ const (
 
 func SetTokenCookies(w http.ResponseWriter, r *http.Request, accessToken, refreshToken string, expiresIn, refreshExpiresIn int64) {
 	w.Header().Set("Cache-Control", "no-store")
-	setAuthCookie(w, r, AccessCookieName, accessToken, int(expiresIn))
-	setAuthCookie(w, r, RefreshCookieName, refreshToken, int(refreshExpiresIn))
+	setAuthCookie(w, AccessCookieName, accessToken, int(expiresIn))
+	setAuthCookie(w, RefreshCookieName, refreshToken, int(refreshExpiresIn))
 }
 
 func ClearTokenCookies(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
-	setAuthCookie(w, r, AccessCookieName, "", -1)
-	setAuthCookie(w, r, RefreshCookieName, "", -1)
+	setAuthCookie(w, AccessCookieName, "", -1)
+	setAuthCookie(w, RefreshCookieName, "", -1)
 }
 
 func RefreshTokenFromRequest(r *http.Request) string {
@@ -41,7 +41,7 @@ func cookieValue(r *http.Request, name string) string {
 	return ""
 }
 
-func setAuthCookie(w http.ResponseWriter, r *http.Request, name, value string, maxAge int) {
+func setAuthCookie(w http.ResponseWriter, name, value string, maxAge int) {
 	cookie := &http.Cookie{
 		Name:     name,
 		Value:    value,

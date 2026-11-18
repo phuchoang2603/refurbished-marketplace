@@ -33,7 +33,7 @@ func (h *Handler) getOwnedCheckout(w http.ResponseWriter, r *http.Request) (*che
 	return status, true
 }
 
-func (h *Handler) paymentURL(r *http.Request, status *checkoutv1.CheckoutStatus) string {
+func (h *Handler) paymentURL(status *checkoutv1.CheckoutStatus) string {
 	if status.GetState() != checkoutv1.CheckoutState_CHECKOUT_STATE_READY_TO_PAY {
 		return ""
 	}
@@ -45,7 +45,7 @@ func (h *Handler) handleCheckoutProgressPage(w http.ResponseWriter, r *http.Requ
 	if !ok {
 		return
 	}
-	if url := h.paymentURL(r, status); url != "" {
+	if url := h.paymentURL(status); url != "" {
 		shared.Redirect(w, r, url, http.StatusSeeOther)
 		return
 	}
@@ -58,7 +58,7 @@ func (h *Handler) handleCheckoutProgress(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	sse := datastar.NewSSE(w, r)
-	if url := h.paymentURL(r, status); url != "" {
+	if url := h.paymentURL(status); url != "" {
 		_ = sse.Redirect(url)
 		return
 	}

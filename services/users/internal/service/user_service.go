@@ -45,7 +45,7 @@ func (s *Service) CreateUser(ctx context.Context, email, password string) (User,
 		return User{}, err
 	}
 
-	return mapDBUser(database.User(created)), nil
+	return mapDBUser(created), nil
 }
 
 func (s *Service) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
@@ -54,5 +54,5 @@ func (s *Service) GetUserByID(ctx context.Context, id uuid.UUID) (User, error) {
 		return User{}, mapNotFound(err, ErrUserNotFound)
 	}
 
-	return mapDBUser(database.User(u)), nil
+	return mapDBUser(u), nil
 }

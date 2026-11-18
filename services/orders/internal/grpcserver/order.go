@@ -40,7 +40,7 @@ func mapOrder(o service.Order) *ordersv1.Order {
 		Id:          o.ID.String(),
 		BuyerUserId: o.BuyerUserID.String(),
 		MerchantId:  o.MerchantID.String(),
-		Status:      ordersv1.OrderStatus(status),
+		Status:      status,
 		TotalCents:  o.TotalCents,
 		CreatedAt:   timestamppb.New(o.CreatedAt),
 		UpdatedAt:   timestamppb.New(o.UpdatedAt),

@@ -22,12 +22,12 @@ func TestGatewayWebhookRejectsBeforeDatabaseAccess(t *testing.T) {
 			case "tampered":
 				request.RawBody = append(request.RawBody, ' ')
 			case "stale":
-				request.SignatureHeader = signWebhook(request.RawBody, "test-webhook-secret", time.Now().Add(-6*time.Minute))
+				request.SignatureHeader = signWebhook(request.RawBody, time.Now().Add(-6*time.Minute))
 			case "future":
-				request.SignatureHeader = signWebhook(request.RawBody, "test-webhook-secret", time.Now().Add(6*time.Minute))
+				request.SignatureHeader = signWebhook(request.RawBody, time.Now().Add(6*time.Minute))
 			case "invalid-json":
 				request.RawBody = []byte("{")
-				request.SignatureHeader = signWebhook(request.RawBody, "test-webhook-secret", time.Now())
+				request.SignatureHeader = signWebhook(request.RawBody, time.Now())
 			case "unknown-event":
 				request = webhookRequest(t, "event-1", "payment.unknown", "order-1")
 			case "duplicate-timestamp":

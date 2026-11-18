@@ -50,13 +50,12 @@ func readyPayment(t *testing.T, db *sql.DB) (*service.Service, string, string) {
 	return svc, checkoutID, orderID
 }
 
-func sendResult(t *testing.T, svc *service.Service, checkoutID, orderID, topic, operation string, version uint64, payload any) messaging.KafkaMessage {
+func sendResult(t *testing.T, svc *service.Service, checkoutID, orderID, topic, operation string, version uint64, payload any) {
 	t.Helper()
 	message := buildResult(t, checkoutID, orderID, topic, operation, version, payload)
 	if err := svc.HandleResult(context.Background(), message); err != nil {
 		t.Fatalf("process %s: %v", topic, err)
 	}
-	return message
 }
 
 func buildResult(t *testing.T, checkoutID, orderID, topic, operation string, version uint64, payload any) messaging.KafkaMessage {

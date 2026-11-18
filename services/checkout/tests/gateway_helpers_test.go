@@ -52,9 +52,9 @@ func writePayment(t *testing.T, w http.ResponseWriter) {
 	}
 }
 
-func signWebhook(body []byte, secret string, now time.Time) string {
+func signWebhook(body []byte, now time.Time) string {
 	timestamp := fmt.Sprint(now.Unix())
-	mac := hmac.New(sha256.New, []byte(secret))
+	mac := hmac.New(sha256.New, []byte("test-webhook-secret"))
 	_, _ = mac.Write([]byte(timestamp + "."))
 	_, _ = mac.Write(body)
 	return "t=" + timestamp + ",v1=" + hex.EncodeToString(mac.Sum(nil))
@@ -73,7 +73,7 @@ func webhookRequest(t *testing.T, eventID, eventType, orderID string) *checkoutv
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &checkoutv1.HandleGatewayWebhookRequest{RawBody: body, SignatureHeader: signWebhook(body, "test-webhook-secret", time.Now())}
+	return &checkoutv1.HandleGatewayWebhookRequest{RawBody: body, SignatureHeader: signWebhook(body, time.Now())}
 }
 
 func sendWebhook(t *testing.T, svc *service.Service, eventID, eventType, orderID string) *checkoutv1.HandleGatewayWebhookResponse {
