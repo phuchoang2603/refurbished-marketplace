@@ -77,8 +77,6 @@ in
     fi
   '';
 
-  repo.golangci.run.allow-parallel-runners = true;
-
   repo.golangci.linters = {
     enable = [ "depguard" ];
     settings.depguard.rules =
