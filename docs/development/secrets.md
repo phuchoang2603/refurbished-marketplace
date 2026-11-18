@@ -64,7 +64,7 @@ kubectl apply -f infra/argocd/dev/root.yaml
 
 For production, use platform config `prod`, marketplace config `prd`, and `infra/argocd/prod/root.yaml`. Keep the kubeconfig private and remove the temporary copy after bootstrap.
 
-Do not commit tokens. Do not set the Doppler config in Helm or Argo values.
+Do not commit tokens.
 
 ```bash
 kubectl get secretstore doppler -n ecommerce

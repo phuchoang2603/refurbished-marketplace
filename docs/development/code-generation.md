@@ -46,7 +46,6 @@ Build from the repo root:
 
 ```bash
 go build ./services/users/cmd/users
-go test ./services/users/...
 ```
 
 Container images copy `go.work`, `go.work.sum`, `shared/`, `services/`, and `tools/`, then run `go build` from `/src` so the workspace resolves shared modules the same way as local dev.
