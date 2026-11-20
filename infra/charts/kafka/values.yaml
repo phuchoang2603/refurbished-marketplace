@@ -20,7 +20,6 @@ kafka:
   resources:
     requests:
       cpu: 100m
-      memory: 1Gi
     limits:
       memory: 1Gi
 
@@ -32,7 +31,6 @@ entityOperator:
     resources:
       requests:
         cpu: 50m
-        memory: 512Mi
       limits:
         memory: 512Mi
 
@@ -45,7 +43,6 @@ connect:
   resources:
     requests:
       cpu: 100m
-      memory: 1Gi
     limits:
       memory: 1Gi
   livenessProbe:
